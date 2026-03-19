@@ -38,7 +38,7 @@ pnpm lint           # Type check
 
 ### Language
 
-- **All code, comments, and documentation must be written in English**
+- All code, comments, and documentation must be written in English
 - This is a global project targeting international users
 
 ### Code Style
@@ -74,3 +74,47 @@ pnpm lint           # Type check
 ### Git
 
 - Commit messages: conventional commits (feat, fix, docs, refactor, test, chore)
+
+## Severity Levels
+
+Rules are classified into 4 severity levels:
+
+- **blocking**: Cannot implement correctly without fixing. Direct impact on screen reproduction.
+- **risk**: Implementable now but will break or increase cost later.
+- **missing-info**: Information is absent, forcing developers to guess.
+- **suggestion**: Not immediately problematic, but improves systemization.
+
+## Score Calibration
+
+Current rule scores are intuition-based and require validation.
+
+Planned calibration process:
+1. Connect Figma MCP + Claude after MVP completion
+2. Run analysis on real Figma files
+3. Claude attempts to convert nodes to actual CSS/components
+4. Collect mismatch cases:
+   - Conversion failed or required guessing → increase rule score
+   - Conversion was easy but got penalized → decrease rule score
+5. Repeat until scores reflect actual implementation difficulty
+
+Long-term: Automate calibration using a multi-agent architecture.
+
+```
+Orchestrator Agent
+├── Analysis Agent     → runs design-readiness-checker, outputs scores
+├── Conversion Agent   → reads nodes via Figma MCP, attempts CSS/component conversion
+├── Evaluation Agent   → measures conversion difficulty, detects score mismatches
+└── Tuning Agent       → proposes rule-config.ts adjustments as a PR
+```
+
+Final score adjustments are reviewed and merged by the developer.
+
+## Adjustable Rule Config
+
+All rule scores, severity, and thresholds are managed in `rules/rule-config.ts`.
+Rule logic and score config are intentionally separated so scores can be tuned without touching rule logic.
+
+Configurable thresholds:
+- `gridBase` (default: 8) — spacing grid unit for inconsistent-spacing and magic-number-spacing
+- `tolerance` (default: 10) — color difference tolerance for multiple-fill-colors
+- `no-dev-status` — disabled by default
