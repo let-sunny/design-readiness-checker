@@ -10,14 +10,32 @@ import { buildFigmaDeepLink } from "../adapters/figma-url-parser.js";
 import type { VisualComparisonRecord } from "../agents/contracts/visual-comparison.js";
 
 /**
- * Generate a static HTML report with optional visual comparison section
+ * Node screenshot for analyze --visual (Figma preview only, no comparison)
+ */
+export interface NodeScreenshot {
+  nodeId: string;
+  nodePath: string;
+  screenshotBase64: string;
+  issueCount: number;
+  topSeverity: string;
+}
+
+export interface HtmlReportOptions {
+  visualComparisons?: VisualComparisonRecord[];
+  nodeScreenshots?: NodeScreenshot[];
+}
+
+/**
+ * Generate a static HTML report with optional visual sections
  */
 export function generateHtmlReport(
   file: AnalysisFile,
   result: AnalysisResult,
   scores: ScoreReport,
-  visualComparisons?: VisualComparisonRecord[]
+  options?: HtmlReportOptions
 ): string {
+  const visualComparisons = options?.visualComparisons;
+  const nodeScreenshots = options?.nodeScreenshots;
   const quickWins = getQuickWins(result.issues, 5);
   const issuesByCategory = groupIssuesByCategory(result.issues);
 
@@ -83,6 +101,7 @@ ${quickWins.length > 0 ? renderQuickWins(quickWins, file.fileKey) : ""}
 ${CATEGORIES.map(cat => renderCategoryIssues(cat, issuesByCategory.get(cat) ?? [], file.fileKey)).join("\n")}
     </section>
 
+${nodeScreenshots && nodeScreenshots.length > 0 ? renderNodeScreenshotSection(nodeScreenshots, file.fileKey) : ""}
 ${visualComparisons && visualComparisons.length > 0 ? renderVisualComparisonSection(visualComparisons) : ""}
 
     <footer>
@@ -359,6 +378,41 @@ function getStyles(): string {
       font-size: 0.875rem;
     }
 
+    .node-screenshots-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1rem;
+    }
+
+    .ns-card {
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 0.75rem;
+      background: #fafafa;
+    }
+
+    .ns-card img {
+      width: 100%;
+      border: 1px solid #e5e7eb;
+      border-radius: 4px;
+      margin-bottom: 0.5rem;
+    }
+
+    .ns-card h4 {
+      font-size: 0.8rem;
+      color: #333;
+      margin-bottom: 0.25rem;
+      word-break: break-all;
+    }
+
+    .ns-meta {
+      font-size: 0.75rem;
+      color: #666;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
     .visual-comparison-grid {
       display: grid;
       gap: 1.5rem;
@@ -535,6 +589,31 @@ function groupIssuesByCategory(issues: AnalysisIssue[]): Map<Category, AnalysisI
   }
 
   return grouped;
+}
+
+function renderNodeScreenshotSection(screenshots: NodeScreenshot[], fileKey: string): string {
+  const cards = screenshots.map((ns) => {
+    const badgeClass = ns.topSeverity === "blocking" ? "badge-blocking" : "badge-risk";
+    const figmaLink = buildFigmaDeepLink(fileKey, ns.nodeId);
+
+    return `<div class="ns-card">
+        <img src="data:image/png;base64,${ns.screenshotBase64}" alt="${escapeHtml(ns.nodePath)}">
+        <h4>${escapeHtml(ns.nodePath)}</h4>
+        <div class="ns-meta">
+          <span class="severity-badge ${badgeClass}">${escapeHtml(ns.topSeverity)} (${ns.issueCount})</span>
+          <a href="${figmaLink}" target="_blank" rel="noopener" class="figma-link">Open in Figma</a>
+        </div>
+      </div>`;
+  });
+
+  return `
+    <section>
+      <h2>Node Previews (${screenshots.length})</h2>
+      <p style="margin-bottom:1rem;color:#666;font-size:0.875rem">Figma screenshots of the most impactful nodes with blocking or risk issues.</p>
+      <div class="node-screenshots-grid">
+${cards.join("\n")}
+      </div>
+    </section>`;
 }
 
 function renderVisualComparisonSection(comparisons: VisualComparisonRecord[]): string {

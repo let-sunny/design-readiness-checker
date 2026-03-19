@@ -22,7 +22,8 @@ import {
   runCalibrationEvaluate,
 } from "../agents/orchestrator.js";
 import { runVisualComparison } from "../agents/visual-comparator.js";
-import type { VisualComparisonInput, VisualComparisonRecord } from "../agents/contracts/visual-comparison.js";
+import type { VisualComparisonInput } from "../agents/contracts/visual-comparison.js";
+import type { NodeScreenshot } from "../report-html/index.js";
 
 // Import rules to register them
 import "../rules/index.js";
@@ -34,6 +35,7 @@ interface AnalyzeOptions {
   output?: string;
   token?: string;
   visual?: boolean;
+  visualLimit?: number;
   verbose?: boolean;
 }
 
@@ -97,7 +99,8 @@ cli
   .option("--preset <preset>", "Analysis preset (relaxed | dev-friendly | ai-ready | strict)")
   .option("--output <path>", "HTML report output path")
   .option("--token <token>", "Figma API token (or use FIGMA_TOKEN env var)")
-  .option("--visual", "Capture Figma screenshots for blocking/risk nodes and include visual comparison in report")
+  .option("--visual", "Capture Figma screenshots for blocking/risk nodes and include in report")
+  .option("--visual-limit <count>", "Max nodes to capture screenshots for (default: 5)")
   .option("--verbose", "Show detailed logs for visual capture and other operations")
   .example("  drc analyze https://www.figma.com/design/ABC123/MyDesign")
   .example("  drc analyze ./fixtures/design.json --output report.html")
@@ -127,44 +130,50 @@ cli
       console.log(formatScoreSummary(scores));
       console.log("=".repeat(50));
 
-      // Visual comparison (if --visual and Figma URL)
-      let visualComparisons: VisualComparisonRecord[] | undefined;
+      // Visual node screenshots (if --visual and Figma URL)
+      let nodeScreenshots: NodeScreenshot[] | undefined;
 
       if (options.visual && isFigmaUrl(input)) {
         const figmaToken = options.token ?? process.env["FIGMA_TOKEN"];
         if (!figmaToken) {
-          console.warn("--visual requires FIGMA_TOKEN. Skipping visual comparison.");
+          console.warn("--visual requires FIGMA_TOKEN. Skipping screenshots.");
         } else {
-          // Collect unique nodeIds with blocking/risk issues, ranked by score impact
-          const MAX_VISUAL_NODES = 20;
-          const nodeScoreMap = new Map<string, { path: string; score: number }>();
+          const maxNodes = options.visualLimit ?? 5;
+
+          // Collect unique nodeIds with blocking/risk issues, ranked by score
+          const nodeInfoMap = new Map<string, { path: string; score: number; issueCount: number; topSeverity: string }>();
 
           for (const issue of result.issues) {
             if (issue.config.severity === "blocking" || issue.config.severity === "risk") {
-              const existing = nodeScoreMap.get(issue.violation.nodeId);
+              const existing = nodeInfoMap.get(issue.violation.nodeId);
               if (existing) {
                 existing.score += issue.calculatedScore;
+                existing.issueCount++;
+                if (issue.config.severity === "blocking") {
+                  existing.topSeverity = "blocking";
+                }
               } else {
-                nodeScoreMap.set(issue.violation.nodeId, {
+                nodeInfoMap.set(issue.violation.nodeId, {
                   path: issue.violation.nodePath,
                   score: issue.calculatedScore,
+                  issueCount: 1,
+                  topSeverity: issue.config.severity,
                 });
               }
             }
           }
 
           // Sort by score (most negative first), take top N
-          const rankedNodes = [...nodeScoreMap.entries()]
+          const rankedNodes = [...nodeInfoMap.entries()]
             .sort((a, b) => a[1].score - b[1].score)
-            .slice(0, MAX_VISUAL_NODES);
+            .slice(0, maxNodes);
 
           if (rankedNodes.length > 0) {
-            const totalCandidates = nodeScoreMap.size;
-            console.log(`\nCapturing screenshots for ${rankedNodes.length} nodes${totalCandidates > MAX_VISUAL_NODES ? ` (top ${MAX_VISUAL_NODES} of ${totalCandidates})` : ""}...`);
+            const totalCandidates = nodeInfoMap.size;
+            console.log(`\nCapturing screenshots for ${rankedNodes.length} nodes${totalCandidates > maxNodes ? ` (top ${maxNodes} of ${totalCandidates})` : ""}...`);
 
             const client = new FigmaClient({ token: figmaToken });
             const nodeIdList = rankedNodes.map(([id]) => id);
-            const nodePathMap = new Map(rankedNodes.map(([id, data]) => [id, data.path]));
 
             try {
               const imageUrls = await client.getNodeImages(file.fileKey, nodeIdList);
@@ -175,29 +184,30 @@ cli
                 console.log(`  [verbose] Image API returned ${urlCount} URLs, ${nullCount} null`);
               }
 
-              const visualInputs: VisualComparisonInput[] = [];
-              for (const nid of nodeIdList) {
+              const screenshots: NodeScreenshot[] = [];
+              for (const [nid, info] of rankedNodes) {
                 const imageUrl = imageUrls[nid];
                 if (!imageUrl) {
                   if (options.verbose) {
-                    console.log(`  [verbose] Node ${nid}: no image URL returned (null)`);
+                    console.log(`  [verbose] Node ${nid}: no image URL (null)`);
                   }
                   continue;
                 }
 
                 try {
                   if (options.verbose) {
-                    console.log(`  [verbose] Node ${nid}: downloading ${imageUrl.slice(0, 80)}...`);
+                    console.log(`  [verbose] Node ${nid}: downloading...`);
                   }
                   const base64 = await client.fetchImageAsBase64(imageUrl);
                   if (options.verbose) {
-                    console.log(`  [verbose] Node ${nid}: OK (${Math.round(base64.length / 1024)}KB base64)`);
+                    console.log(`  [verbose] Node ${nid}: OK (${Math.round(base64.length / 1024)}KB)`);
                   }
-                  visualInputs.push({
+                  screenshots.push({
                     nodeId: nid,
-                    nodePath: nodePathMap.get(nid) ?? nid,
-                    figmaScreenshotBase64: base64,
-                    renderedScreenshotBase64: base64,
+                    nodePath: info.path,
+                    screenshotBase64: base64,
+                    issueCount: info.issueCount,
+                    topSeverity: info.topSeverity,
                   });
                 } catch (dlErr) {
                   if (options.verbose) {
@@ -206,9 +216,9 @@ cli
                 }
               }
 
-              if (visualInputs.length > 0) {
-                visualComparisons = await runVisualComparison(visualInputs);
-                console.log(`  Captured ${visualComparisons.length} screenshots.`);
+              if (screenshots.length > 0) {
+                nodeScreenshots = screenshots;
+                console.log(`  Captured ${screenshots.length} screenshots.`);
               } else if (options.verbose) {
                 console.log(`  [verbose] No screenshots downloaded successfully.`);
               }
@@ -221,7 +231,7 @@ cli
           }
         }
       } else if (options.visual && !isFigmaUrl(input)) {
-        console.warn("--visual requires a Figma URL input. Skipping visual comparison.");
+        console.warn("--visual requires a Figma URL input. Skipping screenshots.");
       }
 
       // Generate HTML report
@@ -236,7 +246,9 @@ cli
         mkdirSync(outputDir, { recursive: true });
       }
 
-      const html = generateHtmlReport(file, result, scores, visualComparisons);
+      const html = generateHtmlReport(file, result, scores,
+        nodeScreenshots ? { nodeScreenshots } : undefined
+      );
       await writeFile(outputPath, html, "utf-8");
       console.log(`\nReport saved: ${outputPath}`);
 
