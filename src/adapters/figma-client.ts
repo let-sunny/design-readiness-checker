@@ -52,27 +52,39 @@ export class FigmaClient {
     nodeIds: string[],
     options?: { format?: "png" | "svg" | "jpg"; scale?: number }
   ): Promise<Record<string, string | null>> {
-    const ids = nodeIds.join(",");
     const format = options?.format ?? "png";
     const scale = options?.scale ?? 2;
-    const url = `${FIGMA_API_BASE}/images/${fileKey}?ids=${encodeURIComponent(ids)}&format=${format}&scale=${scale}`;
-    const response = await fetch(url, {
-      headers: {
-        "X-Figma-Token": this.token,
-      },
-    });
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({}));
-      throw new FigmaClientError(
-        `Failed to fetch images: ${response.status} ${response.statusText}`,
-        response.status,
-        error
-      );
+    // Batch into chunks to avoid 414 URI Too Large
+    const BATCH_SIZE = 50;
+    const allImages: Record<string, string | null> = {};
+
+    for (let i = 0; i < nodeIds.length; i += BATCH_SIZE) {
+      const batch = nodeIds.slice(i, i + BATCH_SIZE);
+      const ids = batch.join(",");
+      const url = `${FIGMA_API_BASE}/images/${fileKey}?ids=${encodeURIComponent(ids)}&format=${format}&scale=${scale}`;
+      const response = await fetch(url, {
+        headers: {
+          "X-Figma-Token": this.token,
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new FigmaClientError(
+          `Failed to fetch images: ${response.status} ${response.statusText}`,
+          response.status,
+          error
+        );
+      }
+
+      const data = await response.json() as { images: Record<string, string | null> };
+      for (const [nodeId, imageUrl] of Object.entries(data.images)) {
+        allImages[nodeId] = imageUrl;
+      }
     }
 
-    const data = await response.json() as { images: Record<string, string | null> };
-    return data.images;
+    return allImages;
   }
 
   /**

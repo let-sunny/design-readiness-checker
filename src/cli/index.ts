@@ -133,22 +133,36 @@ cli
         if (!figmaToken) {
           console.warn("--visual requires FIGMA_TOKEN. Skipping visual comparison.");
         } else {
-          // Collect unique nodeIds with blocking/risk issues
-          const targetNodeIds = new Set<string>();
-          const nodePathMap = new Map<string, string>();
+          // Collect unique nodeIds with blocking/risk issues, ranked by score impact
+          const MAX_VISUAL_NODES = 20;
+          const nodeScoreMap = new Map<string, { path: string; score: number }>();
 
           for (const issue of result.issues) {
             if (issue.config.severity === "blocking" || issue.config.severity === "risk") {
-              targetNodeIds.add(issue.violation.nodeId);
-              nodePathMap.set(issue.violation.nodeId, issue.violation.nodePath);
+              const existing = nodeScoreMap.get(issue.violation.nodeId);
+              if (existing) {
+                existing.score += issue.calculatedScore;
+              } else {
+                nodeScoreMap.set(issue.violation.nodeId, {
+                  path: issue.violation.nodePath,
+                  score: issue.calculatedScore,
+                });
+              }
             }
           }
 
-          if (targetNodeIds.size > 0) {
-            console.log(`\nCapturing screenshots for ${targetNodeIds.size} nodes...`);
+          // Sort by score (most negative first), take top N
+          const rankedNodes = [...nodeScoreMap.entries()]
+            .sort((a, b) => a[1].score - b[1].score)
+            .slice(0, MAX_VISUAL_NODES);
+
+          if (rankedNodes.length > 0) {
+            const totalCandidates = nodeScoreMap.size;
+            console.log(`\nCapturing screenshots for ${rankedNodes.length} nodes${totalCandidates > MAX_VISUAL_NODES ? ` (top ${MAX_VISUAL_NODES} of ${totalCandidates})` : ""}...`);
 
             const client = new FigmaClient({ token: figmaToken });
-            const nodeIdList = [...targetNodeIds];
+            const nodeIdList = rankedNodes.map(([id]) => id);
+            const nodePathMap = new Map(rankedNodes.map(([id, data]) => [id, data.path]));
 
             try {
               const imageUrls = await client.getNodeImages(file.fileKey, nodeIdList);
