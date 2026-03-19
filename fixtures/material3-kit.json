@@ -1,0 +1,202 @@
+{
+  "fileKey": "prDMk2nQSznodtlhbf0orH",
+  "name": "Material 3 Design Kit",
+  "lastModified": "2026-03-19T23:40:19.451Z",
+  "version": "mcp",
+  "document": {
+    "id": "56554:638",
+    "name": "section",
+    "type": "SECTION",
+    "visible": true,
+    "absoluteBoundingBox": {
+      "x": 5516,
+      "y": 18,
+      "width": 7003,
+      "height": 3558
+    },
+    "children": [
+      {
+        "id": "56554:644",
+        "name": "Header",
+        "type": "INSTANCE",
+        "visible": true,
+        "absoluteBoundingBox": {
+          "x": 0,
+          "y": 0,
+          "width": 7003,
+          "height": 403.001220703125
+        }
+      },
+      {
+        "id": "56615:82356",
+        "name": "Examples/Home-Mobile",
+        "type": "COMPONENT",
+        "visible": true,
+        "absoluteBoundingBox": {
+          "x": 100,
+          "y": 472,
+          "width": 412,
+          "height": 1788
+        }
+      },
+      {
+        "id": "56615:48121",
+        "name": "Examples/Upcoming-Mobile",
+        "type": "COMPONENT",
+        "visible": true,
+        "absoluteBoundingBox": {
+          "x": 2064,
+          "y": 472,
+          "width": 412,
+          "height": 954.0003051757812
+        }
+      },
+      {
+        "id": "56615:47726",
+        "name": "Examples/Detailed view-Mobile",
+        "type": "COMPONENT",
+        "visible": true,
+        "absoluteBoundingBox": {
+          "x": 3049,
+          "y": 472,
+          "width": 412,
+          "height": 1072
+        }
+      },
+      {
+        "id": "56615:45927",
+        "name": "Examples/Reviews-Mobile",
+        "type": "COMPONENT",
+        "visible": true,
+        "absoluteBoundingBox": {
+          "x": 6004,
+          "y": 472,
+          "width": 412,
+          "height": 983.0001831054688
+        }
+      },
+      {
+        "id": "56615:48333",
+        "name": "Examples/Library-Mobile",
+        "type": "COMPONENT",
+        "visible": true,
+        "absoluteBoundingBox": {
+          "x": 1079,
+          "y": 472,
+          "width": 412,
+          "height": 1020
+        }
+      },
+      {
+        "id": "56615:47041",
+        "name": "Examples/Gallery-Mobile",
+        "type": "COMPONENT",
+        "visible": true,
+        "absoluteBoundingBox": {
+          "x": 4034,
+          "y": 472,
+          "width": 412,
+          "height": 1184
+        }
+      },
+      {
+        "id": "56615:46684",
+        "name": "Examples/Messaging-Mobile",
+        "type": "COMPONENT",
+        "visible": true,
+        "absoluteBoundingBox": {
+          "x": 5019,
+          "y": 472,
+          "width": 412,
+          "height": 910
+        }
+      },
+      {
+        "id": "56615:47017",
+        "name": "Examples/Gallery-Web",
+        "type": "COMPONENT",
+        "visible": true,
+        "absoluteBoundingBox": {
+          "x": 4034,
+          "y": 2471,
+          "width": 905,
+          "height": 680
+        }
+      },
+      {
+        "id": "56615:82332",
+        "name": "Examples/Home-Web",
+        "type": "COMPONENT",
+        "visible": true,
+        "absoluteBoundingBox": {
+          "x": 94,
+          "y": 2471,
+          "width": 905,
+          "height": 680
+        }
+      },
+      {
+        "id": "56615:48097",
+        "name": "Examples/Upcoming-Web",
+        "type": "COMPONENT",
+        "visible": true,
+        "absoluteBoundingBox": {
+          "x": 2064,
+          "y": 2471,
+          "width": 905,
+          "height": 680
+        }
+      },
+      {
+        "id": "56615:48317",
+        "name": "Examples/Library-Web",
+        "type": "COMPONENT",
+        "visible": true,
+        "absoluteBoundingBox": {
+          "x": 1079,
+          "y": 2471,
+          "width": 905,
+          "height": 680
+        }
+      },
+      {
+        "id": "56615:47706",
+        "name": "Examples/Detailed view-Web",
+        "type": "COMPONENT",
+        "visible": true,
+        "absoluteBoundingBox": {
+          "x": 3049,
+          "y": 2471,
+          "width": 905,
+          "height": 680
+        }
+      },
+      {
+        "id": "56615:45943",
+        "name": "Examples/Reviews-Web",
+        "type": "COMPONENT",
+        "visible": true,
+        "absoluteBoundingBox": {
+          "x": 6004,
+          "y": 2471,
+          "width": 905,
+          "height": 680
+        }
+      },
+      {
+        "id": "56615:46667",
+        "name": "Examples/Messaging-Web",
+        "type": "COMPONENT",
+        "visible": true,
+        "absoluteBoundingBox": {
+          "x": 5019,
+          "y": 2471,
+          "width": 905,
+          "height": 680
+        }
+      }
+    ]
+  },
+  "components": {},
+  "styles": {}
+}

@@ -24,6 +24,8 @@ const TAG_TYPE_MAP: Record<string, AnalysisNodeType> = {
   sticky: "STICKY",
   table: "TABLE",
   "table-cell": "TABLE_CELL",
+  symbol: "COMPONENT",
+  slot: "FRAME",
 };
 
 interface ParsedXmlNode {
