@@ -18,9 +18,11 @@ import { calculateScores, formatScoreSummary } from "../core/scoring.js";
 import { getConfigsWithPreset, type Preset } from "../rules/rule-config.js";
 import { generateHtmlReport } from "../report-html/index.js";
 import {
+  runCalibration,
   runCalibrationAnalyze,
   runCalibrationEvaluate,
 } from "../agents/orchestrator.js";
+import { createAnthropicExecutor } from "../agents/anthropic-executor.js";
 
 // Import rules to register them
 import "../rules/index.js";
@@ -298,31 +300,83 @@ interface CalibrateRunOptions {
   token?: string;
   maxNodes?: number;
   sampling?: string;
+  exportReport?: boolean;
 }
 
 cli
   .command(
     "calibrate-run <input>",
-    "Run full calibration pipeline (requires ConversionExecutor)"
+    "Run full calibration pipeline using Anthropic API"
   )
-  .option("--output <path>", "Report output path (default: logs/calibration/calibration-YYYY-MM-DD-HH-mm.md)")
+  .option("--output <path>", "Markdown report output path")
   .option("--token <token>", "Figma API token (or use FIGMA_TOKEN env var)")
-  .option("--max-nodes <count>", "Max nodes to convert", { default: 20 })
+  .option("--max-nodes <count>", "Max nodes to convert", { default: 5 })
   .option("--sampling <strategy>", "Sampling strategy (all | top-issues | random)", { default: "top-issues" })
-  .example("  drc calibrate-run ./fixtures/sample.json")
-  .action(async (_input: string, _options: CalibrateRunOptions) => {
+  .option("--export-report", "Generate HTML report in reports/")
+  .example("  drc calibrate-run https://www.figma.com/design/ABC123/MyDesign")
+  .example("  drc calibrate-run https://www.figma.com/design/ABC123/MyDesign --export-report")
+  .action(async (input: string, options: CalibrateRunOptions) => {
     try {
-      console.log("Full calibration pipeline requires a ConversionExecutor.");
-      console.log("This command is intended for programmatic use with an injected executor.");
+      const anthropicKey = process.env["ANTHROPIC_API_KEY"];
+      if (!anthropicKey) {
+        throw new Error(
+          "ANTHROPIC_API_KEY environment variable is required for calibrate-run.\n" +
+          "Set it in .env or export it in your shell."
+        );
+      }
+
+      const figmaToken = options.token ?? process.env["FIGMA_TOKEN"];
+
+      console.log("Running calibration pipeline...");
+      console.log(`  Input: ${input}`);
+      console.log(`  Max nodes: ${options.maxNodes ?? 5}`);
+      console.log(`  Sampling: ${options.sampling ?? "top-issues"}`);
+      if (options.exportReport) {
+        console.log("  HTML report: enabled");
+      }
       console.log("");
-      console.log("For manual calibration, use the 3-step process:");
-      console.log("  1. drc calibrate-analyze <input>");
-      console.log("  2. Convert nodes in a Claude Code session with Figma MCP");
-      console.log("  3. drc calibrate-evaluate <analysis.json> <conversion.json>");
+
+      const calNow = new Date();
+      const calTs = `${calNow.getFullYear()}-${String(calNow.getMonth() + 1).padStart(2, "0")}-${String(calNow.getDate()).padStart(2, "0")}-${String(calNow.getHours()).padStart(2, "0")}-${String(calNow.getMinutes()).padStart(2, "0")}`;
+      const defaultOutput = `logs/calibration/calibration-${calTs}.md`;
+
+      const executor = createAnthropicExecutor(anthropicKey);
+
+      const result = await runCalibration(
+        {
+          input,
+          maxConversionNodes: options.maxNodes ?? 5,
+          samplingStrategy: (options.sampling as "all" | "top-issues" | "random") ?? "top-issues",
+          outputPath: options.output ?? defaultOutput,
+          ...(figmaToken && { token: figmaToken }),
+        },
+        executor,
+        {
+          enableActivityLog: true,
+          ...(options.exportReport && { exportHtmlReport: true }),
+        }
+      );
+
+      if (result.status === "failed") {
+        throw new Error(result.error ?? "Calibration pipeline failed");
+      }
+
+      console.log("\nCalibration complete.");
+      console.log(`  Grade: ${result.scoreReport.overall.grade} (${result.scoreReport.overall.percentage}%)`);
+      console.log(`  Nodes with issues: ${result.nodeIssueSummaries.length}`);
+      console.log(`  Mismatches: ${result.mismatches.length}`);
+      console.log(`  Adjustments proposed: ${result.adjustments.length}`);
+      console.log(`  Report: ${result.reportPath}`);
+      if (result.htmlReportPath) {
+        console.log(`  HTML report: ${result.htmlReportPath}`);
+      }
+      if (result.logPath) {
+        console.log(`  Activity log: ${result.logPath}`);
+      }
+
       console.log("");
       console.log("Tip: For long-running sessions on macOS, prevent sleep with:");
-      console.log("  caffeinate -i drc calibrate-run <url>");
-      process.exit(1);
+      console.log(`  caffeinate -i drc calibrate-run "${input}"`);
     } catch (error) {
       console.error(
         "\nError:",

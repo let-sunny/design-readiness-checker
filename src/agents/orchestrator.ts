@@ -35,6 +35,7 @@ import {
 
 export interface CalibrationRunOptions {
   enableActivityLog?: boolean;
+  exportHtmlReport?: boolean;
 }
 
 export interface CalibrationRunResult {
@@ -342,12 +343,16 @@ export async function runCalibration(
 
     // Write markdown report
     const reportPath = resolve(parsed.outputPath);
+    const reportDir = resolve(parsed.outputPath, "..");
+    if (!existsSync(reportDir)) {
+      mkdirSync(reportDir, { recursive: true });
+    }
     await writeFile(reportPath, report, "utf-8");
 
-    // Generate HTML calibration report with screenshots
+    // Generate HTML calibration report with screenshots (if requested)
     stepStart = Date.now();
     let htmlReportPath: string | undefined;
-    try {
+    if (options?.exportHtmlReport) try {
       // Fetch Figma screenshots
       const figmaToken = parsed.token ?? process.env["FIGMA_TOKEN"];
       const figmaScreenshots = new Map<string, string>();

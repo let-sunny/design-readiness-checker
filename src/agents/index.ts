@@ -14,3 +14,4 @@ export {
 } from "./orchestrator.js";
 export { ActivityLogger } from "./activity-logger.js";
 export { renderCodeToScreenshot, renderCodeBatch } from "./code-renderer.js";
+export { createAnthropicExecutor } from "./anthropic-executor.js";
