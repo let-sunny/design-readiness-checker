@@ -1,0 +1,22 @@
+[
+  {
+    "id": "icon-missing-component",
+    "category": "component",
+    "severity": "blocking",
+    "score": -10,
+    "prompt": "Check if this node is an icon (small size, vector children, no text) and is not a component or instance. Icon nodes should always be componentized for reuse.",
+    "why": "Icon nodes that are not components cannot be reused consistently across the design system.",
+    "impact": "Developers will hardcode icons instead of using a shared icon component.",
+    "fix": "Convert this icon node to a component and publish it to the design system library."
+  },
+  {
+    "id": "missing-dark-mode-token",
+    "category": "token",
+    "severity": "risk",
+    "score": -7,
+    "prompt": "Check if this node uses color fills or strokes that are not bound to a variable. Dark mode support requires all colors to be tokenized via Figma variables.",
+    "why": "Hardcoded colors cannot be swapped for dark mode variants.",
+    "impact": "Dark mode implementation will require manual overrides for every affected node.",
+    "fix": "Replace hardcoded color values with Figma variables that support mode switching."
+  }
+]
