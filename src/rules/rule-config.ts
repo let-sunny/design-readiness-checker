@@ -33,8 +33,8 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
     enabled: true,
   },
   "group-usage": {
-    severity: "risk",
-    score: -6,
+    severity: "blocking",
+    score: -8,
     depthWeight: 1.2,
     enabled: true,
   },
@@ -194,13 +194,13 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
   // ============================================
   "ambiguous-structure": {
     severity: "blocking",
-    score: -10,
+    score: -7,
     depthWeight: 1.3,
     enabled: true,
   },
   "z-index-dependent-layout": {
     severity: "blocking",
-    score: -5,
+    score: -3,
     depthWeight: 1.3,
     enabled: true,
   },
