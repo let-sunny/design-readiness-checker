@@ -1,0 +1,20 @@
+{
+  "excludeNodeTypes": [],
+  "excludeNodeNames": [],
+  "gridBase": 4,
+  "colorTolerance": 5,
+  "rules": {
+    "no-auto-layout": {
+      "score": -15,
+      "severity": "blocking",
+      "enabled": true
+    },
+    "raw-color": {
+      "score": -12,
+      "enabled": true
+    },
+    "default-name": {
+      "enabled": false
+    }
+  }
+}

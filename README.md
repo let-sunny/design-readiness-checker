@@ -123,6 +123,66 @@ aiready save-fixture https://www.figma.com/design/ABC123/MyDesign --api --token 
 | `FIGMA_TOKEN` | For Figma URLs | Figma personal access token |
 | `ANTHROPIC_API_KEY` | For `--screenshot` | Anthropic API key for screenshot comparison |
 
+## Distribution
+
+### CLI
+
+```bash
+npm install -g aiready
+aiready analyze https://www.figma.com/design/ABC123/MyDesign
+```
+
+### MCP Server
+
+Add AIReady as an MCP server in Claude Code:
+
+```bash
+claude mcp add --transport stdio aiready npx aiready-mcp
+```
+
+Once added, Claude Code can use the `analyze` and `list-rules` tools to analyze Figma designs.
+
+### Claude Skills
+
+Copy the `.claude/skills/aiready/` directory from this repository into your project's `.claude/skills/` directory:
+
+```bash
+cp -r path/to/aiready/.claude/skills/aiready .claude/skills/
+```
+
+## Extensibility
+
+### Custom Rules
+
+Add new analysis rules via a JSON file. Each rule defines what to check, why it matters, and how to fix it.
+
+```bash
+aiready analyze ./fixtures/design.json --custom-rules ./my-rules.json
+```
+
+See [`examples/custom-rules.json`](examples/custom-rules.json) for the format.
+
+### Config Overrides
+
+Override built-in rule scores, severity levels, and global settings without modifying source code.
+
+```bash
+aiready analyze ./fixtures/design.json --config ./my-config.json
+```
+
+See [`examples/config.json`](examples/config.json) for the format.
+
+Config options:
+| Option | Description |
+|--------|-------------|
+| `gridBase` | Spacing grid unit (default: 8) |
+| `colorTolerance` | Color difference tolerance (default: 10) |
+| `excludeNodeTypes` | Node types to skip during analysis |
+| `excludeNodeNames` | Node name patterns to skip |
+| `rules.<id>.score` | Override rule score |
+| `rules.<id>.severity` | Override rule severity |
+| `rules.<id>.enabled` | Enable/disable a rule |
+
 ## Calibration (Internal)
 
 Rule scores are validated against actual code conversion difficulty via a calibration pipeline. This runs inside Claude Code using the `/calibrate-loop` command — it is not exposed as a CLI command.
@@ -159,9 +219,9 @@ The pipeline uses 4 subagents:
 
 `--screenshot` flag: Figma original screenshot next to AI-generated code rendered via Playwright, per node. Visual diff in the HTML report.
 
-### Phase 4 — Ecosystem
+### Phase 4 — Ecosystem (in progress)
 
-Plugin system for custom rules. Figma plugin for in-editor feedback. Integration with design system documentation tools.
+Plugin system for custom rules. MCP server for Claude Code integration. Claude Skills. Figma plugin for in-editor feedback. Integration with design system documentation tools.
 
 ## License
 

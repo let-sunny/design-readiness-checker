@@ -18,11 +18,13 @@ A CLI tool that analyzes Figma design structures to provide development-friendli
 src/
 ├── core/           # Analysis engine and core logic
 ├── rules/          # Analysis rule definitions
+│   └── custom/     # Custom rule loading and config override
 ├── contracts/      # Type definitions and Zod schemas
 ├── cli/            # CLI entry point
+├── mcp/            # MCP server for Claude Code integration
 ├── report-html/    # HTML report generation
 ├── adapters/       # External service integrations (Figma API, etc.)
-└── agents/         # Calibration pipeline (analysis, conversion, evaluation, tuning)
+└── agents/         # Calibration pipeline
 ```
 
 ## Architecture
@@ -39,7 +41,14 @@ src/
   - `--screenshot`: include screenshot comparison (requires ANTHROPIC_API_KEY, coming soon)
   - `--token`: Figma API token
   - `--output`: custom report path
-- Each issue includes a Figma deep link (click → navigate to node in Figma)
+  - `--custom-rules`: path to custom rules JSON file
+  - `--config`: path to config JSON override file
+- Each issue includes a Figma deep link (click -> navigate to node in Figma)
+
+**`aiready-mcp`**
+- Role: MCP server exposing analyze as a tool
+- Install: `claude mcp add --transport stdio aiready npx aiready-mcp`
+- Tools: `analyze`, `list-rules`
 
 **`aiready save-fixture`**
 - Role: Save Figma file data as JSON fixture for offline analysis

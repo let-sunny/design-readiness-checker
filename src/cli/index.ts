@@ -13,9 +13,13 @@ import { loadFigmaFileFromJson } from "../adapters/figma-file-loader.js";
 import { transformFigmaResponse } from "../adapters/figma-transformer.js";
 import { parseFigmaUrl } from "../adapters/figma-url-parser.js";
 import type { AnalysisFile } from "../contracts/figma-node.js";
+import type { RuleConfig, RuleId } from "../contracts/rule.js";
 import { analyzeFile } from "../core/rule-engine.js";
 import { calculateScores, formatScoreSummary } from "../core/scoring.js";
-import { getConfigsWithPreset, type Preset } from "../rules/rule-config.js";
+import { getConfigsWithPreset, RULE_CONFIGS, type Preset } from "../rules/rule-config.js";
+import { ruleRegistry } from "../rules/rule-registry.js";
+import { loadCustomRules } from "../rules/custom/custom-rule-loader.js";
+import { loadConfigFile, mergeConfigs } from "../rules/custom/config-loader.js";
 import { generateHtmlReport } from "../report-html/index.js";
 import {
   runCalibration,
@@ -78,6 +82,8 @@ interface AnalyzeOptions {
   mcp?: boolean;
   api?: boolean;
   screenshot?: boolean;
+  customRules?: string;
+  config?: string;
 }
 
 function isFigmaUrl(input: string): boolean {
@@ -207,10 +213,14 @@ cli
   .option("--mcp", "Load via Figma MCP (no FIGMA_TOKEN needed)")
   .option("--api", "Load via Figma REST API (requires FIGMA_TOKEN)")
   .option("--screenshot", "Include screenshot comparison in report (requires ANTHROPIC_API_KEY)")
+  .option("--custom-rules <path>", "Path to custom rules JSON file")
+  .option("--config <path>", "Path to config JSON file (override rule scores/settings)")
   .example("  aiready analyze https://www.figma.com/design/ABC123/MyDesign")
   .example("  aiready analyze https://www.figma.com/design/ABC123/MyDesign --mcp")
   .example("  aiready analyze https://www.figma.com/design/ABC123/MyDesign --api --token YOUR_TOKEN")
   .example("  aiready analyze ./fixtures/design.json --output report.html")
+  .example("  aiready analyze ./fixtures/design.json --custom-rules ./my-rules.json")
+  .example("  aiready analyze ./fixtures/design.json --config ./my-config.json")
   .action(async (input: string, options: AnalyzeOptions) => {
     try {
       // Validate mutually exclusive flags
@@ -267,9 +277,31 @@ cli
       console.log(`\nAnalyzing: ${file.name}`);
       console.log(`Nodes: ${totalNodes}`);
 
+      // Build rule configs: start from preset or defaults
+      let configs: Record<string, RuleConfig> = options.preset
+        ? { ...getConfigsWithPreset(options.preset) }
+        : { ...RULE_CONFIGS };
+
+      // Load and merge config file overrides
+      if (options.config) {
+        const configFile = await loadConfigFile(options.config);
+        configs = mergeConfigs(configs, configFile);
+        console.log(`Config loaded: ${options.config}`);
+      }
+
+      // Load and register custom rules
+      if (options.customRules) {
+        const { rules, configs: customConfigs } = await loadCustomRules(options.customRules);
+        for (const rule of rules) {
+          ruleRegistry.register(rule);
+        }
+        configs = { ...configs, ...customConfigs };
+        console.log(`Custom rules loaded: ${rules.length} rules from ${options.customRules}`);
+      }
+
       // Build analysis options
       const analyzeOptions = {
-        ...(options.preset && { configs: getConfigsWithPreset(options.preset) }),
+        configs: configs as Record<RuleId, RuleConfig>,
         ...(effectiveNodeId && { targetNodeId: effectiveNodeId }),
       };
 
