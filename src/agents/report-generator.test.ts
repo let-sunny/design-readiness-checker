@@ -44,7 +44,7 @@ function buildScoreReport(
   }
 
   return {
-    overall: { score: 95, maxScore: 100, percentage: 95, grade: "A" },
+    overall: { score: 95, maxScore: 100, percentage: 95, grade: "S" },
     byCategory,
     summary: {
       totalIssues: 0,
@@ -108,7 +108,7 @@ describe("generateCalibrationReport", () => {
       convertedNodeCount: 100,
       skippedNodeCount: 20,
       scoreReport: buildScoreReport({
-        overall: { score: 82, maxScore: 100, percentage: 82, grade: "B" },
+        overall: { score: 82, maxScore: 100, percentage: 82, grade: "B+" },
       }),
     });
 
@@ -121,7 +121,7 @@ describe("generateCalibrationReport", () => {
     expect(report).toContain("15");
     expect(report).toContain("100");
     expect(report).toContain("20");
-    expect(report).toContain("B (82%)");
+    expect(report).toContain("B+ (82%)");
   });
 
   it("renders adjustment table when adjustments exist", () => {

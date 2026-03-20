@@ -43,7 +43,7 @@ export interface ScoreReport {
 /**
  * Grade levels based on percentage
  */
-export type Grade = "A" | "B" | "C" | "D" | "F";
+export type Grade = "S" | "A+" | "A" | "B+" | "B" | "C+" | "C" | "D" | "F";
 
 /**
  * Severity weights for density calculation
@@ -94,11 +94,23 @@ const SCORE_FLOOR = 5;
  * Calculate grade from percentage
  */
 function calculateGrade(percentage: number): Grade {
-  if (percentage >= 90) return "A";
-  if (percentage >= 80) return "B";
-  if (percentage >= 70) return "C";
-  if (percentage >= 60) return "D";
+  if (percentage >= 95) return "S";
+  if (percentage >= 90) return "A+";
+  if (percentage >= 85) return "A";
+  if (percentage >= 80) return "B+";
+  if (percentage >= 75) return "B";
+  if (percentage >= 70) return "C+";
+  if (percentage >= 65) return "C";
+  if (percentage >= 50) return "D";
   return "F";
+}
+
+/**
+ * Convert grade to a CSS-safe class name suffix
+ * e.g. "A+" -> "Aplus", "B+" -> "Bplus", "C+" -> "Cplus"
+ */
+export function gradeToClassName(grade: Grade): string {
+  return grade.replace("+", "plus");
 }
 
 /**

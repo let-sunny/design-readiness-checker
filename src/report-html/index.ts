@@ -6,6 +6,7 @@ import { CATEGORIES, CATEGORY_LABELS } from "../contracts/category.js";
 import { SEVERITY_LABELS } from "../contracts/severity.js";
 import type { AnalysisResult, AnalysisIssue } from "../core/rule-engine.js";
 import type { ScoreReport } from "../core/scoring.js";
+import { gradeToClassName } from "../core/scoring.js";
 import { buildFigmaDeepLink } from "../adapters/figma-url-parser.js";
 
 /**
@@ -58,7 +59,7 @@ ${getStyles()}
     </header>
 
     <section class="overall-score">
-      <div class="grade grade-${scores.overall.grade}">${scores.overall.grade}</div>
+      <div class="grade grade-${gradeToClassName(scores.overall.grade)}">${escapeHtml(scores.overall.grade)}</div>
       <div class="score-details">
         <div class="percentage">${scores.overall.percentage}%</div>
         <div class="score-label">Overall Score</div>
@@ -184,8 +185,12 @@ function getStyles(): string {
       color: white;
     }
 
+    .grade-S { background: linear-gradient(135deg, #8b5cf6, #7c3aed); font-size: 2.5rem; }
+    .grade-Aplus { background: linear-gradient(135deg, #10b981, #059669); font-size: 2rem; }
     .grade-A { background: linear-gradient(135deg, #10b981, #059669); }
+    .grade-Bplus { background: linear-gradient(135deg, #3b82f6, #2563eb); font-size: 2rem; }
     .grade-B { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+    .grade-Cplus { background: linear-gradient(135deg, #f59e0b, #d97706); font-size: 2rem; }
     .grade-C { background: linear-gradient(135deg, #f59e0b, #d97706); }
     .grade-D { background: linear-gradient(135deg, #f97316, #ea580c); }
     .grade-F { background: linear-gradient(135deg, #ef4444, #dc2626); }

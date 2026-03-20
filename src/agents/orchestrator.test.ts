@@ -268,7 +268,7 @@ describe("runCalibrationEvaluate", () => {
         },
       ],
       scoreReport: {
-        overall: { score: 75, maxScore: 100, percentage: 75, grade: "C" as const },
+        overall: { score: 75, maxScore: 100, percentage: 75, grade: "B" as const },
         byCategory: {
           layout: {
             category: "layout" as const,
