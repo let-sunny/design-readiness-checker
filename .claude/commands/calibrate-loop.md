@@ -1,152 +1,132 @@
-Autonomously calibrate rule scores by running a 3-agent debate loop against a real Figma file.
+Autonomously calibrate rule scores by running a 3-subagent debate loop against a Figma fixture file.
 
-Input: $ARGUMENTS (a Figma URL or JSON fixture path)
+Input: $ARGUMENTS (a JSON fixture path, e.g. fixtures/material3-kit.json)
 
 ---
 
-## Step 1 — Runner Agent
+## Step 1 — Runner (subagent, isolated worktree)
 
-Run the calibration pipeline and extract proposals.
+Spawn a subagent with `isolation: "worktree"` to run calibration analysis.
 
-1. Execute: `pnpm exec drc calibrate-analyze $ARGUMENTS`
-2. Read the output file `calibration-analysis.json`
-3. Read the most recent `logs/calibration/calibration-report.md` if it exists from a prior run
-4. Read `logs/activity/` for the most recent `agent-activity-*.md` file
-5. Extract the list of score adjustment proposals. For each proposal, capture:
-   - `ruleId`
-   - `currentScore`
-   - `proposedScore`
-   - `currentSeverity`
-   - `proposedSeverity` (if changed)
-   - `confidence` (high / medium / low)
-   - `supportingCases` (number)
-   - `reasoning`
-6. If there are zero proposals, stop and report: "No calibration adjustments needed."
-7. Log the Runner output to `logs/activity/agent-activity-YYYY-MM-DD.md`:
+The Runner subagent should:
+1. Run `pnpm exec drc calibrate-run $ARGUMENTS --max-nodes 5`
+2. Read the generated report from `logs/calibration/`
+3. Read `src/rules/rule-config.ts` for current scores
+4. Extract ALL score adjustment proposals as a JSON array:
 
+```json
+[
+  {
+    "ruleId": "...",
+    "currentScore": -10,
+    "proposedScore": -5,
+    "currentSeverity": "blocking",
+    "proposedSeverity": "risk",
+    "confidence": "medium",
+    "supportingCases": 2,
+    "reasoning": "..."
+  }
+]
+```
+
+5. Return the JSON array. If zero proposals, return `[]`.
+
+Log to `logs/activity/agent-activity-YYYY-MM-DD.md`:
 ```
 ## HH:mm — Runner
 - 제안 목록:
-  - ruleId: current→proposed, confidence (supportingCases cases). reasoning
-  - ruleId: current→proposed, confidence (supportingCases cases). reasoning
+  - ruleId: current→proposed, confidence (N cases). reasoning
 ```
 
 ---
 
-## Step 2 — Critic Agent
+## Step 2 — Critic (subagent, read-only)
 
-Review each Runner proposal and apply rejection heuristics.
+Spawn a SEPARATE subagent to review the Runner's proposals.
+Pass ONLY the Runner's JSON output — NOT the Runner's reasoning process.
 
-For each proposal, evaluate:
+The Critic subagent should apply these rejection rules strictly:
 
-**Rejection Rule 1 — Insufficient evidence:**
-If `confidence` is `"low"` AND `supportingCases < 2`, reject the proposal.
+**Rule 1 — Insufficient evidence:**
+If `confidence` is `"low"` AND `supportingCases < 2` → REJECT
 Reason: "Insufficient evidence — only N case(s) with low confidence."
 
-**Rejection Rule 2 — Excessive change magnitude:**
-If `abs(proposedScore - currentScore) > abs(currentScore) * 0.5`, reject the proposal.
+**Rule 2 — Excessive change magnitude:**
+If `abs(proposedScore - currentScore) > abs(currentScore) * 0.5` → REJECT
 Reason: "Change magnitude exceeds 50% of current score (current: X, proposed: Y, delta: Z)."
 
-**Rejection Rule 3 — Severity jump without strong evidence:**
-If `proposedSeverity` differs from `currentSeverity` AND `confidence` is not `"high"`, reject the proposal.
+**Rule 3 — Severity jump without strong evidence:**
+If `proposedSeverity` differs from `currentSeverity` AND `confidence` is not `"high"` → REJECT
 Reason: "Severity change requires high confidence."
 
-For each proposal, output one of:
-- `ACCEPT` — passes all checks
-- `REJECT(reason)` — fails one or more checks
-- `REVIEW` — borderline case, needs visual confirmation
+Return a JSON array:
+```json
+[
+  { "ruleId": "...", "verdict": "ACCEPT" },
+  { "ruleId": "...", "verdict": "REJECT", "reason": "..." }
+]
+```
 
-If any proposal is marked `REVIEW`, re-run with visual comparison:
-`pnpm exec drc calibrate-analyze $ARGUMENTS`
-Then re-evaluate the `REVIEW` items using the visual comparison data to make a final `ACCEPT` or `REJECT` decision.
-
-Log the Critic output to `logs/activity/agent-activity-YYYY-MM-DD.md`:
-
+Log to `logs/activity/agent-activity-YYYY-MM-DD.md`:
 ```
 ## HH:mm — Critic
 - 반박:
   - ruleId: REJECT — reason
-  - ruleId: REJECT — reason
 - 동의:
   - ruleId: ACCEPT
-- deep-compare 재실행:
-  - ruleId: REVIEW — reason (재실행 후 최종 판정 기록)
 ```
 
 ---
 
-## Step 3 — Arbitrator Agent
+## Step 3 — Arbitrator (subagent, can edit files)
 
-Resolve disagreements between Runner and Critic.
+Spawn a SEPARATE subagent with the Runner's proposals AND the Critic's verdicts.
 
-For each proposal:
+The Arbitrator should:
 
-**Case A — Both agree (Runner proposed, Critic accepted):**
-Apply the proposal as-is.
+**If Critic accepted:** Apply the proposal as-is.
 
-**Case B — Critic rejected:**
-Choose one of:
-- **Compromise**: Use the midpoint `round((currentScore + proposedScore) / 2)` if the Runner's reasoning is strong but the Critic's concern is valid.
-- **Keep current**: If the Critic's rejection reason is compelling, keep the current score unchanged.
-- **Override Critic**: If the Runner provided 3+ supporting cases and the rejection was only about magnitude, apply the original proposal.
+**If Critic rejected:**
+- **Compromise**: Use midpoint `round((currentScore + proposedScore) / 2)` if Runner's reasoning is strong but Critic's concern is valid
+- **Keep current**: If Critic's rejection is compelling
+- **Override Critic**: If Runner has 3+ supporting cases and rejection was only about magnitude
 
-For each decision, write exactly one line of reasoning. Keep it factual.
-
-Output a final list of changes to apply and log to `logs/activity/agent-activity-YYYY-MM-DD.md`:
-
-```
-## HH:mm — Arbitrator
-- 최종 결정:
-  - ruleId: current → newScore — reason
-  - ruleId: KEEP -6 — reason
-  - ruleId: current → newScore (severity: old → new) — reason
-```
-
----
-
-## Step 4 — Apply Changes
-
-1. Read `src/rules/rule-config.ts`
-2. For each approved change from the Arbitrator:
-   - Update the `score` value for the rule
-   - Update the `severity` value if changed
-3. Run `pnpm test:run` to verify no tests break
-4. Run `pnpm lint` to verify TypeScript compiles
-5. If either fails, revert changes and report the failure
-6. If both pass, create a commit:
-
+Then:
+1. Edit `src/rules/rule-config.ts` with approved changes
+2. Run `pnpm test:run` — if fails, revert and report
+3. Run `pnpm lint` — if fails, revert and report
+4. If both pass, commit:
 ```
 chore: calibrate rule scores via agent loop
 
 Adjustments:
-- <ruleId>: <old> → <new> (<reason>)
-- <ruleId>: <old> → <new> (<reason>)
-...
+- ruleId: old → new (reason)
 
 Source: calibration against <input>
 ```
 
+Log to `logs/activity/agent-activity-YYYY-MM-DD.md`:
+```
+## HH:mm — Arbitrator
+- 최종 결정:
+  - ruleId: current → newScore — reason
+  - ruleId: KEEP — reason
+```
+
 ---
 
-## Step 5 — Log Summary
+## Orchestrator rules
 
-Append to `logs/activity/agent-activity-YYYY-MM-DD.md`:
-
-```
-## HH:mm — Applied Changes
-
-| Rule | Before | After | Severity | Reason |
-|------|--------|-------|----------|--------|
-| ... | ... | ... | ... | ... |
-
-Total: N rules adjusted, M proposals rejected, K kept unchanged.
-```
+- You are the orchestrator. Do NOT make calibration decisions yourself.
+- Spawn each agent as a SEPARATE subagent so their contexts don't leak.
+- Pass only structured data (JSON) between agents — not reasoning chains.
+- If Runner returns `[]`, stop and report: "No calibration adjustments needed."
+- If any step fails, log the error and stop.
 
 ---
 
 ## Error Handling
 
-- If `drc calibrate-analyze` fails, report the error and stop.
-- If a test or lint failure occurs after applying changes, revert all changes to `rule-config.ts` and report which rule change caused the issue.
+- If `drc calibrate-run` fails, report the error and stop.
+- If tests/lint fail after applying changes, revert `rule-config.ts` and report.
 - Never force-push or amend existing commits.
-- If the Figma URL requires a token and `FIGMA_TOKEN` is not set, stop and ask the user.
