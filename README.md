@@ -1,6 +1,8 @@
-# Design Readiness Checker
+# AIReady
 
 A CLI tool that analyzes Figma design files and scores how development-friendly and AI-friendly they are.
+
+> **Note:** This project was previously named `design-readiness-checker`. The GitHub repository is planned to be renamed from `let-sunny/design-readiness-checker` to `let-sunny/aiready`.
 
 ## Problem
 
@@ -8,7 +10,7 @@ Designers hand off Figma files. Developers open them and immediately start guess
 
 These questions slow down implementation, produce inconsistent code, and make AI-assisted code generation unreliable. The gap between "looks right in Figma" and "actually implementable" is real, but invisible until someone tries to write the code.
 
-Design Readiness Checker makes that gap measurable. It scans a Figma file's structure and produces a concrete score with specific, actionable issues — before any code is written.
+AIReady makes that gap measurable. It scans a Figma file's structure and produces a concrete score with specific, actionable issues — before any code is written.
 
 ## How It Works
 
@@ -52,8 +54,8 @@ Pass a Figma URL with a `node-id` parameter to analyze a specific frame or compo
 ## Installation
 
 ```bash
-git clone https://github.com/let-sunny/design-readiness-checker.git
-cd design-readiness-checker
+git clone https://github.com/let-sunny/aiready.git
+cd aiready
 pnpm install
 pnpm build
 ```
@@ -64,25 +66,25 @@ Requires Node.js >= 18 and pnpm.
 
 ```bash
 # Auto-detect: tries MCP first, falls back to REST API
-drc analyze https://www.figma.com/design/ABC123/MyDesign
+aiready analyze https://www.figma.com/design/ABC123/MyDesign
 
 # Explicit MCP mode (no FIGMA_TOKEN needed, requires Claude Code with Figma MCP)
-drc analyze https://www.figma.com/design/ABC123/MyDesign --mcp
+aiready analyze https://www.figma.com/design/ABC123/MyDesign --mcp
 
 # Explicit REST API mode (requires FIGMA_TOKEN)
-drc analyze https://www.figma.com/design/ABC123/MyDesign --api --token YOUR_TOKEN
+aiready analyze https://www.figma.com/design/ABC123/MyDesign --api --token YOUR_TOKEN
 
 # Scoped to a specific node
-drc analyze "https://www.figma.com/design/ABC123/MyDesign?node-id=1-234"
+aiready analyze "https://www.figma.com/design/ABC123/MyDesign?node-id=1-234"
 
 # From a JSON fixture
-drc analyze ./fixtures/design.json --output report.html
+aiready analyze ./fixtures/design.json --output report.html
 
 # With a preset
-drc analyze https://www.figma.com/design/ABC123/MyDesign --preset strict
+aiready analyze https://www.figma.com/design/ABC123/MyDesign --preset strict
 
 # With screenshot comparison (coming soon, requires ANTHROPIC_API_KEY)
-drc analyze https://www.figma.com/design/ABC123/MyDesign --screenshot
+aiready analyze https://www.figma.com/design/ABC123/MyDesign --screenshot
 ```
 
 Reports are saved to `reports/YYYY-MM-DD-HH-mm-<filekey>.html`.
@@ -100,9 +102,9 @@ Reports are saved to `reports/YYYY-MM-DD-HH-mm-<filekey>.html`.
 Save Figma file data as a JSON fixture for offline analysis:
 
 ```bash
-drc save-fixture https://www.figma.com/design/ABC123/MyDesign
-drc save-fixture https://www.figma.com/design/ABC123/MyDesign --mcp
-drc save-fixture https://www.figma.com/design/ABC123/MyDesign --api --token YOUR_TOKEN
+aiready save-fixture https://www.figma.com/design/ABC123/MyDesign
+aiready save-fixture https://www.figma.com/design/ABC123/MyDesign --mcp
+aiready save-fixture https://www.figma.com/design/ABC123/MyDesign --api --token YOUR_TOKEN
 ```
 
 ### Presets

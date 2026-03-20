@@ -1,4 +1,4 @@
-# Design Readiness Checker
+# AIReady
 
 A CLI tool that analyzes Figma design structures to provide development-friendliness and AI-friendliness scores and reports.
 
@@ -29,7 +29,7 @@ src/
 
 ### External (User-Facing)
 
-**`drc analyze`**
+**`aiready analyze`**
 - Role: Analyze Figma file structure + generate HTML report
 - Input: Figma URL or JSON fixture
 - Output: HTML report in `reports/`
@@ -41,7 +41,7 @@ src/
   - `--output`: custom report path
 - Each issue includes a Figma deep link (click → navigate to node in Figma)
 
-**`drc save-fixture`**
+**`aiready save-fixture`**
 - Role: Save Figma file data as JSON fixture for offline analysis
 - Input: Figma URL
 - Output: JSON file in `fixtures/`
@@ -67,7 +67,7 @@ Calibration commands are NOT exposed as CLI commands. They run exclusively insid
 ### File Output Structure
 
 ```
-reports/            # HTML reports (drc analyze)
+reports/            # HTML reports (aiready analyze)
 logs/calibration/   # Calibration analysis results (internal)
 logs/activity/      # Agent activity logs (internal)
 ```
@@ -144,9 +144,9 @@ Rules are classified into 4 severity levels:
 Rule scores started as intuition-based estimates. The calibration pipeline validates them against actual code conversion difficulty.
 
 Process:
-1. Run analysis on real Figma files (`drc calibrate-analyze`)
+1. Run analysis on real Figma files (`aiready calibrate-analyze`)
 2. Convert flagged nodes to code via Claude Code subagent with Figma MCP (`get_design_context`)
-3. Compare conversion difficulty vs rule scores (`drc calibrate-evaluate`)
+3. Compare conversion difficulty vs rule scores (`aiready calibrate-evaluate`)
 4. Propose adjustments: overscored rules get reduced, underscored rules get increased (Tuning Agent)
 5. 4-agent debate loop (`/calibrate-loop`) applies conservative changes automatically
 

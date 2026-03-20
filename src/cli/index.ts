@@ -27,7 +27,7 @@ import { parseMcpMetadataXml } from "../adapters/figma-mcp-adapter.js";
 // Import rules to register them
 import "../rules/index.js";
 
-const cli = cac("drc");
+const cli = cac("aiready");
 
 type LoadMode = "mcp" | "api" | "auto";
 
@@ -207,10 +207,10 @@ cli
   .option("--mcp", "Load via Figma MCP (no FIGMA_TOKEN needed)")
   .option("--api", "Load via Figma REST API (requires FIGMA_TOKEN)")
   .option("--screenshot", "Include screenshot comparison in report (requires ANTHROPIC_API_KEY)")
-  .example("  drc analyze https://www.figma.com/design/ABC123/MyDesign")
-  .example("  drc analyze https://www.figma.com/design/ABC123/MyDesign --mcp")
-  .example("  drc analyze https://www.figma.com/design/ABC123/MyDesign --api --token YOUR_TOKEN")
-  .example("  drc analyze ./fixtures/design.json --output report.html")
+  .example("  aiready analyze https://www.figma.com/design/ABC123/MyDesign")
+  .example("  aiready analyze https://www.figma.com/design/ABC123/MyDesign --mcp")
+  .example("  aiready analyze https://www.figma.com/design/ABC123/MyDesign --api --token YOUR_TOKEN")
+  .example("  aiready analyze ./fixtures/design.json --output report.html")
   .action(async (input: string, options: AnalyzeOptions) => {
     try {
       // Validate mutually exclusive flags
@@ -255,7 +255,7 @@ cli
             `Too many nodes (${totalNodes}) for unscoped analysis. ` +
             `Max ${MAX_NODES_WITHOUT_SCOPE} nodes without a node-id scope.\n\n` +
             `Add ?node-id=XXX to the Figma URL to target a specific section.\n` +
-            `Example: drc analyze "https://www.figma.com/design/.../MyDesign?node-id=1-234"`
+            `Example: aiready analyze "https://www.figma.com/design/.../MyDesign?node-id=1-234"`
           );
         }
       }
@@ -554,8 +554,8 @@ cli
   .option("--mcp", "Load via Figma MCP (no FIGMA_TOKEN needed)")
   .option("--api", "Load via Figma REST API (requires FIGMA_TOKEN)")
   .option("--token <token>", "Figma API token (or use FIGMA_TOKEN env var)")
-  .example("  drc save-fixture https://www.figma.com/design/ABC123/MyDesign --mcp")
-  .example("  drc save-fixture https://www.figma.com/design/ABC123/MyDesign --api --token YOUR_TOKEN")
+  .example("  aiready save-fixture https://www.figma.com/design/ABC123/MyDesign --mcp")
+  .example("  aiready save-fixture https://www.figma.com/design/ABC123/MyDesign --api --token YOUR_TOKEN")
   .action(async (input: string, options: SaveFixtureOptions) => {
     try {
       if (options.mcp && options.api) {
