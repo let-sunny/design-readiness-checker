@@ -21,8 +21,8 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
     enabled: true,
   },
   "fixed-width-in-responsive-context": {
-    severity: "blocking",
-    score: -8,
+    severity: "risk",
+    score: -5,
     depthWeight: 1.3,
     enabled: true,
   },
@@ -133,7 +133,7 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
   },
   "detached-instance": {
     severity: "risk",
-    score: -6,
+    score: -8,
     enabled: true,
   },
   "nested-instance-override": {
