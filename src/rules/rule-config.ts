@@ -10,7 +10,7 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
   // ============================================
   "no-auto-layout": {
     severity: "blocking",
-    score: -6,
+    score: -8,
     depthWeight: 1.5,
     enabled: true,
   },
@@ -54,8 +54,8 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
     enabled: true,
   },
   "deep-nesting": {
-    severity: "missing-info",
-    score: -2,
+    severity: "risk",
+    score: -3,
     enabled: true,
     options: {
       maxDepth: 5,
@@ -162,7 +162,7 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
   // ============================================
   "default-name": {
     severity: "risk",
-    score: -4,
+    score: -7,
     enabled: true,
   },
   "non-semantic-name": {
@@ -200,7 +200,7 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
   },
   "z-index-dependent-layout": {
     severity: "risk",
-    score: -4,
+    score: -5,
     depthWeight: 1.3,
     enabled: true,
   },
