@@ -25,7 +25,9 @@ For each proposal, output ONE of:
 
 ## Output
 
-Append your critique to the activity log file specified by the orchestrator.
+**CRITICAL: Your prompt will contain a line like `Append your critique to: logs/activity/2026-03-20-22-30-material3-kit.md`. You MUST append your output to that EXACT file path. Do NOT use any other path. Do NOT create `agent-activity-*.md` or any other file.**
+
+Format:
 
 ```
 ## HH:mm — Critic

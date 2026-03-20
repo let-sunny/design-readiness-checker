@@ -27,7 +27,9 @@ You receive the Runner's proposals and the Critic's reviews, and make final deci
 
 ## Output
 
-Append final summary to the activity log file specified by the orchestrator.
+**CRITICAL: Your prompt will contain a line like `Activity log: logs/activity/2026-03-20-22-30-material3-kit.md`. You MUST append your summary to that EXACT file path. Do NOT use any other path. Do NOT create `agent-activity-*.md` or any other file.**
+
+Format:
 
 ```
 ## HH:mm — Arbitrator

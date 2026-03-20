@@ -8,87 +8,54 @@ You are the orchestrator. Do NOT make calibration decisions yourself. Only pass 
 
 ### Step 0 — Setup
 
-Generate the activity log filename for this run. Extract the fixture name from the input path (e.g. `fixtures/material3-kit.json` → `material3-kit`). Create the log file:
+Generate the activity log filename. Extract the fixture name (e.g. `fixtures/material3-kit.json` → `material3-kit`). Build the path:
 
 ```
-logs/activity/YYYY-MM-DD-HH-mm-<fixture-name>.md
+LOG_FILE=logs/activity/YYYY-MM-DD-HH-mm-<fixture-name>.md
 ```
 
-Example: `logs/activity/2026-03-20-22-30-material3-kit.md`
-
-Write the header to the log file:
-```
-# Calibration Activity Log — YYYY-MM-DD-HH-mm-<fixture-name>
-```
-
-Use this exact log file path in ALL subsequent subagent prompts.
+Create the file with a header. Store the exact path — you will paste it verbatim into every subagent prompt below.
 
 ### Step 1 — Analysis (CLI)
-
-Run this command directly:
 
 ```
 npx drc calibrate-analyze $ARGUMENTS --output logs/calibration/calibration-analysis.json
 ```
 
-Read `logs/calibration/calibration-analysis.json`. If `issueCount` is 0, stop here: "No issues found."
+Read `logs/calibration/calibration-analysis.json`. If `issueCount` is 0, stop here.
 
-### Step 2 — Converter (Code Conversion from fixture JSON)
+### Step 2 — Converter
 
-Spawn the `calibration-converter` subagent (use `general-purpose` type) with this prompt:
+Spawn a `general-purpose` subagent. In the prompt, include the full converter instructions from `.claude/agents/calibration-converter.md` and add:
 
-> Convert the top 5 nodes from this analysis to code:
-> - Analysis JSON: logs/calibration/calibration-analysis.json
-> - Original input: $ARGUMENTS
-> - Output to: logs/calibration/calibration-conversion.json
-> - Activity log: <LOG_FILE_PATH>
->
-> This is a fixture file. Read the fixture JSON directly to get node data. Do NOT call Figma MCP.
->
-> (include full converter instructions from .claude/agents/calibration-converter.md)
-
-Wait for the Converter to complete.
+```
+Activity log: <paste LOG_FILE here>
+Append a brief summary to this EXACT file. Do NOT write to any other log file.
+```
 
 ### Step 3 — Evaluation (CLI)
-
-Run this command directly:
 
 ```
 npx drc calibrate-evaluate logs/calibration/calibration-analysis.json logs/calibration/calibration-conversion.json
 ```
 
-Read the generated report from `logs/calibration/` (the most recent `.md` file).
-Extract the proposals (score adjustments and new rule proposals).
-
-If there are zero proposals, stop here and report: "No calibration adjustments needed."
+Read the generated report, extract proposals. If zero proposals, stop.
 
 ### Step 4 — Critic
 
-Spawn the `calibration-critic` subagent with this prompt:
+Spawn the `calibration-critic` subagent. The prompt MUST include this exact line:
 
-> Review these calibration proposals:
-> (paste the proposals section only — NOT any reasoning chain)
->
-> Append your critique to: <LOG_FILE_PATH>
-
-Wait for the Critic to complete. Capture its full critique (APPROVE/REJECT/REVISE per rule).
+```
+Append your critique to: <paste LOG_FILE here>
+```
 
 ### Step 5 — Arbitrator
 
-Spawn the `calibration-arbitrator` subagent with this prompt:
+Spawn the `calibration-arbitrator` subagent. The prompt MUST include this exact line:
 
-> Here are the Runner proposals and Critic reviews. Make final decisions.
->
-> Runner proposals:
-> (paste the proposals from Step 3)
->
-> Critic reviews:
-> (paste the Critic's reviews from Step 4)
->
-> Fixture: $ARGUMENTS
-> Activity log: <LOG_FILE_PATH>
-
-Wait for the Arbitrator to complete.
+```
+Activity log: <paste LOG_FILE here>
+```
 
 ### Done
 
@@ -100,5 +67,5 @@ Report the final summary from the Arbitrator.
 - Pass only structured data between agents — never raw reasoning.
 - The Critic must NOT see the Runner's or Converter's reasoning, only the proposal list.
 - Only the Arbitrator may edit `rule-config.ts`.
-- Steps 1 and 3 are CLI commands — run them directly with Bash, NOT as subagents.
-- ALL agents must write to the SAME log file generated in Step 0.
+- Steps 1 and 3 are CLI commands — run them directly with Bash.
+- **CRITICAL**: Every subagent prompt MUST contain the exact LOG_FILE path. Do NOT use placeholders. Paste the actual path string.
