@@ -1,4 +1,4 @@
-// Report HTML module - Lighthouse-style HTML report generation
+// Report HTML module - shadcn/ui styled HTML report generation
 
 import type { AnalysisFile } from "../contracts/figma-node.js";
 import type { Category } from "../contracts/category.js";
@@ -9,9 +9,6 @@ import type { AnalysisResult, AnalysisIssue } from "../core/rule-engine.js";
 import type { ScoreReport, Grade } from "../core/scoring.js";
 import { buildFigmaDeepLink } from "../adapters/figma-url-parser.js";
 
-/**
- * Figma node screenshot for --visual (preview only, no comparison)
- */
 export interface NodeScreenshot {
   nodeId: string;
   nodePath: string;
@@ -21,60 +18,58 @@ export interface NodeScreenshot {
 }
 
 export interface HtmlReportOptions {
-  /** Figma node screenshots keyed by nodeId (analyze --visual) */
   nodeScreenshots?: NodeScreenshot[];
 }
 
-// shadcn/ui-inspired color palette
-const LH_GREEN = "#22c55e";
-const LH_ORANGE = "#f59e0b";
-const LH_RED = "#ef4444";
-const LH_GRAY = "#a1a1aa";
-
 // Gauge geometry
-const GAUGE_RADIUS = 53;
-const GAUGE_CIRCUMFERENCE = Math.round(2 * Math.PI * GAUGE_RADIUS); // ~333
+const GAUGE_R = 54;
+const GAUGE_C = Math.round(2 * Math.PI * GAUGE_R); // ~339
 
-// Category descriptions for tooltips
 const CATEGORY_DESCRIPTIONS: Record<Category, string> = {
-  layout: "Auto Layout usage, responsive constraints, nesting depth, absolute positioning",
-  token: "Design token binding for colors, fonts, shadows, spacing grid consistency",
-  component: "Component reuse, detached instances, variant coverage, property usage",
-  naming: "Semantic layer names, naming conventions, default/auto-generated names",
-  "ai-readability": "Structure clarity for AI code generation, z-index reliance, empty frames",
-  "handoff-risk": "Hardcoded values, text truncation handling, image placeholders, dev status",
+  layout: "Auto Layout, responsive constraints, nesting depth, absolute positioning",
+  token: "Design token binding for colors, fonts, shadows, spacing grid",
+  component: "Component reuse, detached instances, variant coverage",
+  naming: "Semantic layer names, naming conventions, default names",
+  "ai-readability": "Structure clarity for AI code generation, z-index, empty frames",
+  "handoff-risk": "Hardcoded values, text truncation, image placeholders, dev status",
 };
 
-// Severity ordering for display (highest first)
 const SEVERITY_ORDER: Severity[] = ["blocking", "risk", "missing-info", "suggestion"];
 
-// Severity dot colors (Lighthouse-inspired)
-const SEVERITY_DOT_COLORS: Record<Severity, string> = {
-  blocking: LH_RED,
-  risk: LH_ORANGE,
-  "missing-info": LH_GRAY,
-  suggestion: LH_GREEN,
-};
-
-/**
- * Get Lighthouse gauge color based on percentage score
- */
-function gaugeColor(percentage: number): string {
-  if (percentage >= 75) return LH_GREEN;
-  if (percentage >= 50) return LH_ORANGE;
-  return LH_RED;
+function gaugeColor(pct: number): string {
+  if (pct >= 75) return "#22c55e";
+  if (pct >= 50) return "#f59e0b";
+  return "#ef4444";
 }
 
-/**
- * Calculate stroke-dashoffset for SVG gauge
- */
-function gaugeDashOffset(percentage: number): number {
-  return GAUGE_CIRCUMFERENCE * (1 - percentage / 100);
+function gaugeTw(pct: number): string {
+  if (pct >= 75) return "text-green-500";
+  if (pct >= 50) return "text-amber-500";
+  return "text-red-500";
 }
 
-/**
- * Generate a static HTML report with Lighthouse-style design
- */
+function severityBadge(sev: Severity): string {
+  const map: Record<Severity, string> = {
+    blocking: "bg-red-500/10 text-red-600 border-red-500/20",
+    risk: "bg-amber-500/10 text-amber-600 border-amber-500/20",
+    "missing-info": "bg-zinc-500/10 text-zinc-600 border-zinc-500/20",
+    suggestion: "bg-green-500/10 text-green-600 border-green-500/20",
+  };
+  return map[sev];
+}
+
+function severityDot(sev: Severity): string {
+  const map: Record<Severity, string> = {
+    blocking: "bg-red-500",
+    risk: "bg-amber-500",
+    "missing-info": "bg-zinc-400",
+    suggestion: "bg-green-500",
+  };
+  return map[sev];
+}
+
+// ---- Main ----
+
 export function generateHtmlReport(
   file: AnalysisFile,
   result: AnalysisResult,
@@ -88,302 +83,277 @@ export function generateHtmlReport(
   const issuesByCategory = groupIssuesByCategory(result.issues);
 
   return `<!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="antialiased">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AIReady Report - ${escapeHtml(file.name)}</title>
+  <title>AIReady Report — ${esc(file.name)}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'] },
+          colors: {
+            border: 'hsl(240 5.9% 90%)',
+            ring: 'hsl(240 5.9% 10%)',
+            background: 'hsl(0 0% 100%)',
+            foreground: 'hsl(240 10% 3.9%)',
+            muted: { DEFAULT: 'hsl(240 4.8% 95.9%)', foreground: 'hsl(240 3.8% 46.1%)' },
+            card: { DEFAULT: 'hsl(0 0% 100%)', foreground: 'hsl(240 10% 3.9%)' },
+          },
+          borderRadius: { lg: '0.5rem', md: 'calc(0.5rem - 2px)', sm: 'calc(0.5rem - 4px)' },
+        }
+      }
+    }
+  </script>
   <style>
-${getStyles()}
+    details summary::-webkit-details-marker { display: none; }
+    details summary::marker { content: ""; }
+    details summary { list-style: none; }
+    .gauge-fill { transition: stroke-dashoffset 0.8s cubic-bezier(0.4,0,0.2,1); }
+    @media print {
+      .no-print { display: none !important; }
+      .topbar-print { position: static !important; background: white !important; color: hsl(240 10% 3.9%) !important; }
+    }
   </style>
 </head>
-<body>
-  <div class="lh-topbar">
-    <div class="lh-topbar__inner">
-      <span class="lh-topbar__title">AIReady Report</span>
-      <span class="lh-topbar__url">${escapeHtml(file.name)}</span>
+<body class="bg-muted font-sans text-foreground min-h-screen">
+
+  <!-- Top Bar -->
+  <header class="topbar-print sticky top-0 z-50 bg-zinc-950 text-white border-b border-zinc-800">
+    <div class="max-w-[960px] mx-auto px-6 py-3 flex items-center gap-4">
+      <span class="font-semibold text-sm tracking-tight">AIReady</span>
+      <span class="text-zinc-400 text-sm truncate">${esc(file.name)}</span>
+      <span class="ml-auto text-zinc-500 text-xs no-print">${new Date().toLocaleDateString()}</span>
     </div>
-  </div>
+  </header>
 
-  <div class="lh-container">
-    <!-- Overall Score Gauge -->
-    <section class="lh-gauge-section">
-      <div class="lh-gauge-overall">
-${renderGauge(scores.overall.percentage, "Overall", true, scores.overall.grade)}
+  <main class="max-w-[960px] mx-auto px-6 pb-16">
+
+    <!-- Overall Score -->
+    <section class="flex flex-col items-center pt-12 pb-6">
+      ${renderGaugeSvg(scores.overall.percentage, 140, 8)}
+      <div class="mt-3 text-center">
+        <span class="text-lg font-semibold">${scores.overall.percentage}</span>
+        <span class="text-muted-foreground text-sm ml-1">/ 100</span>
+        <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border ${gradeStyle(scores.overall.grade)}">${esc(scores.overall.grade)}</span>
       </div>
+      <p class="text-muted-foreground text-sm mt-1">Overall Score</p>
     </section>
 
-    <!-- Category Gauges Row -->
-    <section class="lh-category-gauges">
+    <!-- Category Gauges -->
+    <section class="bg-card border border-border rounded-lg shadow-sm p-6 mb-6">
+      <div class="grid grid-cols-3 sm:grid-cols-6 gap-4">
 ${CATEGORIES.map(cat => {
-    const catScore = scores.byCategory[cat];
+    const cs = scores.byCategory[cat];
     const desc = CATEGORY_DESCRIPTIONS[cat];
-    return `      <div class="lh-gauge-category lh-tooltip-wrap">
-${renderGauge(catScore.percentage, CATEGORY_LABELS[cat], false)}
-        <div class="lh-gauge-issues">${catScore.issueCount} issues</div>
-        <div class="lh-tooltip">${escapeHtml(desc)}</div>
-      </div>`;
+    return `        <div class="flex flex-col items-center group relative">
+          ${renderGaugeSvg(cs.percentage, 72, 6)}
+          <span class="text-xs font-medium mt-2 text-center leading-tight">${CATEGORY_LABELS[cat]}</span>
+          <span class="text-[11px] text-muted-foreground">${cs.issueCount} issues</span>
+          <div class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:block bg-zinc-900 text-white text-xs px-3 py-2 rounded-md whitespace-nowrap z-10 shadow-lg pointer-events-none">
+            ${esc(desc)}
+            <div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-zinc-900"></div>
+          </div>
+        </div>`;
   }).join("\n")}
-    </section>
-
-    <!-- Issue Summary Bar -->
-    <section class="lh-summary-bar">
-      <div class="lh-summary-item">
-        <span class="lh-summary-dot" style="background: ${LH_RED}"></span>
-        <span class="lh-summary-count">${scores.summary.blocking}</span>
-        <span class="lh-summary-label">Blocking</span>
-      </div>
-      <div class="lh-summary-item">
-        <span class="lh-summary-dot" style="background: ${LH_ORANGE}"></span>
-        <span class="lh-summary-count">${scores.summary.risk}</span>
-        <span class="lh-summary-label">Risk</span>
-      </div>
-      <div class="lh-summary-item">
-        <span class="lh-summary-dot" style="background: ${LH_GRAY}"></span>
-        <span class="lh-summary-count">${scores.summary.missingInfo}</span>
-        <span class="lh-summary-label">Missing Info</span>
-      </div>
-      <div class="lh-summary-item">
-        <span class="lh-summary-dot" style="background: ${LH_GREEN}"></span>
-        <span class="lh-summary-count">${scores.summary.suggestion}</span>
-        <span class="lh-summary-label">Suggestion</span>
-      </div>
-      <div class="lh-summary-item lh-summary-total">
-        <span class="lh-summary-count">${scores.summary.totalIssues}</span>
-        <span class="lh-summary-label">Total</span>
       </div>
     </section>
 
-${quickWins.length > 0 ? renderOpportunities(quickWins, file.fileKey, screenshotMap) : ""}
+    <!-- Issue Summary -->
+    <section class="bg-card border border-border rounded-lg shadow-sm p-4 mb-6">
+      <div class="flex flex-wrap items-center justify-center gap-6">
+        ${renderSummaryDot("bg-red-500", scores.summary.blocking, "Blocking")}
+        ${renderSummaryDot("bg-amber-500", scores.summary.risk, "Risk")}
+        ${renderSummaryDot("bg-zinc-400", scores.summary.missingInfo, "Missing Info")}
+        ${renderSummaryDot("bg-green-500", scores.summary.suggestion, "Suggestion")}
+        <div class="border-l border-border pl-6 flex items-center gap-2">
+          <span class="text-xl font-bold tracking-tight">${scores.summary.totalIssues}</span>
+          <span class="text-sm text-muted-foreground">Total</span>
+        </div>
+      </div>
+    </section>
 
-    <!-- Category Detail Sections -->
-${CATEGORIES.map(cat => renderCategoryDetail(cat, scores, issuesByCategory.get(cat) ?? [], file.fileKey, screenshotMap)).join("\n")}
+${quickWins.length > 0 ? renderOpportunities(quickWins, file.fileKey) : ""}
 
-    <footer class="lh-footer">
-      <p>Generated by <strong>AIReady</strong></p>
-      <p class="lh-footer-meta">${new Date().toLocaleString()} &middot; ${result.nodeCount} nodes &middot; Max depth ${result.maxDepth}</p>
+    <!-- Categories -->
+    <div class="space-y-3">
+${CATEGORIES.map(cat => renderCategory(cat, scores, issuesByCategory.get(cat) ?? [], file.fileKey, screenshotMap)).join("\n")}
+    </div>
+
+    <!-- Footer -->
+    <footer class="mt-12 pt-6 border-t border-border text-center">
+      <p class="text-sm text-muted-foreground">Generated by <span class="font-semibold text-foreground">AIReady</span></p>
+      <p class="text-xs text-muted-foreground/60 mt-1">${new Date().toLocaleString()} · ${result.nodeCount} nodes · Max depth ${result.maxDepth}</p>
     </footer>
-  </div>
+
+  </main>
 </body>
 </html>`;
 }
 
-/**
- * Render an SVG gauge circle
- */
-function renderGauge(
-  percentage: number,
-  label: string,
-  isLarge: boolean,
-  grade?: Grade
-): string {
-  const color = gaugeColor(percentage);
-  const offset = gaugeDashOffset(percentage);
-  const sizeClass = isLarge ? "lh-gauge--large" : "lh-gauge--small";
-  const gradeLabel = grade ? `${label} · ${grade}` : label;
+// ---- Components ----
 
-  return `      <div class="lh-gauge ${sizeClass}">
-        <svg viewBox="0 0 120 120" class="lh-gauge__svg">
-          <circle class="lh-gauge__track" cx="60" cy="60" r="${GAUGE_RADIUS}" />
-          <circle class="lh-gauge__fill" cx="60" cy="60" r="${GAUGE_RADIUS}"
-            stroke="${color}"
-            stroke-dasharray="${GAUGE_CIRCUMFERENCE}"
-            stroke-dashoffset="${offset}"
-            transform="rotate(-90 60 60)" />
-          <text x="60" y="68" class="lh-gauge__score">${percentage}</text>
-        </svg>
-        <div class="lh-gauge__label">${escapeHtml(gradeLabel)}</div>
-      </div>`;
+function renderGaugeSvg(pct: number, size: number, strokeW: number): string {
+  const offset = GAUGE_C * (1 - pct / 100);
+  const color = gaugeColor(pct);
+  const fontSize = size > 100 ? 28 : size > 80 ? 20 : 16;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 120 120" class="block">
+            <circle cx="60" cy="60" r="${GAUGE_R}" fill="none" stroke-width="${strokeW}" class="stroke-border" />
+            <circle cx="60" cy="60" r="${GAUGE_R}" fill="none" stroke="${color}" stroke-width="${strokeW}" stroke-linecap="round" stroke-dasharray="${GAUGE_C}" stroke-dashoffset="${offset}" transform="rotate(-90 60 60)" class="gauge-fill" />
+            <text x="60" y="62" text-anchor="middle" dominant-baseline="central" fill="currentColor" font-size="${fontSize}" font-weight="700" class="font-sans">${pct}</text>
+          </svg>`;
 }
 
-/**
- * Render the Opportunities section (like Lighthouse's Opportunities)
- */
-function renderOpportunities(
-  issues: AnalysisIssue[],
-  fileKey: string,
-  screenshotMap: Map<string, NodeScreenshot>
-): string {
-  // Find max absolute score for bar width scaling
-  const maxScore = issues.reduce(
-    (max, issue) => Math.max(max, Math.abs(issue.calculatedScore)),
-    1
-  );
+function renderSummaryDot(dotClass: string, count: number, label: string): string {
+  return `<div class="flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full ${dotClass}"></span>
+          <span class="text-lg font-bold tracking-tight">${count}</span>
+          <span class="text-sm text-muted-foreground">${label}</span>
+        </div>`;
+}
 
+function gradeStyle(grade: Grade): string {
+  const g = grade.replace("+", "");
+  if (g === "S" || g === "A") return "bg-green-500/10 text-green-700 border-green-500/20";
+  if (g === "B") return "bg-blue-500/10 text-blue-700 border-blue-500/20";
+  if (g === "C") return "bg-amber-500/10 text-amber-700 border-amber-500/20";
+  if (g === "D") return "bg-orange-500/10 text-orange-700 border-orange-500/20";
+  return "bg-red-500/10 text-red-700 border-red-500/20";
+}
+
+function renderOpportunities(issues: AnalysisIssue[], fileKey: string): string {
+  const maxAbs = issues.reduce((m, i) => Math.max(m, Math.abs(i.calculatedScore)), 1);
   return `
-    <section class="lh-section lh-opportunities">
-      <div class="lh-section__header">
-        <h2 class="lh-section__title">
-          <span class="lh-section__title-icon" style="color: ${LH_RED}">&#9679;</span>
+    <!-- Opportunities -->
+    <section class="bg-card border border-border rounded-lg shadow-sm mb-6 overflow-hidden">
+      <div class="px-6 py-4 border-b border-border">
+        <h2 class="text-sm font-semibold flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-red-500"></span>
           Opportunities
         </h2>
-        <p class="lh-section__description">These blocking issues have the highest impact. Fix them first.</p>
+        <p class="text-xs text-muted-foreground mt-1">Top blocking issues — fix these first for the biggest improvement.</p>
       </div>
-      <div class="lh-opportunity-list">
-${issues.map(issue => renderOpportunityItem(issue, fileKey, screenshotMap, maxScore)).join("\n")}
+      <div class="divide-y divide-border">
+${issues.map(issue => {
+    const def = issue.rule.definition;
+    const link = buildFigmaDeepLink(fileKey, issue.violation.nodeId);
+    const barW = Math.round((Math.abs(issue.calculatedScore) / maxAbs) * 100);
+    return `        <div class="px-6 py-3 flex items-center gap-4 hover:bg-muted/50 transition-colors">
+          <div class="flex-1 min-w-0">
+            <div class="text-sm font-medium truncate">${esc(def.name)}</div>
+            <div class="text-xs text-muted-foreground truncate mt-0.5">${esc(issue.violation.message)}</div>
+          </div>
+          <div class="w-32 flex items-center gap-2 shrink-0">
+            <div class="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+              <div class="h-full bg-red-500 rounded-full" style="width:${barW}%"></div>
+            </div>
+            <span class="text-xs font-medium text-red-600 w-12 text-right">${issue.calculatedScore}</span>
+          </div>
+          <a href="${link}" target="_blank" rel="noopener" class="text-xs text-muted-foreground hover:text-foreground shrink-0 no-print">Figma →</a>
+        </div>`;
+  }).join("\n")}
       </div>
     </section>`;
 }
 
-/**
- * Render a single opportunity item with impact bar
- */
-function renderOpportunityItem(
-  issue: AnalysisIssue,
-  fileKey: string,
-  _screenshotMap: Map<string, NodeScreenshot>,
-  maxScore: number
-): string {
-  const def = issue.rule.definition;
-  const figmaLink = buildFigmaDeepLink(fileKey, issue.violation.nodeId);
-  const barWidth = Math.round((Math.abs(issue.calculatedScore) / maxScore) * 100);
-  const pts = issue.calculatedScore;
-
-  return `        <div class="lh-opportunity-item">
-          <div class="lh-opportunity-main">
-            <div class="lh-opportunity-rule">${escapeHtml(def.name)}</div>
-            <div class="lh-opportunity-message">${escapeHtml(issue.violation.message)}</div>
-            <div class="lh-opportunity-path">${escapeHtml(issue.violation.nodePath)}</div>
-          </div>
-          <div class="lh-opportunity-bar-wrap">
-            <div class="lh-opportunity-bar" style="width: ${barWidth}%"></div>
-            <span class="lh-opportunity-score">${pts} pts</span>
-          </div>
-          <a href="${figmaLink}" target="_blank" rel="noopener" class="lh-figma-link">Open in Figma &#8594;</a>
-        </div>`;
-}
-
-/**
- * Render a full category detail section
- */
-function renderCategoryDetail(
-  category: Category,
+function renderCategory(
+  cat: Category,
   scores: ScoreReport,
   issues: AnalysisIssue[],
   fileKey: string,
   screenshotMap: Map<string, NodeScreenshot>
 ): string {
-  const catScore = scores.byCategory[category];
-  const color = gaugeColor(catScore.percentage);
-  const isOpen = issues.some(i => i.config.severity === "blocking" || i.config.severity === "risk");
+  const cs = scores.byCategory[cat];
+  const tw = gaugeTw(cs.percentage);
+  const hasProblems = issues.some(i => i.config.severity === "blocking" || i.config.severity === "risk");
 
-  // Group by severity
   const bySeverity = new Map<Severity, AnalysisIssue[]>();
-  for (const sev of SEVERITY_ORDER) {
-    bySeverity.set(sev, []);
-  }
-  for (const issue of issues) {
-    bySeverity.get(issue.config.severity)?.push(issue);
-  }
+  for (const sev of SEVERITY_ORDER) bySeverity.set(sev, []);
+  for (const issue of issues) bySeverity.get(issue.config.severity)?.push(issue);
 
   return `
-    <section class="lh-section">
-      <details class="lh-category-detail"${isOpen ? " open" : ""}>
-        <summary class="lh-category-summary">
-          <div class="lh-category-header">
-            <div class="lh-category-gauge-inline">
-              <svg viewBox="0 0 120 120" class="lh-gauge__svg--inline">
-                <circle class="lh-gauge__track" cx="60" cy="60" r="${GAUGE_RADIUS}" />
-                <circle class="lh-gauge__fill" cx="60" cy="60" r="${GAUGE_RADIUS}"
-                  stroke="${color}"
-                  stroke-dasharray="${GAUGE_CIRCUMFERENCE}"
-                  stroke-dashoffset="${gaugeDashOffset(catScore.percentage)}"
-                  transform="rotate(-90 60 60)" />
-                <text x="60" y="68" class="lh-gauge__score--inline">${catScore.percentage}</text>
-              </svg>
-            </div>
-            <div class="lh-category-name-wrap">
-              <h2 class="lh-category-name">${CATEGORY_LABELS[category]}</h2>
-              <span class="lh-category-desc">${escapeHtml(CATEGORY_DESCRIPTIONS[category])}</span>
-            </div>
-            <span class="lh-category-count" style="color: ${color}">${catScore.issueCount} issues</span>
-            <span class="lh-category-chevron"></span>
+      <details class="bg-card border border-border rounded-lg shadow-sm overflow-hidden group"${hasProblems ? " open" : ""}>
+        <summary class="px-5 py-3.5 flex items-center gap-3 cursor-pointer hover:bg-muted/50 transition-colors select-none">
+          <div class="w-9 h-9 shrink-0">
+            ${renderGaugeSvg(cs.percentage, 36, 4)}
           </div>
+          <div class="flex-1 min-w-0">
+            <div class="text-sm font-semibold">${CATEGORY_LABELS[cat]}</div>
+            <div class="text-xs text-muted-foreground">${esc(CATEGORY_DESCRIPTIONS[cat])}</div>
+          </div>
+          <span class="text-sm font-semibold ${tw}">${cs.percentage}</span>
+          <span class="text-xs text-muted-foreground">${cs.issueCount} issues</span>
+          <svg class="w-4 h-4 text-muted-foreground transition-transform group-open:rotate-180 shrink-0 no-print" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 9l-7 7-7-7"/></svg>
         </summary>
-        <div class="lh-category-body">
+        <div class="border-t border-border">
 ${issues.length === 0
-    ? '          <p class="lh-no-issues">No issues found - all clear!</p>'
+    ? '          <div class="px-5 py-4 text-sm text-green-600 font-medium">No issues found</div>'
     : SEVERITY_ORDER
-        .filter(sev => {
-          const sevIssues = bySeverity.get(sev);
-          return sevIssues && sevIssues.length > 0;
-        })
-        .map(sev => {
-          const sevIssues = bySeverity.get(sev);
-          if (!sevIssues || sevIssues.length === 0) return "";
-          return renderSeverityGroup(sev, sevIssues, fileKey, screenshotMap);
-        })
+        .filter(sev => (bySeverity.get(sev)?.length ?? 0) > 0)
+        .map(sev => renderSeverityGroup(sev, bySeverity.get(sev) ?? [], fileKey, screenshotMap))
         .join("\n")
-  }
+}
         </div>
-      </details>
-    </section>`;
+      </details>`;
 }
 
-/**
- * Render a severity group within a category
- */
 function renderSeverityGroup(
-  severity: Severity,
+  sev: Severity,
   issues: AnalysisIssue[],
   fileKey: string,
   screenshotMap: Map<string, NodeScreenshot>
 ): string {
-  const dotColor = SEVERITY_DOT_COLORS[severity];
-  return `          <div class="lh-severity-group">
-            <div class="lh-severity-header">
-              <span class="lh-severity-dot" style="background: ${dotColor}"></span>
-              <span class="lh-severity-label">${SEVERITY_LABELS[severity]}</span>
-              <span class="lh-severity-count">${issues.length}</span>
+  return `          <div class="px-5 py-3">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="w-2 h-2 rounded-full ${severityDot(sev)}"></span>
+              <span class="text-xs font-semibold uppercase tracking-wider">${SEVERITY_LABELS[sev]}</span>
+              <span class="text-xs text-muted-foreground ml-auto">${issues.length}</span>
             </div>
+            <div class="space-y-1">
 ${issues.map(issue => renderIssueRow(issue, fileKey, screenshotMap)).join("\n")}
+            </div>
           </div>`;
 }
 
-/**
- * Render a single issue row (Lighthouse audit item style)
- */
 function renderIssueRow(
   issue: AnalysisIssue,
   fileKey: string,
   screenshotMap: Map<string, NodeScreenshot>
 ): string {
-  const severity = issue.config.severity;
+  const sev = issue.config.severity;
   const def = issue.rule.definition;
-  const figmaLink = buildFigmaDeepLink(fileKey, issue.violation.nodeId);
-  const dotColor = SEVERITY_DOT_COLORS[severity];
-  const pts = issue.calculatedScore;
+  const link = buildFigmaDeepLink(fileKey, issue.violation.nodeId);
   const screenshot = screenshotMap.get(issue.violation.nodeId);
 
   const screenshotHtml = screenshot
-    ? `
-                  <div class="lh-issue-screenshot">
-                    <a href="${figmaLink}" target="_blank" rel="noopener">
-                      <img src="data:image/png;base64,${screenshot.screenshotBase64}" alt="${escapeHtml(screenshot.nodePath)}">
-                    </a>
-                  </div>`
+    ? `<div class="mt-3"><a href="${link}" target="_blank" rel="noopener"><img src="data:image/png;base64,${screenshot.screenshotBase64}" alt="${esc(screenshot.nodePath)}" class="max-w-[240px] border border-border rounded-md"></a></div>`
     : "";
 
-  return `            <details class="lh-issue-row">
-              <summary class="lh-issue-summary">
-                <span class="lh-issue-dot" style="background: ${dotColor}"></span>
-                <span class="lh-issue-rule">${escapeHtml(def.name)}</span>
-                <span class="lh-issue-message">${escapeHtml(issue.violation.message)}</span>
-                <span class="lh-issue-pts">${pts} pts</span>
-              </summary>
-              <div class="lh-issue-detail">
-                <div class="lh-issue-path">${escapeHtml(issue.violation.nodePath)}</div>
-                <div class="lh-issue-meta">
-                  <p><strong>Why:</strong> ${escapeHtml(def.why)}</p>
-                  <p><strong>Impact:</strong> ${escapeHtml(def.impact)}</p>
-                  <p><strong>Fix:</strong> ${escapeHtml(def.fix)}</p>
-                </div>${screenshotHtml}
-                <a href="${figmaLink}" target="_blank" rel="noopener" class="lh-figma-link">Open in Figma &#8594;</a>
-              </div>
-            </details>`;
+  return `              <details class="border border-border rounded-md overflow-hidden">
+                <summary class="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer hover:bg-muted/50 transition-colors">
+                  <span class="w-1.5 h-1.5 rounded-full ${severityDot(sev)} shrink-0"></span>
+                  <span class="font-medium shrink-0">${esc(def.name)}</span>
+                  <span class="text-muted-foreground truncate text-xs flex-1">${esc(issue.violation.message)}</span>
+                  <span class="inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium rounded border ${severityBadge(sev)} shrink-0">${issue.calculatedScore}</span>
+                </summary>
+                <div class="px-3 py-3 bg-muted/30 border-t border-border text-sm space-y-2">
+                  <div class="font-mono text-xs text-muted-foreground break-all">${esc(issue.violation.nodePath)}</div>
+                  <div class="text-muted-foreground leading-relaxed space-y-1">
+                    <p><span class="font-medium text-foreground">Why:</span> ${esc(def.why)}</p>
+                    <p><span class="font-medium text-foreground">Impact:</span> ${esc(def.impact)}</p>
+                    <p><span class="font-medium text-foreground">Fix:</span> ${esc(def.fix)}</p>
+                  </div>${screenshotHtml}
+                  <a href="${link}" target="_blank" rel="noopener" class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium border border-border rounded-md hover:bg-muted transition-colors no-print">Open in Figma <span>→</span></a>
+                </div>
+              </details>`;
 }
 
-// ---- Utility functions ----
+// ---- Utils ----
 
 function getQuickWins(issues: AnalysisIssue[], limit: number): AnalysisIssue[] {
   return issues
@@ -394,770 +364,16 @@ function getQuickWins(issues: AnalysisIssue[], limit: number): AnalysisIssue[] {
 
 function groupIssuesByCategory(issues: AnalysisIssue[]): Map<Category, AnalysisIssue[]> {
   const grouped = new Map<Category, AnalysisIssue[]>();
-
-  for (const category of CATEGORIES) {
-    grouped.set(category, []);
-  }
-
-  for (const issue of issues) {
-    const category = issue.rule.definition.category;
-    grouped.get(category)!.push(issue);
-  }
-
+  for (const category of CATEGORIES) grouped.set(category, []);
+  for (const issue of issues) grouped.get(issue.rule.definition.category)!.push(issue);
   return grouped;
 }
 
-function escapeHtml(text: string): string {
+function esc(text: string): string {
   return text
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
-}
-
-// ---- Styles ----
-
-function getStyles(): string {
-  return `
-    /* ===== shadcn/ui CSS Variables ===== */
-    :root {
-      --background: 0 0% 100%;
-      --foreground: 240 10% 3.9%;
-      --card: 0 0% 100%;
-      --card-foreground: 240 10% 3.9%;
-      --muted: 240 4.8% 95.9%;
-      --muted-foreground: 240 3.8% 46.1%;
-      --border: 240 5.9% 90%;
-      --input: 240 5.9% 90%;
-      --ring: 240 5.9% 10%;
-      --radius: 0.5rem;
-    }
-
-    /* ===== Reset & Base ===== */
-    *, *::before, *::after {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      line-height: 1.5;
-      color: hsl(var(--foreground));
-      background: hsl(240 4.8% 95.9%);
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-    }
-
-    /* ===== Top Bar ===== */
-    .lh-topbar {
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      background: hsl(240 10% 3.9%);
-      color: hsl(0 0% 98%);
-      padding: 14px 0;
-      border-bottom: 1px solid hsl(240 3.7% 15.9%);
-    }
-
-    .lh-topbar__inner {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 0 24px;
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
-
-    .lh-topbar__title {
-      font-weight: 600;
-      font-size: 15px;
-      letter-spacing: -0.01em;
-    }
-
-    .lh-topbar__url {
-      font-size: 13px;
-      color: hsl(240 5% 64.9%);
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    /* ===== Container ===== */
-    .lh-container {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 0 24px 48px;
-    }
-
-    /* ===== Overall Gauge Section ===== */
-    .lh-gauge-section {
-      display: flex;
-      justify-content: center;
-      padding: 48px 0 20px;
-    }
-
-    .lh-gauge-overall {
-      text-align: center;
-    }
-
-    /* ===== Category Gauges Row ===== */
-    .lh-category-gauges {
-      display: flex;
-      justify-content: center;
-      flex-wrap: wrap;
-      gap: 12px;
-      padding: 8px 0 32px;
-    }
-
-    .lh-gauge-category {
-      text-align: center;
-      min-width: 110px;
-    }
-
-    .lh-gauge-issues {
-      font-size: 11px;
-      color: hsl(var(--muted-foreground));
-      margin-top: -2px;
-    }
-
-    /* ===== Tooltip ===== */
-    .lh-tooltip-wrap {
-      position: relative;
-      cursor: default;
-    }
-
-    .lh-tooltip {
-      display: none;
-      position: absolute;
-      bottom: calc(100% + 8px);
-      left: 50%;
-      transform: translateX(-50%);
-      background: hsl(240 10% 3.9%);
-      color: hsl(0 0% 98%);
-      font-size: 12px;
-      line-height: 1.5;
-      padding: 8px 12px;
-      border-radius: var(--radius);
-      white-space: nowrap;
-      z-index: 10;
-      pointer-events: none;
-      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
-    }
-
-    .lh-tooltip::after {
-      content: "";
-      position: absolute;
-      top: 100%;
-      left: 50%;
-      transform: translateX(-50%);
-      border: 5px solid transparent;
-      border-top-color: hsl(240 10% 3.9%);
-    }
-
-    .lh-tooltip-wrap:hover .lh-tooltip {
-      display: block;
-    }
-
-    /* ===== SVG Gauge ===== */
-    .lh-gauge {
-      display: inline-block;
-    }
-
-    .lh-gauge--large .lh-gauge__svg {
-      width: 160px;
-      height: 160px;
-    }
-
-    .lh-gauge--small .lh-gauge__svg {
-      width: 88px;
-      height: 88px;
-    }
-
-    .lh-gauge__track {
-      fill: none;
-      stroke: hsl(var(--border));
-      stroke-width: 8;
-    }
-
-    .lh-gauge__fill {
-      fill: none;
-      stroke-width: 8;
-      stroke-linecap: round;
-    }
-
-    .lh-gauge__score {
-      font-size: 30px;
-      font-weight: 700;
-      fill: hsl(var(--foreground));
-      text-anchor: middle;
-      dominant-baseline: central;
-      letter-spacing: -0.02em;
-    }
-
-    .lh-gauge__label {
-      font-size: 13px;
-      font-weight: 500;
-      color: hsl(var(--foreground));
-      margin-top: 6px;
-      text-align: center;
-    }
-
-    .lh-gauge--large .lh-gauge__label {
-      font-size: 14px;
-      font-weight: 600;
-    }
-
-    /* ===== Inline Gauge (Category Headers) ===== */
-    .lh-gauge__svg--inline {
-      width: 36px;
-      height: 36px;
-    }
-
-    .lh-gauge__svg--inline .lh-gauge__track {
-      stroke-width: 10;
-    }
-
-    .lh-gauge__svg--inline .lh-gauge__fill {
-      stroke-width: 10;
-    }
-
-    .lh-gauge__score--inline {
-      font-size: 34px;
-      font-weight: 700;
-      fill: hsl(var(--foreground));
-      text-anchor: middle;
-      dominant-baseline: central;
-    }
-
-    /* ===== Issue Summary Bar (shadcn Card) ===== */
-    .lh-summary-bar {
-      display: flex;
-      justify-content: center;
-      flex-wrap: wrap;
-      gap: 24px;
-      padding: 16px 24px;
-      background: hsl(var(--card));
-      border: 1px solid hsl(var(--border));
-      border-radius: var(--radius);
-      margin-bottom: 24px;
-      box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);
-    }
-
-    .lh-summary-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .lh-summary-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-
-    .lh-summary-count {
-      font-size: 20px;
-      font-weight: 700;
-      color: hsl(var(--foreground));
-      letter-spacing: -0.02em;
-    }
-
-    .lh-summary-label {
-      font-size: 13px;
-      color: hsl(var(--muted-foreground));
-    }
-
-    .lh-summary-total {
-      padding-left: 16px;
-      border-left: 1px solid hsl(var(--border));
-    }
-
-    /* ===== Section ===== */
-    .lh-section {
-      margin-bottom: 12px;
-    }
-
-    .lh-section__header {
-      padding: 0 0 12px;
-    }
-
-    .lh-section__title {
-      font-size: 16px;
-      font-weight: 600;
-      color: hsl(var(--foreground));
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      letter-spacing: -0.01em;
-    }
-
-    .lh-section__title-icon {
-      font-size: 12px;
-    }
-
-    .lh-section__description {
-      font-size: 14px;
-      color: hsl(var(--muted-foreground));
-      margin-top: 4px;
-    }
-
-    /* ===== Opportunities (shadcn Card) ===== */
-    .lh-opportunities {
-      background: hsl(var(--card));
-      border: 1px solid hsl(var(--border));
-      border-radius: var(--radius);
-      padding: 20px 24px;
-      margin-bottom: 24px;
-      box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);
-    }
-
-    .lh-opportunity-list {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .lh-opportunity-item {
-      display: grid;
-      grid-template-columns: 1fr 160px;
-      gap: 12px;
-      align-items: center;
-      padding: 12px 16px;
-      border-radius: calc(var(--radius) - 2px);
-      background: hsl(var(--muted));
-      border: 1px solid hsl(var(--border));
-    }
-
-    .lh-opportunity-rule {
-      font-size: 14px;
-      font-weight: 600;
-      color: hsl(var(--foreground));
-      letter-spacing: -0.01em;
-    }
-
-    .lh-opportunity-message {
-      font-size: 13px;
-      color: hsl(var(--muted-foreground));
-      margin-top: 2px;
-    }
-
-    .lh-opportunity-path {
-      font-size: 11px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      color: hsl(var(--muted-foreground));
-      margin-top: 4px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      opacity: 0.7;
-    }
-
-    .lh-opportunity-bar-wrap {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .lh-opportunity-bar {
-      height: 8px;
-      background: ${LH_RED};
-      border-radius: 9999px;
-      min-width: 4px;
-    }
-
-    .lh-opportunity-score {
-      font-size: 12px;
-      font-weight: 600;
-      color: ${LH_RED};
-      white-space: nowrap;
-    }
-
-    .lh-opportunity-item .lh-figma-link {
-      grid-column: 1 / -1;
-    }
-
-    /* ===== Category Detail (shadcn Card + Collapsible) ===== */
-    .lh-category-detail {
-      border: 1px solid hsl(var(--border));
-      border-radius: var(--radius);
-      overflow: hidden;
-      background: hsl(var(--card));
-      box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);
-    }
-
-    .lh-category-summary {
-      cursor: pointer;
-      list-style: none;
-      padding: 14px 20px;
-      background: hsl(var(--card));
-      border-bottom: 1px solid transparent;
-      transition: background 0.15s;
-    }
-
-    .lh-category-summary::-webkit-details-marker {
-      display: none;
-    }
-
-    .lh-category-summary::marker {
-      content: "";
-    }
-
-    .lh-category-detail[open] .lh-category-summary {
-      border-bottom: 1px solid hsl(var(--border));
-    }
-
-    .lh-category-summary:hover {
-      background: hsl(var(--muted));
-    }
-
-    .lh-category-header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .lh-category-gauge-inline {
-      flex-shrink: 0;
-      width: 36px;
-      height: 36px;
-    }
-
-    .lh-category-name-wrap {
-      flex: 1;
-    }
-
-    .lh-category-name {
-      font-size: 14px;
-      font-weight: 600;
-      color: hsl(var(--foreground));
-      letter-spacing: -0.01em;
-    }
-
-    .lh-category-desc {
-      display: block;
-      font-size: 12px;
-      font-weight: 400;
-      color: hsl(var(--muted-foreground));
-      margin-top: 1px;
-    }
-
-    .lh-category-count {
-      font-size: 13px;
-      font-weight: 600;
-    }
-
-    .lh-category-chevron {
-      width: 16px;
-      height: 16px;
-      flex-shrink: 0;
-      position: relative;
-    }
-
-    .lh-category-chevron::after {
-      content: "";
-      position: absolute;
-      top: 4px;
-      left: 3px;
-      width: 7px;
-      height: 7px;
-      border-right: 1.5px solid hsl(var(--muted-foreground));
-      border-bottom: 1.5px solid hsl(var(--muted-foreground));
-      transform: rotate(45deg);
-      transition: transform 0.2s;
-    }
-
-    .lh-category-detail[open] .lh-category-chevron::after {
-      transform: rotate(-135deg);
-      top: 6px;
-    }
-
-    .lh-category-body {
-      padding: 16px 20px;
-      background: hsl(var(--card));
-    }
-
-    .lh-no-issues {
-      color: ${LH_GREEN};
-      font-weight: 500;
-      font-size: 14px;
-      padding: 8px 0;
-    }
-
-    /* ===== Severity Group ===== */
-    .lh-severity-group {
-      margin-bottom: 16px;
-    }
-
-    .lh-severity-group:last-child {
-      margin-bottom: 0;
-    }
-
-    .lh-severity-header {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 6px 0;
-      margin-bottom: 6px;
-      border-bottom: 1px solid hsl(var(--border));
-    }
-
-    .lh-severity-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-
-    .lh-severity-label {
-      font-size: 13px;
-      font-weight: 600;
-      color: hsl(var(--foreground));
-    }
-
-    .lh-severity-count {
-      font-size: 12px;
-      color: hsl(var(--muted-foreground));
-      margin-left: auto;
-    }
-
-    /* ===== Issue Row ===== */
-    .lh-issue-row {
-      border: 1px solid hsl(var(--border));
-      border-radius: calc(var(--radius) - 2px);
-      margin-bottom: 4px;
-      background: hsl(var(--card));
-      overflow: hidden;
-    }
-
-    .lh-issue-row:last-child {
-      margin-bottom: 0;
-    }
-
-    .lh-issue-summary {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 10px 12px;
-      cursor: pointer;
-      list-style: none;
-      font-size: 13px;
-    }
-
-    .lh-issue-summary::-webkit-details-marker {
-      display: none;
-    }
-
-    .lh-issue-summary::marker {
-      content: "";
-    }
-
-    .lh-issue-summary:hover {
-      background: hsl(var(--muted));
-    }
-
-    .lh-issue-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-
-    .lh-issue-rule {
-      font-weight: 600;
-      color: hsl(var(--foreground));
-      white-space: nowrap;
-      font-size: 13px;
-    }
-
-    .lh-issue-message {
-      flex: 1;
-      color: hsl(var(--muted-foreground));
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      font-size: 13px;
-    }
-
-    .lh-issue-pts {
-      font-size: 11px;
-      font-weight: 500;
-      color: hsl(var(--muted-foreground));
-      white-space: nowrap;
-      background: hsl(var(--muted));
-      padding: 2px 8px;
-      border-radius: 9999px;
-      border: 1px solid hsl(var(--border));
-    }
-
-    /* ===== Issue Detail (expanded) ===== */
-    .lh-issue-detail {
-      padding: 12px 12px 14px 30px;
-      border-top: 1px solid hsl(var(--border));
-      background: hsl(var(--muted));
-    }
-
-    .lh-issue-path {
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: 11px;
-      color: hsl(var(--muted-foreground));
-      padding: 4px 0 8px;
-      word-break: break-all;
-    }
-
-    .lh-issue-meta {
-      font-size: 13px;
-      color: hsl(var(--muted-foreground));
-      line-height: 1.7;
-    }
-
-    .lh-issue-meta p {
-      margin: 4px 0;
-    }
-
-    .lh-issue-meta strong {
-      color: hsl(var(--foreground));
-    }
-
-    .lh-issue-screenshot {
-      margin-top: 12px;
-    }
-
-    .lh-issue-screenshot img {
-      max-width: 240px;
-      border: 1px solid hsl(var(--border));
-      border-radius: calc(var(--radius) - 2px);
-    }
-
-    /* ===== Figma Link (shadcn Button outline variant) ===== */
-    .lh-figma-link {
-      display: inline-flex;
-      align-items: center;
-      margin-top: 10px;
-      padding: 6px 12px;
-      font-size: 12px;
-      font-weight: 500;
-      color: hsl(var(--foreground));
-      text-decoration: none;
-      border: 1px solid hsl(var(--input));
-      border-radius: var(--radius);
-      background: hsl(var(--background));
-      transition: background 0.15s, color 0.15s;
-      line-height: 1;
-    }
-
-    .lh-figma-link:hover {
-      background: hsl(var(--muted));
-    }
-
-    /* ===== Footer ===== */
-    .lh-footer {
-      text-align: center;
-      padding: 32px 0 0;
-      color: hsl(var(--muted-foreground));
-      font-size: 13px;
-      border-top: 1px solid hsl(var(--border));
-      margin-top: 32px;
-    }
-
-    .lh-footer strong {
-      color: hsl(var(--foreground));
-    }
-
-    .lh-footer-meta {
-      font-size: 11px;
-      color: hsl(var(--muted-foreground));
-      margin-top: 4px;
-      opacity: 0.7;
-    }
-
-    /* ===== Responsive ===== */
-    @media (max-width: 768px) {
-      .lh-container {
-        padding: 0 16px 32px;
-      }
-
-      .lh-gauge--large .lh-gauge__svg {
-        width: 128px;
-        height: 128px;
-      }
-
-      .lh-gauge--small .lh-gauge__svg {
-        width: 68px;
-        height: 68px;
-      }
-
-      .lh-category-gauges {
-        gap: 4px;
-      }
-
-      .lh-gauge-category {
-        min-width: 80px;
-      }
-
-      .lh-gauge__label {
-        font-size: 11px;
-      }
-
-      .lh-summary-bar {
-        gap: 16px;
-        padding: 12px 16px;
-      }
-
-      .lh-summary-count {
-        font-size: 16px;
-      }
-
-      .lh-opportunity-item {
-        grid-template-columns: 1fr;
-      }
-
-      .lh-category-body {
-        padding: 12px 16px;
-      }
-
-      .lh-issue-summary {
-        flex-wrap: wrap;
-      }
-
-      .lh-issue-message {
-        white-space: normal;
-        flex-basis: 100%;
-        order: 3;
-        margin-left: 18px;
-      }
-
-      .lh-issue-detail {
-        padding-left: 18px;
-      }
-    }
-
-    /* ===== Print ===== */
-    @media print {
-      body {
-        background: #fff;
-      }
-
-      .lh-topbar {
-        position: static;
-        background: #fff;
-        color: hsl(var(--foreground));
-        border-bottom: 1px solid hsl(var(--border));
-      }
-
-      .lh-category-detail {
-        break-inside: avoid;
-      }
-
-      details[open] > summary ~ * {
-        display: block !important;
-      }
-
-      .lh-category-chevron {
-        display: none;
-      }
-    }
-  `;
 }
