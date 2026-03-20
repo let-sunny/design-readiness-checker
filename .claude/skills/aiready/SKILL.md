@@ -7,33 +7,42 @@ description: Analyze Figma designs for development-friendliness and AI-friendlin
 
 Analyze Figma design files to score how development-friendly and AI-friendly they are. Produces actionable reports with specific issues and fix suggestions.
 
+## Setup
+
+```bash
+# Set Figma API token (one-time)
+npx aiready init --token YOUR_FIGMA_TOKEN
+```
+
 ## Usage
 
 ### Analyze a Figma URL
 ```bash
+# REST API mode (needs FIGMA_TOKEN)
+npx aiready analyze "https://www.figma.com/design/ABC123/MyDesign?node-id=1-234" --api
+
+# MCP bridge mode (Claude Code only, no token needed)
+npx aiready analyze "https://www.figma.com/design/ABC123/MyDesign?node-id=1-234" --mcp
+
+# Auto-detect: try MCP first, fallback to API
 npx aiready analyze "https://www.figma.com/design/ABC123/MyDesign?node-id=1-234"
 ```
 
-### Analyze a JSON fixture
-```bash
-npx aiready analyze ./fixtures/design.json
-```
-
-### With custom rules
-```bash
-npx aiready analyze ./fixtures/design.json --custom-rules ./my-rules.json
-```
-
-### With config overrides
-```bash
-npx aiready analyze ./fixtures/design.json --config ./my-config.json
-```
-
-### Presets
+### With presets
 - `--preset relaxed` -- Downgrades blocking to risk, reduces scores by 50%
 - `--preset dev-friendly` -- Focuses on layout and handoff rules only
 - `--preset ai-ready` -- Boosts structure and naming rule weights by 150%
 - `--preset strict` -- Enables all rules, increases all scores by 150%
+
+### With custom rules
+```bash
+npx aiready analyze <url> --custom-rules ./my-rules.json
+```
+
+### With config overrides
+```bash
+npx aiready analyze <url> --config ./my-config.json
+```
 
 ## What It Reports
 

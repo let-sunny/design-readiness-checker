@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { existsSync, mkdirSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { writeFile } from "node:fs/promises";
 import { resolve, dirname } from "node:path";
 import { config } from "dotenv";
@@ -8,13 +8,11 @@ import cac from "cac";
 // Load .env file
 config();
 
-import { FigmaClient } from "../adapters/figma-client.js";
-import { loadFigmaFileFromJson } from "../adapters/figma-file-loader.js";
-import { transformFigmaResponse } from "../adapters/figma-transformer.js";
 import { parseFigmaUrl } from "../adapters/figma-url-parser.js";
 import type { AnalysisFile } from "../contracts/figma-node.js";
 import type { RuleConfig, RuleId } from "../contracts/rule.js";
 import { analyzeFile } from "../core/rule-engine.js";
+import { loadFile, isFigmaUrl, isJsonFile, type LoadMode } from "../core/loader.js";
 import { calculateScores, formatScoreSummary } from "../core/scoring.js";
 import { getConfigsWithPreset, RULE_CONFIGS, type Preset } from "../rules/rule-config.js";
 import { ruleRegistry } from "../rules/rule-registry.js";
@@ -26,15 +24,12 @@ import {
   runCalibrationAnalyze,
   runCalibrationEvaluate,
 } from "../agents/orchestrator.js";
-import { parseMcpMetadataXml } from "../adapters/figma-mcp-adapter.js";
 import { handleDocs } from "./docs.js";
 
 // Import rules to register them
 import "../rules/index.js";
 
 const cli = cac("aiready");
-
-type LoadMode = "mcp" | "api" | "auto";
 
 const MAX_NODES_WITHOUT_SCOPE = 500;
 
@@ -85,125 +80,6 @@ interface AnalyzeOptions {
   screenshot?: boolean;
   customRules?: string;
   config?: string;
-}
-
-function isFigmaUrl(input: string): boolean {
-  return input.includes("figma.com/");
-}
-
-function isJsonFile(input: string): boolean {
-  return input.endsWith(".json");
-}
-
-interface LoadResult {
-  file: AnalysisFile;
-  nodeId?: string | undefined;
-}
-
-async function loadFile(
-  input: string,
-  token?: string,
-  mode: LoadMode = "auto"
-): Promise<LoadResult> {
-  if (isJsonFile(input)) {
-    const filePath = resolve(input);
-    if (!existsSync(filePath)) {
-      throw new Error(`File not found: ${filePath}`);
-    }
-    console.log(`Loading from JSON: ${filePath}`);
-    return { file: await loadFigmaFileFromJson(filePath) };
-  }
-
-  if (isFigmaUrl(input)) {
-    const { fileKey, nodeId, fileName } = parseFigmaUrl(input);
-
-    if (mode === "mcp") {
-      return loadFromMcp(fileKey, nodeId, fileName);
-    }
-
-    if (mode === "api") {
-      return loadFromApi(fileKey, nodeId, token);
-    }
-
-    // Auto mode: try MCP first, fallback to API
-    try {
-      console.log("Auto-detecting data source... trying MCP first.");
-      return await loadFromMcp(fileKey, nodeId, fileName);
-    } catch (mcpError) {
-      const mcpMsg = mcpError instanceof Error ? mcpError.message : String(mcpError);
-      console.log(`MCP unavailable (${mcpMsg}). Falling back to REST API.`);
-      return loadFromApi(fileKey, nodeId, token);
-    }
-  }
-
-  throw new Error(
-    `Invalid input: ${input}. Provide a Figma URL or JSON file path.`
-  );
-}
-
-async function loadFromMcp(
-  fileKey: string,
-  nodeId: string | undefined,
-  fileName: string | undefined
-): Promise<LoadResult> {
-  console.log(`Loading via MCP: ${fileKey} (node: ${nodeId ?? "root"})`);
-  const file = await loadViaMcp(fileKey, nodeId ?? "0:1", fileName);
-  return { file, nodeId };
-}
-
-async function loadFromApi(
-  fileKey: string,
-  nodeId: string | undefined,
-  token?: string
-): Promise<LoadResult> {
-  console.log(`Fetching from Figma REST API: ${fileKey}`);
-  if (nodeId) {
-    console.log(`Target node: ${nodeId}`);
-  }
-
-  const figmaToken = token ?? process.env["FIGMA_TOKEN"];
-  if (!figmaToken) {
-    throw new Error(
-      "FIGMA_TOKEN required for REST API mode. Provide --token or set FIGMA_TOKEN env var, or use --mcp instead."
-    );
-  }
-
-  const client = new FigmaClient({ token: figmaToken });
-  const response = await client.getFile(fileKey);
-  return {
-    file: transformFigmaResponse(fileKey, response),
-    nodeId,
-  };
-}
-
-/**
- * Load Figma data via MCP Desktop bridge (no REST API, no rate limit)
- */
-async function loadViaMcp(
-  fileKey: string,
-  nodeId: string,
-  fileName?: string
-): Promise<AnalysisFile> {
-  // Dynamic import to avoid hard dependency when MCP is not available
-  const { execSync } = await import("node:child_process");
-
-  // Call Claude Code CLI to invoke MCP tool and capture the XML output
-  // We use a simple approach: write a script that calls the MCP tool
-  // Try using the Figma MCP directly via claude CLI
-  const result = execSync(
-    `claude --print "Use the mcp__figma__get_metadata tool with fileKey=\\"${fileKey}\\" and nodeId=\\"${nodeId.replace(/-/g, ":")}\\" — return ONLY the raw XML output, nothing else."`,
-    { encoding: "utf-8", timeout: 120000 }
-  );
-
-  // Extract XML from the response (find first < to last >)
-  const xmlStart = result.indexOf("<");
-  const xmlEnd = result.lastIndexOf(">");
-  if (xmlStart === -1 || xmlEnd === -1) {
-    throw new Error("MCP did not return valid XML metadata");
-  }
-  const xml = result.slice(xmlStart, xmlEnd + 1);
-
-  return parseMcpMetadataXml(xml, fileKey, fileName);
 }
 
 cli
@@ -626,6 +502,75 @@ cli
   });
 
 // ============================================
+// Setup command
+// ============================================
+
+interface InitOptions {
+  token?: string;
+  mcp?: boolean;
+}
+
+cli
+  .command("init", "Set up aiready (Figma token or MCP)")
+  .option("--token <token>", "Save Figma API token to .env")
+  .option("--mcp", "Show Figma MCP setup instructions")
+  .action(async (options: InitOptions) => {
+    try {
+      if (options.token) {
+        const envPath = resolve(".env");
+        let envContent = "";
+        if (existsSync(envPath)) {
+          envContent = readFileSync(envPath, "utf-8");
+        }
+
+        if (envContent.includes("FIGMA_TOKEN=")) {
+          envContent = envContent.replace(/FIGMA_TOKEN=.*/, `FIGMA_TOKEN=${options.token}`);
+        } else {
+          const sep = envContent.length > 0 && !envContent.endsWith("\n") ? "\n" : "";
+          envContent = envContent + sep + `FIGMA_TOKEN=${options.token}\n`;
+        }
+        await writeFile(envPath, envContent, "utf-8");
+
+        console.log(`FIGMA_TOKEN saved to .env`);
+        console.log(`\nYou can now run:`);
+        console.log(`  aiready analyze "https://www.figma.com/design/..."`);
+        return;
+      }
+
+      if (options.mcp) {
+        console.log(`MCP SETUP\n`);
+        console.log(`1. Install Figma MCP in Claude Code:`);
+        console.log(`   claude mcp add figma -- npx -y @anthropic-ai/claude-code-mcp-figma\n`);
+        console.log(`2. Add aiready MCP server:`);
+        console.log(`   claude mcp add --transport stdio aiready npx aiready-mcp\n`);
+        console.log(`3. Set FIGMA_TOKEN for the MCP server:`);
+        console.log(`   aiready init --token YOUR_TOKEN\n`);
+        console.log(`4. Use in Claude Code:`);
+        console.log(`   "Analyze this Figma design: https://www.figma.com/design/..."`);
+        return;
+      }
+
+      // No flags: show setup guide
+      console.log(`AIREADY SETUP\n`);
+      console.log(`Choose your Figma data source:\n`);
+      console.log(`Option 1: REST API (recommended for CI/automation)`);
+      console.log(`  aiready init --token YOUR_FIGMA_TOKEN`);
+      console.log(`  Get token: figma.com > Settings > Personal access tokens\n`);
+      console.log(`Option 2: Figma MCP (recommended for Claude Code)`);
+      console.log(`  aiready init --mcp`);
+      console.log(`  No token needed for CLI — uses Claude Code's Figma MCP bridge\n`);
+      console.log(`After setup:`);
+      console.log(`  aiready analyze "https://www.figma.com/design/..."`);
+    } catch (error) {
+      console.error(
+        "\nError:",
+        error instanceof Error ? error.message : String(error)
+      );
+      process.exit(1);
+    }
+  });
+
+// ============================================
 // Documentation command
 // ============================================
 
@@ -638,17 +583,32 @@ cli
 cli.help((sections) => {
   sections.push(
     {
+      title: "\nSetup",
+      body: [
+        `  aiready init --token <token>   Save Figma API token to .env`,
+        `  aiready init --mcp             Show MCP setup instructions`,
+      ].join("\n"),
+    },
+    {
+      title: "\nData source",
+      body: [
+        `  --mcp                   Load via Figma MCP (no token needed)`,
+        `  --api                   Load via Figma REST API (needs FIGMA_TOKEN)`,
+        `  (default)               Auto-detect: try MCP first, then API`,
+      ].join("\n"),
+    },
+    {
       title: "\nCustomization",
       body: [
-        `  Run 'aiready docs' for full guide`,
-        `  --custom-rules <path>   Add custom rules`,
-        `  --config <path>         Override rule settings`,
+        `  --custom-rules <path>   Add custom rules (see: aiready docs rules)`,
+        `  --config <path>         Override rule settings (see: aiready docs config)`,
       ].join("\n"),
     },
     {
       title: "\nExamples",
       body: [
-        `  $ aiready analyze "https://www.figma.com/design/..."`,
+        `  $ aiready analyze "https://www.figma.com/design/..." --mcp`,
+        `  $ aiready analyze "https://www.figma.com/design/..." --api`,
         `  $ aiready analyze "https://www.figma.com/design/..." --preset strict`,
         `  $ aiready analyze "https://www.figma.com/design/..." --config ./my-config.json`,
         `  $ aiready analyze "https://www.figma.com/design/..." --custom-rules ./my-rules.json`,

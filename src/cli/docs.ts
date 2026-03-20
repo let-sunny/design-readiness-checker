@@ -85,17 +85,35 @@ export function printDocsInstall(): void {
   console.log(`
 INSTALLATION GUIDE
 
+SETUP (required first)
+  aiready init --token YOUR_TOKEN   Save Figma API token to .env
+  aiready init --mcp                Show MCP bridge setup instructions
+  aiready init                      See all options
+
+  Get token: figma.com > Settings > Personal access tokens
+
 CLI
   npm install -g aiready
-  aiready analyze "https://www.figma.com/design/..."
+  aiready analyze "https://www.figma.com/design/..." --api     # REST API (needs FIGMA_TOKEN)
+  aiready analyze "https://www.figma.com/design/..." --mcp     # MCP bridge (Claude Code only)
+  aiready analyze "https://www.figma.com/design/..."           # Auto: try MCP, fallback to API
 
-MCP (Claude Code)
-  claude mcp add --transport stdio aiready npx aiready-mcp
-  Then in Claude Code: "Analyze this Figma file: <url>"
+MCP SERVER (Claude Code integration)
+  1. Set up token:
+     aiready init --token YOUR_TOKEN
 
-Skills (Claude Code)
+  2. Add MCP server:
+     claude mcp add --transport stdio aiready npx aiready-mcp
+
+  3. Use in Claude Code:
+     "Analyze this Figma design: https://www.figma.com/design/..."
+
+  Note: MCP server uses REST API internally (needs FIGMA_TOKEN in .env)
+
+SKILLS (Claude Code)
   Copy .claude/skills/aiready/ from github.com/let-sunny/aiready
-  Then in Claude Code: /aiready analyze <url>
+  Then: /aiready analyze "https://www.figma.com/design/..."
+  Supports --mcp and --api flags (same as CLI)
 `.trimStart());
 }
 

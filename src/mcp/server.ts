@@ -1,15 +1,19 @@
 #!/usr/bin/env node
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { config } from "dotenv";
 import { z } from "zod";
 import { analyzeFile } from "../core/rule-engine.js";
+import { loadFile } from "../core/loader.js";
 import { calculateScores, formatScoreSummary } from "../core/scoring.js";
-import { loadFigmaFileFromJson } from "../adapters/figma-file-loader.js";
 import { getConfigsWithPreset, RULE_CONFIGS, type Preset } from "../rules/rule-config.js";
 import { loadConfigFile, mergeConfigs } from "../rules/custom/config-loader.js";
 import { loadCustomRules } from "../rules/custom/custom-rule-loader.js";
 import { ruleRegistry } from "../rules/rule-registry.js";
 import type { RuleConfig, RuleId } from "../contracts/rule.js";
+
+// Load .env for FIGMA_TOKEN
+config();
 
 // Import rules to register them
 import "../rules/index.js";
@@ -21,17 +25,21 @@ const server = new McpServer({
 
 server.tool(
   "analyze",
-  "Analyze a Figma design JSON fixture for development-friendliness and AI-friendliness",
+  "Analyze a Figma design for development-friendliness and AI-friendliness. Accepts a Figma URL (requires FIGMA_TOKEN env var) or a local JSON fixture path.",
   {
-    fixturePath: z.string().describe("Path to a Figma JSON fixture file"),
+    input: z.string().describe("Figma URL (e.g. https://www.figma.com/design/ABC123/MyDesign?node-id=1-234) or path to JSON fixture"),
+    token: z.string().optional().describe("Figma API token (falls back to FIGMA_TOKEN env var)"),
     preset: z.enum(["relaxed", "dev-friendly", "ai-ready", "strict"]).optional().describe("Analysis preset"),
     targetNodeId: z.string().optional().describe("Scope analysis to a specific node ID"),
     configPath: z.string().optional().describe("Path to config JSON file for rule overrides"),
     customRulesPath: z.string().optional().describe("Path to custom rules JSON file"),
   },
-  async ({ fixturePath, preset, targetNodeId, configPath, customRulesPath }) => {
+  async ({ input, token, preset, targetNodeId, configPath, customRulesPath }) => {
     try {
-      const file = await loadFigmaFileFromJson(fixturePath);
+      // MCP server uses API mode (MCP-within-MCP is not supported)
+      const { file, nodeId } = await loadFile(input, token, "api");
+
+      const effectiveNodeId = targetNodeId ?? nodeId;
 
       let configs: Record<string, RuleConfig> = preset
         ? { ...getConfigsWithPreset(preset as Preset) }
@@ -52,7 +60,7 @@ server.tool(
 
       const result = analyzeFile(file, {
         configs: configs as Record<RuleId, RuleConfig>,
-        ...(targetNodeId ? { targetNodeId } : {}),
+        ...(effectiveNodeId ? { targetNodeId: effectiveNodeId } : {}),
       });
 
       const scores = calculateScores(result);
