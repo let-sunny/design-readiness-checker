@@ -33,6 +33,34 @@ type LoadMode = "mcp" | "api" | "auto";
 
 const MAX_NODES_WITHOUT_SCOPE = 500;
 
+/**
+ * Find all FRAME/COMPONENT nodes with 50-500 nodes in their subtree,
+ * then pick one at random. Used to auto-scope fixture analysis.
+ */
+function pickRandomScope(root: AnalysisFile["document"]): AnalysisFile["document"] | null {
+  const candidates: AnalysisFile["document"][] = [];
+
+  function collect(node: AnalysisFile["document"]): void {
+    const isContainer = node.type === "FRAME" || node.type === "COMPONENT" || node.type === "SECTION";
+    if (isContainer) {
+      const size = countNodes(node);
+      if (size >= 50 && size <= 500) {
+        candidates.push(node);
+      }
+    }
+    if ("children" in node && node.children) {
+      for (const child of node.children) {
+        collect(child);
+      }
+    }
+  }
+
+  collect(root);
+  if (candidates.length === 0) return null;
+  const idx = Math.floor(Math.random() * candidates.length);
+  return candidates[idx] ?? null;
+}
+
 function countNodes(node: { children?: readonly unknown[] | undefined }): number {
   let count = 1;
   if (node.children) {
@@ -207,17 +235,31 @@ cli
       // Load file
       const { file, nodeId } = await loadFile(input, options.token, mode);
 
-      // Block unscoped analysis on large files
+      // Scope enforcement for large files
       const totalNodes = countNodes(file.document);
-      if (!nodeId && totalNodes > MAX_NODES_WITHOUT_SCOPE) {
-        throw new Error(
-          `Too many nodes (${totalNodes}) for unscoped analysis. ` +
-          `Max ${MAX_NODES_WITHOUT_SCOPE} nodes without a node-id scope.\n\n` +
-          `Add ?node-id=XXX to the Figma URL to target a specific section, or use a scoped fixture.\n` +
-          `Example: drc analyze "https://www.figma.com/design/.../MyDesign?node-id=1-234"`
-        );
+      let effectiveNodeId = nodeId;
+
+      if (!effectiveNodeId && totalNodes > MAX_NODES_WITHOUT_SCOPE) {
+        if (isJsonFile(input)) {
+          // Fixture: auto-pick a random suitable FRAME
+          const picked = pickRandomScope(file.document);
+          if (picked) {
+            effectiveNodeId = picked.id;
+            console.log(`\nAuto-scoped to "${picked.name}" (${picked.id}, ${countNodes(picked)} nodes) — file too large (${totalNodes} nodes) for unscoped analysis.`);
+          } else {
+            console.warn(`\nWarning: Could not find a suitable scope in fixture. Analyzing all ${totalNodes} nodes.`);
+          }
+        } else {
+          // Figma URL: require explicit node-id
+          throw new Error(
+            `Too many nodes (${totalNodes}) for unscoped analysis. ` +
+            `Max ${MAX_NODES_WITHOUT_SCOPE} nodes without a node-id scope.\n\n` +
+            `Add ?node-id=XXX to the Figma URL to target a specific section.\n` +
+            `Example: drc analyze "https://www.figma.com/design/.../MyDesign?node-id=1-234"`
+          );
+        }
       }
-      if (!nodeId && totalNodes > 100) {
+      if (!effectiveNodeId && totalNodes > 100) {
         console.warn(`\nWarning: Analyzing ${totalNodes} nodes without scope. Results may be noisy.`);
         console.warn("Tip: Add ?node-id=XXX to analyze a specific section.\n");
       }
@@ -228,7 +270,7 @@ cli
       // Build analysis options
       const analyzeOptions = {
         ...(options.preset && { configs: getConfigsWithPreset(options.preset) }),
-        ...(nodeId && { targetNodeId: nodeId }),
+        ...(effectiveNodeId && { targetNodeId: effectiveNodeId }),
       };
 
       // Run analysis
