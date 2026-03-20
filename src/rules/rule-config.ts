@@ -28,13 +28,13 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
   },
   "missing-responsive-behavior": {
     severity: "missing-info",
-    score: -5,
+    score: -4,
     depthWeight: 1.5,
     enabled: true,
   },
   "group-usage": {
-    severity: "blocking",
-    score: -8,
+    severity: "risk",
+    score: -5,
     depthWeight: 1.2,
     enabled: true,
   },
@@ -55,7 +55,7 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
   },
   "deep-nesting": {
     severity: "risk",
-    score: -3,
+    score: -4,
     enabled: true,
     options: {
       maxDepth: 5,
@@ -77,7 +77,7 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
   // ============================================
   "raw-color": {
     severity: "missing-info",
-    score: -3,
+    score: -2,
     enabled: true,
   },
   "raw-font": {
