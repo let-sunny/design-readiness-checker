@@ -15,12 +15,13 @@ Spawn the `calibration-runner` subagent with this prompt:
 Wait for the Runner to complete. Capture the analysis summary.
 If Runner returns "No issues found", stop here.
 
-### Step 2 — Converter (Code Conversion via Figma MCP)
+### Step 2 — Converter (Code Conversion)
 
 Spawn the `calibration-converter` subagent with this prompt:
 
 > Convert the top 5 nodes from this analysis to code:
 > - Analysis JSON: logs/calibration/calibration-analysis.json
+> - Original input: $ARGUMENTS
 > - Output to: logs/calibration/calibration-conversion.json
 
 Wait for the Converter to complete.
