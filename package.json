@@ -1,7 +1,7 @@
 {
   "name": "aiready",
   "version": "0.1.0",
-  "description": "Figma 디자인 구조를 분석하여 개발 친화도와 AI 친화도를 점수와 리포트로 제공하는 CLI 도구",
+  "description": "CLI tool that analyzes Figma design structures for development-friendliness and AI-friendliness scores",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
