@@ -14,21 +14,33 @@ function getTimestamp(): string {
   return now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
 }
 
-function getDateString(): string {
+function getDateTimeString(): string {
   const now = new Date();
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, "0");
   const day = String(now.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  const hours = String(now.getHours()).padStart(2, "0");
+  const minutes = String(now.getMinutes()).padStart(2, "0");
+  return `${year}-${month}-${day}-${hours}-${minutes}`;
+}
+
+/**
+ * Extract a short fixture name from a file path.
+ * e.g. "fixtures/http-design.json" → "http-design"
+ */
+function extractFixtureName(fixturePath: string): string {
+  const fileName = fixturePath.split("/").pop() ?? fixturePath;
+  return fileName.replace(/\.json$/, "");
 }
 
 export class ActivityLogger {
   private logPath: string;
   private initialized = false;
 
-  constructor(logDir = "logs/activity") {
-    const dateStr = getDateString();
-    this.logPath = resolve(logDir, `agent-activity-${dateStr}.md`);
+  constructor(fixturePath?: string, logDir = "logs/activity") {
+    const dateTimeStr = getDateTimeString();
+    const fixtureName = fixturePath ? extractFixtureName(fixturePath) : "unknown";
+    this.logPath = resolve(logDir, `${dateTimeStr}-${fixtureName}.md`);
   }
 
   /**
@@ -43,7 +55,8 @@ export class ActivityLogger {
     }
 
     if (!existsSync(this.logPath)) {
-      await writeFile(this.logPath, `# Agent Activity Log — ${getDateString()}\n\n`, "utf-8");
+      const ts = getDateTimeString();
+      await writeFile(this.logPath, `# Calibration Activity Log — ${ts}\n\n`, "utf-8");
     }
 
     this.initialized = true;

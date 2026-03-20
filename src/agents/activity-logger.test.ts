@@ -17,7 +17,7 @@ describe("ActivityLogger", () => {
 
   it("logStep creates directory and file if they don't exist, file contains step data", async () => {
     const logDir = join(tempDir, "nested", "logs");
-    const logger = new ActivityLogger(logDir);
+    const logger = new ActivityLogger("fixtures/http-design.json", logDir);
 
     await logger.logStep({
       step: "Analyze Node",
@@ -30,7 +30,7 @@ describe("ActivityLogger", () => {
     expect(existsSync(logPath)).toBe(true);
 
     const content = readFileSync(logPath, "utf-8");
-    expect(content).toContain("# Agent Activity Log");
+    expect(content).toContain("# Calibration Activity Log");
     expect(content).toContain("Analyze Node");
     expect(content).toContain("- Node: Frame > Button");
     expect(content).toContain("- Result: success");
@@ -38,7 +38,7 @@ describe("ActivityLogger", () => {
   });
 
   it("logStep with nodePath includes node line in output", async () => {
-    const logger = new ActivityLogger(tempDir);
+    const logger = new ActivityLogger("fixtures/sample.json", tempDir);
 
     await logger.logStep({
       step: "Convert Component",
@@ -52,7 +52,7 @@ describe("ActivityLogger", () => {
   });
 
   it("logStep without nodePath omits node line", async () => {
-    const logger = new ActivityLogger(tempDir);
+    const logger = new ActivityLogger("fixtures/sample.json", tempDir);
 
     await logger.logStep({
       step: "Initialize Pipeline",
@@ -67,7 +67,7 @@ describe("ActivityLogger", () => {
   });
 
   it("logSummary writes summary section with all fields and trailing ---", async () => {
-    const logger = new ActivityLogger(tempDir);
+    const logger = new ActivityLogger("fixtures/sample.json", tempDir);
 
     await logger.logSummary({
       totalDurationMs: 5000,
@@ -90,7 +90,7 @@ describe("ActivityLogger", () => {
   });
 
   it("multiple logStep calls append to the same file (not overwrite)", async () => {
-    const logger = new ActivityLogger(tempDir);
+    const logger = new ActivityLogger("fixtures/sample.json", tempDir);
 
     await logger.logStep({
       step: "First Step",
@@ -111,9 +111,11 @@ describe("ActivityLogger", () => {
     expect(content).toContain("- Result: done");
   });
 
-  it("getLogPath returns path containing agent-activity- and today's date", () => {
-    const logger = new ActivityLogger(tempDir);
+  it("getLogPath contains fixture name and datetime", () => {
+    const logger = new ActivityLogger("fixtures/http-design.json", tempDir);
     const logPath = logger.getLogPath();
+
+    expect(logPath).toContain("http-design");
 
     const now = new Date();
     const year = now.getFullYear();
@@ -121,7 +123,11 @@ describe("ActivityLogger", () => {
     const day = String(now.getDate()).padStart(2, "0");
     const todayStr = `${year}-${month}-${day}`;
 
-    expect(logPath).toContain("agent-activity-");
     expect(logPath).toContain(todayStr);
+  });
+
+  it("defaults fixture name to unknown when not provided", () => {
+    const logger = new ActivityLogger(undefined, tempDir);
+    expect(logger.getLogPath()).toContain("unknown");
   });
 });

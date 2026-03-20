@@ -51,8 +51,8 @@ done
 LOG_DIR="logs/activity"
 mkdir -p "$LOG_DIR"
 
-DATE=$(date +%Y-%m-%d)
-LOG_FILE="$LOG_DIR/agent-activity-$DATE.md"
+DATETIME=$(date +%Y-%m-%d-%H-%M)
+LOG_FILE="$LOG_DIR/${DATETIME}-nightly.md"
 
 log() {
   local timestamp
@@ -65,10 +65,8 @@ log() {
   fi
 }
 
-if [ ! -f "$LOG_FILE" ]; then
-  echo "# Agent Activity Log — $DATE" > "$LOG_FILE"
-  echo "" >> "$LOG_FILE"
-fi
+echo "# Calibration Activity Log — $DATETIME" > "$LOG_FILE"
+echo "" >> "$LOG_FILE"
 
 # ── Prevent sleep (re-exec under caffeinate if not already) ─────────
 

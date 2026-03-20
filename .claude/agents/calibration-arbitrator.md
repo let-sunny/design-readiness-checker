@@ -27,7 +27,7 @@ You receive the Runner's proposals and the Critic's reviews, and make final deci
 
 ## Output
 
-Append final summary to `logs/activity/agent-activity-YYYY-MM-DD.md`:
+Append final summary to `logs/activity/YYYY-MM-DD-HH-mm-<fixture-name>.md`:
 
 ```
 ## HH:mm — Arbitrator

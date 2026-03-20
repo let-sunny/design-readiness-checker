@@ -25,7 +25,7 @@ For each proposal, output ONE of:
 
 ## Output
 
-Append your critique to `logs/activity/agent-activity-YYYY-MM-DD.md`:
+Append your critique to `logs/activity/YYYY-MM-DD-HH-mm-<fixture-name>.md`:
 
 ```
 ## HH:mm — Critic

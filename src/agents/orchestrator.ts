@@ -313,7 +313,7 @@ export async function runCalibration(
   const parsed = CalibrationConfigSchema.parse(config);
   const pipelineStart = Date.now();
   const startedAt = new Date().toISOString();
-  const logger = options?.enableActivityLog ? new ActivityLogger() : null;
+  const logger = options?.enableActivityLog ? new ActivityLogger(parsed.input) : null;
 
   try {
     // Step 1: Load and analyze
