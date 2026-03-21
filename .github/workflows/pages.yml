@@ -30,10 +30,12 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm build:web
 
-      - name: Inject monitoring keys into HTML
+      - name: Inject monitoring keys and version into HTML
         run: |
+          VERSION=$(node -p "require('./package.json').version")
           sed -i "s|var POSTHOG_KEY = '';|var POSTHOG_KEY = '${{ vars.POSTHOG_API_KEY }}';|" docs/index.html
           sed -i "s|var SENTRY_DSN = '';|var SENTRY_DSN = '${{ vars.SENTRY_DSN }}';|" docs/index.html
+          sed -i "s|/\* __VERSION__ \*/|$VERSION|" docs/index.html
 
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

@@ -63,8 +63,10 @@ node -e "
   // Inject monitoring keys if available
   const phKey = process.env.POSTHOG_API_KEY || '';
   const sDsn = process.env.SENTRY_DSN || '';
+  const version = require('$ROOT/package.json').version;
   output = output.replace('/* __POSTHOG_API_KEY__ */', phKey);
   output = output.replace('/* __SENTRY_DSN__ */', sDsn);
+  output = output.replace('/* __VERSION__ */', version);
   fs.writeFileSync('$OUTPUT', output, 'utf-8');
   console.log('  ui.html written (' + Math.round(output.length / 1024) + ' KB)');
 "

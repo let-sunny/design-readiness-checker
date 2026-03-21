@@ -428,7 +428,7 @@
     (function() {
       var PH_KEY = '/* __POSTHOG_API_KEY__ */';
       var S_DSN = '/* __SENTRY_DSN__ */';
-      var _common = { _sdk: 'canicode', _sdk_version: '0.5.1', _env: 'figma-plugin' };
+      var _common = { _sdk: 'canicode', _sdk_version: '/* __VERSION__ */', _env: 'figma-plugin' };
       var _distinctId = 'anonymous';
 
       // Receive device ID from main thread (hashed Figma user ID)

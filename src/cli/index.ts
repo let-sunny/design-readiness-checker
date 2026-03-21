@@ -2,6 +2,7 @@
 import { existsSync, mkdirSync } from "node:fs";
 import { writeFile } from "node:fs/promises";
 import { resolve, dirname } from "node:path";
+import { createRequire } from "node:module";
 import { config } from "dotenv";
 import cac from "cac";
 
@@ -36,13 +37,16 @@ import { POSTHOG_API_KEY as BUILTIN_PH_KEY, SENTRY_DSN as BUILTIN_SENTRY_DSN } f
 // Import rules to register them
 import "../rules/index.js";
 
+const require = createRequire(import.meta.url);
+const pkg = require("../../package.json") as { version: string };
+
 const cli = cac("canicode");
 
 // Initialise monitoring (fire-and-forget, never blocks startup)
 {
   const monitoringConfig: Parameters<typeof initMonitoring>[0] = {
     environment: "cli",
-    version: "0.3.3",
+    version: pkg.version,
     enabled: getTelemetryEnabled(),
   };
   const phKey = getPosthogApiKey() || BUILTIN_PH_KEY;
