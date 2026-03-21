@@ -38,7 +38,7 @@ src/
 - Also: `canicode save-fixture` to save Figma data as JSON for offline analysis
 
 **2. MCP Server (`canicode-mcp`)**
-- Install: `claude mcp add canicode -- npx -y canicode canicode-mcp`
+- Install: `claude mcp add canicode -- npx -y -p canicode canicode-mcp`
 - Tools: `analyze`, `list-rules`, `docs`
 - Works with Figma MCP: user installs official Figma MCP → Claude Code orchestrates both
   - Figma MCP `get_metadata` → XML → canicode MCP `analyze(designData: XML)`

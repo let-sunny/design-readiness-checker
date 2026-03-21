@@ -13,14 +13,14 @@
   "installation": {
     "npm": {
       "package": "canicode",
-      "command": "npx -y canicode canicode-mcp"
+      "command": "npx -y -p canicode canicode-mcp"
     },
-    "claude_code": "claude mcp add canicode -e FIGMA_TOKEN=YOUR_TOKEN -- npx -y canicode canicode-mcp",
+    "claude_code": "claude mcp add canicode -- npx -y -p canicode canicode-mcp",
     "cursor": {
       "mcpServers": {
         "canicode": {
           "command": "npx",
-          "args": ["-y", "canicode", "canicode-mcp"],
+          "args": ["-y", "-p", "canicode", "canicode-mcp"],
           "env": {
             "FIGMA_TOKEN": "YOUR_TOKEN"
           }
@@ -31,7 +31,7 @@
       "mcpServers": {
         "canicode": {
           "command": "npx",
-          "args": ["-y", "canicode", "canicode-mcp"],
+          "args": ["-y", "-p", "canicode", "canicode-mcp"],
           "env": {
             "FIGMA_TOKEN": "YOUR_TOKEN"
           }

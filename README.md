@@ -105,7 +105,7 @@ canicode init --token figd_xxxxxxxxxxxxx
 
 **Claude Code:**
 ```bash
-claude mcp add canicode -e FIGMA_TOKEN=figd_xxxxxxxxxxxxx -- npx -y canicode canicode-mcp
+claude mcp add canicode -e FIGMA_TOKEN=figd_xxxxxxxxxxxxx -- npx -y -p canicode canicode-mcp
 ```
 
 **Cursor** (`~/.cursor/mcp.json`):
