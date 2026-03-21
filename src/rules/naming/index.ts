@@ -1,7 +1,7 @@
 import type { RuleCheckFn, RuleDefinition } from "../../contracts/rule.js";
-// AnalysisNode type used in helper functions
 import { defineRule } from "../rule-registry.js";
 import { getRuleOption } from "../rule-config.js";
+import { isExcludedName } from "../excluded-names.js";
 
 // ============================================
 // Helper functions
@@ -72,6 +72,7 @@ const defaultNameDef: RuleDefinition = {
 
 const defaultNameCheck: RuleCheckFn = (node, context) => {
   if (!node.name) return null;
+  if (isExcludedName(node.name)) return null;
   if (!isDefaultName(node.name)) return null;
 
   return {
@@ -102,6 +103,7 @@ const nonSemanticNameDef: RuleDefinition = {
 
 const nonSemanticNameCheck: RuleCheckFn = (node, context) => {
   if (!node.name) return null;
+  if (isExcludedName(node.name)) return null;
   if (!isNonSemanticName(node.name)) return null;
 
   // Allow non-semantic names for actual shape primitives at leaf level
@@ -197,6 +199,7 @@ const numericSuffixNameDef: RuleDefinition = {
 
 const numericSuffixNameCheck: RuleCheckFn = (node, context) => {
   if (!node.name) return null;
+  if (isExcludedName(node.name)) return null;
   if (isDefaultName(node.name)) return null; // Already caught by default-name
   if (!hasNumericSuffix(node.name)) return null;
 

@@ -132,12 +132,7 @@ const ELIGIBLE_NODE_TYPES: Set<AnalysisNodeType> = new Set([
   "INSTANCE",
 ]);
 
-/**
- * Name patterns for nodes that should be excluded from conversion candidates.
- * These are typically decorative, structural, or overlay elements where
- * absolute positioning is intentional and not a design issue.
- */
-const EXCLUDED_NAME_PATTERN = /\b(icon|ico|badge|indicator|image|asset|chatbot|cta|gnb|navigation|nav|fab|modal|dialog|popup|overlay|toast|snackbar|tooltip|dropdown|menu|sticky|bg|background|divider|separator|logo|avatar|thumbnail|thumb|header|footer|sidebar|toolbar|tabbar|tab-bar|statusbar|status-bar|spinner|loader|cursor|dot|dim|dimmed|filter)\b/i;
+import { isExcludedName } from "@/rules/excluded-names.js";
 
 /**
  * Filter node summaries to meaningful conversion candidates.
@@ -167,7 +162,7 @@ export function filterConversionCandidates(
     if (!ELIGIBLE_NODE_TYPES.has(node.type)) return false;
 
     // Exclude decorative/structural/overlay nodes by name
-    if (EXCLUDED_NAME_PATTERN.test(node.name)) return false;
+    if (isExcludedName(node.name)) return false;
 
     // Require minimum dimensions
     const bbox = node.absoluteBoundingBox;

@@ -64,11 +64,7 @@ const absolutePositionInAutoLayoutDef: RuleDefinition = {
   fix: "Remove absolute positioning or use proper Auto Layout alignment",
 };
 
-/**
- * Name patterns that indicate intentional absolute positioning.
- * Matches if the name contains any of these words (case-insensitive).
- */
-const INTENTIONAL_ABSOLUTE_PATTERNS = /(badge|close|dismiss|overlay|float|fab|dot|indicator|corner|decoration|tag|status|notification|icon|image|asset|filter|dim|dimmed|bg|background|logo|avatar|divider|separator|nav|navigation|gnb|header|footer|sidebar|toolbar|modal|dialog|popup|toast|tooltip|dropdown|menu|sticky|spinner|loader|cursor|cta|chatbot|thumb|thumbnail)/i;
+import { isExcludedName } from "../excluded-names.js";
 
 /**
  * Check if a node is small relative to its parent (decoration/badge pattern).
@@ -94,7 +90,7 @@ const absolutePositionInAutoLayoutCheck: RuleCheckFn = (node, context) => {
   if (node.type === "VECTOR" || node.type === "BOOLEAN_OPERATION" || node.type === "LINE" || node.type === "ELLIPSE" || node.type === "STAR" || node.type === "REGULAR_POLYGON") return null;
 
   // Exception: intentional name patterns (badge, close, overlay, etc.)
-  if (INTENTIONAL_ABSOLUTE_PATTERNS.test(node.name)) return null;
+  if (isExcludedName(node.name)) return null;
 
   // Exception: small decoration relative to parent (< 25% size)
   if (isSmallRelativeToParent(node, context.parent)) return null;
