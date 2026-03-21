@@ -1,6 +1,6 @@
 {
   "name": "canicode",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "CLI tool that analyzes Figma design structures for development-friendliness and AI-friendliness scores",
   "type": "module",
   "main": "./dist/index.js",
