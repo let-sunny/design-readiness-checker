@@ -36,17 +36,16 @@ server.tool(
   "analyze",
   `Analyze a Figma design for development-friendliness and AI-friendliness.
 
-Three ways to provide design data:
-1. designData — Pass Figma node data directly (from Figma MCP get_metadata). Recommended when Claude Code has Figma MCP.
-2. input — Figma URL (fetches via REST API, requires FIGMA_TOKEN) or local JSON fixture path.
-3. Both — designData takes priority over input.
+Two ways to provide design data:
+1. designData — Pass Figma node data directly (from Figma MCP get_metadata). Recommended when using Figma MCP.
+2. input — Figma URL (fetches via REST API, requires FIGMA_TOKEN).
 
 Typical flow with Figma MCP:
   Step 1: Call Figma MCP get_metadata to get the node tree
   Step 2: Pass the result as designData to this tool`,
   {
     designData: z.string().optional().describe("Figma node data from Figma MCP get_metadata (XML or JSON). Pass this instead of input when using Figma MCP."),
-    input: z.string().optional().describe("Figma URL or JSON fixture path. Used when designData is not provided. Figma URL requires FIGMA_TOKEN."),
+    input: z.string().optional().describe("Figma URL. Used when designData is not provided. Requires FIGMA_TOKEN."),
     fileKey: z.string().optional().describe("Figma file key (used with designData to generate deep links)"),
     fileName: z.string().optional().describe("Figma file name (used with designData for display)"),
     token: z.string().optional().describe("Figma API token (falls back to FIGMA_TOKEN env var)"),
@@ -69,7 +68,7 @@ Typical flow with Figma MCP:
         file = loaded.file;
         nodeId = loaded.nodeId;
       } else {
-        throw new Error("Provide either designData (from Figma MCP) or input (Figma URL / fixture path).");
+        throw new Error("Provide either designData (from Figma MCP) or input (Figma URL).");
       }
 
       const effectiveNodeId = targetNodeId ?? nodeId;
