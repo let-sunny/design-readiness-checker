@@ -9,6 +9,7 @@
   <a href="https://github.com/let-sunny/canicode/actions/workflows/ci.yml"><img src="https://github.com/let-sunny/canicode/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://github.com/let-sunny/canicode/actions/workflows/release.yml"><img src="https://github.com/let-sunny/canicode/actions/workflows/release.yml/badge.svg" alt="Release"></a>
   <a href="https://let-sunny.github.io/canicode/"><img src="https://img.shields.io/badge/Try_it-GitHub_Pages-blue" alt="GitHub Pages"></a>
+  <a href="https://www.figma.com/community/plugin/1617144221046795292/canicode"><img src="https://img.shields.io/badge/Figma_Plugin-under_review-orange" alt="Figma Plugin"></a>
 </p>
 
 <p align="center">Analyze Figma designs. Score how dev-friendly and AI-friendly they are. Get actionable issues before writing code.</p>
@@ -70,7 +71,11 @@ Scores use density + diversity weighting per category, combined into an overall 
 
 ## Getting Started
 
-Four ways to use CanICode. Pick one.
+Five ways to use CanICode. Pick one.
+
+### Figma Plugin (under review)
+
+Install from **[Figma Community](https://www.figma.com/community/plugin/1617144221046795292/canicode)** — analyze directly inside Figma. No tokens needed.
 
 ### Web (no install)
 
