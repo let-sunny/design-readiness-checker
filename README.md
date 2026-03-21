@@ -44,7 +44,7 @@ canicode analyze "https://www.figma.com/design/ABC123/MyDesign?node-id=1-234"
 
 Each issue is classified: **Blocking** > **Risk** > **Missing Info** > **Suggestion**.
 
-Scores use density + diversity weighting per category, combined into an overall grade (S/A+/A/B+/B/C+/C/D/F).
+Scores use density + diversity weighting per category, combined into an overall grade (S/A+/A/B+/B/C+/C/D/F). Rule scores are calibrated against actual code conversion difficulty — see [Calibration](docs/CALIBRATION.md) for how scores are validated.
 
 ---
 
