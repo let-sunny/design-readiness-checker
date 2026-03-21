@@ -9,7 +9,7 @@ export default defineConfig({
   splitting: false,
   treeshake: true,
   target: "node18",
-  external: ["playwright", "posthog-node", "@sentry/node"],
+  external: ["playwright"],
   define: {
     __POSTHOG_API_KEY__: JSON.stringify(process.env.POSTHOG_API_KEY ?? ""),
     __SENTRY_DSN__: JSON.stringify(process.env.SENTRY_DSN ?? ""),

@@ -363,5 +363,18 @@ figma.ui.onmessage = (msg: { type: string }) => {
   }
 };
 
+// Send anonymous device ID derived from Figma user ID
+{
+  const userId = figma.currentUser?.id ?? "unknown";
+  // Simple FNV-1a hash to anonymize — no PII leaves the plugin
+  let h = 0x811c9dc5;
+  for (let i = 0; i < userId.length; i++) {
+    h ^= userId.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  const deviceId = "fp-" + (h >>> 0).toString(16).padStart(8, "0");
+  figma.ui.postMessage({ type: "device-id", deviceId });
+}
+
 // Notify UI that plugin is ready
 figma.ui.postMessage({ type: "ready" });

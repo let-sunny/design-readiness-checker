@@ -429,17 +429,27 @@
       var PH_KEY = '/* __POSTHOG_API_KEY__ */';
       var S_DSN = '/* __SENTRY_DSN__ */';
       var _common = { _sdk: 'canicode', _sdk_version: '0.5.1', _env: 'figma-plugin' };
+      var _distinctId = 'anonymous';
+
+      // Receive device ID from main thread (hashed Figma user ID)
+      window.addEventListener('message', function(e) {
+        var msg = e.data && e.data.pluginMessage;
+        if (msg && msg.type === 'device-id' && msg.deviceId) {
+          _distinctId = msg.deviceId;
+        }
+      });
 
       window._trackEvent = function(event, props) {
         if (!PH_KEY) return;
         try {
-          fetch('https://us.i.posthog.com/capture/', {
+          fetch('https://us.i.posthog.com/i/v0/e/', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               api_key: PH_KEY,
               event: event,
-              properties: Object.assign({}, _common, props, { distinct_id: 'anonymous' }),
+              distinct_id: _distinctId,
+              properties: Object.assign({}, _common, props),
               timestamp: new Date().toISOString()
             })
           }).catch(function() {});

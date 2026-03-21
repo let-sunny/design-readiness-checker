@@ -1,4 +1,5 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { randomUUID } from "node:crypto";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
@@ -11,6 +12,7 @@ interface AireadyConfig {
   telemetry?: boolean;
   posthogApiKey?: string;
   sentryDsn?: string;
+  deviceId?: string;
 }
 
 function ensureDir(dir: string): void {
@@ -79,6 +81,20 @@ export function getPosthogApiKey(): string | undefined {
 
 export function getSentryDsn(): string | undefined {
   return process.env["SENTRY_DSN"] ?? readConfig().sentryDsn;
+}
+
+/**
+ * Get or create a stable anonymous device ID for telemetry.
+ * Stored in ~/.canicode/config.json, persists across sessions.
+ */
+export function getDeviceId(): string {
+  const config = readConfig();
+  if (config.deviceId) return config.deviceId;
+
+  const id = randomUUID();
+  config.deviceId = id;
+  writeConfig(config);
+  return id;
 }
 
 /**

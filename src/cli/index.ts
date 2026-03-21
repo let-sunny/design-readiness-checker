@@ -15,7 +15,7 @@ import { analyzeFile } from "../core/rule-engine.js";
 import { loadFile, isFigmaUrl, isJsonFile } from "../core/loader.js";
 import {
   getFigmaToken, initAiready, getConfigPath, getReportsDir, ensureReportsDir,
-  readConfig, getTelemetryEnabled, setTelemetryEnabled, getPosthogApiKey, getSentryDsn,
+  readConfig, getTelemetryEnabled, setTelemetryEnabled, getPosthogApiKey, getSentryDsn, getDeviceId,
 } from "../core/config-store.js";
 import { calculateScores, formatScoreSummary } from "../core/scoring.js";
 import { getConfigsWithPreset, RULE_CONFIGS, type Preset } from "../rules/rule-config.js";
@@ -49,15 +49,12 @@ const cli = cac("canicode");
   if (phKey) monitoringConfig.posthogApiKey = phKey;
   const sDsn = getSentryDsn() || BUILTIN_SENTRY_DSN;
   if (sDsn) monitoringConfig.sentryDsn = sDsn;
-  initMonitoring(monitoringConfig).catch(() => {
-    // monitoring init failed — no-op
-  });
+  monitoringConfig.distinctId = getDeviceId();
+  initMonitoring(monitoringConfig);
 }
 
 process.on("beforeExit", () => {
-  shutdownMonitoring().catch(() => {
-    // ignore
-  });
+  shutdownMonitoring();
 });
 
 const MAX_NODES_WITHOUT_SCOPE = 500;

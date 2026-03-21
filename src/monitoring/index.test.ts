@@ -1,33 +1,29 @@
 import { initMonitoring, trackEvent, trackError, shutdownMonitoring, EVENTS } from "./index.js";
 
 describe("monitoring module", () => {
-  afterEach(async () => {
-    await shutdownMonitoring();
+  afterEach(() => {
+    shutdownMonitoring();
   });
 
   describe("initMonitoring", () => {
-    it("does not throw when enabled is false", async () => {
-      await expect(
-        initMonitoring({ enabled: false }),
-      ).resolves.toBeUndefined();
+    it("does not throw when enabled is false", () => {
+      expect(() => initMonitoring({ enabled: false })).not.toThrow();
     });
 
-    it("does not throw when no keys are configured", async () => {
-      await expect(
-        initMonitoring({ environment: "cli" }),
-      ).resolves.toBeUndefined();
+    it("does not throw when no keys are configured", () => {
+      expect(() => initMonitoring({ environment: "cli" })).not.toThrow();
     });
 
-    it("does not throw with invalid PostHog key (package not installed)", async () => {
-      await expect(
+    it("does not throw with PostHog key", () => {
+      expect(() =>
         initMonitoring({ posthogApiKey: "phc_test_invalid", environment: "cli" }),
-      ).resolves.toBeUndefined();
+      ).not.toThrow();
     });
 
-    it("does not throw with invalid Sentry DSN (package not installed)", async () => {
-      await expect(
+    it("does not throw with Sentry DSN", () => {
+      expect(() =>
         initMonitoring({ sentryDsn: "https://invalid@sentry.io/123", environment: "cli" }),
-      ).resolves.toBeUndefined();
+      ).not.toThrow();
     });
   });
 
@@ -56,13 +52,13 @@ describe("monitoring module", () => {
   });
 
   describe("shutdownMonitoring", () => {
-    it("does not throw when monitoring is not initialised", async () => {
-      await expect(shutdownMonitoring()).resolves.toBeUndefined();
+    it("does not throw when monitoring is not initialised", () => {
+      expect(() => shutdownMonitoring()).not.toThrow();
     });
 
-    it("can be called multiple times safely", async () => {
-      await shutdownMonitoring();
-      await expect(shutdownMonitoring()).resolves.toBeUndefined();
+    it("can be called multiple times safely", () => {
+      shutdownMonitoring();
+      expect(() => shutdownMonitoring()).not.toThrow();
     });
   });
 
@@ -81,18 +77,17 @@ describe("monitoring module", () => {
   });
 
   describe("graceful degradation", () => {
-    it("all functions work when initialised with disabled=false but no packages installed", async () => {
-      await initMonitoring({
+    it("all functions work with keys configured (fetch fires silently)", () => {
+      initMonitoring({
         posthogApiKey: "phc_test",
         sentryDsn: "https://test@sentry.io/123",
         environment: "cli",
         version: "0.0.0-test",
       });
 
-      // These should all be no-ops since posthog-node and @sentry/node are not installed
       expect(() => trackEvent(EVENTS.ANALYSIS_STARTED)).not.toThrow();
       expect(() => trackError(new Error("test"))).not.toThrow();
-      await expect(shutdownMonitoring()).resolves.toBeUndefined();
+      expect(() => shutdownMonitoring()).not.toThrow();
     });
   });
 });

@@ -8,6 +8,8 @@ export interface MonitoringConfig {
   /** 'cli' | 'mcp' | 'web' */
   environment?: string;
   version?: string;
+  /** Stable anonymous device ID for user-level analytics */
+  distinctId?: string;
   /** default: true — set false to opt out of telemetry */
   enabled?: boolean;
 }
