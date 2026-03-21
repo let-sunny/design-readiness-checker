@@ -68,15 +68,15 @@ describe("monitoring module", () => {
 
   describe("EVENTS", () => {
     it("exports expected event names", () => {
-      expect(EVENTS.ANALYSIS_STARTED).toBe("analysis_started");
-      expect(EVENTS.ANALYSIS_COMPLETED).toBe("analysis_completed");
-      expect(EVENTS.ANALYSIS_FAILED).toBe("analysis_failed");
-      expect(EVENTS.REPORT_GENERATED).toBe("report_generated");
-      expect(EVENTS.COMMENT_POSTED).toBe("comment_posted");
-      expect(EVENTS.COMMENT_FAILED).toBe("comment_failed");
-      expect(EVENTS.MCP_TOOL_CALLED).toBe("mcp_tool_called");
-      expect(EVENTS.CLI_COMMAND).toBe("cli_command");
-      expect(EVENTS.CLI_INIT).toBe("cli_init");
+      expect(EVENTS.ANALYSIS_STARTED).toBe("cic_analysis_started");
+      expect(EVENTS.ANALYSIS_COMPLETED).toBe("cic_analysis_completed");
+      expect(EVENTS.ANALYSIS_FAILED).toBe("cic_analysis_failed");
+      expect(EVENTS.REPORT_GENERATED).toBe("cic_report_generated");
+      expect(EVENTS.COMMENT_POSTED).toBe("cic_comment_posted");
+      expect(EVENTS.COMMENT_FAILED).toBe("cic_comment_failed");
+      expect(EVENTS.MCP_TOOL_CALLED).toBe("cic_mcp_tool_called");
+      expect(EVENTS.CLI_COMMAND).toBe("cic_cli_command");
+      expect(EVENTS.CLI_INIT).toBe("cic_cli_init");
     });
   });
 

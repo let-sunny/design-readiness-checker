@@ -11,6 +11,7 @@ import type { MonitoringConfig } from "./types.js";
 let posthogClient: PostHogLike | null = null;
 let sentryModule: SentryLike | null = null;
 let monitoringEnabled = false;
+let commonProps: Record<string, unknown> = {};
 
 // Minimal interfaces so we avoid importing the real types at compile time
 interface PostHogLike {
@@ -28,6 +29,11 @@ export async function initNodeMonitoring(config: MonitoringConfig): Promise<void
   if (config.enabled === false) return;
 
   monitoringEnabled = true;
+  commonProps = {
+    _sdk: "canicode",
+    _sdk_version: config.version ?? "unknown",
+    _env: config.environment ?? "unknown",
+  };
 
   // --- PostHog ---
   if (config.posthogApiKey) {
@@ -72,7 +78,7 @@ export function trackNodeEvent(event: string, properties?: Record<string, unknow
       distinctId: "anonymous",
       event,
     };
-    if (properties) captureOpts.properties = properties;
+    captureOpts.properties = { ...commonProps, ...properties };
     posthogClient.capture(captureOpts);
   } catch {
     // never throw from monitoring
@@ -91,8 +97,8 @@ export function trackNodeError(error: Error, context?: Record<string, unknown>):
   try {
     posthogClient?.capture({
       distinctId: "anonymous",
-      event: "error",
-      properties: { error: error.message, ...context },
+      event: "cic_error",
+      properties: { ...commonProps, error: error.message, ...context },
     });
   } catch {
     // never throw from monitoring

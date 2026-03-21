@@ -197,13 +197,16 @@
         document.head.appendChild(s);
       }
 
+      // Common properties injected into every event for filtering
+      var _common = { _sdk: 'canicode', _sdk_version: '0.3.3', _env: 'web' };
+
       // Helper used by app code below
       window._trackEvent = function(event, props) {
-        try { window.posthog && window.posthog.capture(event, props); } catch(e) {}
+        try { window.posthog && window.posthog.capture(event, Object.assign({}, _common, props)); } catch(e) {}
       };
       window._trackError = function(err, ctx) {
-        try { window.Sentry && window.Sentry.captureException(err, ctx ? { extra: ctx } : undefined); } catch(e) {}
-        try { window.posthog && window.posthog.capture('error', Object.assign({ error: err.message || String(err) }, ctx)); } catch(e) {}
+        try { window.Sentry && window.Sentry.captureException(err, ctx ? { extra: Object.assign({}, _common, ctx) } : { extra: _common }); } catch(e) {}
+        try { window.posthog && window.posthog.capture('cic_error', Object.assign({}, _common, { error: err.message || String(err) }, ctx)); } catch(e) {}
       };
     })();
   </script>
@@ -300,7 +303,7 @@
 
       var fileKey = urlInfo.fileKey, nodeId = urlInfo.nodeId;
 
-      window._trackEvent && window._trackEvent('analysis_started', { source: 'web' });
+      window._trackEvent && window._trackEvent('cic_analysis_started', { source: 'web' });
       var analysisStart = Date.now();
 
       setLoading(true, 'Fetching Figma data...');
@@ -324,10 +327,10 @@
       try {
         result = CanICode.analyzeFile(analysisFile, options);
         scores = CanICode.calculateScores(result);
-      } catch (e) { setLoading(false); showError('Analysis error', e.message); window._trackError && window._trackError(e, { context: 'analysis' }); window._trackEvent && window._trackEvent('analysis_failed', { error: e.message }); return; }
+      } catch (e) { setLoading(false); showError('Analysis error', e.message); window._trackError && window._trackError(e, { context: 'analysis' }); window._trackEvent && window._trackEvent('cic_analysis_failed', { error: e.message }); return; }
 
       setLoading(false);
-      window._trackEvent && window._trackEvent('analysis_completed', { nodeCount: result.nodeCount, issueCount: result.issues.length, grade: scores.overall.grade, percentage: scores.overall.percentage, duration: Date.now() - analysisStart });
+      window._trackEvent && window._trackEvent('cic_analysis_completed', { nodeCount: result.nodeCount, issueCount: result.issues.length, grade: scores.overall.grade, percentage: scores.overall.percentage, duration: Date.now() - analysisStart });
       renderResults(analysisFile, result, scores, fileKey);
     }
 
@@ -411,13 +414,13 @@
         btn.textContent = 'Sent \u2713';
         btn.classList.remove('hover:bg-muted');
         btn.classList.add('text-green-600', 'border-green-500/30');
-        window._trackEvent && window._trackEvent('comment_posted', { rule: btn.dataset.rule });
+        window._trackEvent && window._trackEvent('cic_comment_posted', { rule: btn.dataset.rule });
       } catch (e) {
         btn.textContent = 'Failed \u2717';
         btn.classList.remove('hover:bg-muted');
         btn.classList.add('text-red-600', 'border-red-500/30');
         btn.disabled = false;
-        window._trackEvent && window._trackEvent('comment_failed', { error: e.message || String(e) });
+        window._trackEvent && window._trackEvent('cic_comment_failed', { error: e.message || String(e) });
       }
     }
   </script>

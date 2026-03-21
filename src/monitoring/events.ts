@@ -1,25 +1,31 @@
 /**
  * Typed event definitions for PostHog analytics.
+ * All events are prefixed with `cic_` (CanICode) to distinguish
+ * from noise/spam in PostHog dashboards.
+ *
  * Only event metadata is tracked — no design data, tokens, or file contents.
  */
 
+/** Event name prefix — use this to filter genuine events in PostHog */
+export const EVENT_PREFIX = "cic_";
+
 export const EVENTS = {
   // Analysis
-  ANALYSIS_STARTED: "analysis_started",
-  ANALYSIS_COMPLETED: "analysis_completed",
-  ANALYSIS_FAILED: "analysis_failed",
+  ANALYSIS_STARTED: `${EVENT_PREFIX}analysis_started`,
+  ANALYSIS_COMPLETED: `${EVENT_PREFIX}analysis_completed`,
+  ANALYSIS_FAILED: `${EVENT_PREFIX}analysis_failed`,
 
   // Report
-  REPORT_GENERATED: "report_generated",
-  COMMENT_POSTED: "comment_posted",
-  COMMENT_FAILED: "comment_failed",
+  REPORT_GENERATED: `${EVENT_PREFIX}report_generated`,
+  COMMENT_POSTED: `${EVENT_PREFIX}comment_posted`,
+  COMMENT_FAILED: `${EVENT_PREFIX}comment_failed`,
 
   // MCP
-  MCP_TOOL_CALLED: "mcp_tool_called",
+  MCP_TOOL_CALLED: `${EVENT_PREFIX}mcp_tool_called`,
 
   // CLI
-  CLI_COMMAND: "cli_command",
-  CLI_INIT: "cli_init",
+  CLI_COMMAND: `${EVENT_PREFIX}cli_command`,
+  CLI_INIT: `${EVENT_PREFIX}cli_init`,
 } as const;
 
 export type EventName = (typeof EVENTS)[keyof typeof EVENTS];
