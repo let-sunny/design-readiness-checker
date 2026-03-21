@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
-const AIREADY_DIR = join(homedir(), ".aiready");
+const AIREADY_DIR = join(homedir(), ".canicode");
 const CONFIG_PATH = join(AIREADY_DIR, "config.json");
 const REPORTS_DIR = join(AIREADY_DIR, "reports");
 
@@ -61,7 +61,7 @@ export function ensureReportsDir(): void {
 }
 
 /**
- * Initialize aiready: write config + create reports dir
+ * Initialize canicode: write config + create reports dir
  */
 export function initAiready(token: string): void {
   setFigmaToken(token);

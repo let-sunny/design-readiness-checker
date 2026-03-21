@@ -1,9 +1,9 @@
 ---
-name: aiready
+name: canicode
 description: Analyze Figma designs for development-friendliness and AI-friendliness scores
 ---
 
-# AIReady -- Figma Design Analysis
+# CanICode -- Figma Design Analysis
 
 Analyze Figma design files to score how development-friendly and AI-friendly they are. Produces actionable reports with specific issues and fix suggestions.
 
@@ -11,7 +11,7 @@ Analyze Figma design files to score how development-friendly and AI-friendly the
 
 ```bash
 # Set Figma API token (one-time)
-npx aiready init --token YOUR_FIGMA_TOKEN
+npx canicode init --token YOUR_FIGMA_TOKEN
 ```
 
 ## Usage
@@ -19,13 +19,13 @@ npx aiready init --token YOUR_FIGMA_TOKEN
 ### Analyze a Figma URL
 ```bash
 # REST API mode (needs FIGMA_TOKEN)
-npx aiready analyze "https://www.figma.com/design/ABC123/MyDesign?node-id=1-234" --api
+npx canicode analyze "https://www.figma.com/design/ABC123/MyDesign?node-id=1-234" --api
 
 # MCP bridge mode (Claude Code only, no token needed)
-npx aiready analyze "https://www.figma.com/design/ABC123/MyDesign?node-id=1-234" --mcp
+npx canicode analyze "https://www.figma.com/design/ABC123/MyDesign?node-id=1-234" --mcp
 
 # Auto-detect: try MCP first, fallback to API
-npx aiready analyze "https://www.figma.com/design/ABC123/MyDesign?node-id=1-234"
+npx canicode analyze "https://www.figma.com/design/ABC123/MyDesign?node-id=1-234"
 ```
 
 ### With presets
@@ -36,12 +36,12 @@ npx aiready analyze "https://www.figma.com/design/ABC123/MyDesign?node-id=1-234"
 
 ### With custom rules
 ```bash
-npx aiready analyze <url> --custom-rules ./my-rules.json
+npx canicode analyze <url> --custom-rules ./my-rules.json
 ```
 
 ### With config overrides
 ```bash
-npx aiready analyze <url> --config ./my-config.json
+npx canicode analyze <url> --config ./my-config.json
 ```
 
 ## What It Reports

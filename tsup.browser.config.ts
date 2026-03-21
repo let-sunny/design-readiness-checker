@@ -3,7 +3,7 @@ import { defineConfig } from "tsup";
 export default defineConfig({
   entry: { browser: "src/browser.ts" },
   format: ["iife"],
-  globalName: "AIReady",
+  globalName: "CanICode",
   platform: "browser",
   outDir: "docs",
   dts: false,

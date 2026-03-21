@@ -1,13 +1,13 @@
 {
-  "name": "fig-aiready",
-  "version": "0.2.0",
+  "name": "canicode",
+  "version": "0.3.0",
   "description": "CLI tool that analyzes Figma design structures for development-friendliness and AI-friendliness scores",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "aiready": "dist/cli/index.js",
-    "aiready-mcp": "dist/mcp/server.js"
+    "canicode": "dist/cli/index.js",
+    "canicode-mcp": "dist/mcp/server.js"
   },
   "exports": {
     ".": {
@@ -38,7 +38,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/let-sunny/aiready.git"
+    "url": "git+https://github.com/let-sunny/canicode.git"
   },
   "author": "minseon",
   "license": "MIT",

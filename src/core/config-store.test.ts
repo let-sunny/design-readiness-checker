@@ -11,7 +11,7 @@ let configPath: string;
 
 beforeEach(() => {
   tempDir = mkdtempSync(join(tmpdir(), "config-store-test-"));
-  configDir = join(tempDir, ".config", "aiready");
+  configDir = join(tempDir, ".config", "canicode");
   configPath = join(configDir, "config.json");
 });
 
@@ -39,7 +39,7 @@ describe("getFigmaToken", () => {
     // and figmaToken is undefined, so env ?? undefined = undefined
     const result = getFigmaToken();
     // If there's no real config file, this should be undefined
-    // (unless a real ~/.config/aiready/config.json exists on this machine)
+    // (unless a real ~/.config/canicode/config.json exists on this machine)
     expect(typeof result === "string" || result === undefined).toBe(true);
   });
 });
@@ -127,7 +127,7 @@ describe("getConfigPath", () => {
     const { getConfigPath } = await import("./config-store.js");
     const path = getConfigPath();
     expect(path).toMatch(/config\.json$/);
-    expect(path).toContain("aiready");
+    expect(path).toContain("canicode");
   });
 });
 

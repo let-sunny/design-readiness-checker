@@ -31,7 +31,7 @@ import { handleDocs } from "./docs.js";
 // Import rules to register them
 import "../rules/index.js";
 
-const cli = cac("aiready");
+const cli = cac("canicode");
 
 const MAX_NODES_WITHOUT_SCOPE = 500;
 
@@ -96,12 +96,12 @@ cli
   .option("--custom-rules <path>", "Path to custom rules JSON file")
   .option("--config <path>", "Path to config JSON file (override rule scores/settings)")
   .option("--no-open", "Don't open report in browser after analysis")
-  .example("  aiready analyze https://www.figma.com/design/ABC123/MyDesign")
-  .example("  aiready analyze https://www.figma.com/design/ABC123/MyDesign --mcp")
-  .example("  aiready analyze https://www.figma.com/design/ABC123/MyDesign --api --token YOUR_TOKEN")
-  .example("  aiready analyze ./fixtures/design.json --output report.html")
-  .example("  aiready analyze ./fixtures/design.json --custom-rules ./my-rules.json")
-  .example("  aiready analyze ./fixtures/design.json --config ./my-config.json")
+  .example("  canicode analyze https://www.figma.com/design/ABC123/MyDesign")
+  .example("  canicode analyze https://www.figma.com/design/ABC123/MyDesign --mcp")
+  .example("  canicode analyze https://www.figma.com/design/ABC123/MyDesign --api --token YOUR_TOKEN")
+  .example("  canicode analyze ./fixtures/design.json --output report.html")
+  .example("  canicode analyze ./fixtures/design.json --custom-rules ./my-rules.json")
+  .example("  canicode analyze ./fixtures/design.json --config ./my-config.json")
   .action(async (input: string, options: AnalyzeOptions) => {
     try {
       // Validate mutually exclusive flags
@@ -112,7 +112,7 @@ cli
       // Check init for non-MCP mode
       if (!options.mcp && !options.token && !getFigmaToken() && !isJsonFile(input)) {
         throw new Error(
-          "aiready is not configured. Run 'aiready init --token YOUR_TOKEN' first.\n" +
+          "canicode is not configured. Run 'canicode init --token YOUR_TOKEN' first.\n" +
           "Or use --mcp flag for Figma MCP mode (no token needed)."
         );
       }
@@ -154,7 +154,7 @@ cli
             `Too many nodes (${totalNodes}) for unscoped analysis. ` +
             `Max ${MAX_NODES_WITHOUT_SCOPE} nodes without a node-id scope.\n\n` +
             `Add ?node-id=XXX to the Figma URL to target a specific section.\n` +
-            `Example: aiready analyze "https://www.figma.com/design/.../MyDesign?node-id=1-234"`
+            `Example: canicode analyze "https://www.figma.com/design/.../MyDesign?node-id=1-234"`
           );
         }
       }
@@ -493,8 +493,8 @@ cli
   .option("--mcp", "Load via Figma MCP (no FIGMA_TOKEN needed)")
   .option("--api", "Load via Figma REST API (requires FIGMA_TOKEN)")
   .option("--token <token>", "Figma API token (or use FIGMA_TOKEN env var)")
-  .example("  aiready save-fixture https://www.figma.com/design/ABC123/MyDesign --mcp")
-  .example("  aiready save-fixture https://www.figma.com/design/ABC123/MyDesign --api --token YOUR_TOKEN")
+  .example("  canicode save-fixture https://www.figma.com/design/ABC123/MyDesign --mcp")
+  .example("  canicode save-fixture https://www.figma.com/design/ABC123/MyDesign --api --token YOUR_TOKEN")
   .action(async (input: string, options: SaveFixtureOptions) => {
     try {
       if (options.mcp && options.api) {
@@ -541,8 +541,8 @@ interface InitOptions {
 }
 
 cli
-  .command("init", "Set up aiready (Figma token or MCP)")
-  .option("--token <token>", "Save Figma API token to ~/.aiready/")
+  .command("init", "Set up canicode (Figma token or MCP)")
+  .option("--token <token>", "Save Figma API token to ~/.canicode/")
   .option("--mcp", "Show Figma MCP setup instructions")
   .action((options: InitOptions) => {
     try {
@@ -551,7 +551,7 @@ cli
 
         console.log(`  Config saved: ${getConfigPath()}`);
         console.log(`  Reports will be saved to: ${getReportsDir()}/`);
-        console.log(`\n  Next: aiready analyze "https://www.figma.com/design/..."`);
+        console.log(`\n  Next: canicode analyze "https://www.figma.com/design/..."`);
         return;
       }
 
@@ -559,26 +559,26 @@ cli
         console.log(`MCP SETUP\n`);
         console.log(`1. Install Figma MCP in Claude Code:`);
         console.log(`   claude mcp add figma -- npx -y @anthropic-ai/claude-code-mcp-figma\n`);
-        console.log(`2. Add aiready MCP server:`);
-        console.log(`   claude mcp add --transport stdio aiready npx aiready-mcp\n`);
+        console.log(`2. Add canicode MCP server:`);
+        console.log(`   claude mcp add --transport stdio canicode npx canicode-mcp\n`);
         console.log(`3. Set Figma token (for MCP server's REST API fallback):`);
-        console.log(`   aiready init --token YOUR_TOKEN\n`);
+        console.log(`   canicode init --token YOUR_TOKEN\n`);
         console.log(`4. Use in Claude Code:`);
         console.log(`   "Analyze this Figma design: https://www.figma.com/design/..."`);
         return;
       }
 
       // No flags: show setup guide
-      console.log(`AIREADY SETUP\n`);
+      console.log(`CANICODE SETUP\n`);
       console.log(`Choose your Figma data source:\n`);
       console.log(`Option 1: REST API (recommended for CI/automation)`);
-      console.log(`  aiready init --token YOUR_FIGMA_TOKEN`);
+      console.log(`  canicode init --token YOUR_FIGMA_TOKEN`);
       console.log(`  Get token: figma.com > Settings > Personal access tokens\n`);
       console.log(`Option 2: Figma MCP (recommended for Claude Code)`);
-      console.log(`  aiready init --mcp`);
+      console.log(`  canicode init --mcp`);
       console.log(`  No token needed for CLI — uses Claude Code's Figma MCP bridge\n`);
       console.log(`After setup:`);
-      console.log(`  aiready analyze "https://www.figma.com/design/..."`);
+      console.log(`  canicode analyze "https://www.figma.com/design/..."`);
     } catch (error) {
       console.error(
         "\nError:",
@@ -603,8 +603,8 @@ cli.help((sections) => {
     {
       title: "\nSetup",
       body: [
-        `  aiready init --token <token>   Save Figma token to ~/.aiready/`,
-        `  aiready init --mcp             Show MCP setup instructions`,
+        `  canicode init --token <token>   Save Figma token to ~/.canicode/`,
+        `  canicode init --mcp             Show MCP setup instructions`,
       ].join("\n"),
     },
     {
@@ -618,26 +618,26 @@ cli.help((sections) => {
     {
       title: "\nCustomization",
       body: [
-        `  --custom-rules <path>   Add custom rules (see: aiready docs rules)`,
-        `  --config <path>         Override rule settings (see: aiready docs config)`,
+        `  --custom-rules <path>   Add custom rules (see: canicode docs rules)`,
+        `  --config <path>         Override rule settings (see: canicode docs config)`,
       ].join("\n"),
     },
     {
       title: "\nExamples",
       body: [
-        `  $ aiready analyze "https://www.figma.com/design/..." --mcp`,
-        `  $ aiready analyze "https://www.figma.com/design/..." --api`,
-        `  $ aiready analyze "https://www.figma.com/design/..." --preset strict`,
-        `  $ aiready analyze "https://www.figma.com/design/..." --config ./my-config.json`,
-        `  $ aiready analyze "https://www.figma.com/design/..." --custom-rules ./my-rules.json`,
+        `  $ canicode analyze "https://www.figma.com/design/..." --mcp`,
+        `  $ canicode analyze "https://www.figma.com/design/..." --api`,
+        `  $ canicode analyze "https://www.figma.com/design/..." --preset strict`,
+        `  $ canicode analyze "https://www.figma.com/design/..." --config ./my-config.json`,
+        `  $ canicode analyze "https://www.figma.com/design/..." --custom-rules ./my-rules.json`,
       ].join("\n"),
     },
     {
       title: "\nInstallation",
       body: [
-        `  CLI:     npm install -g aiready`,
-        `  MCP:     claude mcp add --transport stdio aiready npx aiready-mcp`,
-        `  Skills:  github.com/let-sunny/aiready`,
+        `  CLI:     npm install -g canicode`,
+        `  MCP:     claude mcp add --transport stdio canicode npx canicode-mcp`,
+        `  Skills:  github.com/let-sunny/canicode`,
       ].join("\n"),
     },
   );

@@ -1,14 +1,14 @@
-# AIReady
+# CanICode
 
 Analyze Figma designs. Score how dev-friendly and AI-friendly they are. Get actionable issues before writing code.
 
 ```bash
-npm install -g aiready
-aiready init --token YOUR_FIGMA_TOKEN
-aiready analyze "https://www.figma.com/design/ABC123/MyDesign?node-id=1-234"
+npm install -g canicode
+canicode init --token YOUR_FIGMA_TOKEN
+canicode analyze "https://www.figma.com/design/ABC123/MyDesign?node-id=1-234"
 ```
 
-> Run `aiready docs setup` for the full setup guide — CLI, MCP Server, Claude Skills, and all options.
+> Run `canicode docs setup` for the full setup guide — CLI, MCP Server, Claude Skills, and all options.
 
 ---
 
@@ -33,37 +33,37 @@ Scores use density + diversity weighting per category, combined into an overall 
 
 ## Getting Started
 
-Three ways to use AIReady. Pick one.
+Three ways to use CanICode. Pick one.
 
 ### CLI (standalone)
 
 ```bash
-npx fig-aiready analyze "https://www.figma.com/design/ABC123/MyDesign?node-id=1-234"
+npx canicode analyze "https://www.figma.com/design/ABC123/MyDesign?node-id=1-234"
 
 # Or install globally
-npm install -g fig-aiready
-aiready analyze "https://www.figma.com/design/ABC123/MyDesign?node-id=1-234"
+npm install -g canicode
+canicode analyze "https://www.figma.com/design/ABC123/MyDesign?node-id=1-234"
 ```
 
 To enable "Comment on Figma" buttons in reports, set your Figma token:
 ```bash
-aiready init --token figd_xxxxxxxxxxxxx
+canicode init --token figd_xxxxxxxxxxxxx
 ```
 
 ### MCP Server (Claude Code / Cursor / Claude Desktop)
 
 **Claude Code:**
 ```bash
-claude mcp add aiready -e FIGMA_TOKEN=figd_xxxxxxxxxxxxx -- npx -y fig-aiready aiready-mcp
+claude mcp add canicode -e FIGMA_TOKEN=figd_xxxxxxxxxxxxx -- npx -y canicode canicode-mcp
 ```
 
 **Cursor** (`~/.cursor/mcp.json`):
 ```json
 {
   "mcpServers": {
-    "aiready": {
+    "canicode": {
       "command": "npx",
-      "args": ["-y", "fig-aiready", "aiready-mcp"],
+      "args": ["-y", "canicode", "canicode-mcp"],
       "env": {
         "FIGMA_TOKEN": "figd_xxxxxxxxxxxxx"
       }
@@ -76,9 +76,9 @@ claude mcp add aiready -e FIGMA_TOKEN=figd_xxxxxxxxxxxxx -- npx -y fig-aiready a
 ```json
 {
   "mcpServers": {
-    "aiready": {
+    "canicode": {
       "command": "npx",
-      "args": ["-y", "fig-aiready", "aiready-mcp"],
+      "args": ["-y", "canicode", "canicode-mcp"],
       "env": {
         "FIGMA_TOKEN": "figd_xxxxxxxxxxxxx"
       }
@@ -105,7 +105,7 @@ Then ask: *"Analyze this Figma design: https://www.figma.com/design/..."*
 Token priority:
 1. `--token` flag (one-time override)
 2. `FIGMA_TOKEN` env var (CI/CD)
-3. `~/.aiready/config.json` (`aiready init`)
+3. `~/.canicode/config.json` (`canicode init`)
 
 </details>
 
@@ -120,7 +120,7 @@ Token priority:
 | `strict` | Enables all rules, increases all scores by 150% |
 
 ```bash
-aiready analyze <url> --preset strict
+canicode analyze <url> --preset strict
 ```
 
 </details>
@@ -131,7 +131,7 @@ aiready analyze <url> --preset strict
 Add project-specific checks via a JSON file:
 
 ```bash
-aiready analyze <url> --custom-rules ./my-rules.json
+canicode analyze <url> --custom-rules ./my-rules.json
 ```
 
 ```json
@@ -149,7 +149,7 @@ aiready analyze <url> --custom-rules ./my-rules.json
 ]
 ```
 
-See [`examples/custom-rules.json`](examples/custom-rules.json) | Run `aiready docs rules`
+See [`examples/custom-rules.json`](examples/custom-rules.json) | Run `canicode docs rules`
 
 </details>
 
@@ -159,7 +159,7 @@ See [`examples/custom-rules.json`](examples/custom-rules.json) | Run `aiready do
 Override built-in rule scores, severity, and global settings:
 
 ```bash
-aiready analyze <url> --config ./my-config.json
+canicode analyze <url> --config ./my-config.json
 ```
 
 ```json
@@ -183,7 +183,7 @@ aiready analyze <url> --config ./my-config.json
 | `rules.<id>.severity` | Override rule severity |
 | `rules.<id>.enabled` | Enable/disable a rule |
 
-See [`examples/config.json`](examples/config.json) | Run `aiready docs config`
+See [`examples/config.json`](examples/config.json) | Run `canicode docs config`
 
 </details>
 
@@ -204,22 +204,22 @@ Severity weights issues — a single blocking issue counts 3x more than a sugges
 <details>
 <summary><strong>MCP Server Details</strong></summary>
 
-The `aiready-mcp` server exposes two tools: `analyze` and `list-rules`.
+The `canicode-mcp` server exposes two tools: `analyze` and `list-rules`.
 
 **Route A — Figma MCP relay (no token):**
 
 ```
 Claude Code → Figma MCP get_metadata → XML node tree
-Claude Code → aiready MCP analyze(designData: XML) → result
+Claude Code → canicode MCP analyze(designData: XML) → result
 ```
 
 **Route B — REST API direct (token):**
 
 ```
-Claude Code → aiready MCP analyze(input: URL) → internal fetch → result
+Claude Code → canicode MCP analyze(input: URL) → internal fetch → result
 ```
 
-Route A requires two MCP servers (figma + aiready). Route B requires one + a saved token.
+Route A requires two MCP servers (figma + canicode). Route B requires one + a saved token.
 
 The `analyze` tool accepts `designData` (XML/JSON from Figma MCP) or `input` (Figma URL / fixture path). When both are provided, `designData` takes priority.
 
@@ -231,8 +231,8 @@ The `analyze` tool accepts `designData` (XML/JSON from Figma MCP) or `input` (Fi
 Save Figma file data as JSON for offline analysis:
 
 ```bash
-aiready save-fixture https://www.figma.com/design/ABC123/MyDesign
-aiready save-fixture https://www.figma.com/design/ABC123/MyDesign --mcp
+canicode save-fixture https://www.figma.com/design/ABC123/MyDesign
+canicode save-fixture https://www.figma.com/design/ABC123/MyDesign --mcp
 ```
 
 </details>
@@ -271,8 +271,8 @@ The pipeline uses 4 subagents:
 <summary><strong>Development</strong></summary>
 
 ```bash
-git clone https://github.com/let-sunny/aiready.git
-cd aiready
+git clone https://github.com/let-sunny/canicode.git
+cd canicode
 pnpm install
 pnpm build
 ```

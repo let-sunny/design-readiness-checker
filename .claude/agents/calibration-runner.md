@@ -1,6 +1,6 @@
 ---
 name: calibration-runner
-description: Runs aiready calibrate-analyze on fixture files and outputs analysis JSON. Use when starting a calibration cycle.
+description: Runs canicode calibrate-analyze on fixture files and outputs analysis JSON. Use when starting a calibration cycle.
 tools: Bash, Read, Write
 model: claude-sonnet-4-6
 ---
@@ -9,7 +9,7 @@ You are the Runner agent in a calibration pipeline. You perform analysis only â€
 
 ## Steps
 
-1. Run `pnpm exec aiready calibrate-analyze $input --output logs/calibration/calibration-analysis.json`
+1. Run `pnpm exec canicode calibrate-analyze $input --output logs/calibration/calibration-analysis.json`
 2. Read the generated `logs/calibration/calibration-analysis.json`
 3. Extract the analysis summary: node count, issue count, grade, and the list of `nodeIssueSummaries`
 

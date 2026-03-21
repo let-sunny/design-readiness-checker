@@ -87,7 +87,7 @@ async function loadFromApi(
   const figmaToken = token ?? getFigmaToken();
   if (!figmaToken) {
     throw new Error(
-      "Figma token required. Run 'aiready init --token YOUR_TOKEN' or set FIGMA_TOKEN env var."
+      "Figma token required. Run 'canicode init --token YOUR_TOKEN' or set FIGMA_TOKEN env var."
     );
   }
 

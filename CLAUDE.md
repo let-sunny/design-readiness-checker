@@ -1,4 +1,4 @@
-# AIReady
+# CanICode
 
 A CLI tool that analyzes Figma design structures to provide development-friendliness and AI-friendliness scores and reports.
 
@@ -31,7 +31,7 @@ src/
 
 ### External (User-Facing)
 
-**`aiready analyze`**
+**`canicode analyze`**
 - Role: Analyze Figma file structure + generate HTML report
 - Input: Figma URL or JSON fixture
 - Output: HTML report in `reports/`
@@ -46,13 +46,13 @@ src/
 - Each issue includes a Figma deep link (click → navigate to node in Figma)
 - With FIGMA_TOKEN: each issue has a "Comment on Figma" button that posts analysis findings to the Figma node
 
-**`aiready-mcp`**
+**`canicode-mcp`**
 - Role: MCP server exposing analyze as a tool for Claude Code / Cursor / Claude Desktop
-- Install: `claude mcp add aiready -e FIGMA_TOKEN=figd_xxx -- npx -y fig-aiready aiready-mcp`
+- Install: `claude mcp add canicode -e FIGMA_TOKEN=figd_xxx -- npx -y canicode canicode-mcp`
 - Tools: `analyze` (returns JSON summary + generates HTML report), `list-rules`
 - With FIGMA_TOKEN: HTML report includes "Comment on Figma" buttons
 
-**`aiready save-fixture`**
+**`canicode save-fixture`**
 - Role: Save Figma file data as JSON fixture for offline analysis
 - Input: Figma URL
 - Output: JSON file in `fixtures/`
@@ -78,7 +78,7 @@ Calibration commands are NOT exposed as CLI commands. They run exclusively insid
 ### File Output Structure
 
 ```
-reports/            # HTML reports (aiready analyze)
+reports/            # HTML reports (canicode analyze)
 logs/calibration/   # Calibration analysis results (internal)
 logs/activity/      # Agent activity logs (internal)
 ```
@@ -155,9 +155,9 @@ Rules are classified into 4 severity levels:
 Rule scores started as intuition-based estimates. The calibration pipeline validates them against actual code conversion difficulty.
 
 Process:
-1. Run analysis on real Figma files (`aiready calibrate-analyze`)
+1. Run analysis on real Figma files (`canicode calibrate-analyze`)
 2. Convert flagged nodes to code via Claude Code subagent with Figma MCP (`get_design_context`)
-3. Compare conversion difficulty vs rule scores (`aiready calibrate-evaluate`)
+3. Compare conversion difficulty vs rule scores (`canicode calibrate-evaluate`)
 4. Propose adjustments: overscored rules get reduced, underscored rules get increased (Tuning Agent)
 5. 4-agent debate loop (`/calibrate-loop`) applies conservative changes automatically
 

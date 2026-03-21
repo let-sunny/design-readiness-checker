@@ -28,7 +28,7 @@ const require = createRequire(import.meta.url);
 const pkg = require("../../package.json") as { version: string };
 
 const server = new McpServer({
-  name: "aiready",
+  name: "canicode",
   version: pkg.version,
 });
 

@@ -19,7 +19,7 @@ Create the file with a header. Store the exact path — you will paste it verbat
 ### Step 1 — Analysis (CLI)
 
 ```
-npx aiready calibrate-analyze "$ARGUMENTS" --output logs/calibration/calibration-analysis.json
+npx canicode calibrate-analyze "$ARGUMENTS" --output logs/calibration/calibration-analysis.json
 ```
 
 Read `logs/calibration/calibration-analysis.json`. If `issueCount` is 0, stop here.
@@ -37,7 +37,7 @@ Append a brief summary to this EXACT file. Do NOT write to any other log file.
 ### Step 3 — Evaluation (CLI)
 
 ```
-npx aiready calibrate-evaluate logs/calibration/calibration-analysis.json logs/calibration/calibration-conversion.json
+npx canicode calibrate-evaluate logs/calibration/calibration-analysis.json logs/calibration/calibration-conversion.json
 ```
 
 Read the generated report, extract proposals. If zero proposals, stop.
