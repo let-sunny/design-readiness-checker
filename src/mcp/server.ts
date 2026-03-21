@@ -18,6 +18,7 @@ import { loadCustomRules } from "../rules/custom/custom-rule-loader.js";
 import { ruleRegistry } from "../rules/rule-registry.js";
 import type { RuleConfig, RuleId } from "../contracts/rule.js";
 import { initMonitoring, trackEvent, trackError, shutdownMonitoring, EVENTS } from "../monitoring/index.js";
+import { POSTHOG_API_KEY as BUILTIN_PH_KEY, SENTRY_DSN as BUILTIN_SENTRY_DSN } from "../monitoring/keys.js";
 import { getTelemetryEnabled, getPosthogApiKey, getSentryDsn } from "../core/config-store.js";
 
 // Load .env for FIGMA_TOKEN
@@ -280,9 +281,9 @@ async function main() {
     version: pkg.version,
     enabled: getTelemetryEnabled(),
   };
-  const phKey = getPosthogApiKey();
+  const phKey = getPosthogApiKey() || BUILTIN_PH_KEY;
   if (phKey) monitoringConfig.posthogApiKey = phKey;
-  const sDsn = getSentryDsn();
+  const sDsn = getSentryDsn() || BUILTIN_SENTRY_DSN;
   if (sDsn) monitoringConfig.sentryDsn = sDsn;
   await initMonitoring(monitoringConfig).catch(() => {
     // monitoring init failed — no-op

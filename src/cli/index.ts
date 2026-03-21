@@ -31,6 +31,7 @@ import {
 } from "../agents/orchestrator.js";
 import { handleDocs } from "./docs.js";
 import { initMonitoring, trackEvent, trackError, shutdownMonitoring, EVENTS } from "../monitoring/index.js";
+import { POSTHOG_API_KEY as BUILTIN_PH_KEY, SENTRY_DSN as BUILTIN_SENTRY_DSN } from "../monitoring/keys.js";
 
 // Import rules to register them
 import "../rules/index.js";
@@ -44,9 +45,9 @@ const cli = cac("canicode");
     version: "0.3.3",
     enabled: getTelemetryEnabled(),
   };
-  const phKey = getPosthogApiKey();
+  const phKey = getPosthogApiKey() || BUILTIN_PH_KEY;
   if (phKey) monitoringConfig.posthogApiKey = phKey;
-  const sDsn = getSentryDsn();
+  const sDsn = getSentryDsn() || BUILTIN_SENTRY_DSN;
   if (sDsn) monitoringConfig.sentryDsn = sDsn;
   initMonitoring(monitoringConfig).catch(() => {
     // monitoring init failed — no-op
