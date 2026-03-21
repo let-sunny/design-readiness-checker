@@ -21,7 +21,13 @@ jobs:
           registry-url: https://registry.npmjs.org
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
-      - run: pnpm build
+
+      - name: Build with monitoring keys
+        run: pnpm build
+        env:
+          POSTHOG_API_KEY: ${{ vars.POSTHOG_API_KEY }}
+          SENTRY_DSN: ${{ vars.SENTRY_DSN }}
+
       - run: pnpm test:run
 
       - name: Publish to npm

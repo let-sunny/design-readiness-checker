@@ -13,7 +13,10 @@ import type { AnalysisFile } from "../contracts/figma-node.js";
 import type { RuleConfig, RuleId } from "../contracts/rule.js";
 import { analyzeFile } from "../core/rule-engine.js";
 import { loadFile, isFigmaUrl, isJsonFile, type LoadMode } from "../core/loader.js";
-import { getFigmaToken, initAiready, getConfigPath, getReportsDir, ensureReportsDir } from "../core/config-store.js";
+import {
+  getFigmaToken, initAiready, getConfigPath, getReportsDir, ensureReportsDir,
+  readConfig, getTelemetryEnabled, setTelemetryEnabled, getPosthogApiKey, getSentryDsn,
+} from "../core/config-store.js";
 import { calculateScores, formatScoreSummary } from "../core/scoring.js";
 import { getConfigsWithPreset, RULE_CONFIGS, type Preset } from "../rules/rule-config.js";
 import { ruleRegistry } from "../rules/rule-registry.js";
@@ -27,11 +30,35 @@ import {
   filterConversionCandidates,
 } from "../agents/orchestrator.js";
 import { handleDocs } from "./docs.js";
+import { initMonitoring, trackEvent, trackError, shutdownMonitoring, EVENTS } from "../monitoring/index.js";
+import { POSTHOG_API_KEY as BUILTIN_PH_KEY, SENTRY_DSN as BUILTIN_SENTRY_DSN } from "../monitoring/keys.js";
 
 // Import rules to register them
 import "../rules/index.js";
 
 const cli = cac("canicode");
+
+// Initialise monitoring (fire-and-forget, never blocks startup)
+{
+  const monitoringConfig: Parameters<typeof initMonitoring>[0] = {
+    environment: "cli",
+    version: "0.3.3",
+    enabled: getTelemetryEnabled(),
+  };
+  const phKey = getPosthogApiKey() || BUILTIN_PH_KEY;
+  if (phKey) monitoringConfig.posthogApiKey = phKey;
+  const sDsn = getSentryDsn() || BUILTIN_SENTRY_DSN;
+  if (sDsn) monitoringConfig.sentryDsn = sDsn;
+  initMonitoring(monitoringConfig).catch(() => {
+    // monitoring init failed — no-op
+  });
+}
+
+process.on("beforeExit", () => {
+  shutdownMonitoring().catch(() => {
+    // ignore
+  });
+});
 
 const MAX_NODES_WITHOUT_SCOPE = 500;
 
@@ -103,6 +130,8 @@ cli
   .example("  canicode analyze ./fixtures/design.json --custom-rules ./my-rules.json")
   .example("  canicode analyze ./fixtures/design.json --config ./my-config.json")
   .action(async (input: string, options: AnalyzeOptions) => {
+    const analysisStart = Date.now();
+    trackEvent(EVENTS.ANALYSIS_STARTED, { source: isJsonFile(input) ? "fixture" : "figma" });
     try {
       // Validate mutually exclusive flags
       if (options.mcp && options.api) {
@@ -234,6 +263,15 @@ cli
       await writeFile(outputPath, html, "utf-8");
       console.log(`\nReport saved: ${outputPath}`);
 
+      trackEvent(EVENTS.ANALYSIS_COMPLETED, {
+        nodeCount: result.nodeCount,
+        issueCount: result.issues.length,
+        grade: scores.overall.grade,
+        percentage: scores.overall.percentage,
+        duration: Date.now() - analysisStart,
+      });
+      trackEvent(EVENTS.REPORT_GENERATED, { format: "html" });
+
       // Open in browser unless --no-open
       if (!options.noOpen) {
         const { exec } = await import("node:child_process");
@@ -246,6 +284,14 @@ cli
         process.exit(1);
       }
     } catch (error) {
+      trackError(
+        error instanceof Error ? error : new Error(String(error)),
+        { command: "analyze", input },
+      );
+      trackEvent(EVENTS.ANALYSIS_FAILED, {
+        error: error instanceof Error ? error.message : String(error),
+        duration: Date.now() - analysisStart,
+      });
       console.error(
         "\nError:",
         error instanceof Error ? error.message : String(error)
@@ -586,6 +632,51 @@ cli
       console.log(`  No token needed for CLI — uses Claude Code's Figma MCP bridge\n`);
       console.log(`After setup:`);
       console.log(`  canicode analyze "https://www.figma.com/design/..."`);
+    } catch (error) {
+      console.error(
+        "\nError:",
+        error instanceof Error ? error.message : String(error)
+      );
+      process.exit(1);
+    }
+  });
+
+// ============================================
+// Config command (telemetry opt-out)
+// ============================================
+
+interface ConfigOptions {
+  telemetry?: boolean;
+  noTelemetry?: boolean;
+}
+
+cli
+  .command("config", "Manage canicode configuration")
+  .option("--telemetry", "Enable anonymous telemetry")
+  .option("--no-telemetry", "Disable anonymous telemetry")
+  .action((options: ConfigOptions) => {
+    try {
+      if (options.noTelemetry === true) {
+        setTelemetryEnabled(false);
+        console.log("Telemetry disabled. No analytics data will be sent.");
+        return;
+      }
+
+      if (options.telemetry === true) {
+        setTelemetryEnabled(true);
+        console.log("Telemetry enabled. Only anonymous usage events are tracked — no design data.");
+        return;
+      }
+
+      // No flags: show current config
+      const cfg = readConfig();
+      console.log("CANICODE CONFIG\n");
+      console.log(`  Config path: ${getConfigPath()}`);
+      console.log(`  Figma token: ${cfg.figmaToken ? "set" : "not set"}`);
+      console.log(`  Telemetry:   ${cfg.telemetry !== false ? "enabled" : "disabled"}`);
+      console.log(`\nOptions:`);
+      console.log(`  canicode config --no-telemetry    Opt out of anonymous telemetry`);
+      console.log(`  canicode config --telemetry       Opt back in`);
     } catch (error) {
       console.error(
         "\nError:",

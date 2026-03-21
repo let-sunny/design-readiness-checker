@@ -172,6 +172,45 @@
   </main>
 
   <script src="browser.global.js"></script>
+
+  <!-- Monitoring: PostHog analytics + Sentry error tracking -->
+  <!-- These are public project keys, safe to include in client-side code -->
+  <script>
+    (function() {
+      // PostHog — set your project API key here to enable analytics
+      var POSTHOG_KEY = ''; // e.g. 'phc_XXXX'
+      // Sentry — set your project DSN here to enable error tracking
+      var SENTRY_DSN = ''; // e.g. 'https://xxx@o123.ingest.sentry.io/456'
+
+      if (POSTHOG_KEY) {
+        !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.async=!0,p.src=s.api_host+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="capture identify alias people.set people.set_once set_config register register_once unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled onFeatureFlags getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures getActiveMatchingSurveys getSurveys onSessionId".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+        posthog.init(POSTHOG_KEY, { api_host: 'https://us.i.posthog.com', autocapture: false });
+      }
+
+      if (SENTRY_DSN) {
+        var s = document.createElement('script');
+        s.src = 'https://browser.sentry-cdn.com/8.0.0/bundle.min.js';
+        s.crossOrigin = 'anonymous';
+        s.onload = function() {
+          window.Sentry && window.Sentry.init({ dsn: SENTRY_DSN, environment: 'web', tracesSampleRate: 0 });
+        };
+        document.head.appendChild(s);
+      }
+
+      // Common properties injected into every event for filtering
+      var _common = { _sdk: 'canicode', _sdk_version: '0.3.3', _env: 'web' };
+
+      // Helper used by app code below
+      window._trackEvent = function(event, props) {
+        try { window.posthog && window.posthog.capture(event, Object.assign({}, _common, props)); } catch(e) {}
+      };
+      window._trackError = function(err, ctx) {
+        try { window.Sentry && window.Sentry.captureException(err, ctx ? { extra: Object.assign({}, _common, ctx) } : { extra: _common }); } catch(e) {}
+        try { window.posthog && window.posthog.capture('cic_error', Object.assign({}, _common, { error: err.message || String(err) }, ctx)); } catch(e) {}
+      };
+    })();
+  </script>
+
   <script>
     // ---- Constants ----
     const GAUGE_R = 54;
@@ -264,6 +303,9 @@
 
       var fileKey = urlInfo.fileKey, nodeId = urlInfo.nodeId;
 
+      window._trackEvent && window._trackEvent('cic_analysis_started', { source: 'web' });
+      var analysisStart = Date.now();
+
       setLoading(true, 'Fetching Figma data...');
       try {
         var res = await fetch('https://api.figma.com/v1/files/' + encodeURIComponent(fileKey), { headers: { 'X-FIGMA-TOKEN': token } });
@@ -285,9 +327,10 @@
       try {
         result = CanICode.analyzeFile(analysisFile, options);
         scores = CanICode.calculateScores(result);
-      } catch (e) { setLoading(false); showError('Analysis error', e.message); return; }
+      } catch (e) { setLoading(false); showError('Analysis error', e.message); window._trackError && window._trackError(e, { context: 'analysis' }); window._trackEvent && window._trackEvent('cic_analysis_failed', { error: e.message }); return; }
 
       setLoading(false);
+      window._trackEvent && window._trackEvent('cic_analysis_completed', { nodeCount: result.nodeCount, issueCount: result.issues.length, grade: scores.overall.grade, percentage: scores.overall.percentage, duration: Date.now() - analysisStart });
       renderResults(analysisFile, result, scores, fileKey);
     }
 
@@ -371,11 +414,13 @@
         btn.textContent = 'Sent \u2713';
         btn.classList.remove('hover:bg-muted');
         btn.classList.add('text-green-600', 'border-green-500/30');
+        window._trackEvent && window._trackEvent('cic_comment_posted', { rule: btn.dataset.rule });
       } catch (e) {
         btn.textContent = 'Failed \u2717';
         btn.classList.remove('hover:bg-muted');
         btn.classList.add('text-red-600', 'border-red-500/30');
         btn.disabled = false;
+        window._trackEvent && window._trackEvent('cic_comment_failed', { error: e.message || String(e) });
       }
     }
   </script>

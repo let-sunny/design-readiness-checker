@@ -17,6 +17,9 @@ import { loadConfigFile, mergeConfigs } from "../rules/custom/config-loader.js";
 import { loadCustomRules } from "../rules/custom/custom-rule-loader.js";
 import { ruleRegistry } from "../rules/rule-registry.js";
 import type { RuleConfig, RuleId } from "../contracts/rule.js";
+import { initMonitoring, trackEvent, trackError, shutdownMonitoring, EVENTS } from "../monitoring/index.js";
+import { POSTHOG_API_KEY as BUILTIN_PH_KEY, SENTRY_DSN as BUILTIN_SENTRY_DSN } from "../monitoring/keys.js";
+import { getTelemetryEnabled, getPosthogApiKey, getSentryDsn } from "../core/config-store.js";
 
 // Load .env for FIGMA_TOKEN
 config();
@@ -55,6 +58,7 @@ Typical flow with Figma MCP:
     customRulesPath: z.string().optional().describe("Path to custom rules JSON file"),
   },
   async ({ designData, input, fileKey, fileName, token, preset, targetNodeId, configPath, customRulesPath }) => {
+    trackEvent(EVENTS.MCP_TOOL_CALLED, { tool: "analyze" });
     try {
       let file;
       let nodeId: string | undefined;
@@ -118,6 +122,14 @@ Typical flow with Figma MCP:
       const openCmd = process.platform === "darwin" ? "open" : process.platform === "win32" ? "start" : "xdg-open";
       exec(`${openCmd} "${reportPath}"`);
 
+      trackEvent(EVENTS.ANALYSIS_COMPLETED, {
+        nodeCount: result.nodeCount,
+        issueCount: result.issues.length,
+        grade: scores.overall.grade,
+        percentage: scores.overall.percentage,
+        source: designData ? "mcp-data" : "url",
+      });
+
       const issuesByRule: Record<string, number> = {};
       for (const issue of result.issues) {
         const id = issue.violation.ruleId;
@@ -148,6 +160,13 @@ Typical flow with Figma MCP:
         ],
       };
     } catch (error) {
+      trackError(
+        error instanceof Error ? error : new Error(String(error)),
+        { tool: "analyze" },
+      );
+      trackEvent(EVENTS.ANALYSIS_FAILED, {
+        error: error instanceof Error ? error.message : String(error),
+      });
       return {
         content: [
           {
@@ -257,8 +276,27 @@ Use this when the user asks about customization, configuration, rule settings, o
 );
 
 async function main() {
+  const monitoringConfig: Parameters<typeof initMonitoring>[0] = {
+    environment: "mcp",
+    version: pkg.version,
+    enabled: getTelemetryEnabled(),
+  };
+  const phKey = getPosthogApiKey() || BUILTIN_PH_KEY;
+  if (phKey) monitoringConfig.posthogApiKey = phKey;
+  const sDsn = getSentryDsn() || BUILTIN_SENTRY_DSN;
+  if (sDsn) monitoringConfig.sentryDsn = sDsn;
+  await initMonitoring(monitoringConfig).catch(() => {
+    // monitoring init failed — no-op
+  });
+
   const transport = new StdioServerTransport();
   await server.connect(transport);
 }
+
+process.on("beforeExit", () => {
+  shutdownMonitoring().catch(() => {
+    // ignore
+  });
+});
 
 main().catch(console.error);

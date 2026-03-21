@@ -271,3 +271,34 @@ canicode analyze <url> --config ./config.json --custom-rules ./rules.json
 ```
 
 The config adjusts built-in rules, while custom rules add new checks on top.
+
+---
+
+## Telemetry
+
+CanICode collects anonymous usage analytics via [PostHog](https://posthog.com) and error tracking via [Sentry](https://sentry.io). This helps improve the tool by understanding which features are used and catching errors early.
+
+### What is tracked
+
+- Event names only (e.g. `analysis_completed`, `cli_command`)
+- Aggregate metadata: node count, issue count, grade, duration
+- Error messages (stack traces for debugging)
+
+### What is NOT tracked
+
+- No design data, file contents, or Figma tokens
+- No personally identifiable information
+- No file names or URLs
+
+### How to opt out
+
+```bash
+canicode config --no-telemetry    # disable telemetry
+canicode config --telemetry       # re-enable telemetry
+```
+
+Telemetry is enabled by default. When disabled, all monitoring functions become silent no-ops.
+
+### Dependencies
+
+PostHog (`posthog-node`) and Sentry (`@sentry/node`) are optional peer dependencies. If they are not installed, monitoring degrades gracefully with no impact on functionality.

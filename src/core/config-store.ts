@@ -8,6 +8,9 @@ const REPORTS_DIR = join(AIREADY_DIR, "reports");
 
 interface AireadyConfig {
   figmaToken?: string;
+  telemetry?: boolean;
+  posthogApiKey?: string;
+  sentryDsn?: string;
 }
 
 function ensureDir(dir: string): void {
@@ -58,6 +61,24 @@ export function getReportsDir(): string {
 
 export function ensureReportsDir(): void {
   ensureDir(REPORTS_DIR);
+}
+
+export function getTelemetryEnabled(): boolean {
+  return readConfig().telemetry !== false;
+}
+
+export function setTelemetryEnabled(enabled: boolean): void {
+  const config = readConfig();
+  config.telemetry = enabled;
+  writeConfig(config);
+}
+
+export function getPosthogApiKey(): string | undefined {
+  return process.env["POSTHOG_API_KEY"] ?? readConfig().posthogApiKey;
+}
+
+export function getSentryDsn(): string | undefined {
+  return process.env["SENTRY_DSN"] ?? readConfig().sentryDsn;
 }
 
 /**
