@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { createRequire } from "node:module";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { config } from "dotenv";
@@ -19,9 +20,12 @@ config();
 // Import rules to register them
 import "../rules/index.js";
 
+const require = createRequire(import.meta.url);
+const pkg = require("../../package.json") as { version: string };
+
 const server = new McpServer({
   name: "aiready",
-  version: "0.1.0",
+  version: pkg.version,
 });
 
 server.tool(

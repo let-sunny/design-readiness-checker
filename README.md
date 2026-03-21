@@ -38,27 +38,45 @@ Three ways to use AIReady. Pick one.
 ### CLI (standalone)
 
 ```bash
-npm install -g aiready
-aiready init --token figd_xxxxxxxxxxxxx    # saved to ~/.aiready/
+npx fig-aiready analyze "https://www.figma.com/design/ABC123/MyDesign?node-id=1-234"
+
+# Or install globally
+npm install -g fig-aiready
 aiready analyze "https://www.figma.com/design/ABC123/MyDesign?node-id=1-234"
 ```
 
-### MCP Server (Claude Code)
+### MCP Server (Claude Code / Cursor / Claude Desktop)
 
+**Claude Code:**
 ```bash
-claude mcp add figma -- npx -y @anthropic-ai/claude-code-mcp-figma
-claude mcp add --transport stdio aiready npx aiready-mcp
+claude mcp add aiready -- npx -y fig-aiready aiready-mcp
 ```
-Then ask Claude Code: *"Analyze this Figma design: https://www.figma.com/design/..."*
 
-### Claude Skills (lightweight)
-
-```bash
-cp -r path/to/aiready/.claude/skills/aiready .claude/skills/
+**Cursor** (`~/.cursor/mcp.json`):
+```json
+{
+  "mcpServers": {
+    "aiready": {
+      "command": "npx",
+      "args": ["-y", "fig-aiready", "aiready-mcp"]
+    }
+  }
+}
 ```
-Then in Claude Code: `/aiready analyze <url>`
 
-> Full setup details for each method: `aiready docs setup`
+**Claude Desktop** (`~/Library/Application Support/Claude/claude_desktop_config.json`):
+```json
+{
+  "mcpServers": {
+    "aiready": {
+      "command": "npx",
+      "args": ["-y", "fig-aiready", "aiready-mcp"]
+    }
+  }
+}
+```
+
+Then ask: *"Analyze this Figma design: https://www.figma.com/design/..."*
 
 ---
 
