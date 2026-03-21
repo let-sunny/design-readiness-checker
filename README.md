@@ -212,6 +212,13 @@ canicode analyze <url> --custom-rules ./my-rules.json
 
 Conditions use AND logic — all must match for the rule to fire. Available conditions: `type`, `notType`, `nameContains`, `nameNotContains`, `namePattern`, `minWidth`, `maxWidth`, `minHeight`, `maxHeight`, `hasAutoLayout`, `hasChildren`, `minChildren`, `maxChildren`, `isComponent`, `isInstance`, `hasComponentId`, `isVisible`, `hasFills`, `hasStrokes`, `hasEffects`, `minDepth`, `maxDepth`.
 
+Combine with config overrides:
+```bash
+canicode analyze <url> --config ./config.json --custom-rules ./rules.json
+```
+
+> **Tip:** Ask any LLM *"Write a canicode custom rule that checks X"* with the conditions above — it can generate the JSON for you.
+
 See [`examples/custom-rules.json`](examples/custom-rules.json) | [`docs/CUSTOMIZATION.md`](docs/CUSTOMIZATION.md)
 
 </details>
