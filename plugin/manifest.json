@@ -1,0 +1,11 @@
+{
+  "name": "CanICode",
+  "id": "canicode-figma-plugin",
+  "api": "1.0.0",
+  "main": "main.js",
+  "ui": "ui.html",
+  "editorType": ["figma"],
+  "networkAccess": {
+    "allowedDomains": ["none"]
+  }
+}

@@ -24,6 +24,9 @@ importers:
         specifier: ^4.3.6
         version: 4.3.6
     devDependencies:
+      '@figma/plugin-typings':
+        specifier: ^1.123.0
+        version: 1.123.0
       '@types/node':
         specifier: ^25.5.0
         version: 25.5.0
@@ -206,6 +209,9 @@ packages:
     engines: {node: '>=18'}
     cpu: [x64]
     os: [win32]
+
+  '@figma/plugin-typings@1.123.0':
+    resolution: {integrity: sha512-NLv2aQ8R9dP5psDplWpq+pJxRUGsJ1YEYYbBV2oTd03kS+aau7N9XWLjw52s1uVgi8jQ33N001EX3f7vSCztjQ==}
 
   '@figma/rest-api-spec@0.36.0':
     resolution: {integrity: sha512-OyAjMF3ON2k6aVm61H4MrjSNwJ9Q4w2tYGa6qoUG6tVaNk9eMe/JcCKKYgLPfR9PKfKyoxV/xwn9/HBW3C3bKQ==}
@@ -1409,6 +1415,8 @@ snapshots:
 
   '@esbuild/win32-x64@0.27.4':
     optional: true
+
+  '@figma/plugin-typings@1.123.0': {}
 
   '@figma/rest-api-spec@0.36.0': {}
 

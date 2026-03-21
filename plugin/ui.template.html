@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    /* ---- Reset & Base ---- */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #fafafa;
+      --card: #ffffff;
+      --border: #e4e4e7;
+      --fg: #18181b;
+      --fg-muted: #71717a;
+      --green: #22c55e;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --blue: #3b82f6;
+      --green-bg: rgba(34,197,94,0.08);
+      --amber-bg: rgba(245,158,11,0.08);
+      --red-bg: rgba(239,68,68,0.08);
+      --blue-bg: rgba(59,130,246,0.08);
+      --radius: 8px;
+      --radius-sm: 6px;
+    }
+    body {
+      font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--fg);
+      background: var(--bg);
+      overflow-x: hidden;
+    }
+
+    /* ---- Layout ---- */
+    .container { padding: 16px; }
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+    .header-logo {
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: -0.02em;
+    }
+    .header-sub {
+      font-size: 11px;
+      color: var(--fg-muted);
+    }
+
+    /* ---- Buttons ---- */
+    .btn-group {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .btn {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--card);
+      color: var(--fg);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: center;
+    }
+    .btn:hover { background: #f4f4f5; }
+    .btn-primary {
+      background: var(--fg);
+      color: white;
+      border-color: var(--fg);
+    }
+    .btn-primary:hover { background: #27272a; }
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* ---- Empty state ---- */
+    .empty-state {
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--fg-muted);
+    }
+    .empty-state h2 {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--fg);
+      margin-bottom: 8px;
+    }
+    .empty-state p {
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    /* ---- Loading ---- */
+    .loading {
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--fg-muted);
+    }
+    .spinner {
+      display: inline-block;
+      width: 24px;
+      height: 24px;
+      border: 2px solid var(--border);
+      border-top-color: var(--fg);
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ---- Error ---- */
+    .error-msg {
+      background: var(--red-bg);
+      color: #b91c1c;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      margin-bottom: 16px;
+      border: 1px solid rgba(239,68,68,0.15);
+    }
+
+    /* ---- Grade ---- */
+    .grade-section {
+      text-align: center;
+      padding: 20px 0 16px;
+    }
+    .gauge-svg { display: block; margin: 0 auto; }
+    .grade-score {
+      font-size: 18px;
+      font-weight: 700;
+      margin-top: 8px;
+    }
+    .grade-score span {
+      font-size: 13px;
+      font-weight: 400;
+      color: var(--fg-muted);
+    }
+    .grade-label {
+      font-size: 11px;
+      color: var(--fg-muted);
+      margin-top: 2px;
+    }
+
+    /* ---- Category grid ---- */
+    .cat-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .cat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 8px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .cat-card:hover { border-color: #a1a1aa; }
+    .cat-card.active { border-color: var(--fg); }
+    .cat-score {
+      font-size: 20px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+    .cat-score.green { color: var(--green); }
+    .cat-score.amber { color: var(--amber); }
+    .cat-score.red { color: var(--red); }
+    .cat-label {
+      font-size: 10px;
+      color: var(--fg-muted);
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .cat-issues {
+      font-size: 10px;
+      color: var(--fg-muted);
+    }
+
+    /* ---- Summary bar ---- */
+    .summary-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .summary-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+    }
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .dot-blocking { background: var(--red); }
+    .dot-risk { background: var(--amber); }
+    .dot-missing { background: #a1a1aa; }
+    .dot-suggestion { background: var(--green); }
+    .summary-count { font-weight: 700; }
+    .summary-total {
+      margin-left: auto;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    /* ---- Issue list ---- */
+    .issue-section {
+      margin-bottom: 12px;
+    }
+    .issue-section-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 0;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--fg-muted);
+      cursor: pointer;
+      user-select: none;
+    }
+    .issue-section-header .count {
+      margin-left: auto;
+      font-weight: 500;
+    }
+    .chevron {
+      width: 12px;
+      height: 12px;
+      transition: transform 0.15s;
+      flex-shrink: 0;
+    }
+    .issue-section.collapsed .chevron { transform: rotate(-90deg); }
+    .issue-section.collapsed .issue-list { display: none; }
+
+    .issue-row {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      margin-bottom: 4px;
+      overflow: hidden;
+    }
+    .issue-summary {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 10px;
+      cursor: pointer;
+      font-size: 12px;
+      user-select: none;
+      transition: background 0.1s;
+    }
+    .issue-summary:hover { background: #f9f9fa; }
+    .issue-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .issue-rule {
+      font-weight: 600;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .issue-msg {
+      color: var(--fg-muted);
+      font-size: 11px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+      min-width: 0;
+    }
+    .issue-score {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 1px 5px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+    .score-blocking { background: var(--red-bg); color: #dc2626; }
+    .score-risk { background: var(--amber-bg); color: #d97706; }
+    .score-missing { background: #f4f4f5; color: #71717a; }
+    .score-suggestion { background: var(--green-bg); color: #16a34a; }
+
+    .issue-detail {
+      display: none;
+      padding: 8px 10px;
+      border-top: 1px solid var(--border);
+      background: #fafafa;
+      font-size: 11px;
+    }
+    .issue-row.open .issue-detail { display: block; }
+    .issue-path {
+      font-family: 'SF Mono', Menlo, Monaco, monospace;
+      font-size: 10px;
+      color: var(--fg-muted);
+      word-break: break-all;
+      margin-bottom: 6px;
+    }
+    .issue-info p {
+      margin-bottom: 4px;
+      color: var(--fg-muted);
+      line-height: 1.5;
+    }
+    .issue-info strong {
+      color: var(--fg);
+      font-weight: 600;
+    }
+
+    /* ---- Category filter tabs ---- */
+    .filter-tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+    .filter-tab {
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 500;
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      background: var(--card);
+      color: var(--fg-muted);
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .filter-tab:hover { border-color: #a1a1aa; color: var(--fg); }
+    .filter-tab.active {
+      background: var(--fg);
+      color: white;
+      border-color: var(--fg);
+    }
+
+    /* ---- Scrollable results area ---- */
+    #results { display: none; }
+    #results.visible { display: block; }
+
+    /* ---- Footer ---- */
+    .footer {
+      text-align: center;
+      padding: 16px 0 8px;
+      font-size: 10px;
+      color: var(--fg-muted);
+      border-top: 1px solid var(--border);
+      margin-top: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <span class="header-logo">CanICode</span>
+      <span class="header-sub">Design Readiness Checker</span>
+    </div>
+
+    <!-- Action buttons -->
+    <div class="btn-group">
+      <button class="btn btn-primary" id="btn-selection" onclick="analyzeSelection()">Analyze Selection</button>
+      <button class="btn" id="btn-page" onclick="analyzePage()">Analyze Page</button>
+    </div>
+
+    <!-- Error display -->
+    <div id="error" style="display:none"></div>
+
+    <!-- Empty state -->
+    <div id="empty-state" class="empty-state">
+      <h2>Ready to analyze</h2>
+      <p>Select a frame, component, or section in Figma, then click <strong>Analyze Selection</strong>.<br>
+      Or click <strong>Analyze Page</strong> to check the entire current page.</p>
+    </div>
+
+    <!-- Loading -->
+    <div id="loading" class="loading" style="display:none">
+      <div class="spinner"></div>
+      <p style="margin-top:12px">Analyzing design...</p>
+    </div>
+
+    <!-- Results -->
+    <div id="results">
+      <!-- Grade -->
+      <div class="grade-section" id="grade-section"></div>
+
+      <!-- Category grid -->
+      <div class="cat-grid" id="cat-grid"></div>
+
+      <!-- Summary bar -->
+      <div class="summary-bar" id="summary-bar"></div>
+
+      <!-- Filter tabs -->
+      <div class="filter-tabs" id="filter-tabs"></div>
+
+      <!-- Issue list -->
+      <div id="issue-list"></div>
+
+      <!-- Footer -->
+      <div class="footer">
+        Generated by <strong>CanICode</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- Inline analysis engine (injected at build time) -->
+  <script>
+    /* BROWSER_GLOBAL_JS */
+  </script>
+
+  <script>
+    // ---- State ----
+    let currentScores = null;
+    let currentResult = null;
+    let activeCategory = 'all';
+
+    // ---- Gauge SVG ----
+    const GAUGE_R = 54;
+    const GAUGE_C = Math.round(2 * Math.PI * GAUGE_R);
+
+    function gaugeColor(pct) {
+      if (pct >= 75) return '#22c55e';
+      if (pct >= 50) return '#f59e0b';
+      return '#ef4444';
+    }
+
+    function renderGauge(pct, size, strokeW, grade) {
+      const offset = GAUGE_C * (1 - pct / 100);
+      const color = gaugeColor(pct);
+      const fontSize = grade ? 48 : 28;
+      const label = grade || pct;
+      return `<svg width="${size}" height="${size}" viewBox="0 0 120 120" class="gauge-svg">
+        <circle cx="60" cy="60" r="${GAUGE_R}" fill="none" stroke-width="${strokeW}" stroke="#e4e4e7"/>
+        <circle cx="60" cy="60" r="${GAUGE_R}" fill="none" stroke="${color}" stroke-width="${strokeW}"
+          stroke-linecap="round" stroke-dasharray="${GAUGE_C}" stroke-dashoffset="${offset}"
+          transform="rotate(-90 60 60)" style="transition:stroke-dashoffset 0.6s ease"/>
+        <text x="60" y="${grade ? 60 : 62}" text-anchor="middle" dominant-baseline="central"
+          fill="currentColor" font-size="${fontSize}" font-weight="700"
+          font-family="Inter,-apple-system,sans-serif">${label}</text>
+      </svg>`;
+    }
+
+    // ---- Helpers ----
+    function esc(s) {
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function scoreClass(pct) {
+      if (pct >= 75) return 'green';
+      if (pct >= 50) return 'amber';
+      return 'red';
+    }
+
+    function severityDotClass(sev) {
+      const map = { blocking: 'dot-blocking', risk: 'dot-risk', 'missing-info': 'dot-missing', suggestion: 'dot-suggestion' };
+      return map[sev] || 'dot-missing';
+    }
+
+    function severityScoreClass(sev) {
+      const map = { blocking: 'score-blocking', risk: 'score-risk', 'missing-info': 'score-missing', suggestion: 'score-suggestion' };
+      return map[sev] || 'score-missing';
+    }
+
+    const CATEGORY_LABELS = {
+      layout: 'Layout',
+      token: 'Design Token',
+      component: 'Component',
+      naming: 'Naming',
+      'ai-readability': 'AI Readability',
+      'handoff-risk': 'Handoff Risk',
+    };
+
+    const SEVERITY_ORDER = ['blocking', 'risk', 'missing-info', 'suggestion'];
+    const SEVERITY_LABELS = { blocking: 'Blocking', risk: 'Risk', 'missing-info': 'Missing Info', suggestion: 'Suggestion' };
+
+    // ---- Render ----
+    function showResults(scores, result) {
+      currentScores = scores;
+      currentResult = result;
+
+      document.getElementById('empty-state').style.display = 'none';
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('error').style.display = 'none';
+
+      const resultsEl = document.getElementById('results');
+      resultsEl.className = 'visible';
+
+      // Grade
+      const gradeEl = document.getElementById('grade-section');
+      gradeEl.innerHTML = `
+        ${renderGauge(scores.overall.percentage, 140, 9, scores.overall.grade)}
+        <div class="grade-score">${scores.overall.percentage} <span>/ 100</span></div>
+        <div class="grade-label">Overall Score &middot; ${result.nodeCount} nodes</div>
+      `;
+
+      // Category grid
+      const categories = CanICode.CATEGORIES || ['layout','token','component','naming','ai-readability','handoff-risk'];
+      const gridEl = document.getElementById('cat-grid');
+      gridEl.innerHTML = categories.map(cat => {
+        const cs = scores.byCategory[cat];
+        return `<div class="cat-card" data-cat="${cat}" onclick="filterCategory('${cat}')">
+          <div class="cat-score ${scoreClass(cs.percentage)}">${cs.percentage}</div>
+          <div class="cat-label">${CATEGORY_LABELS[cat] || cat}</div>
+          <div class="cat-issues">${cs.issueCount} issues</div>
+        </div>`;
+      }).join('');
+
+      // Summary bar
+      const s = scores.summary;
+      document.getElementById('summary-bar').innerHTML = `
+        <div class="summary-item"><span class="dot dot-blocking"></span><span class="summary-count">${s.blocking}</span> Blocking</div>
+        <div class="summary-item"><span class="dot dot-risk"></span><span class="summary-count">${s.risk}</span> Risk</div>
+        <div class="summary-item"><span class="dot dot-missing"></span><span class="summary-count">${s.missingInfo}</span> Missing</div>
+        <div class="summary-item"><span class="dot dot-suggestion"></span><span class="summary-count">${s.suggestion}</span> Suggestion</div>
+        <div class="summary-total">${s.totalIssues} total</div>
+      `;
+
+      // Filter tabs
+      document.getElementById('filter-tabs').innerHTML =
+        `<span class="filter-tab active" data-cat="all" onclick="filterCategory('all')">All</span>` +
+        categories.map(cat => {
+          const cs = scores.byCategory[cat];
+          if (cs.issueCount === 0) return '';
+          return `<span class="filter-tab" data-cat="${cat}" onclick="filterCategory('${cat}')">${CATEGORY_LABELS[cat] || cat} (${cs.issueCount})</span>`;
+        }).join('');
+
+      // Issues
+      renderIssues(result.issues, 'all');
+    }
+
+    function renderIssues(issues, categoryFilter) {
+      const filtered = categoryFilter === 'all'
+        ? issues
+        : issues.filter(i => i.rule.definition.category === categoryFilter);
+
+      // Group by severity
+      const bySev = {};
+      for (const sev of SEVERITY_ORDER) bySev[sev] = [];
+      for (const issue of filtered) {
+        const sev = issue.config.severity;
+        if (bySev[sev]) bySev[sev].push(issue);
+      }
+
+      const listEl = document.getElementById('issue-list');
+      let html = '';
+
+      for (const sev of SEVERITY_ORDER) {
+        const sevIssues = bySev[sev];
+        if (!sevIssues || sevIssues.length === 0) continue;
+
+        const collapsed = sev === 'suggestion' ? ' collapsed' : '';
+        html += `<div class="issue-section${collapsed}">
+          <div class="issue-section-header" onclick="toggleSection(this)">
+            <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 9l-7 7-7-7"/></svg>
+            <span class="dot ${severityDotClass(sev)}"></span>
+            ${SEVERITY_LABELS[sev] || sev}
+            <span class="count">${sevIssues.length}</span>
+          </div>
+          <div class="issue-list">
+            ${sevIssues.map(issue => renderIssueRow(issue)).join('')}
+          </div>
+        </div>`;
+      }
+
+      if (filtered.length === 0) {
+        html = '<div style="text-align:center;padding:24px;color:var(--fg-muted);font-size:12px;">No issues found</div>';
+      }
+
+      listEl.innerHTML = html;
+    }
+
+    function renderIssueRow(issue) {
+      const def = issue.rule.definition;
+      const sev = issue.config.severity;
+      return `<div class="issue-row">
+        <div class="issue-summary" onclick="toggleIssue(this)">
+          <span class="issue-dot ${severityDotClass(sev)}"></span>
+          <span class="issue-rule">${esc(def.name)}</span>
+          <span class="issue-msg">${esc(issue.violation.message)}</span>
+          <span class="issue-score ${severityScoreClass(sev)}">${issue.calculatedScore}</span>
+        </div>
+        <div class="issue-detail">
+          <div class="issue-path">${esc(issue.violation.nodePath)}</div>
+          <div class="issue-info">
+            <p><strong>Why:</strong> ${esc(def.why)}</p>
+            <p><strong>Impact:</strong> ${esc(def.impact)}</p>
+            <p><strong>Fix:</strong> ${esc(def.fix)}</p>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    // ---- Interactions ----
+    function toggleSection(el) {
+      el.parentElement.classList.toggle('collapsed');
+    }
+
+    function toggleIssue(el) {
+      el.parentElement.classList.toggle('open');
+    }
+
+    function filterCategory(cat) {
+      activeCategory = cat;
+      // Update tab highlights
+      document.querySelectorAll('.filter-tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.cat === cat);
+      });
+      // Update category card highlights
+      document.querySelectorAll('.cat-card').forEach(card => {
+        card.classList.toggle('active', card.dataset.cat === cat);
+      });
+      if (currentResult) {
+        renderIssues(currentResult.issues, cat);
+      }
+    }
+
+    // ---- Actions ----
+    function analyzeSelection() {
+      showLoading();
+      parent.postMessage({ pluginMessage: { type: 'analyze-selection' } }, '*');
+    }
+
+    function analyzePage() {
+      showLoading();
+      parent.postMessage({ pluginMessage: { type: 'analyze-page' } }, '*');
+    }
+
+    function showLoading() {
+      document.getElementById('empty-state').style.display = 'none';
+      document.getElementById('results').className = '';
+      document.getElementById('loading').style.display = 'block';
+      document.getElementById('error').style.display = 'none';
+      document.getElementById('btn-selection').disabled = true;
+      document.getElementById('btn-page').disabled = true;
+    }
+
+    function showError(msg) {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('results').className = '';
+      document.getElementById('empty-state').style.display = 'none';
+      const errEl = document.getElementById('error');
+      errEl.className = 'error-msg';
+      errEl.textContent = msg;
+      errEl.style.display = 'block';
+      document.getElementById('btn-selection').disabled = false;
+      document.getElementById('btn-page').disabled = false;
+    }
+
+    // ---- Message handler (from main thread) ----
+    window.onmessage = (event) => {
+      const msg = event.data.pluginMessage;
+      if (!msg) return;
+
+      if (msg.type === 'ready') {
+        // Plugin loaded
+      }
+
+      if (msg.type === 'error') {
+        showError(msg.message);
+      }
+
+      if (msg.type === 'result') {
+        document.getElementById('btn-selection').disabled = false;
+        document.getElementById('btn-page').disabled = false;
+
+        try {
+          const file = msg.data;
+          const result = CanICode.analyzeFile(file);
+          const scores = CanICode.calculateScores(result);
+          showResults(scores, result);
+
+          // Resize plugin to fit content
+          parent.postMessage({
+            pluginMessage: { type: 'resize', width: 420, height: 600 }
+          }, '*');
+        } catch (err) {
+          showError('Analysis failed: ' + (err.message || String(err)));
+        }
+      }
+    };
+  </script>
+</body>
+</html>

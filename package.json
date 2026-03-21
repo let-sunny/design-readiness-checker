@@ -22,6 +22,7 @@
     "test": "vitest",
     "test:run": "vitest run",
     "lint": "tsc --noEmit",
+    "build:plugin": "bash scripts/build-plugin.sh",
     "clean": "rm -rf dist"
   },
   "files": [
@@ -55,6 +56,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@figma/plugin-typings": "^1.123.0",
     "@types/node": "^25.5.0",
     "playwright": "^1.58.2",
     "tsup": "^8.5.1",
