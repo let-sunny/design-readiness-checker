@@ -1,6 +1,6 @@
 {
   "name": "fig-aiready",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "CLI tool that analyzes Figma design structures for development-friendliness and AI-friendliness scores",
   "type": "module",
   "main": "./dist/index.js",
