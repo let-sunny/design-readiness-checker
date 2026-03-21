@@ -5,6 +5,7 @@
   "main": "main.js",
   "ui": "ui.html",
   "editorType": ["figma"],
+  "documentAccess": "dynamic-page",
   "networkAccess": {
     "allowedDomains": ["https://us.i.posthog.com", "https://*.ingest.sentry.io"]
   }
