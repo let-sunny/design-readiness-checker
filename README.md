@@ -2,6 +2,8 @@
 
 Analyze Figma designs. Score how dev-friendly and AI-friendly they are. Get actionable issues before writing code.
 
+**[Try it in your browser](https://let-sunny.github.io/canicode/)** — no install needed.
+
 ```bash
 npm install -g canicode
 canicode init --token YOUR_FIGMA_TOKEN
@@ -27,13 +29,17 @@ canicode analyze "https://www.figma.com/design/ABC123/MyDesign?node-id=1-234"
 
 Each issue is classified: **Blocking** > **Risk** > **Missing Info** > **Suggestion**.
 
-Scores use density + diversity weighting per category, combined into an overall grade (A/B/C/D/F).
+Scores use density + diversity weighting per category, combined into an overall grade (S/A+/A/B+/B/C+/C/D/F).
 
 ---
 
 ## Getting Started
 
-Three ways to use CanICode. Pick one.
+Four ways to use CanICode. Pick one.
+
+### Web (no install)
+
+Go to **[let-sunny.github.io/canicode](https://let-sunny.github.io/canicode/)**, paste a Figma URL, and get results instantly in your browser.
 
 ### CLI (standalone)
 
@@ -197,7 +203,7 @@ Density Score  = 100 - (weighted issue count / node count) × 100
 Diversity Score = (1 - unique violated rules / total rules in category) × 100
 ```
 
-Severity weights issues — a single blocking issue counts 3x more than a suggestion. Scores are calculated per category and combined into an overall grade (A/B/C/D/F).
+Severity weights issues — a single blocking issue counts 3x more than a suggestion. Scores are calculated per category and combined into an overall grade (S/A+/A/B+/B/C+/C/D/F).
 
 </details>
 
