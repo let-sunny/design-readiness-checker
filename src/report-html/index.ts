@@ -191,6 +191,62 @@ ${CATEGORIES.map(cat => renderCategory(cat, scores, issuesByCategory.get(cat) ??
     </footer>
 
   </main>
+
+  <script>
+    async function postComment(btn) {
+      let token = sessionStorage.getItem('figma_token');
+      if (!token) {
+        token = prompt('Enter your Figma API token to post comments:');
+        if (!token) return;
+        sessionStorage.setItem('figma_token', token);
+      }
+
+      const fileKey = btn.dataset.fileKey;
+      const nodeId = btn.dataset.nodeId.replace(/-/g, ':');
+      const rule = btn.dataset.rule;
+      const message = btn.dataset.message;
+      const path = btn.dataset.path;
+      const fix = btn.dataset.fix;
+
+      const commentBody = '[AIReady] ' + rule + ': ' + message + '\\nNode: ' + path + '\\nFix: ' + fix;
+
+      btn.disabled = true;
+      btn.textContent = 'Sending...';
+
+      try {
+        const res = await fetch('https://api.figma.com/v1/files/' + fileKey + '/comments', {
+          method: 'POST',
+          headers: {
+            'X-FIGMA-TOKEN': token,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            message: commentBody,
+            client_meta: { node_id: nodeId },
+          }),
+        });
+
+        if (!res.ok) {
+          const errText = await res.text();
+          throw new Error(errText);
+        }
+
+        btn.textContent = 'Sent \\u2713';
+        btn.classList.remove('hover:bg-muted');
+        btn.classList.add('text-green-600', 'border-green-500/30');
+      } catch (e) {
+        btn.textContent = 'Failed \\u2717';
+        btn.classList.remove('hover:bg-muted');
+        btn.classList.add('text-red-600', 'border-red-500/30');
+        btn.disabled = false;
+        console.error('Failed to post Figma comment:', e);
+        // Clear stored token on auth failure so user can re-enter
+        if (e.message && e.message.includes('403')) {
+          sessionStorage.removeItem('figma_token');
+        }
+      }
+    }
+  </script>
 </body>
 </html>`;
 }
@@ -343,7 +399,10 @@ function renderIssueRow(
                     <p><span class="font-medium text-foreground">Impact:</span> ${esc(def.impact)}</p>
                     <p><span class="font-medium text-foreground">Fix:</span> ${esc(def.fix)}</p>
                   </div>${screenshotHtml}
-                  <a href="${link}" target="_blank" rel="noopener" class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium border border-border rounded-md hover:bg-muted transition-colors no-print">Open in Figma <span>→</span></a>
+                  <div class="flex items-center gap-2 mt-1 no-print">
+                    <a href="${link}" target="_blank" rel="noopener" class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium border border-border rounded-md hover:bg-muted transition-colors">Open in Figma <span>→</span></a>
+                    <button onclick="postComment(this)" data-file-key="${esc(fileKey)}" data-node-id="${esc(issue.violation.nodeId)}" data-rule="${esc(def.name)}" data-message="${esc(issue.violation.message)}" data-path="${esc(issue.violation.nodePath)}" data-fix="${esc(def.fix)}" class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium border border-border rounded-md hover:bg-muted transition-colors cursor-pointer">Comment on Figma</button>
+                  </div>
                 </div>
               </details>`;
 }

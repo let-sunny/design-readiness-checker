@@ -4,10 +4,14 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { config } from "dotenv";
 import { z } from "zod";
+import { writeFile } from "node:fs";
+import { exec } from "node:child_process";
 import { analyzeFile } from "../core/rule-engine.js";
 import { loadFile } from "../core/loader.js";
 import { parseDesignData } from "../core/design-data-parser.js";
 import { calculateScores, formatScoreSummary } from "../core/scoring.js";
+import { generateHtmlReport } from "../report-html/index.js";
+import { getReportsDir, ensureReportsDir } from "../core/config-store.js";
 import { getConfigsWithPreset, RULE_CONFIGS, type Preset } from "../rules/rule-config.js";
 import { loadConfigFile, mergeConfigs } from "../rules/custom/config-loader.js";
 import { loadCustomRules } from "../rules/custom/custom-rule-loader.js";
@@ -94,6 +98,25 @@ Typical flow with Figma MCP:
 
       const scores = calculateScores(result);
       const summary = formatScoreSummary(scores);
+
+      // Generate HTML report
+      const html = generateHtmlReport(file, result, scores);
+
+      // Save report to disk
+      const now = new Date();
+      const ts = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}-${String(now.getHours()).padStart(2, "0")}-${String(now.getMinutes()).padStart(2, "0")}`;
+      ensureReportsDir();
+      const reportPath = `${getReportsDir()}/report-${ts}-${file.fileKey}.html`;
+      await new Promise<void>((resolve, reject) => {
+        writeFile(reportPath, html, "utf-8", (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+
+      // Open report in browser
+      const openCmd = process.platform === "darwin" ? "open" : process.platform === "win32" ? "start" : "xdg-open";
+      exec(`${openCmd} "${reportPath}"`);
 
       const issuesByRule: Record<string, number> = {};
       for (const issue of result.issues) {
