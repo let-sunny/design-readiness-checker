@@ -1,0 +1,175 @@
+{
+  "name": "canicode",
+  "display_name": "CanICode",
+  "description": "Analyze Figma design structures for development-friendliness and AI-friendliness. Scores designs across 39 rules in 6 categories (layout, design tokens, components, naming, AI readability, handoff risk) and generates detailed HTML reports with actionable issues.",
+  "version": "0.5.1",
+  "author": "minseon",
+  "repository": "https://github.com/let-sunny/canicode",
+  "homepage": "https://github.com/let-sunny/canicode",
+  "license": "MIT",
+  "privacy_policy": "./PRIVACY.md",
+  "support": "https://github.com/let-sunny/canicode/issues",
+  "transport": "stdio",
+  "installation": {
+    "npm": {
+      "package": "canicode",
+      "command": "npx -y canicode canicode-mcp"
+    },
+    "claude_code": "claude mcp add canicode -e FIGMA_TOKEN=YOUR_TOKEN -- npx -y canicode canicode-mcp",
+    "cursor": {
+      "mcpServers": {
+        "canicode": {
+          "command": "npx",
+          "args": ["-y", "canicode", "canicode-mcp"],
+          "env": {
+            "FIGMA_TOKEN": "YOUR_TOKEN"
+          }
+        }
+      }
+    },
+    "claude_desktop": {
+      "mcpServers": {
+        "canicode": {
+          "command": "npx",
+          "args": ["-y", "canicode", "canicode-mcp"],
+          "env": {
+            "FIGMA_TOKEN": "YOUR_TOKEN"
+          }
+        }
+      }
+    }
+  },
+  "tools": [
+    {
+      "name": "analyze",
+      "title": "Analyze Figma Design",
+      "description": "Analyze a Figma design for development-friendliness and AI-friendliness. Accepts design data from Figma MCP or a Figma URL. Returns a JSON score summary and generates an HTML report.",
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "openWorldHint": true
+      },
+      "parameters": [
+        {
+          "name": "designData",
+          "type": "string",
+          "required": false,
+          "description": "Figma node data from Figma MCP get_metadata (XML or JSON)"
+        },
+        {
+          "name": "input",
+          "type": "string",
+          "required": false,
+          "description": "Figma URL (requires FIGMA_TOKEN)"
+        },
+        {
+          "name": "fileKey",
+          "type": "string",
+          "required": false,
+          "description": "Figma file key (used with designData to generate deep links)"
+        },
+        {
+          "name": "fileName",
+          "type": "string",
+          "required": false,
+          "description": "Figma file name (used with designData for display)"
+        },
+        {
+          "name": "token",
+          "type": "string",
+          "required": false,
+          "description": "Figma API token (falls back to FIGMA_TOKEN env var)"
+        },
+        {
+          "name": "preset",
+          "type": "string",
+          "required": false,
+          "description": "Analysis preset: relaxed, dev-friendly, ai-ready, or strict"
+        },
+        {
+          "name": "targetNodeId",
+          "type": "string",
+          "required": false,
+          "description": "Scope analysis to a specific node ID"
+        },
+        {
+          "name": "configPath",
+          "type": "string",
+          "required": false,
+          "description": "Path to config JSON file for rule overrides"
+        },
+        {
+          "name": "customRulesPath",
+          "type": "string",
+          "required": false,
+          "description": "Path to custom rules JSON file"
+        }
+      ]
+    },
+    {
+      "name": "list-rules",
+      "title": "List Analysis Rules",
+      "description": "List all available analysis rules with their current configuration, including rule ID, name, category, severity, score, and enabled status.",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "parameters": []
+    },
+    {
+      "name": "docs",
+      "title": "Get Customization Guide",
+      "description": "Get documentation on config overrides, custom rules, all 39 rule IDs with default scores, and example configurations.",
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "openWorldHint": false
+      },
+      "parameters": [
+        {
+          "name": "topic",
+          "type": "string",
+          "required": false,
+          "description": "Specific topic: all, config, custom-rules, or rules"
+        }
+      ]
+    }
+  ],
+  "environment_variables": [
+    {
+      "name": "FIGMA_TOKEN",
+      "description": "Figma personal access token. Required for fetching designs via REST API and posting comments to Figma. Optional when using Figma MCP to provide design data directly.",
+      "required": false
+    }
+  ],
+  "categories": [
+    "design",
+    "figma",
+    "code-quality",
+    "analysis",
+    "developer-tools"
+  ],
+  "examples": [
+    {
+      "title": "Analyze a Figma design via URL",
+      "prompt": "Analyze this Figma design: https://www.figma.com/design/ABC123/MyDesign?node-id=1-234"
+    },
+    {
+      "title": "Analyze with Figma MCP (two-step)",
+      "prompt": "Get the metadata for this Figma page and then analyze it with canicode: https://www.figma.com/design/ABC123/MyDesign?node-id=1-234"
+    },
+    {
+      "title": "List all analysis rules",
+      "prompt": "Show me all the analysis rules that canicode checks for"
+    },
+    {
+      "title": "Analyze with strict preset",
+      "prompt": "Analyze this design with the strict preset: https://www.figma.com/design/ABC123/MyDesign?node-id=1-234"
+    },
+    {
+      "title": "Get customization docs",
+      "prompt": "How do I customize canicode rule scores and add custom rules?"
+    }
+  ]
+}

@@ -57,6 +57,12 @@ Typical flow with Figma MCP:
     configPath: z.string().optional().describe("Path to config JSON file for rule overrides"),
     customRulesPath: z.string().optional().describe("Path to custom rules JSON file"),
   },
+  {
+    readOnlyHint: false,
+    destructiveHint: false,
+    openWorldHint: true,
+    title: "Analyze Figma Design",
+  },
   async ({ designData, input, fileKey, fileName, token, preset, targetNodeId, configPath, customRulesPath }) => {
     trackEvent(EVENTS.MCP_TOOL_CALLED, { tool: "analyze" });
     try {
@@ -184,6 +190,12 @@ server.tool(
   "list-rules",
   "List all available analysis rules with their current configuration",
   {},
+  {
+    readOnlyHint: true,
+    destructiveHint: false,
+    openWorldHint: false,
+    title: "List Analysis Rules",
+  },
   async () => {
     const rules = ruleRegistry.getAll().map((rule) => {
       const config =
@@ -224,6 +236,12 @@ Use this when the user asks about customization, configuration, rule settings, o
   {
     topic: z.enum(["all", "config", "custom-rules", "rules"]).optional()
       .describe("Specific topic: config (overrides), custom-rules (adding new rules), rules (all rule IDs). Default: all"),
+  },
+  {
+    readOnlyHint: true,
+    destructiveHint: false,
+    openWorldHint: false,
+    title: "Get Customization Guide",
   },
   async ({ topic }) => {
     const { readFile } = await import("node:fs/promises");

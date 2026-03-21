@@ -356,6 +356,12 @@ pnpm lint       # type check
 - [x] **Phase 5** — Custom rules with pattern matching (node name/type/attribute conditions)
 - [ ] **Phase 6** — Screenshot comparison (Figma vs AI-generated code, visual diff)
 
+## Support
+
+- **Bug reports:** [GitHub Issues](https://github.com/let-sunny/canicode/issues)
+- **Questions and discussions:** [GitHub Issues](https://github.com/let-sunny/canicode/issues)
+- **Privacy:** See [PRIVACY.md](PRIVACY.md) for details on data collection and how to opt out
+
 ## License
 
 MIT
