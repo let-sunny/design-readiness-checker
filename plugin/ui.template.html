@@ -423,6 +423,35 @@
     </div>
   </div>
 
+  <!-- Monitoring: lightweight inline PostHog + Sentry via fetch -->
+  <script>
+    (function() {
+      var PH_KEY = '/* __POSTHOG_API_KEY__ */';
+      var S_DSN = '/* __SENTRY_DSN__ */';
+      var _common = { _sdk: 'canicode', _sdk_version: '0.5.1', _env: 'figma-plugin' };
+
+      window._trackEvent = function(event, props) {
+        if (!PH_KEY) return;
+        try {
+          fetch('https://us.i.posthog.com/capture/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              api_key: PH_KEY,
+              event: event,
+              properties: Object.assign({}, _common, props, { distinct_id: 'anonymous' }),
+              timestamp: new Date().toISOString()
+            })
+          }).catch(function() {});
+        } catch(e) {}
+      };
+
+      window._trackError = function(err, ctx) {
+        try { window._trackEvent('cic_error', Object.assign({ error: err.message || String(err) }, ctx)); } catch(e) {}
+      };
+    })();
+  </script>
+
   <!-- Inline analysis engine (injected at build time) -->
   <script>
     /* __CANICODE_BROWSER_BUNDLE_INJECT__ */
@@ -684,10 +713,19 @@
         document.getElementById('btn-page').disabled = false;
 
         try {
+          var analysisStart = Date.now();
           const file = msg.data;
           const result = CanICode.analyzeFile(file);
           const scores = CanICode.calculateScores(result);
           showResults(scores, result);
+
+          window._trackEvent('cic_analysis_completed', {
+            nodeCount: result.nodeCount,
+            issueCount: result.issues.length,
+            grade: scores.overall.grade,
+            percentage: scores.overall.percentage,
+            duration: Date.now() - analysisStart
+          });
 
           // Resize plugin to fit content
           parent.postMessage({
@@ -695,6 +733,7 @@
           }, '*');
         } catch (err) {
           showError('Analysis failed: ' + (err.message || String(err)));
+          window._trackError(err, { context: 'figma-plugin-analysis' });
         }
       }
     };

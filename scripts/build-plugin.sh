@@ -52,7 +52,12 @@ node -e "
   const placeholder = '/* __CANICODE_BROWSER_BUNDLE_INJECT__ */';
   const idx = template.indexOf(placeholder);
   if (idx === -1) { console.error('ERROR: placeholder not found in template'); process.exit(1); }
-  const output = template.slice(0, idx) + browserJs + template.slice(idx + placeholder.length);
+  let output = template.slice(0, idx) + browserJs + template.slice(idx + placeholder.length);
+  // Inject monitoring keys if available
+  const phKey = process.env.POSTHOG_API_KEY || '';
+  const sDsn = process.env.SENTRY_DSN || '';
+  output = output.replace('/* __POSTHOG_API_KEY__ */', phKey);
+  output = output.replace('/* __SENTRY_DSN__ */', sDsn);
   fs.writeFileSync('$OUTPUT', output, 'utf-8');
   console.log('  ui.html written (' + Math.round(output.length / 1024) + ' KB)');
 "
