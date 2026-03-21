@@ -48,6 +48,26 @@ Scores use density + diversity weighting per category, combined into an overall 
 
 ---
 
+## Everything is Configurable
+
+| What | How | Example |
+|------|-----|---------|
+| **Presets** | Built-in score profiles | `canicode analyze <url> --preset strict` |
+| **Config overrides** | Adjust scores, severity, exclude nodes | `canicode analyze <url> --config ./config.json` |
+| **Custom rules** | Add your own checks with pattern matching | `canicode analyze <url> --custom-rules ./rules.json` |
+| **Combine** | Use all together | `canicode analyze <url> --preset ai-ready --config ./config.json --custom-rules ./rules.json` |
+
+| Preset | What it does |
+|--------|-------------|
+| `relaxed` | Downgrades blocking → risk, scores −50% |
+| `dev-friendly` | Layout and handoff rules only |
+| `ai-ready` | Structure and naming weights +150% |
+| `strict` | All rules enabled, scores +150% |
+
+> **Custom rules tip:** Ask any LLM *"Write a canicode custom rule that checks X"* — it can generate the JSON for you. See [`docs/CUSTOMIZATION.md`](docs/CUSTOMIZATION.md) for the full guide.
+
+---
+
 ## Getting Started
 
 Four ways to use CanICode. Pick one.
@@ -238,6 +258,8 @@ Diversity Score = (1 - unique violated rules / total rules in category) × 100
 ```
 
 Severity weights issues — a single blocking issue counts 3x more than a suggestion. Scores are calculated per category and combined into an overall grade (S/A+/A/B+/B/C+/C/D/F).
+
+> Weights and rule scores are validated through a 4-agent calibration pipeline. See [docs/CALIBRATION.md](docs/CALIBRATION.md) for details.
 
 </details>
 
