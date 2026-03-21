@@ -25,7 +25,8 @@
     "clean": "rm -rf dist"
   },
   "files": [
-    "dist"
+    "dist",
+    "docs/CUSTOMIZATION.md"
   ],
   "keywords": [
     "figma",

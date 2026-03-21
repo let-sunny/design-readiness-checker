@@ -191,6 +191,71 @@ server.tool(
   },
 );
 
+server.tool(
+  "docs",
+  `Get the customization guide for CanICode.
+
+Returns documentation on:
+- Config overrides (excludeNodeNames, excludeNodeTypes, gridBase, colorTolerance, per-rule score/severity/enabled)
+- Custom rules (how to add project-specific checks)
+- All 39 rule IDs with default scores and severity
+- Example configs (strict, relaxed, mobile-first)
+
+Use this when the user asks about customization, configuration, rule settings, or how to adjust scores.`,
+  {
+    topic: z.enum(["all", "config", "custom-rules", "rules"]).optional()
+      .describe("Specific topic: config (overrides), custom-rules (adding new rules), rules (all rule IDs). Default: all"),
+  },
+  async ({ topic }) => {
+    const { readFile } = await import("node:fs/promises");
+    const { resolve, dirname } = await import("node:path");
+    const { fileURLToPath } = await import("node:url");
+
+    try {
+      // Resolve docs/CUSTOMIZATION.md relative to the package
+      const __dirname = dirname(fileURLToPath(import.meta.url));
+      const docPath = resolve(__dirname, "../../docs/CUSTOMIZATION.md");
+      let content: string;
+
+      try {
+        content = await readFile(docPath, "utf-8");
+      } catch {
+        // Fallback: try from package root (npm installed location)
+        const altPath = resolve(__dirname, "../docs/CUSTOMIZATION.md");
+        content = await readFile(altPath, "utf-8");
+      }
+
+      // Filter by topic if specified
+      if (topic && topic !== "all") {
+        const sections: Record<string, string> = {
+          "config": "## Config Overrides",
+          "custom-rules": "## Custom Rules",
+          "rules": "### All Rule IDs",
+        };
+        const header = sections[topic];
+        if (header) {
+          const startIdx = content.indexOf(header);
+          if (startIdx !== -1) {
+            const nextH2 = content.indexOf("\n## ", startIdx + header.length);
+            content = nextH2 !== -1
+              ? content.slice(startIdx, nextH2)
+              : content.slice(startIdx);
+          }
+        }
+      }
+
+      return {
+        content: [{ type: "text" as const, text: content }],
+      };
+    } catch {
+      return {
+        content: [{ type: "text" as const, text: "Customization guide not found. See: https://github.com/let-sunny/canicode/blob/main/docs/CUSTOMIZATION.md" }],
+        isError: true,
+      };
+    }
+  },
+);
+
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
