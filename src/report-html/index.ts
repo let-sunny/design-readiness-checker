@@ -196,7 +196,7 @@ ${CATEGORIES.map(cat => renderCategory(cat, scores, issuesByCategory.get(cat) ??
     async function postComment(btn) {
       let token = sessionStorage.getItem('figma_token');
       if (!token) {
-        token = prompt('Enter your Figma API token to post comments:');
+        token = prompt('Enter your Figma token:');
         if (!token) return;
         sessionStorage.setItem('figma_token', token);
       }
@@ -207,8 +207,10 @@ ${CATEGORIES.map(cat => renderCategory(cat, scores, issuesByCategory.get(cat) ??
       const message = btn.dataset.message;
       const path = btn.dataset.path;
       const fix = btn.dataset.fix;
+      const why = btn.dataset.why;
+      const impact = btn.dataset.impact;
 
-      const commentBody = '[AIReady] ' + rule + ': ' + message + '\\nNode: ' + path + '\\nFix: ' + fix;
+      const commentBody = '[AIReady] ' + rule + '\\n\\nFix: ' + fix + '\\nWhy: ' + why + '\\nImpact: ' + impact + '\\n\\n' + message + '\\nNode: ' + path;
 
       btn.disabled = true;
       btn.textContent = 'Sending...';
@@ -401,7 +403,7 @@ function renderIssueRow(
                   </div>${screenshotHtml}
                   <div class="flex items-center gap-2 mt-1 no-print">
                     <a href="${link}" target="_blank" rel="noopener" class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium border border-border rounded-md hover:bg-muted transition-colors">Open in Figma <span>→</span></a>
-                    <button onclick="postComment(this)" data-file-key="${esc(fileKey)}" data-node-id="${esc(issue.violation.nodeId)}" data-rule="${esc(def.name)}" data-message="${esc(issue.violation.message)}" data-path="${esc(issue.violation.nodePath)}" data-fix="${esc(def.fix)}" class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium border border-border rounded-md hover:bg-muted transition-colors cursor-pointer">Comment on Figma</button>
+                    <button onclick="postComment(this)" data-file-key="${esc(fileKey)}" data-node-id="${esc(issue.violation.nodeId)}" data-rule="${esc(def.name)}" data-message="${esc(issue.violation.message)}" data-path="${esc(issue.violation.nodePath)}" data-fix="${esc(def.fix)}" data-why="${esc(def.why)}" data-impact="${esc(def.impact)}" class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium border border-border rounded-md hover:bg-muted transition-colors cursor-pointer">Comment on Figma</button>
                   </div>
                 </div>
               </details>`;
