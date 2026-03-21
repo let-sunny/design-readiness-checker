@@ -222,7 +222,8 @@ cli
         outputPath = resolve(getReportsDir(), `report-${ts}-${file.fileKey}.html`);
       }
 
-      const html = generateHtmlReport(file, result, scores);
+      const figmaToken = options.token ?? getFigmaToken();
+      const html = generateHtmlReport(file, result, scores, { figmaToken });
       await writeFile(outputPath, html, "utf-8");
       console.log(`\nReport saved: ${outputPath}`);
 

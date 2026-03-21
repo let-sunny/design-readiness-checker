@@ -19,6 +19,7 @@ export interface NodeScreenshot {
 
 export interface HtmlReportOptions {
   nodeScreenshots?: NodeScreenshot[];
+  figmaToken?: string | undefined;
 }
 
 // Gauge geometry
@@ -79,6 +80,7 @@ export function generateHtmlReport(
   const screenshotMap = new Map(
     (options?.nodeScreenshots ?? []).map((ns) => [ns.nodeId, ns])
   );
+  const figmaToken = options?.figmaToken;
   const quickWins = getQuickWins(result.issues, 5);
   const issuesByCategory = groupIssuesByCategory(result.issues);
 
@@ -181,7 +183,7 @@ ${quickWins.length > 0 ? renderOpportunities(quickWins, file.fileKey) : ""}
 
     <!-- Categories -->
     <div class="space-y-3">
-${CATEGORIES.map(cat => renderCategory(cat, scores, issuesByCategory.get(cat) ?? [], file.fileKey, screenshotMap)).join("\n")}
+${CATEGORIES.map(cat => renderCategory(cat, scores, issuesByCategory.get(cat) ?? [], file.fileKey, screenshotMap, figmaToken)).join("\n")}
     </div>
 
     <!-- Footer -->
@@ -192,15 +194,9 @@ ${CATEGORIES.map(cat => renderCategory(cat, scores, issuesByCategory.get(cat) ??
 
   </main>
 
-  <script>
+${figmaToken ? `  <script>
+    const FIGMA_TOKEN = '${figmaToken}';
     async function postComment(btn) {
-      let token = sessionStorage.getItem('figma_token');
-      if (!token) {
-        token = prompt('Enter your Figma token:');
-        if (!token) return;
-        sessionStorage.setItem('figma_token', token);
-      }
-
       const fileKey = btn.dataset.fileKey;
       const nodeId = btn.dataset.nodeId.replace(/-/g, ':');
       const rule = btn.dataset.rule;
@@ -218,21 +214,10 @@ ${CATEGORIES.map(cat => renderCategory(cat, scores, issuesByCategory.get(cat) ??
       try {
         const res = await fetch('https://api.figma.com/v1/files/' + fileKey + '/comments', {
           method: 'POST',
-          headers: {
-            'X-FIGMA-TOKEN': token,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            message: commentBody,
-            client_meta: { node_id: nodeId },
-          }),
+          headers: { 'X-FIGMA-TOKEN': FIGMA_TOKEN, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: commentBody, client_meta: { node_id: nodeId } }),
         });
-
-        if (!res.ok) {
-          const errText = await res.text();
-          throw new Error(errText);
-        }
-
+        if (!res.ok) throw new Error(await res.text());
         btn.textContent = 'Sent \\u2713';
         btn.classList.remove('hover:bg-muted');
         btn.classList.add('text-green-600', 'border-green-500/30');
@@ -242,13 +227,9 @@ ${CATEGORIES.map(cat => renderCategory(cat, scores, issuesByCategory.get(cat) ??
         btn.classList.add('text-red-600', 'border-red-500/30');
         btn.disabled = false;
         console.error('Failed to post Figma comment:', e);
-        // Clear stored token on auth failure so user can re-enter
-        if (e.message && e.message.includes('403')) {
-          sessionStorage.removeItem('figma_token');
-        }
       }
     }
-  </script>
+  </script>` : ""}
 </body>
 </html>`;
 }
@@ -323,7 +304,8 @@ function renderCategory(
   scores: ScoreReport,
   issues: AnalysisIssue[],
   fileKey: string,
-  screenshotMap: Map<string, NodeScreenshot>
+  screenshotMap: Map<string, NodeScreenshot>,
+  figmaToken?: string
 ): string {
   const cs = scores.byCategory[cat];
   const hasProblems = issues.some(i => i.config.severity === "blocking" || i.config.severity === "risk");
@@ -348,7 +330,7 @@ ${issues.length === 0
     ? '          <div class="px-5 py-4 text-sm text-green-600 font-medium">No issues found</div>'
     : SEVERITY_ORDER
         .filter(sev => (bySeverity.get(sev)?.length ?? 0) > 0)
-        .map(sev => renderSeverityGroup(sev, bySeverity.get(sev) ?? [], fileKey, screenshotMap))
+        .map(sev => renderSeverityGroup(sev, bySeverity.get(sev) ?? [], fileKey, screenshotMap, figmaToken))
         .join("\n")
 }
         </div>
@@ -359,7 +341,8 @@ function renderSeverityGroup(
   sev: Severity,
   issues: AnalysisIssue[],
   fileKey: string,
-  screenshotMap: Map<string, NodeScreenshot>
+  screenshotMap: Map<string, NodeScreenshot>,
+  figmaToken?: string
 ): string {
   return `          <div class="px-5 py-3">
             <div class="flex items-center gap-2 mb-2">
@@ -368,7 +351,7 @@ function renderSeverityGroup(
               <span class="text-xs text-muted-foreground ml-auto">${issues.length}</span>
             </div>
             <div class="space-y-1">
-${issues.map(issue => renderIssueRow(issue, fileKey, screenshotMap)).join("\n")}
+${issues.map(issue => renderIssueRow(issue, fileKey, screenshotMap, figmaToken)).join("\n")}
             </div>
           </div>`;
 }
@@ -376,7 +359,8 @@ ${issues.map(issue => renderIssueRow(issue, fileKey, screenshotMap)).join("\n")}
 function renderIssueRow(
   issue: AnalysisIssue,
   fileKey: string,
-  screenshotMap: Map<string, NodeScreenshot>
+  screenshotMap: Map<string, NodeScreenshot>,
+  figmaToken?: string
 ): string {
   const sev = issue.config.severity;
   const def = issue.rule.definition;
@@ -402,8 +386,8 @@ function renderIssueRow(
                     <p><span class="font-medium text-foreground">Fix:</span> ${esc(def.fix)}</p>
                   </div>${screenshotHtml}
                   <div class="flex items-center gap-2 mt-1 no-print">
-                    <a href="${link}" target="_blank" rel="noopener" class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium border border-border rounded-md hover:bg-muted transition-colors">Open in Figma <span>→</span></a>
-                    <button onclick="postComment(this)" data-file-key="${esc(fileKey)}" data-node-id="${esc(issue.violation.nodeId)}" data-rule="${esc(def.name)}" data-message="${esc(issue.violation.message)}" data-path="${esc(issue.violation.nodePath)}" data-fix="${esc(def.fix)}" data-why="${esc(def.why)}" data-impact="${esc(def.impact)}" class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium border border-border rounded-md hover:bg-muted transition-colors cursor-pointer">Comment on Figma</button>
+                    <a href="${link}" target="_blank" rel="noopener" class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium border border-border rounded-md hover:bg-muted transition-colors">Open in Figma <span>→</span></a>${figmaToken ? `
+                    <button onclick="postComment(this)" data-file-key="${esc(fileKey)}" data-node-id="${esc(issue.violation.nodeId)}" data-rule="${esc(def.name)}" data-message="${esc(issue.violation.message)}" data-path="${esc(issue.violation.nodePath)}" data-fix="${esc(def.fix)}" data-why="${esc(def.why)}" data-impact="${esc(def.impact)}" class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium border border-border rounded-md hover:bg-muted transition-colors cursor-pointer">Comment on Figma</button>` : ""}
                   </div>
                 </div>
               </details>`;

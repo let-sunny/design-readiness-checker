@@ -99,8 +99,9 @@ Typical flow with Figma MCP:
       const scores = calculateScores(result);
       const summary = formatScoreSummary(scores);
 
-      // Generate HTML report
-      const html = generateHtmlReport(file, result, scores);
+      // Generate HTML report (with Figma token for comment buttons)
+      const figmaToken = token ?? process.env["FIGMA_TOKEN"];
+      const html = generateHtmlReport(file, result, scores, { figmaToken });
 
       // Save report to disk
       const now = new Date();
