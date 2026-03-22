@@ -11,7 +11,7 @@ body:
         - Scores are compared against actual code conversion difficulty
         - Rules that are too harsh or too lenient get adjusted
 
-        **Your design is never stored, published, or shared.**
+        **Your design structure is saved as a JSON fixture (node tree only, no images or assets) and used for calibration testing.**
 
   - type: input
     id: figma-url
@@ -61,5 +61,5 @@ body:
     attributes:
       label: Permission
       options:
-        - label: I confirm this design can be used for calibration testing (analysis only, not stored or shared).
+        - label: I confirm this design structure can be saved as a fixture and used for calibration testing.
           required: true

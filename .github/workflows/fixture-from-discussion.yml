@@ -1,0 +1,191 @@
+name: Fixture from Discussion
+
+on:
+  discussion:
+    types: [labeled]
+
+jobs:
+  process:
+    if: >-
+      github.event.label.name == 'approved' &&
+      github.event.discussion.category.slug == 'share-your-figma'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      discussions: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+
+      - name: Parse Figma URL from discussion
+        id: parse
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = context.payload.discussion.body;
+            const number = context.payload.discussion.number;
+
+            // Discussion template renders as: ### Figma URL\n\n<url>
+            const urlMatch = body.match(/https:\/\/www\.figma\.com\/design\/[^\s)]+/);
+            if (!urlMatch) {
+              core.setFailed('No Figma URL found in discussion body');
+              return;
+            }
+
+            const figmaUrl = urlMatch[0];
+            core.info(`Figma URL: ${figmaUrl}`);
+
+            // Check for node-id
+            if (!figmaUrl.includes('node-id=')) {
+              // Comment asking for node-id
+              const mutation = `mutation($id: ID!, $body: String!) {
+                addDiscussionComment(input: { discussionId: $id, body: $body }) {
+                  comment { id }
+                }
+              }`;
+              await github.graphql(mutation, {
+                id: context.payload.discussion.node_id,
+                body: '⚠️ **node-id missing** — Please include `?node-id=` in your Figma URL to scope analysis to a specific section. Full-file analysis produces noisy results.\n\nExample: `https://www.figma.com/design/ABC123/MyDesign?node-id=1-234`',
+              });
+              core.setFailed('Figma URL missing node-id');
+              return;
+            }
+
+            // Extract file key for fixture filename
+            const keyMatch = figmaUrl.match(/\/design\/([^/]+)\//);
+            const fileKey = keyMatch ? keyMatch[1] : 'unknown';
+
+            // Extract node-id for filename
+            const nodeMatch = figmaUrl.match(/node-id=([^&\s]+)/);
+            const nodeId = nodeMatch ? nodeMatch[1].replace(/[:-]/g, '_') : '';
+
+            const fixtureName = `${fileKey}-${nodeId}`.replace(/[^a-zA-Z0-9_-]/g, '_');
+
+            core.setOutput('figma_url', figmaUrl);
+            core.setOutput('fixture_name', fixtureName);
+            core.setOutput('discussion_number', number);
+
+      - name: Save fixture
+        id: fixture
+        env:
+          FIGMA_TOKEN: ${{ secrets.FIGMA_TOKEN }}
+        run: |
+          FIXTURE_PATH="fixtures/${{ steps.parse.outputs.fixture_name }}.json"
+          node dist/cli/index.js save-fixture "${{ steps.parse.outputs.figma_url }}" \
+            --output "$FIXTURE_PATH" \
+            --token "$FIGMA_TOKEN"
+          echo "path=$FIXTURE_PATH" >> "$GITHUB_OUTPUT"
+
+      - name: Run analysis
+        id: analyze
+        run: |
+          # Extract JSON only (skip dotenv/log lines before the JSON object)
+          RAW=$(node dist/cli/index.js analyze "${{ steps.fixture.outputs.path }}" --json 2>&1)
+          RESULT=$(echo "$RAW" | sed -n '/^{/,/^}/p')
+
+          # Extract summary fields
+          SCORE=$(echo "$RESULT" | jq -r '.scores.overall.percentage')
+          GRADE=$(echo "$RESULT" | jq -r '.scores.overall.grade')
+          NODES=$(echo "$RESULT" | jq -r '.nodeCount')
+          ISSUES=$(echo "$RESULT" | jq -r '.issueCount')
+          BLOCKING=$(echo "$RESULT" | jq -r '.summary' | grep -oP 'Blocking: \K\d+' || echo 0)
+          RISK=$(echo "$RESULT" | jq -r '.summary' | grep -oP 'Risk: \K\d+' || echo 0)
+
+          echo "score=$SCORE" >> "$GITHUB_OUTPUT"
+          echo "grade=$GRADE" >> "$GITHUB_OUTPUT"
+          echo "nodes=$NODES" >> "$GITHUB_OUTPUT"
+          echo "issues=$ISSUES" >> "$GITHUB_OUTPUT"
+          echo "blocking=$BLOCKING" >> "$GITHUB_OUTPUT"
+          echo "risk=$RISK" >> "$GITHUB_OUTPUT"
+
+          # Build category table
+          CATEGORIES=$(echo "$RESULT" | jq -r '.scores.categories | to_entries | map("| \(.key) | \(.value.percentage)% |") | .[]')
+          {
+            echo "categories<<ENDCAT"
+            echo "$CATEGORIES"
+            echo "ENDCAT"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Comment on discussion
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const score = '${{ steps.analyze.outputs.score }}';
+            const grade = '${{ steps.analyze.outputs.grade }}';
+            const nodes = '${{ steps.analyze.outputs.nodes }}';
+            const issues = '${{ steps.analyze.outputs.issues }}';
+            const blocking = '${{ steps.analyze.outputs.blocking }}';
+            const risk = '${{ steps.analyze.outputs.risk }}';
+            const fixture = '${{ steps.fixture.outputs.path }}';
+            const categories = `${{ steps.analyze.outputs.categories }}`;
+
+            const body = `## 🔍 canicode Analysis
+
+            | Metric | Value |
+            |--------|-------|
+            | Score | **${score}%** (${grade}) |
+            | Nodes | ${nodes} |
+            | Issues | ${issues} (blocking: ${blocking}, risk: ${risk}) |
+            | Fixture | \`${fixture}\` |
+
+            ### Category Scores
+            | Category | Score |
+            |----------|-------|
+            ${categories}
+
+            ---
+            ✅ Fixture saved. A PR will be created shortly.`.replace(/^            /gm, '');
+
+            const mutation = `mutation($id: ID!, $body: String!) {
+              addDiscussionComment(input: { discussionId: $id, body: $body }) {
+                comment { id }
+              }
+            }`;
+            await github.graphql(mutation, {
+              id: context.payload.discussion.node_id,
+              body,
+            });
+
+      - name: Create PR with fixture
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          DISCUSSION_NUM="${{ steps.parse.outputs.discussion_number }}"
+          FIXTURE_PATH="${{ steps.fixture.outputs.path }}"
+          BRANCH="fixture/discussion-${DISCUSSION_NUM}"
+          SCORE="${{ steps.analyze.outputs.score }}"
+          GRADE="${{ steps.analyze.outputs.grade }}"
+
+          git checkout -b "$BRANCH"
+          git lfs track "fixtures/*.json"
+          git add .gitattributes "$FIXTURE_PATH"
+          git -c user.name="github-actions[bot]" \
+              -c user.email="github-actions[bot]@users.noreply.github.com" \
+              commit -m "feat: add fixture from discussion #${DISCUSSION_NUM}"
+          git push origin "$BRANCH"
+
+          cat > /tmp/pr-body.md << EOF
+          ## Fixture from Discussion #${DISCUSSION_NUM}
+
+          - **Score:** ${SCORE}% (${GRADE})
+          - **Fixture:** \`${FIXTURE_PATH}\`
+          - **Discussion:** https://github.com/${{ github.repository }}/discussions/${DISCUSSION_NUM}
+
+          Auto-generated by fixture-from-discussion workflow
+          EOF
+          sed -i 's/^          //' /tmp/pr-body.md
+
+          gh pr create \
+            --title "feat: add fixture from discussion #${DISCUSSION_NUM}" \
+            --body-file /tmp/pr-body.md
