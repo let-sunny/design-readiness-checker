@@ -11,6 +11,7 @@
   <a href="https://let-sunny.github.io/canicode/"><img src="https://img.shields.io/badge/Try_it-GitHub_Pages-blue" alt="GitHub Pages"></a>
   <a href="https://www.figma.com/community/plugin/1617144221046795292/canicode"><img src="https://img.shields.io/badge/Figma_Plugin-under_review-orange" alt="Figma Plugin"></a>
   <a href="https://github.com/let-sunny/canicode#mcp-server-claude-code--cursor--claude-desktop"><img src="https://img.shields.io/badge/MCP_Registry-published-green" alt="MCP Registry"></a>
+  <a href="https://github.com/marketplace/actions/canicode-action"><img src="https://img.shields.io/badge/GitHub_Action-Marketplace-2088FF" alt="GitHub Action"></a>
 </p>
 
 <p align="center">Analyze Figma designs. Score how dev-friendly and AI-friendly they are. Get actionable issues before writing code.</p>
@@ -46,7 +47,7 @@ Scores use density + diversity weighting per category, combined into an overall 
 
 ## Getting Started
 
-Five ways to use CanICode. Pick one.
+Six ways to use CanICode. Pick one.
 
 ### 1. CLI
 
@@ -87,6 +88,22 @@ Go to **[let-sunny.github.io/canicode](https://let-sunny.github.io/canicode/)**,
 ### 4. Figma Plugin (under review)
 
 Install from **[Figma Community](https://www.figma.com/community/plugin/1617144221046795292/canicode)** — analyze directly inside Figma. No tokens needed.
+
+### 5. GitHub Action
+
+Design quality gate for CI. Enforce score thresholds before merging.
+
+```yaml
+- uses: let-sunny/canicode-action@v0.1.0
+  with:
+    figma_url: ${{ steps.figma.outputs.url }}
+    figma_token: ${{ secrets.FIGMA_TOKEN }}
+    min_score: 70
+```
+
+Posts analysis summary as a PR comment. Fails the check if score is below threshold.
+
+See [**canicode-action**](https://github.com/marketplace/actions/canicode-action) on GitHub Marketplace.
 
 ---
 
