@@ -383,6 +383,17 @@ body {
   border-top: 1px solid var(--border);
   margin-top: 16px;
 }
+.footer-links {
+  margin-top: 4px;
+}
+.footer-links a {
+  color: var(--fg-muted);
+  text-decoration: none;
+}
+.footer-links a:hover {
+  color: var(--fg);
+  text-decoration: underline;
+}
 
 /* ---- Scrollable results area ---- */
 #results { display: none; }
