@@ -179,7 +179,7 @@ function renderApplicationGuide(adjustments: ScoreAdjustment[]): string {
   lines.push("To apply these calibration results:");
   lines.push("");
   lines.push("1. Review each adjustment proposal above");
-  lines.push("2. Edit `src/rules/rule-config.ts` to update scores and severities");
+  lines.push("2. Edit `src/core/rules/rule-config.ts` to update scores and severities");
   lines.push("3. Run `pnpm test:run` to verify no tests break");
   lines.push("4. Re-run calibration to confirm improvements");
   lines.push("");
