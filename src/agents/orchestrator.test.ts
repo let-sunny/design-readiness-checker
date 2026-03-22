@@ -1,13 +1,13 @@
-import type { AnalysisFile } from "@/contracts/figma-node.js";
-import type { AnalysisResult, AnalysisIssue } from "@/core/rule-engine.js";
+import type { AnalysisFile } from "@/core/contracts/figma-node.js";
+import type { AnalysisResult, AnalysisIssue } from "@/core/engine/rule-engine.js";
 import type { ConversionExecutor, ConversionExecutorResult } from "./contracts/conversion-agent.js";
 import { runCalibration, runCalibrationEvaluate } from "./orchestrator.js";
 
 // Register rules so RULE_CONFIGS is populated
-import "@/rules/index.js";
+import "@/core/rules/index.js";
 
-import * as figmaFileLoader from "@/adapters/figma-file-loader.js";
-import * as ruleEngine from "@/core/rule-engine.js";
+import * as figmaFileLoader from "@/core/adapters/figma-file-loader.js";
+import * as ruleEngine from "@/core/engine/rule-engine.js";
 
 vi.mock("node:fs/promises", async (importOriginal) => {
   const original = await importOriginal<typeof import("node:fs/promises")>();

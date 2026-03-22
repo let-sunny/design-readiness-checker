@@ -9,21 +9,21 @@ import cac from "cac";
 // Load .env file
 config();
 
-import { parseFigmaUrl } from "../adapters/figma-url-parser.js";
-import type { AnalysisFile } from "../contracts/figma-node.js";
-import type { RuleConfig, RuleId } from "../contracts/rule.js";
-import { analyzeFile } from "../core/rule-engine.js";
-import { loadFile, isFigmaUrl, isJsonFile } from "../core/loader.js";
+import { parseFigmaUrl } from "../core/adapters/figma-url-parser.js";
+import type { AnalysisFile } from "../core/contracts/figma-node.js";
+import type { RuleConfig, RuleId } from "../core/contracts/rule.js";
+import { analyzeFile } from "../core/engine/rule-engine.js";
+import { loadFile, isFigmaUrl, isJsonFile } from "../core/engine/loader.js";
 import {
   getFigmaToken, initAiready, getConfigPath, getReportsDir, ensureReportsDir,
   readConfig, getTelemetryEnabled, setTelemetryEnabled, getPosthogApiKey, getSentryDsn, getDeviceId,
-} from "../core/config-store.js";
-import { calculateScores, formatScoreSummary } from "../core/scoring.js";
-import { getConfigsWithPreset, RULE_CONFIGS, type Preset } from "../rules/rule-config.js";
-import { ruleRegistry } from "../rules/rule-registry.js";
-import { loadCustomRules } from "../rules/custom/custom-rule-loader.js";
-import { loadConfigFile, mergeConfigs } from "../rules/custom/config-loader.js";
-import { generateHtmlReport } from "../report-html/index.js";
+} from "../core/engine/config-store.js";
+import { calculateScores, formatScoreSummary } from "../core/engine/scoring.js";
+import { getConfigsWithPreset, RULE_CONFIGS, type Preset } from "../core/rules/rule-config.js";
+import { ruleRegistry } from "../core/rules/rule-registry.js";
+import { loadCustomRules } from "../core/rules/custom/custom-rule-loader.js";
+import { loadConfigFile, mergeConfigs } from "../core/rules/custom/config-loader.js";
+import { generateHtmlReport } from "../core/report-html/index.js";
 import {
   runCalibration,
   runCalibrationAnalyze,
@@ -31,11 +31,11 @@ import {
   filterConversionCandidates,
 } from "../agents/orchestrator.js";
 import { handleDocs } from "./docs.js";
-import { initMonitoring, trackEvent, trackError, shutdownMonitoring, EVENTS } from "../monitoring/index.js";
-import { POSTHOG_API_KEY as BUILTIN_PH_KEY, SENTRY_DSN as BUILTIN_SENTRY_DSN } from "../monitoring/keys.js";
+import { initMonitoring, trackEvent, trackError, shutdownMonitoring, EVENTS } from "../core/monitoring/index.js";
+import { POSTHOG_API_KEY as BUILTIN_PH_KEY, SENTRY_DSN as BUILTIN_SENTRY_DSN } from "../core/monitoring/keys.js";
 
 // Import rules to register them
-import "../rules/index.js";
+import "../core/rules/index.js";
 
 const require = createRequire(import.meta.url);
 const pkg = require("../../package.json") as { version: string };

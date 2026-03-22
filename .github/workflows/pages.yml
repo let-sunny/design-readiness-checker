@@ -30,16 +30,19 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm build:web
 
+      - name: Copy static assets from docs/ into app/web/
+        run: cp docs/*.png docs/*.svg docs/*.md app/web/ 2>/dev/null || true
+
       - name: Inject monitoring keys and version into HTML
         run: |
           VERSION=$(node -p "require('./package.json').version")
-          sed -i "s|var POSTHOG_KEY = '';|var POSTHOG_KEY = '${{ vars.POSTHOG_API_KEY }}';|" docs/index.html
-          sed -i "s|var SENTRY_DSN = '';|var SENTRY_DSN = '${{ vars.SENTRY_DSN }}';|" docs/index.html
-          sed -i "s|/\* __VERSION__ \*/|$VERSION|" docs/index.html
+          sed -i "s|var POSTHOG_KEY = '';|var POSTHOG_KEY = '${{ vars.POSTHOG_API_KEY }}';|" app/web/index.html
+          sed -i "s|var SENTRY_DSN = '';|var SENTRY_DSN = '${{ vars.SENTRY_DSN }}';|" app/web/index.html
+          sed -i "s|/\* __VERSION__ \*/|$VERSION|" app/web/index.html
 
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: docs
+          path: app/web
       - id: deployment
         uses: actions/deploy-pages@v4

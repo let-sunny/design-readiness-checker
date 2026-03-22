@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # Build the Figma plugin:
 # 1. Build browser.global.js (analysis engine IIFE bundle)
-# 2. Compile plugin/main.ts -> plugin/main.js
-# 3. Inline browser.global.js into plugin/ui.html from template
+# 2. Compile app/figma-plugin/main.ts -> app/figma-plugin/main.js
+# 3. Inline browser.global.js into app/figma-plugin/ui.html from template
 
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-PLUGIN_DIR="$ROOT/plugin"
-DOCS_DIR="$ROOT/docs"
+PLUGIN_DIR="$ROOT/app/figma-plugin"
+WEB_DIR="$ROOT/app/web"
 
 # Load .env if present
 if [ -f "$ROOT/.env" ]; then
@@ -24,7 +24,7 @@ echo "[1/3] Building browser.global.js..."
 pnpm build:web
 
 # Step 2: Compile plugin main.ts
-echo "[2/3] Compiling plugin/main.ts..."
+echo "[2/3] Compiling app/figma-plugin/main.ts..."
 
 # Compile from plugin directory so tsconfig.json is picked up
 cd "$PLUGIN_DIR"
@@ -37,7 +37,7 @@ cd "$ROOT"
 # Step 3: Inline browser.global.js into ui.html
 echo "[3/3] Inlining browser bundle into ui.html..."
 
-BROWSER_JS="$DOCS_DIR/browser.global.js"
+BROWSER_JS="$WEB_DIR/browser.global.js"
 TEMPLATE="$PLUGIN_DIR/ui.template.html"
 OUTPUT="$PLUGIN_DIR/ui.html"
 

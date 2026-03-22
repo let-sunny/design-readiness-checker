@@ -6,7 +6,7 @@
     "strict": true,
     "outDir": "./build",
     "rootDir": ".",
-    "baseUrl": "..",
+    "baseUrl": "../..",
     "paths": {},
     "skipLibCheck": true,
     "downlevelIteration": true,

@@ -6,26 +6,26 @@ import { config } from "dotenv";
 import { z } from "zod";
 import { writeFile } from "node:fs";
 import { exec } from "node:child_process";
-import { analyzeFile } from "../core/rule-engine.js";
-import { loadFile } from "../core/loader.js";
-import { parseDesignData } from "../core/design-data-parser.js";
-import { calculateScores, formatScoreSummary } from "../core/scoring.js";
-import { generateHtmlReport } from "../report-html/index.js";
-import { getReportsDir, ensureReportsDir } from "../core/config-store.js";
-import { getConfigsWithPreset, RULE_CONFIGS, type Preset } from "../rules/rule-config.js";
-import { loadConfigFile, mergeConfigs } from "../rules/custom/config-loader.js";
-import { loadCustomRules } from "../rules/custom/custom-rule-loader.js";
-import { ruleRegistry } from "../rules/rule-registry.js";
-import type { RuleConfig, RuleId } from "../contracts/rule.js";
-import { initMonitoring, trackEvent, trackError, shutdownMonitoring, EVENTS } from "../monitoring/index.js";
-import { POSTHOG_API_KEY as BUILTIN_PH_KEY, SENTRY_DSN as BUILTIN_SENTRY_DSN } from "../monitoring/keys.js";
-import { getTelemetryEnabled, getPosthogApiKey, getSentryDsn, getDeviceId } from "../core/config-store.js";
+import { analyzeFile } from "../core/engine/rule-engine.js";
+import { loadFile } from "../core/engine/loader.js";
+import { parseDesignData } from "../core/engine/design-data-parser.js";
+import { calculateScores, formatScoreSummary } from "../core/engine/scoring.js";
+import { generateHtmlReport } from "../core/report-html/index.js";
+import { getReportsDir, ensureReportsDir } from "../core/engine/config-store.js";
+import { getConfigsWithPreset, RULE_CONFIGS, type Preset } from "../core/rules/rule-config.js";
+import { loadConfigFile, mergeConfigs } from "../core/rules/custom/config-loader.js";
+import { loadCustomRules } from "../core/rules/custom/custom-rule-loader.js";
+import { ruleRegistry } from "../core/rules/rule-registry.js";
+import type { RuleConfig, RuleId } from "../core/contracts/rule.js";
+import { initMonitoring, trackEvent, trackError, shutdownMonitoring, EVENTS } from "../core/monitoring/index.js";
+import { POSTHOG_API_KEY as BUILTIN_PH_KEY, SENTRY_DSN as BUILTIN_SENTRY_DSN } from "../core/monitoring/keys.js";
+import { getTelemetryEnabled, getPosthogApiKey, getSentryDsn, getDeviceId } from "../core/engine/config-store.js";
 
 // Load .env for FIGMA_TOKEN
 config();
 
 // Import rules to register them
-import "../rules/index.js";
+import "../core/rules/index.js";
 
 const require = createRequire(import.meta.url);
 const pkg = require("../../package.json") as { version: string };

@@ -1,8 +1,8 @@
 import { z } from "zod";
-import type { AnalysisResult } from "@/core/rule-engine.js";
-import type { ScoreReport } from "@/core/scoring.js";
-import type { RuleId } from "@/contracts/rule.js";
-import type { Severity } from "@/contracts/severity.js";
+import type { AnalysisResult } from "@/core/engine/rule-engine.js";
+import type { ScoreReport } from "@/core/engine/scoring.js";
+import type { RuleId } from "@/core/contracts/rule.js";
+import type { Severity } from "@/core/contracts/severity.js";
 
 export const NodeIssueSummarySchema = z.object({
   nodeId: z.string(),

@@ -5,8 +5,8 @@ import type { Category } from "../contracts/category.js";
 import type { Severity } from "../contracts/severity.js";
 import { CATEGORIES, CATEGORY_LABELS } from "../contracts/category.js";
 import { SEVERITY_LABELS } from "../contracts/severity.js";
-import type { AnalysisResult, AnalysisIssue } from "../core/rule-engine.js";
-import type { ScoreReport, Grade } from "../core/scoring.js";
+import type { AnalysisResult, AnalysisIssue } from "../engine/rule-engine.js";
+import type { ScoreReport, Grade } from "../engine/scoring.js";
 import { buildFigmaDeepLink } from "../adapters/figma-url-parser.js";
 
 export interface NodeScreenshot {

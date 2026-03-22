@@ -1,4 +1,4 @@
 // Core module - Analysis engine and core logic
 
-export * from "./rule-engine.js";
-export * from "./scoring.js";
+export * from "./engine/rule-engine.js";
+export * from "./engine/scoring.js";

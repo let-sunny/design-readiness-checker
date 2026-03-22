@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { SeveritySchema } from "@/contracts/severity.js";
+import { SeveritySchema } from "@/core/contracts/severity.js";
 
 export const ConfidenceSchema = z.enum(["high", "medium", "low"]);
 export type Confidence = z.infer<typeof ConfidenceSchema>;

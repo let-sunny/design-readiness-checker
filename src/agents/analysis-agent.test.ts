@@ -1,6 +1,6 @@
 import { runAnalysisAgent, extractRuleScores } from "./analysis-agent.js";
-import type { AnalysisResult, AnalysisIssue } from "@/core/rule-engine.js";
-import type { AnalysisFile } from "@/contracts/figma-node.js";
+import type { AnalysisResult, AnalysisIssue } from "@/core/engine/rule-engine.js";
+import type { AnalysisFile } from "@/core/contracts/figma-node.js";
 
 const mockFile = {
   fileKey: "test",

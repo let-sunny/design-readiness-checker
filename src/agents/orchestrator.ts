@@ -2,13 +2,13 @@ import { existsSync, mkdirSync } from "node:fs";
 import { writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
-import type { AnalysisFile, AnalysisNode, AnalysisNodeType } from "@/contracts/figma-node.js";
-import { analyzeFile } from "@/core/rule-engine.js";
-import { FigmaClient } from "@/adapters/figma-client.js";
-import { loadFigmaFileFromJson } from "@/adapters/figma-file-loader.js";
-import { transformFigmaResponse } from "@/adapters/figma-transformer.js";
-import { parseFigmaUrl } from "@/adapters/figma-url-parser.js";
-import { RULE_CONFIGS } from "@/rules/rule-config.js";
+import type { AnalysisFile, AnalysisNode, AnalysisNodeType } from "@/core/contracts/figma-node.js";
+import { analyzeFile } from "@/core/engine/rule-engine.js";
+import { FigmaClient } from "@/core/adapters/figma-client.js";
+import { loadFigmaFileFromJson } from "@/core/adapters/figma-file-loader.js";
+import { transformFigmaResponse } from "@/core/adapters/figma-transformer.js";
+import { parseFigmaUrl } from "@/core/adapters/figma-url-parser.js";
+import { RULE_CONFIGS } from "@/core/rules/rule-config.js";
 
 import type {
   CalibrationConfig,
@@ -19,7 +19,7 @@ import type { ConversionExecutor } from "./contracts/conversion-agent.js";
 import type { NodeIssueSummary } from "./contracts/analysis-agent.js";
 import type { ScoreAdjustment, NewRuleProposal } from "./contracts/tuning-agent.js";
 import type { MismatchCase } from "./contracts/evaluation-agent.js";
-import type { ScoreReport } from "@/core/scoring.js";
+import type { ScoreReport } from "@/core/engine/scoring.js";
 
 import { runAnalysisAgent, extractRuleScores } from "./analysis-agent.js";
 import { runConversionAgent } from "./conversion-agent.js";
@@ -132,7 +132,7 @@ const ELIGIBLE_NODE_TYPES: Set<AnalysisNodeType> = new Set([
   "INSTANCE",
 ]);
 
-import { isExcludedName } from "@/rules/excluded-names.js";
+import { isExcludedName } from "@/core/rules/excluded-names.js";
 
 /**
  * Filter node summaries to meaningful conversion candidates.

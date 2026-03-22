@@ -1,5 +1,5 @@
-import type { ScoreReport, CategoryScoreResult } from "@/core/scoring.js";
-import type { Category } from "@/contracts/category.js";
+import type { ScoreReport, CategoryScoreResult } from "@/core/engine/scoring.js";
+import type { Category } from "@/core/contracts/category.js";
 import type { MismatchCase } from "./contracts/evaluation-agent.js";
 import type { ScoreAdjustment, NewRuleProposal } from "./contracts/tuning-agent.js";
 import {
