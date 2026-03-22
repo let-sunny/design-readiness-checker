@@ -1,6 +1,6 @@
 {
   "name": "canicode",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "mcpName": "io.github.let-sunny/canicode",
   "description": "CLI tool that analyzes Figma design structures for development-friendliness and AI-friendliness scores",
   "type": "module",
