@@ -25,6 +25,10 @@ You will receive:
    - Is it stored in `src/core/contracts/figma-node.ts`?
    - Are there existing rules that use it?
 4. Check the Figma REST API spec (`@figma/rest-api-spec`) for the field's type and availability
+5. Read accumulated gap data in `logs/calibration/gaps/*.json`:
+   - Are there recurring gaps related to this concept?
+   - How many times has this gap appeared across runs?
+   - What pixel impact does it have?
 
 ## Output
 

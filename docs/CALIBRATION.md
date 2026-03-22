@@ -199,6 +199,30 @@ The Critic's conservatism prevented score whiplash — without it, `no-auto-layo
 
 ---
 
+## Calibration Pipeline Structure
+
+```
+/calibrate-loop <fixture>
+
+Step 1 — Analysis (CLI): run canicode calibrate-analyze
+Step 2 — Converter: implement ENTIRE design as one HTML page + visual-compare
+Step 3 — Gap Analyzer: analyze diff image, categorize pixel differences
+Step 4 — Evaluation (CLI): compare predicted vs actual difficulty, propose adjustments
+Step 5 — Critic: challenge proposals (50% change cap, evidence thresholds)
+Step 6 — Arbitrator: apply approved changes to rule-config.ts
+```
+
+### Gap Analysis
+
+The Gap Analyzer examines the diff image between Figma screenshot and AI-generated code. Each gap is categorized (spacing, color, typography, layout, etc.) and assessed:
+- **Covered by existing rule?** → validates that rule's relevance
+- **Actionable but no rule?** → candidate for rule discovery
+- **Rendering artifact?** → not actionable (font smoothing, anti-aliasing)
+
+Gap data accumulates in `logs/calibration/gaps/` across runs. The rule discovery pipeline reads this data to find recurring patterns worth turning into new rules.
+
+---
+
 ## Rule Discovery Pipeline
 
 New rules are added through a 5-agent debate pipeline (`/add-rule`):
@@ -206,23 +230,36 @@ New rules are added through a 5-agent debate pipeline (`/add-rule`):
 ```
 /add-rule "concept" fixture.json
 
-Step 1 — Researcher: explore fixture data for the concept
+Step 1 — Researcher: explore fixture data + accumulated gap data
 Step 2 — Designer: propose rule spec (ID, category, severity, score)
 Step 3 — Implementer: write rule code + tests
-Step 4 — Evaluator: run against fixtures, measure impact + false positives
-Step 5 — Critic: decide KEEP / ADJUST / DROP
+Step 4 — A/B Visual Validation: implement entire design with/without the rule's data, compare similarity
+Step 5 — Evaluator: measure impact, false positives, visual improvement
+Step 6 — Critic: decide KEEP / ADJUST / DROP
+```
+
+### Gap → Rule Discovery Flow
+
+```
+Calibration runs accumulate gap data
+    ↓
+logs/calibration/gaps/*.json
+    ↓
+Researcher reads accumulated gaps
+    ↓
+Recurring actionable patterns → new rule candidates
 ```
 
 ### Known Limitations
 
-1. **Heuristic rules can't be visually validated.** Rules like `missing-component-description` flag absent metadata — there's no before/after code to compare. The pipeline can only assess these by false positive rate, not actual implementation difficulty.
+1. **A/B validation requires AI to generate "missing" data.** For metadata rules (e.g., component descriptions), Test B needs AI-generated descriptions as proxy. This introduces noise — the comparison measures "AI-generated context" benefit, not "human-authored context" benefit.
 
-2. **Test fixtures with both positive and negative cases needed.** Current fixtures tend to be all-or-nothing (e.g., 0% description coverage). Effective evaluation requires fixtures where some components have descriptions and some don't, so the rule's precision can be measured.
+2. **Test fixtures with both positive and negative cases needed.** Current fixtures tend to be all-or-nothing (e.g., 0% description coverage). Effective evaluation requires controlled fixtures.
 
-3. **Calibration `nodeIssueSummaries` empty bug.** The `calibrate-analyze` command returns `nodeIssueSummaries: []` even when issues exist, blocking the Converter step. Needs investigation.
+3. **Font rendering differences.** Playwright uses system fonts; Figma renders with embedded fonts. This creates a baseline similarity gap (~3-5%) that is not actionable.
 
 ### Next Steps
 
-- Design test fixtures with controlled positive/negative cases per concept
-- Integrate `visual-compare` into Evaluator for rules that affect visual output
-- Fix calibration `nodeIssueSummaries` grouping for the Converter step
+- Design controlled test fixtures per concept
+- Accumulate gap data across 10+ fixture runs to identify patterns
+- Build gap-to-rule-candidate pipeline automation

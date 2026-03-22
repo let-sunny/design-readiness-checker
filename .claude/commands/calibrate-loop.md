@@ -40,7 +40,23 @@ Append a brief summary to this EXACT file. Do NOT write to any other log file.
 
 The Converter will implement the ENTIRE design as one HTML page and run visual-compare.
 
-### Step 3 — Evaluation (CLI)
+### Step 3 — Gap Analysis
+
+Spawn the `calibration-gap-analyzer` subagent. Provide:
+- Screenshot paths: `/tmp/canicode-visual-compare/figma.png`, `/tmp/canicode-visual-compare/code.png`, `/tmp/canicode-visual-compare/diff.png`
+- Similarity score from the Converter's output
+- Generated HTML path: `/tmp/calibration-output.html`
+- Fixture path
+- Analysis JSON path: `logs/calibration/calibration-analysis.json`
+
+```
+Append your summary to: <paste LOG_FILE here>
+```
+
+Gap data is saved to `logs/calibration/gaps/` and accumulates over time for rule discovery.
+
+### Step 4 — Evaluation (CLI)
+
 
 ```
 npx canicode calibrate-evaluate logs/calibration/calibration-analysis.json logs/calibration/calibration-conversion.json
@@ -48,7 +64,7 @@ npx canicode calibrate-evaluate logs/calibration/calibration-analysis.json logs/
 
 Read the generated report, extract proposals. If zero proposals, stop.
 
-### Step 4 — Critic
+### Step 5 — Critic
 
 Spawn the `calibration-critic` subagent. The prompt MUST include this exact line:
 
@@ -56,7 +72,7 @@ Spawn the `calibration-critic` subagent. The prompt MUST include this exact line
 Append your critique to: <paste LOG_FILE here>
 ```
 
-### Step 5 — Arbitrator
+### Step 6 — Arbitrator
 
 Spawn the `calibration-arbitrator` subagent. The prompt MUST include this exact line:
 
