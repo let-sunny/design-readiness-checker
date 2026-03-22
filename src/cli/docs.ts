@@ -61,8 +61,9 @@ CANICODE SETUP GUIDE
 
   Flow:
     Claude Code
-      -> Figma MCP get_metadata(fileKey, nodeId) -> XML node tree
-      -> Convert to fixture JSON
+      -> Figma MCP get_metadata(fileKey, nodeId) -> XML node tree (structure)
+      -> Figma MCP get_design_context(fileKey, nodeId) -> code (styles)
+      -> Merge into fixture JSON (structure + styles)
       -> canicode analyze fixture.json -> report
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -83,6 +84,19 @@ CANICODE SETUP GUIDE
   In Figma                 -> Figma Plugin
   Browser                  -> Web App (GitHub Pages)
   Quick trial, offline     -> CLI + JSON fixtures
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ DATA SOURCE DIFFERENCES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  CLI (REST API)    Reads raw Figma node data directly.
+                    Most accurate — all style properties available.
+
+  MCP / Skill       Uses Figma MCP's get_metadata (structure) and
+                    get_design_context (styles). Style data is extracted
+                    from Figma MCP's own generated code (React + Tailwind),
+                    not raw Figma node properties. Results may differ
+                    slightly from CLI due to this interpretation layer.
 `.trimStart());
 }
 

@@ -9,6 +9,7 @@ import { exec } from "node:child_process";
 import { analyzeFile } from "../core/engine/rule-engine.js";
 import { loadFile } from "../core/engine/loader.js";
 import { parseDesignData } from "../core/engine/design-data-parser.js";
+import { enrichWithDesignContext } from "../core/adapters/figma-mcp-adapter.js";
 import { calculateScores, formatScoreSummary } from "../core/engine/scoring.js";
 import { generateHtmlReport } from "../core/report-html/index.js";
 import { getReportsDir, ensureReportsDir } from "../core/engine/config-store.js";
@@ -45,16 +46,21 @@ Two ways to provide design data:
 
 Typical flow with Figma MCP (recommended, no token needed):
   Step 1: Call the official Figma MCP's get_metadata tool to get the node tree
-  Step 2: Pass the result as designData to this tool
+  Step 2: Call the official Figma MCP's get_design_context tool on the same node to get style data
+  Step 3: Pass get_metadata result as designData and get_design_context code as designContext to this tool
+
+The designContext parameter enriches analysis with style information (colors, layout, spacing, effects)
+that get_metadata alone cannot provide. Without it, token and layout rules may not fire.
 
 IMPORTANT — Before calling this tool, check which data source is available:
-- If the official Figma MCP (https://mcp.figma.com/mcp) is connected: use get_metadata → designData flow. No token needed.
+- If the official Figma MCP (https://mcp.figma.com/mcp) is connected: use get_metadata + get_design_context → designData + designContext flow. No token needed.
 - If Figma MCP is NOT connected: use the input parameter with a Figma URL. This requires a FIGMA_TOKEN.
   Tell the user: "The official Figma MCP server is not connected. To use without a token, set it up:
   claude mcp add -s project -t http figma https://mcp.figma.com/mcp
   Otherwise, provide a Figma API token via FIGMA_TOKEN env var or the token parameter."`,
   {
     designData: z.string().optional().describe("Figma node data from Figma MCP get_metadata (XML or JSON). Pass this instead of input when using Figma MCP."),
+    designContext: z.string().optional().describe("Code output from Figma MCP get_design_context. Enriches designData with style info (colors, layout, spacing, effects). Highly recommended alongside designData."),
     input: z.string().optional().describe("Figma URL. Used when designData is not provided. Requires FIGMA_TOKEN."),
     fileKey: z.string().optional().describe("Figma file key (used with designData to generate deep links)"),
     fileName: z.string().optional().describe("Figma file name (used with designData for display)"),
@@ -70,7 +76,7 @@ IMPORTANT — Before calling this tool, check which data source is available:
     openWorldHint: true,
     title: "Analyze Figma Design",
   },
-  async ({ designData, input, fileKey, fileName, token, preset, targetNodeId, configPath, customRulesPath }) => {
+  async ({ designData, designContext, input, fileKey, fileName, token, preset, targetNodeId, configPath, customRulesPath }) => {
     trackEvent(EVENTS.MCP_TOOL_CALLED, { tool: "analyze" });
     try {
       let file;
@@ -79,6 +85,11 @@ IMPORTANT — Before calling this tool, check which data source is available:
       if (designData) {
         // Direct data from Figma MCP
         file = parseDesignData(designData, fileKey ?? "unknown", fileName);
+
+        // Enrich with design context if provided
+        if (designContext) {
+          enrichWithDesignContext(file, designContext, targetNodeId);
+        }
       } else if (input) {
         // Fetch via REST API or load from fixture
         const loaded = await loadFile(input, token);

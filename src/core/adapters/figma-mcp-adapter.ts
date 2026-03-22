@@ -1,4 +1,5 @@
 import type { AnalysisFile, AnalysisNode, AnalysisNodeType } from "../contracts/figma-node.js";
+import { parseDesignContextCode, parseCodeHeader, enrichNodeWithStyles } from "./tailwind-parser.js";
 
 /**
  * Map MCP XML tag names to Figma AnalysisNodeType
@@ -176,4 +177,86 @@ export function parseMcpMetadataXml(
     components: {},
     styles: {},
   };
+}
+
+/**
+ * Enrich an AnalysisFile (from get_metadata) with style data extracted
+ * from get_design_context code output.
+ *
+ * The design context code is React+Tailwind generated for a specific node.
+ * We parse Tailwind classes to extract layout, color, spacing, and effect
+ * properties, then merge them into matching AnalysisNodes in the tree.
+ *
+ * @param file - AnalysisFile from parseMcpMetadataXml
+ * @param designContextCode - Code string from get_design_context
+ * @param targetNodeId - The node ID that get_design_context was called for (optional)
+ */
+export function enrichWithDesignContext(
+  file: AnalysisFile,
+  designContextCode: string,
+  targetNodeId?: string,
+): void {
+  const header = parseCodeHeader(designContextCode);
+  const styles = parseDesignContextCode(designContextCode);
+
+  // If header provides auto-layout info, use it
+  if (header.hasAutoLayout === true && header.layoutDirection) {
+    if (!styles.layoutMode) styles.layoutMode = header.layoutDirection;
+  } else if (header.hasAutoLayout === false) {
+    // Explicitly no auto-layout — don't set layoutMode
+    delete styles.layoutMode;
+  }
+
+  // Find the target node and enrich it
+  if (targetNodeId) {
+    const node = findNodeById(file.document, targetNodeId);
+    if (node) {
+      enrichNodeWithStyles(node, styles);
+      enrichChildrenFromCode(node, designContextCode);
+      return;
+    }
+  }
+
+  // Fallback: enrich the root document node
+  enrichNodeWithStyles(file.document, styles);
+  enrichChildrenFromCode(file.document, designContextCode);
+}
+
+/**
+ * Try to enrich child nodes by scanning the full code for className patterns.
+ * For each child, extract classes from JSX elements that match the child's name.
+ */
+function enrichChildrenFromCode(parent: AnalysisNode, code: string): void {
+  if (!parent.children) return;
+
+  for (const child of parent.children) {
+    // Look for comments like "{/* ChildName */}" or "{/* ChildName — ... */}"
+    const escapedName = child.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const commentPattern = new RegExp(
+      `\\{/\\*\\s*${escapedName}(?:\\s*—[^*]*)?\\s*\\*/\\}\\s*\\n\\s*<\\w+[^>]*className="([^"]*)"`,
+    );
+    const match = code.match(commentPattern);
+    if (match?.[1]) {
+      const childStyles = parseDesignContextCode(
+        `<div className="${match[1]}">`,
+      );
+      enrichNodeWithStyles(child, childStyles);
+    }
+
+    // Recurse into children
+    if (child.children) {
+      enrichChildrenFromCode(child, code);
+    }
+  }
+}
+
+function findNodeById(node: AnalysisNode, id: string): AnalysisNode | undefined {
+  if (node.id === id) return node;
+  if (node.children) {
+    for (const child of node.children) {
+      const found = findNodeById(child, id);
+      if (found) return found;
+    }
+  }
+  return undefined;
 }

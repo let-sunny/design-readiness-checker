@@ -78,6 +78,8 @@ For Cursor / Claude Desktop config, see [`docs/CUSTOMIZATION.md`](docs/CUSTOMIZA
 
 Then ask: *"Analyze this Figma design: https://www.figma.com/design/..."*
 
+> **Note:** MCP/Skill path extracts style data from Figma MCP's generated code (React + Tailwind), not raw Figma node properties. For the most accurate analysis, use the CLI with a Figma API token.
+
 ### 3. Web (no install)
 
 Go to **[let-sunny.github.io/canicode](https://let-sunny.github.io/canicode/)**, paste a Figma URL, and get results instantly in your browser.

@@ -53,14 +53,15 @@ app/                          # Browser runtime
 - Install: `claude mcp add canicode -- npx -y -p canicode canicode-mcp`
 - Tools: `analyze`, `list-rules`, `docs`
 - Works with Figma MCP: user installs official Figma MCP → Claude Code orchestrates both
-  - Figma MCP `get_metadata` → XML → canicode MCP `analyze(designData: XML)`
+  - Figma MCP `get_metadata` → XML (structure) + `get_design_context` → code (styles)
+  - canicode MCP `analyze(designData: XML, designContext: code)` — hybrid enrichment
   - No FIGMA_TOKEN needed when using Figma MCP
 - Also works standalone with FIGMA_TOKEN (REST API fallback via `input` param)
 
 **3. Claude Code Skill (`/canicode`)**
 - Location: `.claude/skills/canicode/SKILL.md` (copy to any project)
 - Requires: Official Figma MCP (`https://mcp.figma.com/mcp`) at project level
-- Flow: Figma MCP `get_metadata` → fixture JSON → `canicode analyze`
+- Flow: Figma MCP `get_metadata` (structure) + `get_design_context` (styles) → enriched fixture JSON → `canicode analyze`
 - Lightweight alternative to MCP server — no canicode MCP installation needed
 
 **4. Web App (GitHub Pages)**

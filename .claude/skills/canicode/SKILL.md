@@ -11,7 +11,7 @@ Analyze Figma design files to score how development-friendly and AI-friendly the
 
 This skill requires the **official Figma MCP server** (`https://mcp.figma.com/mcp`) to be connected.
 
-**Before doing anything else**, check if `mcp__figma__get_metadata` is available in this session:
+**Before doing anything else**, check if `mcp__figma__get_metadata` and `mcp__figma__get_design_context` are available in this session:
 - If available → proceed with analysis
 - If NOT available → stop and show the user this setup guide:
 
@@ -38,14 +38,25 @@ When the user provides a Figma URL, follow these steps:
 Extract `fileKey` and `nodeId` from the URL:
 - `figma.com/design/:fileKey/:fileName?node-id=:nodeId` → convert `-` to `:` in nodeId
 
-### Step 2: Fetch design metadata via Figma MCP
-Call `mcp__figma__get_metadata` directly from this session:
+### Step 2: Fetch design data via Figma MCP (two calls)
+
+**Call 1 — Structure:** Call `mcp__figma__get_metadata` to get the node tree (XML):
 ```
 fileKey: (extracted from URL)
 nodeId: (extracted from URL, use ":" separator e.g. "127:2")
 ```
 
-### Step 3: Convert XML to fixture JSON and analyze
+**Call 2 — Style enrichment:** Call `mcp__figma__get_design_context` to get style data (code):
+```
+fileKey: (extracted from URL)
+nodeId: (extracted from URL, use ":" separator e.g. "127:2")
+excludeScreenshot: true
+```
+
+Both calls can be made in parallel.
+
+### Step 3: Convert to fixture JSON and analyze
+
 1. Parse the XML response from `mcp__figma__get_metadata`
 2. Convert to AnalysisFile JSON format:
 ```json
@@ -74,9 +85,26 @@ nodeId: (extracted from URL, use ":" separator e.g. "127:2")
   "styles": {}
 }
 ```
-3. Save to `fixtures/_mcp-temp.json`
-4. Run: `npx canicode analyze fixtures/_mcp-temp.json [options]`
-5. Clean up: delete `fixtures/_mcp-temp.json` after analysis
+
+3. **Enrich with design context:** Parse the code from `get_design_context` to extract style properties and merge into the AnalysisFile nodes. Extract from Tailwind classes:
+   - `flex` / `flex-col` → `layoutMode: "HORIZONTAL" / "VERTICAL"`
+   - `absolute` → `layoutPositioning: "ABSOLUTE"`
+   - `gap-N` → `itemSpacing` (px)
+   - `p-N`, `px-N`, `py-N`, `pl-N`, `pr-N`, `pt-N`, `pb-N` → padding values
+   - `bg-[#hex]` → `fills` array with SOLID type
+   - `bg-[var(--token)]` → `fills` with bound variable reference
+   - `shadow-*` → `effects` array with DROP_SHADOW type
+   - `w-full` / `h-full` → `layoutSizingHorizontal/Vertical: "FILL"`
+   - `w-fit` / `h-fit` → `layoutSizingHorizontal/Vertical: "HUG"`
+   - `w-[Npx]` / `h-[Npx]` → `layoutSizingHorizontal/Vertical: "FIXED"`
+
+   Also check the code comment header (e.g. `/* NodeName — 905x680 COMPONENT, vertical auto-layout */`) for:
+   - Auto-layout presence and direction
+   - Node type confirmation
+
+4. Save to `fixtures/_mcp-temp.json`
+5. Run: `npx canicode analyze fixtures/_mcp-temp.json [options]`
+6. Clean up: delete `fixtures/_mcp-temp.json` after analysis
 
 **IMPORTANT:** Do NOT use `npx canicode analyze <url> --mcp`. The `--mcp` CLI flag has been removed.
 
