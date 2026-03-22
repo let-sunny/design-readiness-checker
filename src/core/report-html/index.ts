@@ -3,11 +3,23 @@
 import type { AnalysisFile } from "../contracts/figma-node.js";
 import type { Category } from "../contracts/category.js";
 import type { Severity } from "../contracts/severity.js";
-import { CATEGORIES, CATEGORY_LABELS } from "../contracts/category.js";
-import { SEVERITY_LABELS } from "../contracts/severity.js";
 import type { AnalysisResult, AnalysisIssue } from "../engine/rule-engine.js";
-import type { ScoreReport, Grade } from "../engine/scoring.js";
+import type { ScoreReport } from "../engine/scoring.js";
 import { buildFigmaDeepLink } from "../adapters/figma-url-parser.js";
+import {
+  CATEGORIES,
+  CATEGORY_LABELS,
+  SEVERITY_LABELS,
+  CATEGORY_DESCRIPTIONS,
+  SEVERITY_ORDER,
+} from "../ui-constants.js";
+import {
+  escapeHtml,
+  severityDot,
+  severityBadge,
+  scoreBadgeStyle,
+  renderGaugeSvg,
+} from "../ui-helpers.js";
 
 export interface NodeScreenshot {
   nodeId: string;
@@ -20,53 +32,6 @@ export interface NodeScreenshot {
 export interface HtmlReportOptions {
   nodeScreenshots?: NodeScreenshot[];
   figmaToken?: string | undefined;
-}
-
-// Gauge geometry
-const GAUGE_R = 54;
-const GAUGE_C = Math.round(2 * Math.PI * GAUGE_R); // ~339
-
-const CATEGORY_DESCRIPTIONS: Record<Category, string> = {
-  layout: "Auto Layout, responsive constraints, nesting depth, absolute positioning",
-  token: "Design token binding for colors, fonts, shadows, spacing grid",
-  component: "Component reuse, detached instances, variant coverage",
-  naming: "Semantic layer names, naming conventions, default names",
-  "ai-readability": "Structure clarity for AI code generation, z-index, empty frames",
-  "handoff-risk": "Hardcoded values, text truncation, image placeholders, dev status",
-};
-
-const SEVERITY_ORDER: Severity[] = ["blocking", "risk", "missing-info", "suggestion"];
-
-function gaugeColor(pct: number): string {
-  if (pct >= 75) return "#22c55e";
-  if (pct >= 50) return "#f59e0b";
-  return "#ef4444";
-}
-
-function severityBadge(sev: Severity): string {
-  const map: Record<Severity, string> = {
-    blocking: "bg-red-500/10 text-red-600 border-red-500/20",
-    risk: "bg-amber-500/10 text-amber-600 border-amber-500/20",
-    "missing-info": "bg-zinc-500/10 text-zinc-600 border-zinc-500/20",
-    suggestion: "bg-green-500/10 text-green-600 border-green-500/20",
-  };
-  return map[sev];
-}
-
-function scoreBadgeStyle(pct: number): string {
-  if (pct >= 75) return "bg-green-500/10 text-green-700 border-green-500/20";
-  if (pct >= 50) return "bg-amber-500/10 text-amber-700 border-amber-500/20";
-  return "bg-red-500/10 text-red-700 border-red-500/20";
-}
-
-function severityDot(sev: Severity): string {
-  const map: Record<Severity, string> = {
-    blocking: "bg-red-500",
-    risk: "bg-amber-500",
-    "missing-info": "bg-zinc-400",
-    suggestion: "bg-green-500",
-  };
-  return map[sev];
 }
 
 // ---- Main ----
@@ -236,25 +201,6 @@ ${figmaToken ? `  <script>
 
 // ---- Components ----
 
-function renderGaugeSvg(pct: number, size: number, strokeW: number, grade?: Grade): string {
-  const offset = GAUGE_C * (1 - pct / 100);
-  const color = gaugeColor(pct);
-  if (grade) {
-    // Large gauge with grade inside
-    return `<svg width="${size}" height="${size}" viewBox="0 0 120 120" class="block">
-            <circle cx="60" cy="60" r="${GAUGE_R}" fill="none" stroke-width="${strokeW}" class="stroke-border" />
-            <circle cx="60" cy="60" r="${GAUGE_R}" fill="none" stroke="${color}" stroke-width="${strokeW}" stroke-linecap="round" stroke-dasharray="${GAUGE_C}" stroke-dashoffset="${offset}" transform="rotate(-90 60 60)" class="gauge-fill" />
-            <text x="60" y="60" text-anchor="middle" dominant-baseline="central" fill="currentColor" font-size="52" font-weight="700" class="font-sans">${esc(grade)}</text>
-          </svg>`;
-  }
-  const fontSize = 32;
-  return `<svg width="${size}" height="${size}" viewBox="0 0 120 120" class="block">
-            <circle cx="60" cy="60" r="${GAUGE_R}" fill="none" stroke-width="${strokeW}" class="stroke-border" />
-            <circle cx="60" cy="60" r="${GAUGE_R}" fill="none" stroke="${color}" stroke-width="${strokeW}" stroke-linecap="round" stroke-dasharray="${GAUGE_C}" stroke-dashoffset="${offset}" transform="rotate(-90 60 60)" class="gauge-fill" />
-            <text x="60" y="62" text-anchor="middle" dominant-baseline="central" fill="currentColor" font-size="${fontSize}" font-weight="700" class="font-sans">${pct}</text>
-          </svg>`;
-}
-
 function renderSummaryDot(dotClass: string, count: number, label: string): string {
   return `<div class="flex items-center gap-2">
           <span class="w-2.5 h-2.5 rounded-full ${dotClass}"></span>
@@ -409,11 +355,4 @@ function groupIssuesByCategory(issues: AnalysisIssue[]): Map<Category, AnalysisI
   return grouped;
 }
 
-function esc(text: string): string {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
+const esc = escapeHtml;

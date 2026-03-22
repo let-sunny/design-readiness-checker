@@ -15,5 +15,24 @@ export type { Severity } from "./core/contracts/severity.js";
 export type { AnalysisFile, AnalysisNode } from "./core/contracts/figma-node.js";
 export type { RuleId } from "./core/contracts/rule.js";
 
+// Shared UI constants and helpers (used by app/shared via CanICode.* globals)
+export {
+  GAUGE_R,
+  GAUGE_C,
+  CATEGORY_DESCRIPTIONS,
+  SEVERITY_ORDER,
+} from "./core/ui-constants.js";
+export {
+  gaugeColor,
+  scoreClass,
+  escapeHtml,
+  severityDotClass,
+  severityScoreClass,
+  severityDot,
+  severityBadge,
+  scoreBadgeStyle,
+  renderGaugeSvg,
+} from "./core/ui-helpers.js";
+
 // Import rules to register them with the global registry
 import "./core/rules/index.js";
