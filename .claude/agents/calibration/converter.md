@@ -48,12 +48,27 @@ When reading from a fixture file, the document is a tree structure:
 
 Recursively search the tree to find the node matching the target `nodeId`. Use all available properties (type, name, layoutMode, fills, strokes, effects, styles, absoluteBoundingBox, children, etc.) as your design context for conversion.
 
-## Difficulty Guidelines
+## Visual Validation
 
-- **easy**: Straightforward conversion, no guessing needed
-- **moderate**: Some ambiguity or manual adjustment required
-- **hard**: Significant guessing, multiple approaches needed, fragile output
-- **failed**: Could not produce usable code from the design
+After generating code for each node, save it as a standalone HTML file and run visual comparison:
+
+```
+npx canicode visual-compare /tmp/calibration-node-<nodeId>.html --figma-url "<figma-url-with-node-id>"
+```
+
+The command returns JSON with `similarity` (0-100%). Use this to determine difficulty:
+
+| Similarity | Difficulty |
+|-----------|-----------|
+| 90%+ | easy |
+| 70-90% | moderate |
+| 50-70% | hard |
+| <50% | failed |
+
+Include the similarity score in each record's output.
+
+**To construct the Figma URL:** Use the `fileKey` from the analysis JSON and the node's `nodeId` (replace `:` with `-`):
+`https://www.figma.com/design/<fileKey>/file?node-id=<nodeId>`
 
 ## Output
 
@@ -69,6 +84,7 @@ The JSON must match this exact structure:
       "nodePath": "Page > Frame > Component",
       "generatedCode": "// The generated CSS/HTML/React code",
       "difficulty": "easy | moderate | hard | failed",
+      "similarity": 87,
       "notes": "Brief summary of the conversion experience",
       "ruleRelatedStruggles": [
         {
