@@ -47,63 +47,49 @@ Scores use density + diversity weighting per category, combined into an overall 
 
 ## Getting Started
 
-Six ways to use CanICode. Pick one.
+| If you want to... | Use |
+|---|---|
+| Just try it | **[Web App](https://let-sunny.github.io/canicode/)** — paste a URL, no install |
+| Analyze inside Figma | **[Figma Plugin](https://www.figma.com/community/plugin/1617144221046795292/canicode)** |
+| Use with Claude Code / Cursor | **MCP Server** or **Skill** — see below |
+| Add to CI/CD | **[GitHub Action](https://github.com/marketplace/actions/canicode-action)** |
+| Full control | **CLI** |
 
-### 1. CLI
+### CLI
 
 ```bash
 npx canicode analyze "https://www.figma.com/design/ABC123/MyDesign?node-id=1-234"
 ```
 
-Setup:
-```bash
-canicode init --token figd_xxxxxxxxxxxxx
-```
+Setup: `canicode init --token figd_xxxxxxxxxxxxx`
 
 > **Get your token:** Figma → Settings → Security → Personal access tokens → Generate new token
 
-### 2. MCP Server (Claude Code / Cursor / Claude Desktop)
+### MCP Server (Claude Code / Cursor / Claude Desktop)
 
-**Claude Code (recommended — with official Figma MCP, no token needed):**
 ```bash
 claude mcp add canicode -- npx -y -p canicode canicode-mcp
 claude mcp add -s project -t http figma https://mcp.figma.com/mcp
 ```
 
-**Claude Code (with Figma API token):**
+Then ask: *"Analyze this Figma design: https://www.figma.com/design/..."*
+
+Or with a Figma API token (no Figma MCP needed):
 ```bash
 claude mcp add canicode -e FIGMA_TOKEN=figd_xxxxxxxxxxxxx -- npx -y -p canicode canicode-mcp
 ```
 
 For Cursor / Claude Desktop config, see [`docs/CUSTOMIZATION.md`](docs/CUSTOMIZATION.md).
 
-Then ask: *"Analyze this Figma design: https://www.figma.com/design/..."*
-
-> **Note:** MCP/Skill path extracts style data from Figma MCP's generated code (React + Tailwind), not raw Figma node properties. Results may differ slightly from CLI — see [`docs/MCP-VS-CLI.md`](docs/MCP-VS-CLI.md) for a detailed comparison. For the most accurate analysis, use the CLI with a Figma API token.
-
-### 3. Claude Code Skill (lightweight, no MCP install)
-
-Copy the skill folder into any project:
+### Claude Code Skill (lightweight, no MCP install)
 
 ```bash
 cp -r .claude/skills/canicode /your-project/.claude/skills/
 ```
 
-Requires the official Figma MCP (`claude mcp add -s project -t http figma https://mcp.figma.com/mcp`).
+Requires the official Figma MCP. Then use `/canicode` with a Figma URL.
 
-Then use `/canicode` in Claude Code with a Figma URL.
-
-### 4. Web (no install)
-
-Go to **[let-sunny.github.io/canicode](https://let-sunny.github.io/canicode/)**, paste a Figma URL, and get results instantly in your browser.
-
-### 5. Figma Plugin (under review)
-
-Install from **[Figma Community](https://www.figma.com/community/plugin/1617144221046795292/canicode)** — analyze directly inside Figma. No tokens needed.
-
-### 6. GitHub Action
-
-Design quality gate for CI. Enforce score thresholds before merging.
+### GitHub Action
 
 ```yaml
 - uses: let-sunny/canicode-action@v0.1.0
@@ -113,7 +99,7 @@ Design quality gate for CI. Enforce score thresholds before merging.
     min_score: 70
 ```
 
-Posts analysis summary as a PR comment. Fails the check if score is below threshold.
+Posts analysis as a PR comment. Fails if score is below threshold. See [Marketplace](https://github.com/marketplace/actions/canicode-action).
 
 See [**canicode-action**](https://github.com/marketplace/actions/canicode-action) on GitHub Marketplace.
 
