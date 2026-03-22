@@ -15,16 +15,28 @@ A CLI tool that analyzes Figma design structures to provide development-friendli
 ## Project Structure
 
 ```
-src/
-├── core/           # Analysis engine and core logic
-├── rules/          # Analysis rule definitions
-│   └── custom/     # Custom rule loading and config override
-├── contracts/      # Type definitions and Zod schemas
-├── cli/            # CLI entry point
-├── mcp/            # MCP server for Claude Code integration
-├── report-html/    # HTML report generation
-├── adapters/       # External service integrations (Figma API, etc.)
-└── agents/         # Calibration pipeline
+src/                          # Node.js runtime (tsup build)
+├── core/                     # Shared analysis engine
+│   ├── engine/               # rule-engine, scoring, loader, config-store
+│   ├── rules/                # Rule definitions + config
+│   ├── contracts/            # Type definitions + Zod schemas
+│   ├── adapters/             # Figma API integrations
+│   ├── report-html/          # HTML report generation
+│   └── monitoring/           # Telemetry
+├── cli/                      # Entrypoint: CLI
+├── mcp/                      # Entrypoint: MCP server
+└── agents/                   # Internal: Calibration pipeline
+
+app/                          # Browser runtime
+├── shared/                   # Common UI (gauge, issue list, styles, constants)
+├── web/                      # Entrypoint: Web App (GitHub Pages)
+│   ├── src/                  # Source
+│   └── dist/                 # Build output (deployed)
+├── figma-plugin/             # Entrypoint: Figma Plugin
+│   ├── src/                  # Source
+│   └── dist/                 # Build output (gitignored)
+
+.claude/skills/canicode/      # Entrypoint: Claude Code skill
 ```
 
 ## Architecture
@@ -52,12 +64,14 @@ src/
 - Lightweight alternative to MCP server — no canicode MCP installation needed
 
 **4. Web App (GitHub Pages)**
-- URL: hosted via GitHub Pages (`docs/index.html`)
-- Browser-based analysis — paste Figma URL or upload JSON fixture
+- Source: `app/web/src/index.html`
+- Build: `pnpm build:web` → `app/web/dist/` (deployed via GitHub Pages)
+- Shared UI from `app/shared/` inlined at build time
 
 **5. Figma Plugin**
-- Location: `plugin/`
-- Run analysis directly inside Figma on the selected node
+- Source: `app/figma-plugin/src/`
+- Build: `pnpm build:plugin` → `app/figma-plugin/dist/` (gitignored)
+- Shared UI from `app/shared/` inlined at build time
 
 ### Internal (Claude Code Only)
 
