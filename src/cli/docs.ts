@@ -2,9 +2,14 @@
  * Built-in documentation for canicode CLI
  */
 
+import { createRequire } from "node:module";
+
+const require = createRequire(import.meta.url);
+const pkg = require("../../package.json") as { version: string };
+
 export function printDocsIndex(): void {
   console.log(`
-CANICODE DOCUMENTATION
+CANICODE DOCUMENTATION (v${pkg.version})
 
   canicode docs setup    Full setup guide (CLI, MCP, Skills)
   canicode docs rules    Custom rules guide + example

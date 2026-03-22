@@ -791,6 +791,6 @@ cli.help((sections) => {
     },
   );
 });
-cli.version("0.1.0");
+cli.version(pkg.version);
 
 cli.parse();

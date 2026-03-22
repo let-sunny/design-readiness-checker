@@ -1,6 +1,6 @@
 // Main entry point
 
-export const VERSION = "0.1.0";
+export { version as VERSION } from "../package.json";
 
 // Contracts (types and schemas)
 export * from "./core/contracts/index.js";
