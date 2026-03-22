@@ -14,7 +14,9 @@
   <a href="https://github.com/marketplace/actions/canicode-action"><img src="https://img.shields.io/badge/GitHub_Action-Marketplace-2088FF" alt="GitHub Action"></a>
 </p>
 
-<p align="center">The design linter that scores how well AI can implement your Figma file — before a single line of code is written.</p>
+<p align="center">The design linter that scores how easily your Figma design can be implemented by AI or developers — before a single line of code is written.</p>
+
+<p align="center">AI-powered insights. Zero tokens per analysis — rules run deterministically, not through AI calls.</p>
 
 <p align="center"><strong><a href="https://github.com/let-sunny/canicode/discussions/new?category=share-your-figma">Share your Figma design</a></strong> to help improve scoring accuracy.</p>
 
@@ -41,16 +43,19 @@
 
 Each issue is classified: **Blocking** > **Risk** > **Missing Info** > **Suggestion**.
 
-### AI-Calibrated Scores
+### Rule Scores Validated by AI
 
-Rule scores aren't guesswork — they're **calibrated by AI agents debating each other**:
+Rule scores aren't guesswork. They're validated through a 4-agent debate pipeline that converts real Figma nodes to code and measures actual implementation difficulty.
 
 1. **Runner** analyzes the design and flags issues
 2. **Converter** converts the flagged nodes to actual code
 3. **Critic** challenges whether the scores match the real difficulty
 4. **Arbitrator** makes the final call — adjust or keep
 
-Too harsh → score goes down. Too lenient → score goes up. This runs continuously against real Figma files submitted by the community. See [`docs/CALIBRATION.md`](docs/CALIBRATION.md).
+- A node that's hard to implement → rule score goes up
+- A node that's easy to implement despite the flag → rule score goes down
+
+The rules themselves run deterministically on every analysis. No tokens consumed per run. The AI debate only validated whether each rule's score reflects real difficulty — once, not on every run. See [`docs/CALIBRATION.md`](docs/CALIBRATION.md).
 
 ---
 
@@ -82,6 +87,8 @@ claude mcp add -s project -t http figma https://mcp.figma.com/mcp
 ```
 
 Then ask: *"Analyze this Figma design: https://www.figma.com/design/..."*
+
+canicode's rule engine analyzes the design data — Claude Code orchestrates the calls.
 
 Or with a Figma API token (no Figma MCP needed):
 ```bash
