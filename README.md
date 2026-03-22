@@ -47,7 +47,7 @@ Scores use density + diversity weighting per category, combined into an overall 
 
 ## Getting Started
 
-Five ways to use CanICode. Pick one.
+Six ways to use CanICode. Pick one.
 
 ### 1. CLI
 
@@ -81,15 +81,27 @@ Then ask: *"Analyze this Figma design: https://www.figma.com/design/..."*
 
 > **Note:** MCP/Skill path extracts style data from Figma MCP's generated code (React + Tailwind), not raw Figma node properties. Results may differ slightly from CLI — see [`docs/MCP-VS-CLI.md`](docs/MCP-VS-CLI.md) for a detailed comparison. For the most accurate analysis, use the CLI with a Figma API token.
 
-### 3. Web (no install)
+### 3. Claude Code Skill (lightweight, no MCP install)
+
+Copy the skill folder into any project:
+
+```bash
+cp -r .claude/skills/canicode /your-project/.claude/skills/
+```
+
+Requires the official Figma MCP (`claude mcp add -s project -t http figma https://mcp.figma.com/mcp`).
+
+Then use `/canicode` in Claude Code with a Figma URL.
+
+### 4. Web (no install)
 
 Go to **[let-sunny.github.io/canicode](https://let-sunny.github.io/canicode/)**, paste a Figma URL, and get results instantly in your browser.
 
-### 4. Figma Plugin (under review)
+### 5. Figma Plugin (under review)
 
 Install from **[Figma Community](https://www.figma.com/community/plugin/1617144221046795292/canicode)** — analyze directly inside Figma. No tokens needed.
 
-### 5. GitHub Action
+### 6. GitHub Action
 
 Design quality gate for CI. Enforce score thresholds before merging.
 
