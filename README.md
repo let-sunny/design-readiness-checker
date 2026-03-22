@@ -69,7 +69,8 @@ The rules themselves run deterministically on every analysis — no tokens consu
 | Add to CI/CD | **[GitHub Action](https://github.com/marketplace/actions/canicode-action)** |
 | Full control | **CLI** |
 
-### CLI
+<details>
+<summary><strong>CLI</strong></summary>
 
 ```bash
 npx canicode analyze "https://www.figma.com/design/ABC123/MyDesign?node-id=1-234"
@@ -79,7 +80,19 @@ Setup: `canicode init --token figd_xxxxxxxxxxxxx`
 
 > **Get your token:** Figma → Settings → Security → Personal access tokens → Generate new token
 
-### MCP Server (Claude Code / Cursor / Claude Desktop)
+**Figma API Rate Limits** — Rate limits depend on **where the file lives**, not just your plan.
+
+| Seat | File in Starter plan | File in Pro/Org/Enterprise |
+|------|---------------------|---------------------------|
+| View, Collab | 6 req/month | 6 req/month |
+| Dev, Full | 6 req/month | 10–20 req/min |
+
+Hitting 429 errors? Make sure the file is in a paid workspace. Or use MCP (no token, separate rate limit pool). Or `save-fixture` once and analyze locally. [Full details](https://developers.figma.com/docs/rest-api/rate-limits/)
+
+</details>
+
+<details>
+<summary><strong>MCP Server</strong> (Claude Code / Cursor / Claude Desktop)</summary>
 
 ```bash
 claude mcp add canicode -- npx -y -p canicode canicode-mcp
@@ -97,7 +110,20 @@ claude mcp add canicode -e FIGMA_TOKEN=figd_xxxxxxxxxxxxx -- npx -y -p canicode 
 
 For Cursor / Claude Desktop config, see [`docs/CUSTOMIZATION.md`](docs/CUSTOMIZATION.md).
 
-### Claude Code Skill (lightweight, no MCP install)
+**Figma MCP Rate Limits**
+
+| Plan | Limit |
+|------|-------|
+| Starter | 6 tool calls/month |
+| Pro / Org — Full or Dev seat | 200 tool calls/day |
+| Enterprise — Full or Dev seat | 600 tool calls/day |
+
+MCP and CLI use separate rate limit pools — switching to MCP won't affect your CLI quota. [Full details](https://developers.figma.com/docs/figma-mcp-server/plans-access-and-permissions/)
+
+</details>
+
+<details>
+<summary><strong>Claude Code Skill</strong> (lightweight, no MCP install)</summary>
 
 ```bash
 cp -r .claude/skills/canicode /your-project/.claude/skills/
@@ -105,7 +131,10 @@ cp -r .claude/skills/canicode /your-project/.claude/skills/
 
 Requires the official Figma MCP. Then use `/canicode` with a Figma URL.
 
-### GitHub Action
+</details>
+
+<details>
+<summary><strong>GitHub Action</strong></summary>
 
 ```yaml
 - uses: let-sunny/canicode-action@v0.1.0
@@ -116,6 +145,8 @@ Requires the official Figma MCP. Then use `/canicode` with a Figma URL.
 ```
 
 Posts analysis as a PR comment. Fails if score is below threshold. See [**canicode-action**](https://github.com/marketplace/actions/canicode-action) on Marketplace.
+
+</details>
 
 ---
 
