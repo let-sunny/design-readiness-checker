@@ -192,11 +192,57 @@ USAGE
 `.trimStart());
 }
 
+function printDocsVisualCompare(): void {
+  console.log(`
+VISUAL COMPARE — Pixel-level comparison between Figma and AI-generated code
+
+USAGE
+  canicode visual-compare ./index.html --figma-url 'https://www.figma.com/design/ABC/File?node-id=1-234'
+
+OPTIONS
+  --figma-url <url>   Figma URL with node-id (required)
+  --token <token>     Figma API token (or FIGMA_TOKEN env var)
+  --output <dir>      Output directory (default: /tmp/canicode-visual-compare)
+  --width <px>        Viewport width override (default: match Figma screenshot)
+  --height <px>       Viewport height override (default: match Figma screenshot)
+
+OUTPUT FILES
+  /tmp/canicode-visual-compare/
+    figma.png         Figma screenshot (scale=2)
+    code.png          Playwright render of your HTML
+    diff.png          Pixel diff (red = different pixels)
+
+JSON OUTPUT (stdout)
+  {
+    "similarity": 87,        // 0-100%
+    "diffPixels": 1340,
+    "totalPixels": 102400,
+    "width": 800,
+    "height": 600,
+    "figmaScreenshot": "/tmp/.../figma.png",
+    "codeScreenshot": "/tmp/.../code.png",
+    "diff": "/tmp/.../diff.png"
+  }
+
+HOW IT WORKS
+  1. Fetches Figma screenshot via REST API (scale=2)
+  2. Reads screenshot dimensions
+  3. Renders your HTML with Playwright at the same viewport size
+  4. Compares pixel-by-pixel with pixelmatch (threshold: 0.1)
+  5. Returns similarity % and diff image
+
+REQUIREMENTS
+  npx playwright install chromium
+  Figma API token with read access
+`.trimStart());
+}
+
 const DOCS_TOPICS: Record<string, () => void> = {
   setup: printDocsSetup,
   install: printDocsSetup, // alias
   rules: printDocsRules,
   config: printDocsConfig,
+  "visual-compare": printDocsVisualCompare,
 };
 
 export function handleDocs(topic?: string): void {
@@ -210,7 +256,7 @@ export function handleDocs(topic?: string): void {
     handler();
   } else {
     console.error(`Unknown docs topic: ${topic}`);
-    console.error(`Available topics: setup, rules, config`);
+    console.error(`Available topics: setup, rules, config, visual-compare`);
     process.exit(1);
   }
 }
