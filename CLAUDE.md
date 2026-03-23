@@ -55,7 +55,7 @@ app/                          # Browser runtime
 
 **2. MCP Server (`canicode-mcp`)**
 - Install: `claude mcp add canicode -- npx -y -p canicode canicode-mcp`
-- Tools: `analyze`, `list-rules`, `docs`
+- Tools: `analyze`, `list-rules`, `visual-compare`, `version`, `docs`
 - Works with Figma MCP: user installs official Figma MCP → Claude Code orchestrates both
   - Figma MCP `get_metadata` → XML (structure) + `get_design_context` → code (styles)
   - canicode MCP `analyze(designData: XML, designContext: code)` — hybrid enrichment
