@@ -24,16 +24,22 @@ Convert the **entire root node** (the full scoped design) as one standalone HTML
 
 ## Data Source
 
-- **Fixture file** (`.json`): Read the fixture JSON directly. Use the root `document` node and all its children as your design context.
-- **Figma URL** (`figma.com/`): Call `get_design_context` MCP tool with the `fileKey` and root `nodeId`.
+First, generate the design tree from the fixture:
+```
+npx canicode design-tree <fixture-path> --output /tmp/design-tree.txt
+```
+
+This produces a 4KB DOM-like tree with inline CSS styles instead of 250KB+ raw JSON. Each node = one HTML element. Every style value is CSS-ready.
+
+If the input is a Figma URL, call `get_design_context` MCP tool instead.
 
 ## Steps
 
-1. Read the full design data (fixture JSON root or Figma MCP)
-2. Convert the entire design to a single standalone HTML+CSS file
-   - Match exact colors, fonts, spacing, border-radius, shadows from the data
-   - Replicate auto-layout with flexbox/grid
-   - Include all visible children
+1. Generate design tree (CLI) or get design context (MCP)
+2. Convert the design tree to a single standalone HTML+CSS file
+   - Each node in the tree maps 1:1 to an HTML element
+   - Copy style values directly — they are already CSS-ready
+   - Do NOT interpret or change any value from the tree
 3. Save to `/tmp/calibration-output.html`
 4. Run visual comparison:
    ```

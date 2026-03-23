@@ -574,6 +574,40 @@ cli
   });
 
 // ============================================
+// Design tree command
+// ============================================
+
+cli
+  .command(
+    "design-tree <input>",
+    "Generate a DOM-like design tree from a Figma file or fixture"
+  )
+  .option("--token <token>", "Figma API token (or use FIGMA_TOKEN env var)")
+  .option("--output <path>", "Output file path (default: stdout)")
+  .example("  canicode design-tree ./fixtures/design.json")
+  .example("  canicode design-tree https://www.figma.com/design/ABC/File?node-id=1-234 --output tree.txt")
+  .action(async (input: string, options: { token?: string; output?: string }) => {
+    try {
+      const { file } = await loadFile(input, options.token);
+      const { generateDesignTree } = await import("../core/engine/design-tree.js");
+      const tree = generateDesignTree(file);
+
+      if (options.output) {
+        const outputDir = dirname(resolve(options.output));
+        if (!existsSync(outputDir)) mkdirSync(outputDir, { recursive: true });
+        const { writeFile: writeFileAsync } = await import("node:fs/promises");
+        await writeFileAsync(resolve(options.output), tree, "utf-8");
+        console.log(`Design tree saved: ${resolve(options.output)} (${Math.round(tree.length / 1024)}KB)`);
+      } else {
+        console.log(tree);
+      }
+    } catch (error) {
+      console.error("\nError:", error instanceof Error ? error.message : String(error));
+      process.exit(1);
+    }
+  });
+
+// ============================================
 // Visual compare command
 // ============================================
 

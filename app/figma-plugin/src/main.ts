@@ -69,6 +69,7 @@ interface AnalysisNode {
   fills?: unknown[];
   strokes?: unknown[];
   effects?: unknown[];
+  cornerRadius?: number;
   boundVariables?: Record<string, unknown>;
   characters?: string;
   style?: Record<string, unknown>;
@@ -156,6 +157,11 @@ function transformPluginNode(node: SceneNode): AnalysisNode {
   }
   if (hasEffects(node)) {
     result.effects = node.effects.map((e) => ({ ...e }));
+  }
+
+  // Corner radius
+  if ("cornerRadius" in node && typeof node.cornerRadius === "number" && node.cornerRadius !== figma.mixed) {
+    result.cornerRadius = node.cornerRadius as number;
   }
 
   // Bound variables (design tokens)
