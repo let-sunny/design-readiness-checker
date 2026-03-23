@@ -102,6 +102,9 @@ function transformNode(node: Node): AnalysisNode {
   if ("effects" in node) {
     base.effects = node.effects as unknown[];
   }
+  if ("cornerRadius" in node && typeof node.cornerRadius === "number") {
+    base.cornerRadius = node.cornerRadius;
+  }
 
   // Variable bindings
   if ("boundVariables" in node && node.boundVariables) {

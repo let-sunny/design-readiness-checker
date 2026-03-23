@@ -90,6 +90,7 @@ const BaseAnalysisNodeSchema = z.object({
   fills: z.array(z.unknown()).optional(),
   strokes: z.array(z.unknown()).optional(),
   effects: z.array(z.unknown()).optional(),
+  cornerRadius: z.number().optional(),
 
   // Variable binding analysis (design tokens)
   boundVariables: z.record(z.string(), z.unknown()).optional(),
