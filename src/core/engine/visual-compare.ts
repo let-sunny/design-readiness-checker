@@ -37,7 +37,7 @@ async function fetchFigmaScreenshot(
   outputPath: string,
 ): Promise<void> {
   const res = await fetch(
-    `https://api.figma.com/v1/images/${fileKey}?ids=${nodeId}&format=png&scale=2`,
+    `https://api.figma.com/v1/images/${fileKey}?ids=${nodeId}&format=png&scale=1`,
     { headers: { "X-Figma-Token": token } },
   );
   if (!res.ok) throw new Error(`Figma Images API: ${res.status} ${res.statusText}`);
@@ -73,7 +73,13 @@ async function renderCodeScreenshot(
   });
   await page.waitForTimeout(1000);
 
-  await page.screenshot({ path: outputPath, fullPage: true });
+  // Capture only the first child element (the design root), not the full body/viewport
+  const root = page.locator("body > *:first-child");
+  if (await root.count() > 0) {
+    await root.screenshot({ path: outputPath });
+  } else {
+    await page.screenshot({ path: outputPath });
+  }
   await browser.close();
 }
 
