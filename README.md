@@ -189,6 +189,7 @@ For architecture details, see [`CLAUDE.md`](CLAUDE.md). For calibration pipeline
 - [x] **Phase 6** — Screenshot comparison (`visual-compare` CLI: Figma vs AI-generated code, pixel-level diff)
 - [x] **Phase 7** — Calibration pipeline upgrade (visual-compare + Gap Analyzer for objective score validation)
 - [x] **Phase 8** — Rule discovery pipeline (6-agent debate: researcher → designer → implementer → A/B visual validation → evaluator → critic)
+- [ ] **Ongoing** — Rule refinement via calibration + gap analysis on community fixtures
 
 ## Support
 
