@@ -58,20 +58,22 @@ Run an A/B comparison on the entire design to measure the rule's actual impact o
 
 1. Extract `fileKey` and root `nodeId` from the fixture or Figma URL.
 
-2. Spawn a general-purpose subagent for **Test A (without the rule's data)**:
-   - Read the full fixture and convert the ENTIRE design to a single HTML page
-   - Strip or withhold the information the rule checks for (e.g., remove descriptions if testing missing-component-description)
+2. Generate design tree: `npx canicode design-tree <fixture> --output /tmp/design-tree.txt`
+
+3. Spawn a general-purpose subagent for **Test A (without the rule's data)**:
+   - Use the design tree to convert the ENTIRE design to a single HTML page
+   - Strip or withhold the information the rule checks for from the tree (e.g., remove descriptions if testing missing-component-description)
    - Save to `/tmp/visual-a.html`
    - Run: `npx canicode visual-compare /tmp/visual-a.html --figma-url "<figma-url-with-root-node-id>"`
    - Record similarity_a
 
-3. Spawn a general-purpose subagent for **Test B (with the rule's data)**:
-   - Same fixture, same ENTIRE design, but this time INCLUDE the information (e.g., generate component descriptions via AI and provide them as context)
+4. Spawn a general-purpose subagent for **Test B (with the rule's data)**:
+   - Same design tree, but this time INCLUDE the information (e.g., generate component descriptions via AI and add them to the tree)
    - Save to `/tmp/visual-b.html`
    - Run: `npx canicode visual-compare /tmp/visual-b.html --figma-url "<figma-url-with-root-node-id>"`
    - Record similarity_b
 
-4. Compare: if similarity_b > similarity_a → the rule catches something that genuinely improves implementation quality.
+5. Compare: if similarity_b > similarity_a → the rule catches something that genuinely improves implementation quality.
 
 5. Record both scores for the Evaluator.
 

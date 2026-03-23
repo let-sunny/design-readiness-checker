@@ -243,11 +243,12 @@ Available topics:
 - config: Config overrides (scores, severity, node exclusions, thresholds)
 - custom-rules: How to add project-specific checks
 - visual-compare: Pixel-level comparison between Figma and AI-generated code
+- design-tree: Generate DOM-like design tree from fixture for AI code generation
 - all: Full customization guide
 
 Use this when the user asks about how to use canicode, configuration, rules, visual comparison, or any feature.`,
   {
-    topic: z.enum(["all", "setup", "rules", "config", "custom-rules", "visual-compare"]).optional()
+    topic: z.enum(["all", "setup", "rules", "config", "custom-rules", "visual-compare", "design-tree"]).optional()
       .describe("Topic to retrieve. Default: all"),
   },
   {
@@ -324,6 +325,31 @@ canicode visual-compare ./index.html --figma-url 'https://www.figma.com/design/A
 ## Requirements
 - npx playwright install chromium
 - Figma API token with read access`,
+
+      "design-tree": `# Design Tree
+
+Generate a DOM-like design tree from a Figma fixture. Converts the node tree to a concise text format with inline CSS styles — 50-100x smaller than raw JSON.
+
+## Usage
+\`\`\`bash
+canicode design-tree ./fixtures/design.json
+canicode design-tree ./fixtures/design.json --output tree.txt
+canicode design-tree "https://www.figma.com/design/ABC/File?node-id=1-234"
+\`\`\`
+
+## Output Format
+Each node = one line with name, type, dimensions, followed by CSS-ready styles:
+\`\`\`
+Hero Form (INSTANCE, 375x960)
+  style: display: flex; flex-direction: column; gap: 32px; padding: 160px 24px; background: #F5F5F5
+  Title (TEXT, 117x58)
+    style: font-family: "Inter"; font-weight: 700; font-size: 48px; color: #2C2C2C; text: "Title"
+\`\`\`
+
+## Use Cases
+- AI code generation — feed this to an LLM instead of raw 250KB fixture JSON
+- Calibration pipeline — Converter uses this for accurate code reproduction
+- Debugging — quickly see the design structure and styles`,
     };
 
     // Check inline topics first

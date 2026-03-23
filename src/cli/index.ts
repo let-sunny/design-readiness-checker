@@ -858,7 +858,7 @@ cli
 // ============================================
 
 cli
-  .command("docs [topic]", "Show documentation (topics: setup, rules, config, visual-compare)")
+  .command("docs [topic]", "Show documentation (topics: setup, rules, config, visual-compare, design-tree)")
   .action((topic?: string) => {
     handleDocs(topic);
   });

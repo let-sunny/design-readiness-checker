@@ -237,12 +237,42 @@ REQUIREMENTS
 `.trimStart());
 }
 
+function printDocsDesignTree(): void {
+  console.log(`
+DESIGN TREE — Generate DOM-like design tree from Figma fixture
+
+USAGE
+  canicode design-tree ./fixtures/design.json
+  canicode design-tree ./fixtures/design.json --output tree.txt
+  canicode design-tree "https://www.figma.com/design/ABC/File?node-id=1-234"
+
+OPTIONS
+  --token <token>     Figma API token (for URL input)
+  --output <path>     Output file (default: stdout)
+
+OUTPUT FORMAT
+  Each node = one line: name (TYPE, WxH) + CSS-ready styles
+  Indentation shows parent-child relationships
+
+  Hero Form (INSTANCE, 375x960)
+    style: display: flex; flex-direction: column; gap: 32px; background: #F5F5F5
+    Title (TEXT, 117x58)
+      style: font-family: "Inter"; font-size: 48px; color: #2C2C2C; text: "Title"
+
+USE CASES
+  Feed to AI for code generation (4KB vs 250KB raw JSON)
+  Calibration pipeline (Converter uses this)
+  Quick design structure inspection
+`.trimStart());
+}
+
 const DOCS_TOPICS: Record<string, () => void> = {
   setup: printDocsSetup,
   install: printDocsSetup, // alias
   rules: printDocsRules,
   config: printDocsConfig,
   "visual-compare": printDocsVisualCompare,
+  "design-tree": printDocsDesignTree,
 };
 
 export function handleDocs(topic?: string): void {
@@ -256,7 +286,7 @@ export function handleDocs(topic?: string): void {
     handler();
   } else {
     console.error(`Unknown docs topic: ${topic}`);
-    console.error(`Available topics: setup, rules, config, visual-compare`);
+    console.error(`Available topics: setup, rules, config, visual-compare, design-tree`);
     process.exit(1);
   }
 }
