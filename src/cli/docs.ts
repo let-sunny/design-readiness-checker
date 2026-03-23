@@ -151,7 +151,7 @@ EXAMPLE
 USAGE
   canicode analyze <url> --custom-rules ./my-rules.json
 
-  Full guide: docs/CUSTOMIZATION.md
+  Full guide: docs/REFERENCE.md
   Examples:   examples/custom-rules.json
 
 TIP: Ask any LLM "Write a canicode custom rule that checks X" with the
@@ -187,7 +187,7 @@ EXAMPLE
 USAGE
   canicode analyze <url> --config ./my-config.json
 
-  Full guide: docs/CUSTOMIZATION.md
+  Full guide: docs/REFERENCE.md
   Examples:   examples/config.json
 `.trimStart());
 }

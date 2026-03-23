@@ -108,7 +108,7 @@ Or with a Figma API token (no Figma MCP needed):
 claude mcp add canicode -e FIGMA_TOKEN=figd_xxxxxxxxxxxxx -- npx -y -p canicode canicode-mcp
 ```
 
-For Cursor / Claude Desktop config, see [`docs/CUSTOMIZATION.md`](docs/CUSTOMIZATION.md).
+For Cursor / Claude Desktop config, see [`docs/REFERENCE.md`](docs/REFERENCE.md).
 
 **Figma MCP Rate Limits**
 
@@ -160,7 +160,7 @@ Posts analysis as a PR comment. Fails if score is below threshold. See [**canico
 
 > Ask any LLM *"Write a canicode custom rule that checks X"* — it can generate the JSON for you.
 
-See [`docs/CUSTOMIZATION.md`](docs/CUSTOMIZATION.md) for the full guide, examples, and all available options.
+See [`docs/REFERENCE.md`](docs/REFERENCE.md) for the full guide, examples, and all available options.
 
 ---
 

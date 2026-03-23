@@ -259,7 +259,7 @@ Use this when the user asks about how to use canicode, configuration, rules, vis
   async ({ topic }) => {
     const selectedTopic = topic ?? "all";
 
-    // Inline topics (not from CUSTOMIZATION.md)
+    // Inline topics (not from REFERENCE.md)
     const inlineTopics: Record<string, string> = {
       "setup": `# Setup
 
@@ -333,20 +333,20 @@ canicode visual-compare ./index.html --figma-url 'https://www.figma.com/design/A
       };
     }
 
-    // Fall back to CUSTOMIZATION.md for config/custom-rules/rules/all
+    // Fall back to REFERENCE.md for config/custom-rules/rules/all
     const { readFile } = await import("node:fs/promises");
     const { resolve, dirname } = await import("node:path");
     const { fileURLToPath } = await import("node:url");
 
     try {
       const __dirname = dirname(fileURLToPath(import.meta.url));
-      const docPath = resolve(__dirname, "../../docs/CUSTOMIZATION.md");
+      const docPath = resolve(__dirname, "../../docs/REFERENCE.md");
       let content: string;
 
       try {
         content = await readFile(docPath, "utf-8");
       } catch {
-        const altPath = resolve(__dirname, "../docs/CUSTOMIZATION.md");
+        const altPath = resolve(__dirname, "../docs/REFERENCE.md");
         content = await readFile(altPath, "utf-8");
       }
 
