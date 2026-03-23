@@ -1,31 +1,36 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Nightly calibration: one pass over fixtures (Claude /calibrate-loop), then gap-based rule review.
+# Nightly calibration: scan fixtures directory, run calibration, move converged fixtures to done/.
 #
 # Each /calibrate-loop invocation creates its own run directory under logs/calibration/<name>--<timestamp>/.
-# No manual snapshot copying needed — run directories are self-contained.
 #
-# Phase 1 — For each fixture: run calibration.
+# Phase 1 — For each active fixture (fixtures/*.json): run calibration.
+#           If applied=0 (converged), move fixture to fixtures/done/.
 # Phase 2 — canicode calibrate-gap-report → logs/calibration/REPORT.md
 # Phase 3 — Manual: review the report, then run /add-rule in Claude Code.
 #
 # Usage:
-#   export CALIBRATE_FIXTURES="fixtures/a.json,fixtures/b.json,..."
-#   ./scripts/calibrate-night.sh
-#   ./scripts/calibrate-night.sh --deep   # uses /calibrate-loop-deep instead
+#   ./scripts/calibrate-night.sh                        # scan fixtures/ dir
+#   ./scripts/calibrate-night.sh --fixture-dir path/    # custom fixture directory
+#   ./scripts/calibrate-night.sh --deep                 # uses /calibrate-loop-deep
 #
 # Optional:
 #   CALIBRATE_SKIP_PHASE2=1     — only Phase 1 (no gap report)
-#   CALIBRATE_SKIP_BUILD=1      — skip pnpm build before Phase 2 (use existing dist/)
-#   CALIBRATE_AUTO_COMMIT=1     — git commit + push at end if rule-config or logs changed
+#   CALIBRATE_SKIP_BUILD=1      — skip pnpm build before Phase 2
+#   CALIBRATE_AUTO_COMMIT=1     — git commit + push at end
 
 COMMAND="/calibrate-loop"
+FIXTURE_DIR="fixtures"
 
 for arg in "$@"; do
   case "$arg" in
     --deep)
       COMMAND="/calibrate-loop-deep"
+      ;;
+    --fixture-dir)
+      shift
+      FIXTURE_DIR="$1"
       ;;
   esac
 done
@@ -41,27 +46,19 @@ if [ -f "$PROJECT_ROOT/.env" ]; then
   set +a
 fi
 
-if [ -z "${CALIBRATE_FIXTURES:-}" ]; then
-  echo "Error: CALIBRATE_FIXTURES is not set."
-  echo ""
-  echo "Example:"
-  echo "  export CALIBRATE_FIXTURES=\"fixtures/material3-kit-1.json,fixtures/material3-kit-2.json,...\""
-  echo "  ./scripts/calibrate-night.sh"
-  echo ""
-  echo "Or add CALIBRATE_FIXTURES to .env"
-  exit 1
-fi
-
-IFS=',' read -ra FIXTURES <<< "$CALIBRATE_FIXTURES"
-
-for f in "${FIXTURES[@]}"; do
-  if [ ! -f "$f" ]; then
-    echo "Error: Fixture not found: $f"
-    exit 1
-  fi
+# Discover active fixtures (skip done/)
+FIXTURES=()
+for f in "$FIXTURE_DIR"/*.json; do
+  [ -f "$f" ] && FIXTURES+=("$f")
 done
 
-# Nightly-level log (not per-run — tracks the orchestration itself)
+if [ ${#FIXTURES[@]} -eq 0 ]; then
+  echo "No active fixtures found in $FIXTURE_DIR/*.json"
+  echo "All fixtures may have converged (moved to $FIXTURE_DIR/done/)."
+  exit 0
+fi
+
+# Nightly-level log (tracks the orchestration itself)
 NIGHTLY_LOG_DIR="logs/activity"
 mkdir -p "$NIGHTLY_LOG_DIR"
 
@@ -90,17 +87,21 @@ fi
 TOTAL_START=$SECONDS
 BEFORE_HASH=$(git hash-object src/rules/rule-config.ts 2>/dev/null || echo "none")
 
-log "Phase 1 started" "Command: $COMMAND | Fixtures: ${#FIXTURES[@]}"
+log "Phase 1 started" "Command: $COMMAND | Active fixtures: ${#FIXTURES[@]}"
 
-echo "Phase 1: calibrate ${#FIXTURES[@]} fixture(s) with ${COMMAND}"
+echo "Phase 1: calibrate ${#FIXTURES[@]} active fixture(s) with ${COMMAND}"
+echo "  (converged fixtures in $FIXTURE_DIR/done/ are skipped)"
 echo ""
 
 PASS=0
 FAIL=0
+CONVERGED=0
+CONVERGED_LIST=""
 
 for i in "${!FIXTURES[@]}"; do
   fixture="${FIXTURES[$i]}"
   idx=$((i + 1))
+  base="$(basename "$fixture" .json)"
 
   echo "  [$idx/${#FIXTURES[@]}] $fixture"
   log "Fixture $idx start" "File: $fixture"
@@ -108,8 +109,39 @@ for i in "${!FIXTURES[@]}"; do
   RUN_START=$SECONDS
   if claude --dangerously-skip-permissions "$COMMAND" "$fixture"; then
     DURATION=$(( SECONDS - RUN_START ))
-    log "Fixture $idx complete" "Duration: ${DURATION}s"
-    echo "    Complete (${DURATION}s)"
+
+    # Check if converged: find the latest run dir for this fixture and check debate.json
+    LATEST_RUN_DIR=$(ls -d logs/calibration/"${base}"--* 2>/dev/null | sort | tail -1)
+    APPLIED="?"
+    if [ -n "$LATEST_RUN_DIR" ] && [ -f "$LATEST_RUN_DIR/debate.json" ]; then
+      # Extract applied count from arbitrator summary
+      APPLIED=$(python3 -c "
+import json, sys
+try:
+    d = json.load(open('$LATEST_RUN_DIR/debate.json'))
+    s = d.get('arbitrator', {}).get('summary', '')
+    # Parse 'applied=N' from summary string
+    for part in s.split():
+        if part.startswith('applied='):
+            print(part.split('=')[1])
+            sys.exit(0)
+    print('?')
+except: print('?')
+" 2>/dev/null || echo "?")
+    fi
+
+    if [ "$APPLIED" = "0" ]; then
+      # Converged — move fixture to done/
+      mkdir -p "$FIXTURE_DIR/done"
+      mv "$fixture" "$FIXTURE_DIR/done/"
+      CONVERGED=$((CONVERGED + 1))
+      CONVERGED_LIST="${CONVERGED_LIST}    → $fixture (moved to done/)\n"
+      log "Fixture $idx converged" "Duration: ${DURATION}s — moved to done/"
+      echo "    Complete (${DURATION}s) — converged, moved to done/"
+    else
+      log "Fixture $idx complete" "Duration: ${DURATION}s — applied=$APPLIED"
+      echo "    Complete (${DURATION}s) — applied=$APPLIED"
+    fi
     PASS=$((PASS + 1))
   else
     DURATION=$(( SECONDS - RUN_START ))
@@ -120,10 +152,13 @@ for i in "${!FIXTURES[@]}"; do
 done
 
 PHASE1_DURATION=$(( SECONDS - TOTAL_START ))
-log "Phase 1 finished" "Passed: $PASS | Failed: $FAIL | Duration: ${PHASE1_DURATION}s"
+log "Phase 1 finished" "Passed: $PASS | Failed: $FAIL | Converged: $CONVERGED | Duration: ${PHASE1_DURATION}s"
 
 echo ""
-echo "Phase 1 done: ${PASS} passed, ${FAIL} failed (${PHASE1_DURATION}s)"
+echo "Phase 1 done: ${PASS} passed, ${FAIL} failed, ${CONVERGED} converged (${PHASE1_DURATION}s)"
+if [ -n "$CONVERGED_LIST" ]; then
+  echo -e "$CONVERGED_LIST"
+fi
 echo ""
 
 GAP_REPORT_PATH="logs/calibration/REPORT.md"
@@ -153,9 +188,11 @@ else
 fi
 
 TOTAL_DURATION=$(( SECONDS - TOTAL_START ))
-log "Nightly finished" "Total duration: ${TOTAL_DURATION}s | Log: $NIGHTLY_LOG"
+REMAINING=$(ls "$FIXTURE_DIR"/*.json 2>/dev/null | wc -l | tr -d ' ')
+log "Nightly finished" "Total: ${TOTAL_DURATION}s | Remaining active: $REMAINING | Converged: $CONVERGED"
 
 echo "Log: $NIGHTLY_LOG"
+echo "Active fixtures remaining: $REMAINING"
 echo "Total time: ${TOTAL_DURATION}s"
 
 AFTER_HASH=$(git hash-object src/rules/rule-config.ts 2>/dev/null || echo "none")
@@ -172,7 +209,7 @@ if [ "${CALIBRATE_AUTO_COMMIT:-}" = "1" ]; then
     else
       git commit -m "chore: nightly calibration — ${DATETIME}
 
-Phase 1: ${PASS}/${#FIXTURES[@]} fixtures passed
+Phase 1: ${PASS}/${#FIXTURES[@]} passed, ${CONVERGED} converged
 Report: ${GAP_REPORT_PATH}"
       git push
       echo "Committed and pushed calibration changes."

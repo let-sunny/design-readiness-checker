@@ -128,6 +128,7 @@ export const AnalysisFileSchema = z.object({
   name: z.string(),
   lastModified: z.string(),
   version: z.string(),
+  sourceUrl: z.string().optional(),
   document: AnalysisNodeSchema,
   components: z.record(
     z.string(),

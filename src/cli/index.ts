@@ -632,6 +632,11 @@ cli
 
       const { file } = await loadFile(input, options.token);
 
+      // Store original Figma URL in fixture for future reference
+      if (isFigmaUrl(input)) {
+        file.sourceUrl = input;
+      }
+
       const outputPath = resolve(
         options.output ?? `fixtures/${file.fileKey}.json`
       );
