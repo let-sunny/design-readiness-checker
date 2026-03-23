@@ -40,14 +40,21 @@ Read the original fixture JSON directly when you need to verify a value from the
 
 If the input is a Figma URL, call `get_design_context` MCP tool instead (no fixture JSON available in that case — use design context as the sole source).
 
+## Code Generation Prompt
+
+Read and follow `.claude/skills/design-to-code/PROMPT.md` for all code generation rules. Key points:
+- Do NOT interpret. Reproduce exactly.
+- Load fonts via Google Fonts CDN.
+- List every guessed value as an interpretation.
+
 ## Steps
 
-1. Generate design tree (CLI) or get design context (MCP)
-2. Convert the design tree to a single standalone HTML+CSS file
+1. Read `docs/DESIGN-TO-CODE-PROMPT.md` for code generation rules
+2. Generate design tree (CLI) or get design context (MCP)
+3. Convert the design tree to a single standalone HTML+CSS file
    - Each node in the tree maps 1:1 to an HTML element
    - Copy style values directly — they are already CSS-ready
-   - Do NOT interpret or change any value from the tree
-   - If any value is missing and you have to guess, record it as an interpretation
+   - Follow all rules from DESIGN-TO-CODE-PROMPT.md
 3. Save to `/tmp/calibration-output.html`
 4. Run visual comparison:
    ```

@@ -28,7 +28,8 @@
   },
   "files": [
     "dist",
-    "docs/REFERENCE.md"
+    "docs/REFERENCE.md",
+    ".claude/skills/design-to-code/PROMPT.md"
   ],
   "keywords": [
     "figma",

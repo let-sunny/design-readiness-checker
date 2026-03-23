@@ -61,6 +61,7 @@ Run an A/B comparison on the entire design to measure the rule's actual impact o
 2. Generate design tree: `npx canicode design-tree <fixture> --output /tmp/design-tree.txt`
 
 3. Spawn a general-purpose subagent for **Test A (without the rule's data)**:
+   - Read and follow `.claude/skills/design-to-code/PROMPT.md` for code generation rules
    - Use the design tree to convert the ENTIRE design to a single HTML page
    - Strip or withhold the information the rule checks for from the tree (e.g., remove descriptions if testing missing-component-description)
    - Save to `/tmp/visual-a.html`
@@ -68,6 +69,7 @@ Run an A/B comparison on the entire design to measure the rule's actual impact o
    - Record similarity_a
 
 4. Spawn a general-purpose subagent for **Test B (with the rule's data)**:
+   - Read and follow `.claude/skills/design-to-code/PROMPT.md` for code generation rules
    - Same design tree, but this time INCLUDE the information (e.g., generate component descriptions via AI and add them to the tree)
    - Save to `/tmp/visual-b.html`
    - Run: `npx canicode visual-compare /tmp/visual-b.html --figma-url "<figma-url-with-root-node-id>"`
