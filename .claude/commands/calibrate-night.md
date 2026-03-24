@@ -37,7 +37,13 @@ After each successful run, use the CLI to check convergence and move:
 npx canicode fixture-done <fixture-path> --run-dir $RUN_DIR
 ```
 
-This checks `debate.json` for convergence (`applied=0 AND rejected=0`) and moves the fixture to `done/`. If the fixture hasn't converged, the command exits with an error — that's expected, just skip and continue.
+This checks `debate.json` for convergence (`applied=0 AND rejected=0` by default) and moves the fixture to `done/`. If the fixture hasn't converged, the command exits with an error — that's expected, just skip and continue.
+
+If the same low-confidence proposals keep getting **rejected** and nothing is applied (issue #14), you can move anyway with **`--lenient-convergence`** (converged when there are no applied/revised decisions, ignoring rejects):
+
+```bash
+npx canicode fixture-done <fixture-path> --run-dir $RUN_DIR --lenient-convergence
+```
 
 Report which fixtures were moved to `done/`.
 

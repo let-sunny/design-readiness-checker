@@ -309,12 +309,15 @@ canicode visual-compare ./index.html --figma-url 'https://www.figma.com/design/A
 | --figma-url <url> | (required) | Figma URL with node-id |
 | --token <token> | FIGMA_TOKEN env | Figma API token |
 | --output <dir> | /tmp/canicode-visual-compare | Output directory |
-| --width <px> | (from Figma screenshot) | Viewport width override |
-| --height <px> | (from Figma screenshot) | Viewport height override |
+| --width <px> | (inferred from Figma PNG ÷ scale) | Logical viewport width in CSS px |
+| --height <px> | (inferred from Figma PNG ÷ scale) | Logical viewport height in CSS px |
+| --figma-scale <n> | 2 | Figma export scale (matches @2x fixture PNGs) |
+
+Viewport and device pixel ratio are auto-inferred from the Figma PNG dimensions and export scale. Override only when needed.
 
 ## Output Files
 /tmp/canicode-visual-compare/
-  figma.png — Figma screenshot (scale=2)
+  figma.png — Figma screenshot (at export scale, default @2x)
   code.png — Playwright render of your HTML
   diff.png — Pixel diff (red = different)
 
@@ -427,7 +430,7 @@ fetches the Figma screenshot, and computes pixel-level similarity using pixelmat
 Returns similarity percentage (0-100%), diff pixel count, and paths to
 the Figma screenshot, code screenshot, and diff image.
 
-Viewport is automatically matched to the Figma screenshot dimensions.
+Logical viewport and device pixel ratio are inferred from the Figma PNG export scale (default 2×) so code.png matches figma.png pixels.
 
 Requires: Playwright with Chromium installed, Figma API token.`,
   {
@@ -435,6 +438,7 @@ Requires: Playwright with Chromium installed, Figma API token.`,
     figmaUrl: z.string().describe("Figma URL with node-id (e.g., https://www.figma.com/design/ABC/File?node-id=1-234)"),
     token: z.string().optional().describe("Figma API token (falls back to FIGMA_TOKEN env var)"),
     outputDir: z.string().optional().describe("Output directory for screenshots (default: /tmp/canicode-visual-compare)"),
+    figmaExportScale: z.number().int().min(1).max(4).optional().describe("Figma export scale (default 2, matches @2x fixture PNGs)"),
   },
   {
     readOnlyHint: true,
@@ -442,7 +446,7 @@ Requires: Playwright with Chromium installed, Figma API token.`,
     openWorldHint: true,
     title: "Visual Compare",
   },
-  async ({ codePath, figmaUrl, token, outputDir }) => {
+  async ({ codePath, figmaUrl, token, outputDir, figmaExportScale }) => {
     try {
       const { visualCompare } = await import("../core/engine/visual-compare.js");
       const figmaToken = token ?? process.env["FIGMA_TOKEN"];
@@ -458,6 +462,7 @@ Requires: Playwright with Chromium installed, Figma API token.`,
         figmaToken,
         codePath,
         outputDir,
+        ...(figmaExportScale !== undefined ? { figmaExportScale } : {}),
       });
 
       return {

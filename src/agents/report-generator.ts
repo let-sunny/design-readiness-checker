@@ -2,6 +2,7 @@ import type { ScoreReport } from "@/core/engine/scoring.js";
 import type { MismatchCase } from "./contracts/evaluation-agent.js";
 import type { ScoreAdjustment, NewRuleProposal } from "./contracts/tuning-agent.js";
 
+/** Data structure for generating calibration report markdown. */
 export interface CalibrationReportData {
   fileKey: string;
   fileName: string;
@@ -15,6 +16,12 @@ export interface CalibrationReportData {
   validatedRules: string[];
   adjustments: ScoreAdjustment[];
   newRuleProposals: NewRuleProposal[];
+  /** Design tree token metrics (optional — present when design-tree stats are available) */
+  tokenMetrics?: {
+    designTreeTokens: number;
+    designTreeBytes: number;
+    tokensPerNode: number;
+  } | undefined;
 }
 
 /**
@@ -47,7 +54,9 @@ function renderOverview(data: CalibrationReportData): string {
 | Total Issues | ${data.issueCount} |
 | Converted Nodes | ${data.convertedNodeCount} |
 | Skipped Nodes | ${data.skippedNodeCount} |
-| Overall Grade | ${data.scoreReport.overall.grade} (${data.scoreReport.overall.percentage}%) |
+| Overall Grade | ${data.scoreReport.overall.grade} (${data.scoreReport.overall.percentage}%) |${data.tokenMetrics ? `
+| Design Tree Tokens | ~${data.tokenMetrics.designTreeTokens.toLocaleString()} tokens (${Math.round(data.tokenMetrics.designTreeBytes / 1024)}KB) |
+| Tokens per Node | ~${Math.round(data.tokenMetrics.tokensPerNode)} |` : ""}
 `;
 }
 

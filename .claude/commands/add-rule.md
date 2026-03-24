@@ -68,9 +68,9 @@ Append to `$RUN_DIR/activity.jsonl`:
 {"step":"Implementer","timestamp":"<ISO8601>","result":"implemented rule <rule-id>","durationMs":<ms>}
 ```
 
-### Step 4 — A/B Visual Validation
+### Step 4 — A/B Validation (Visual + Token)
 
-Run an A/B comparison on the entire design to measure the rule's actual impact on pixel-perfect accuracy:
+Run an A/B comparison measuring both **pixel accuracy** and **token efficiency**:
 
 1. Extract `fileKey` and root `nodeId` from the fixture or Figma URL.
 
@@ -91,9 +91,15 @@ Run an A/B comparison on the entire design to measure the rule's actual impact o
    - Run: `npx canicode visual-compare $RUN_DIR/visual-b.html --figma-url "<figma-url-with-root-node-id>" --output $RUN_DIR/visual-b`
    - Record similarity_b
 
-5. Compare: if similarity_b > similarity_a → the rule catches something that genuinely improves implementation quality.
+5. **Visual comparison**: if similarity_b > similarity_a → the rule improves pixel accuracy.
 
-6. Record both scores for the Evaluator.
+6. **Token comparison** (always measure, even if visual diff is zero):
+   - Count lines/bytes of `visual-a.html` vs `visual-b.html`
+   - If Test B is significantly smaller → the rule reduces token consumption (important for large pages)
+   - Record `tokens_a` (estimated: file bytes / 4) and `tokens_b`
+   - Token savings ratio: `1 - tokens_b / tokens_a`
+
+7. Record all scores for the Evaluator: `similarity_a`, `similarity_b`, `tokens_a`, `tokens_b`.
 
 ### Step 5 — Evaluator
 

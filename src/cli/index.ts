@@ -607,13 +607,23 @@ cli
   .option("--fixtures-dir <path>", "Fixtures root directory", { default: "fixtures" })
   .option("--force", "Skip convergence check")
   .option("--run-dir <path>", "Run directory to check for convergence")
-  .action((fixturePath: string, options: { fixturesDir?: string; force?: boolean; runDir?: string }) => {
+  .option(
+    "--lenient-convergence",
+    "Converged when no applied/revised decisions (ignore rejected; see calibration issue #14)"
+  )
+  .action(
+    (fixturePath: string, options: {
+      fixturesDir?: string;
+      force?: boolean;
+      runDir?: string;
+      lenientConvergence?: boolean;
+    }) => {
     if (!options.force) {
       if (!options.runDir) {
         console.error("Error: --run-dir required to check convergence (or use --force to skip check)");
         process.exit(1);
       }
-      if (!isConverged(resolve(options.runDir))) {
+      if (!isConverged(resolve(options.runDir), { lenient: options.lenientConvergence })) {
         const debate = parseDebateResult(resolve(options.runDir));
         const summary = debate?.arbitrator?.summary ?? debate?.skipped ?? "no debate.json found";
         console.error(`Error: fixture has not converged (${summary}). Use --force to override.`);
@@ -854,7 +864,6 @@ cli
   .action(async (input: string, options: { token?: string; output?: string; vectorDir?: string }) => {
     try {
       const { file } = await loadFile(input, options.token);
-      const { generateDesignTree } = await import("../core/engine/design-tree.js");
 
       // Auto-detect vector dir from fixture path
       let vectorDir = options.vectorDir;
@@ -866,16 +875,17 @@ cli
         if (existsSync(autoDir)) vectorDir = autoDir;
       }
 
-      const tree = generateDesignTree(file, vectorDir ? { vectorDir } : undefined);
+      const { generateDesignTreeWithStats } = await import("../core/engine/design-tree.js");
+      const stats = generateDesignTreeWithStats(file, vectorDir ? { vectorDir } : undefined);
 
       if (options.output) {
         const outputDir = dirname(resolve(options.output));
         if (!existsSync(outputDir)) mkdirSync(outputDir, { recursive: true });
         const { writeFile: writeFileAsync } = await import("node:fs/promises");
-        await writeFileAsync(resolve(options.output), tree, "utf-8");
-        console.log(`Design tree saved: ${resolve(options.output)} (${Math.round(tree.length / 1024)}KB)`);
+        await writeFileAsync(resolve(options.output), stats.tree, "utf-8");
+        console.log(`Design tree saved: ${resolve(options.output)} (${Math.round(stats.bytes / 1024)}KB, ~${stats.estimatedTokens} tokens)`);
       } else {
-        console.log(tree);
+        console.log(stats.tree);
       }
     } catch (error) {
       console.error("\nError:", error instanceof Error ? error.message : String(error));
@@ -903,10 +913,11 @@ cli
   .option("--figma-url <url>", "Figma URL with node-id (required)")
   .option("--token <token>", "Figma API token (or use FIGMA_TOKEN env var)")
   .option("--output <dir>", "Output directory for screenshots and diff (default: /tmp/canicode-visual-compare)")
-  .option("--width <px>", "Viewport width (default: 1440)")
-  .option("--height <px>", "Viewport height (default: 900)")
+  .option("--width <px>", "Logical viewport width in CSS px (default: infer from Figma PNG ÷ export scale)")
+  .option("--height <px>", "Logical viewport height in CSS px (default: infer from Figma PNG ÷ export scale)")
+  .option("--figma-scale <n>", "Figma export scale (default: 2, matches save-fixture / @2x PNGs)")
   .example("  canicode visual-compare ./generated/index.html --figma-url 'https://www.figma.com/design/ABC/File?node-id=1-234'")
-  .action(async (codePath: string, options: VisualCompareOptions) => {
+  .action(async (codePath: string, options: VisualCompareOptions & { figmaScale?: string }) => {
     try {
       if (!options.figmaUrl) {
         console.error("Error: --figma-url is required");
@@ -921,16 +932,43 @@ cli
 
       const { visualCompare } = await import("../core/engine/visual-compare.js");
 
+      const exportScale =
+        options.figmaScale !== undefined ? Number(options.figmaScale) : undefined;
+      if (exportScale !== undefined && (!Number.isFinite(exportScale) || exportScale < 1)) {
+        console.error("Error: --figma-scale must be a number >= 1");
+        process.exit(1);
+      }
+
+      // CAC passes option values as strings — coerce to numbers before validation
+      const width = options.width !== undefined ? Number(options.width) : undefined;
+      const height = options.height !== undefined ? Number(options.height) : undefined;
+
+      if (width !== undefined && (!Number.isFinite(width) || width <= 0)) {
+        console.error("Error: --width must be a positive number");
+        process.exit(1);
+      }
+      if (height !== undefined && (!Number.isFinite(height) || height <= 0)) {
+        console.error("Error: --height must be a positive number");
+        process.exit(1);
+      }
+
+      const hasViewportOverride = width !== undefined || height !== undefined;
+
       console.log("Comparing...");
       const result = await visualCompare({
         figmaUrl: options.figmaUrl,
         figmaToken: token,
         codePath: resolve(codePath),
         outputDir: options.output,
-        viewport: {
-          width: options.width ?? 1440,
-          height: options.height ?? 900,
-        },
+        ...(exportScale !== undefined ? { figmaExportScale: exportScale } : {}),
+        ...(hasViewportOverride
+          ? {
+              viewport: {
+                ...(width !== undefined ? { width } : {}),
+                ...(height !== undefined ? { height } : {}),
+              },
+            }
+          : {}),
       });
 
       // JSON output for programmatic use

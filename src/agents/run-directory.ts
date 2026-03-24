@@ -231,12 +231,21 @@ export function extractAppliedRuleIds(debate: DebateResult): string[] {
     .filter((id) => id.length > 0);
 }
 
+/** Options for convergence checking. */
+export interface ConvergenceOptions {
+  /**
+   * When true, converged iff no applied/revised decisions (ignore rejected count).
+   * Use when repeated reject loops block `fixture-done` but scores are stable (see issue #14).
+   */
+  lenient?: boolean | undefined;
+}
+
 /**
  * Check if a calibration run has converged.
- * Converged = debate exists AND applied=0 AND rejected=0.
- * This means all proposals were validated — no changes and no disagreements.
+ * Strict: no applied/revised AND no rejected decisions.
+ * Lenient: no applied/revised only (rejected proposals allowed).
  */
-export function isConverged(runDir: string): boolean {
+export function isConverged(runDir: string, options?: ConvergenceOptions): boolean {
   const debate = parseDebateResult(runDir);
   if (!debate) return false;
   if (debate.skipped) return true; // zero proposals = converged
@@ -247,5 +256,8 @@ export function isConverged(runDir: string): boolean {
     return dec === "applied" || dec === "revised";
   }).length;
   const rejected = decisions.filter((d) => d.decision.trim().toLowerCase() === "rejected").length;
+  if (options?.lenient) {
+    return applied === 0;
+  }
   return applied === 0 && rejected === 0;
 }

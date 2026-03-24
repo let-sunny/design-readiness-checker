@@ -6,6 +6,19 @@ A CLI tool that analyzes Figma design structures to provide development-friendli
 
 **Can AI implement this Figma design pixel-perfectly?** Everything in this project serves this single question. Every rule, score, category, and pipeline exists to measure and improve how accurately AI can reproduce a Figma design as code. The metric is `visual-compare` similarity (0-100%).
 
+## Target Environment
+
+The primary target is **teams with designers** where developers (+AI) implement large Figma pages:
+- **Page scale**: 300+ nodes, full screens, not small component sections
+- **Component-heavy**: Design systems with reusable components, variants, tokens
+- **AI context budget**: Large pages must fit in AI context windows — componentization reduces token count via deduplication
+- **Not the target**: Individual developers generating simple UI with AI — they don't need Figma analysis
+
+This means:
+- Component-related rule scores (missing-component, etc.) should NOT be lowered based on small fixture calibration
+- Token consumption is a first-class metric — designs that waste tokens on repeated structures are penalized
+- Calibration fixtures should include large, complex pages alongside small sections
+
 ## Tech Stack
 
 - **Runtime**: Node.js (>=18)

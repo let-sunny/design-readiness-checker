@@ -226,6 +226,7 @@ function renderNode(
   return lines.join("\n");
 }
 
+/** Options for design tree generation. */
 export interface DesignTreeOptions {
   /** Directory containing <nodeId>.svg files for VECTOR nodes */
   vectorDir?: string;
@@ -234,14 +235,34 @@ export interface DesignTreeOptions {
 /**
  * Generate a design tree string from an AnalysisFile.
  */
+export interface DesignTreeResult {
+  /** The design tree text */
+  tree: string;
+  /** Estimated token count (~4 chars per token for mixed code/text) */
+  estimatedTokens: number;
+  /** Raw byte size */
+  bytes: number;
+}
+
+/**
+ * Generate a design tree string from an AnalysisFile.
+ */
 export function generateDesignTree(file: AnalysisFile, options?: DesignTreeOptions): string {
+  return generateDesignTreeWithStats(file, options).tree;
+}
+
+/**
+ * Generate a design tree with token/size statistics.
+ * Use this when you need to measure token consumption for AI context budget.
+ */
+export function generateDesignTreeWithStats(file: AnalysisFile, options?: DesignTreeOptions): DesignTreeResult {
   const root = file.document;
   const w = root.absoluteBoundingBox ? Math.round(root.absoluteBoundingBox.width) : 0;
   const h = root.absoluteBoundingBox ? Math.round(root.absoluteBoundingBox.height) : 0;
 
   const tree = renderNode(root, 0, options?.vectorDir, file.components);
 
-  return [
+  const result = [
     "# Design Tree",
     `# Root: ${w}px x ${h}px`,
     "# Each node shows: name (TYPE, WxH) followed by CSS-like styles",
@@ -250,4 +271,10 @@ export function generateDesignTree(file: AnalysisFile, options?: DesignTreeOptio
     "",
     tree,
   ].join("\n");
+
+  const bytes = Buffer.byteLength(result, "utf-8");
+  // ~4 chars per token for mixed code/text (conservative estimate)
+  const estimatedTokens = Math.ceil(result.length / 4);
+
+  return { tree: result, estimatedTokens, bytes };
 }
