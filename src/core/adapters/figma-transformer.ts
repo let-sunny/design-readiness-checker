@@ -155,6 +155,24 @@ export function transformFileNodesResponse(
   };
 }
 
+/**
+ * Transform component master nodes from a /v1/files/{key}/nodes response.
+ * Each requested node ID is transformed into an AnalysisNode if present.
+ */
+export function transformComponentMasterNodes(
+  response: GetFileNodesResponse,
+  requestedIds: string[]
+): Record<string, AnalysisNode> {
+  const result: Record<string, AnalysisNode> = {};
+  for (const id of requestedIds) {
+    const entry = response.nodes[id];
+    if (entry?.document) {
+      result[id] = transformNode(entry.document);
+    }
+  }
+  return result;
+}
+
 function transformComponents(
   components: GetFileResponse["components"]
 ): AnalysisFile["components"] {

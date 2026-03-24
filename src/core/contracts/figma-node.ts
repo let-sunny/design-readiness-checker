@@ -138,6 +138,7 @@ export const AnalysisFileSchema = z.object({
       description: z.string(),
     })
   ),
+  componentDefinitions: z.record(z.string(), AnalysisNodeSchema).optional(),
   styles: z.record(
     z.string(),
     z.object({

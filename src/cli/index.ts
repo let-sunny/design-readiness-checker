@@ -755,6 +755,24 @@ cli
       const fixtureDir = resolve(options.output ?? `fixtures/${fixtureName}`);
       mkdirSync(fixtureDir, { recursive: true });
 
+      // 0. Resolve component master node trees
+      const figmaTokenForComponents = options.token ?? getFigmaToken();
+      if (figmaTokenForComponents) {
+        const { FigmaClient: FC } = await import("../core/adapters/figma-client.js");
+        const { resolveComponentDefinitions } = await import("../core/adapters/component-resolver.js");
+        const componentClient = new FC({ token: figmaTokenForComponents });
+        try {
+          const definitions = await resolveComponentDefinitions(componentClient, file.fileKey, file.document);
+          const count = Object.keys(definitions).length;
+          if (count > 0) {
+            file.componentDefinitions = definitions;
+            console.log(`Resolved ${count} component master node tree(s)`);
+          }
+        } catch {
+          console.warn("Warning: failed to resolve component definitions (continuing)");
+        }
+      }
+
       // 1. Save data.json
       const dataPath = resolve(fixtureDir, "data.json");
       await writeFile(dataPath, JSON.stringify(file, null, 2), "utf-8");

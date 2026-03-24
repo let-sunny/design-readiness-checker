@@ -5,3 +5,4 @@ export * from "./figma-client.js";
 export * from "./figma-transformer.js";
 export * from "./figma-file-loader.js";
 export * from "./figma-mcp-adapter.js";
+export * from "./component-resolver.js";
