@@ -11,18 +11,19 @@ reviews:
     enabled: true
     # Skip draft PRs
     drafts: false
-    # Exclude paths that don't need review
-    path_filters:
-      - "!dist/**"
-      - "!app/web/dist/**"
-      - "!app/figma-plugin/dist/**"
-      - "!pnpm-lock.yaml"
-      - "!logs/**"
-      - "!data/**"
-      - "!fixtures/**"
-      - "!reports/**"
-      - "!**/*.png"
-      - "!**/*.jpg"
+
+  # Exclude paths that don't need review
+  path_filters:
+    - "!dist/**"
+    - "!app/web/dist/**"
+    - "!app/figma-plugin/dist/**"
+    - "!pnpm-lock.yaml"
+    - "!logs/**"
+    - "!data/**"
+    - "!fixtures/**"
+    - "!reports/**"
+    - "!**/*.png"
+    - "!**/*.jpg"
 
   # Disable auto-labeling to reduce noise
   suggested_labels: false
