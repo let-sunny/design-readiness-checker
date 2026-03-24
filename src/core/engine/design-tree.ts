@@ -8,6 +8,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { AnalysisFile, AnalysisNode } from "../contracts/figma-node.js";
 
+/** Convert Figma RGBA color object to CSS hex string. */
 function rgbaToHex(color: { r?: number; g?: number; b?: number; a?: number }): string | null {
   if (!color) return null;
   const r = Math.round((color.r ?? 0) * 255);
@@ -21,6 +22,7 @@ interface FillInfo {
   hasImage: boolean;
 }
 
+/** Extract fill color and IMAGE presence from a node, skipping invisible fills. */
 function getFillInfo(node: AnalysisNode): FillInfo {
   const result: FillInfo = { color: null, hasImage: false };
   if (!node.fills || !Array.isArray(node.fills)) return result;
@@ -50,6 +52,7 @@ function getFill(node: AnalysisNode): string | null {
   return getFillInfo(node).color;
 }
 
+/** Extract the first solid stroke color as a CSS hex string. */
 function getStroke(node: AnalysisNode): string | null {
   if (!node.strokes || !Array.isArray(node.strokes)) return null;
   for (const stroke of node.strokes) {
@@ -59,6 +62,7 @@ function getStroke(node: AnalysisNode): string | null {
   return null;
 }
 
+/** Extract the first visible shadow effect as a CSS box-shadow value. */
 function getShadow(node: AnalysisNode): string | null {
   if (!node.effects || !Array.isArray(node.effects)) return null;
   for (const effect of node.effects) {
@@ -79,6 +83,7 @@ function getShadow(node: AnalysisNode): string | null {
   return null;
 }
 
+/** Map Figma alignment values to CSS flexbox equivalents. */
 function mapAlign(figmaAlign: string): string {
   const map: Record<string, string> = {
     MIN: "flex-start",
@@ -89,6 +94,7 @@ function mapAlign(figmaAlign: string): string {
   return map[figmaAlign] ?? figmaAlign;
 }
 
+/** Render a single node and its children as indented design-tree text. */
 function renderNode(node: AnalysisNode, indent: number, vectorDir?: string): string {
   if (node.visible === false) return "";
 
