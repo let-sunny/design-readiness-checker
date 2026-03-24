@@ -42,6 +42,8 @@ export async function loadFigmaFileFromJson(
       const result = AnalysisNodeSchema.safeParse(raw);
       if (result.success) {
         parsed[id] = result.data;
+      } else {
+        console.debug(`[figma-file-loader] componentDefinitions[${id}] failed validation:`, result.error.issues);
       }
     }
     if (Object.keys(parsed).length > 0) {

@@ -61,8 +61,9 @@ export async function resolveComponentDefinitions(
         for (const [id, node] of Object.entries(transformed)) {
           allDefinitions[id] = node;
         }
-      } catch {
+      } catch (err) {
         // Skip failed batches (e.g. external library components)
+        console.debug(`[component-resolver] batch fetch failed (${batch.length} ids):`, err);
       }
     }
 
@@ -71,12 +72,15 @@ export async function resolveComponentDefinitions(
       resolvedIds.add(id);
     }
 
-    // Collect new IDs from the fetched master nodes for the next pass
+    // Collect new IDs only from masters fetched in this pass (not all accumulated)
     pendingIds = new Set<string>();
-    for (const node of Object.values(allDefinitions)) {
-      for (const id of collectComponentIds(node)) {
-        if (!resolvedIds.has(id)) {
-          pendingIds.add(id);
+    for (const id of idsToFetch) {
+      const node = allDefinitions[id];
+      if (node) {
+        for (const nestedId of collectComponentIds(node)) {
+          if (!resolvedIds.has(nestedId)) {
+            pendingIds.add(nestedId);
+          }
         }
       }
     }
