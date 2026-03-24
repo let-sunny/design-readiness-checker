@@ -939,16 +939,20 @@ cli
         process.exit(1);
       }
 
-      if (options.width !== undefined && (!Number.isFinite(options.width) || options.width <= 0)) {
+      // CAC passes option values as strings — coerce to numbers before validation
+      const width = options.width !== undefined ? Number(options.width) : undefined;
+      const height = options.height !== undefined ? Number(options.height) : undefined;
+
+      if (width !== undefined && (!Number.isFinite(width) || width <= 0)) {
         console.error("Error: --width must be a positive number");
         process.exit(1);
       }
-      if (options.height !== undefined && (!Number.isFinite(options.height) || options.height <= 0)) {
+      if (height !== undefined && (!Number.isFinite(height) || height <= 0)) {
         console.error("Error: --height must be a positive number");
         process.exit(1);
       }
 
-      const hasViewportOverride = options.width !== undefined || options.height !== undefined;
+      const hasViewportOverride = width !== undefined || height !== undefined;
 
       console.log("Comparing...");
       const result = await visualCompare({
@@ -960,8 +964,8 @@ cli
         ...(hasViewportOverride
           ? {
               viewport: {
-                ...(options.width !== undefined ? { width: options.width } : {}),
-                ...(options.height !== undefined ? { height: options.height } : {}),
+                ...(width !== undefined ? { width } : {}),
+                ...(height !== undefined ? { height } : {}),
               },
             }
           : {}),
