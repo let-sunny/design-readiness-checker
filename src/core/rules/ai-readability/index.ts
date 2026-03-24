@@ -1,6 +1,7 @@
 import type { RuleCheckFn, RuleDefinition } from "../../contracts/rule.js";
 import type { AnalysisNode } from "../../contracts/figma-node.js";
 import { defineRule } from "../rule-registry.js";
+import { getRuleOption } from "../rule-config.js";
 
 // ============================================
 // Helper functions
@@ -211,11 +212,13 @@ const invisibleLayerCheck: RuleCheckFn = (node, context) => {
   if (context.parent?.visible === false) return null;
 
   // Check if parent has many hidden children — suggest Slot
+  const slotThreshold =
+    getRuleOption("invisible-layer", "slotRecommendationThreshold", 3);
   const hiddenSiblingCount = context.siblings
     ? context.siblings.filter((s) => s.visible === false).length
     : 0;
 
-  if (hiddenSiblingCount >= 3) {
+  if (hiddenSiblingCount >= slotThreshold) {
     return {
       ruleId: invisibleLayerDef.id,
       nodeId: node.id,

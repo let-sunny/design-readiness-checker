@@ -215,6 +215,9 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
     severity: "suggestion",
     score: -1,
     enabled: true,
+    options: {
+      slotRecommendationThreshold: 3,
+    },
   },
   "empty-frame": {
     severity: "missing-info",
