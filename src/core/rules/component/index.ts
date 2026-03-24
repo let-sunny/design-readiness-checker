@@ -98,6 +98,10 @@ function isInsideInstance(context: {
  * Module-level dedup Sets for missing-component stages.
  * These prevent duplicate violations when the same pattern is encountered
  * multiple times during a single analysis run.
+ *
+ * IMPORTANT: The analysis engine must call resetMissingComponentState()
+ * before each run to clear stale state (especially in long-running processes
+ * like the MCP server). See rule-engine.ts analyze() method.
  */
 const seenStage1ComponentNames = new Set<string>();
 const seenStage4ComponentIds = new Set<string>();
@@ -136,13 +140,15 @@ const missingComponentCheck: RuleCheckFn = (node, context, options) => {
       const frameNames = collectFrameNames(context.file.document);
       const sameNameFrames = frameNames.get(node.name);
 
+      const first = sameNameFrames?.[0];
       if (
         sameNameFrames &&
+        first !== undefined &&
         sameNameFrames.length >= 2 &&
         !seenStage1ComponentNames.has(node.name.toLowerCase())
       ) {
         seenStage1ComponentNames.add(node.name.toLowerCase());
-        if (sameNameFrames[0] === node.id) {
+        if (first === node.id) {
           return {
             ruleId: missingComponentDef.id,
             nodeId: node.id,
@@ -158,18 +164,20 @@ const missingComponentCheck: RuleCheckFn = (node, context, options) => {
       (options?.["minRepetitions"] as number | undefined) ??
       getRuleOption("missing-component", "minRepetitions", 3);
 
-    const frameNames = collectFrameNames(context.file.document);
-    const sameNameFrames = frameNames.get(node.name);
+    {
+      const frameNames2 = collectFrameNames(context.file.document);
+      const sameNameFrames2 = frameNames2.get(node.name);
+      const first2 = sameNameFrames2?.[0];
 
-    if (sameNameFrames && sameNameFrames.length >= minRepetitions) {
-      // Only report on the first occurrence to avoid duplicate issues
-      if (sameNameFrames[0] === node.id) {
-        return {
-          ruleId: missingComponentDef.id,
-          nodeId: node.id,
-          nodePath: context.path.join(" > "),
-          message: `"${node.name}" appears ${sameNameFrames.length} times — consider making it a component`,
-        };
+      if (sameNameFrames2 && first2 !== undefined && sameNameFrames2.length >= minRepetitions) {
+        if (first2 === node.id) {
+          return {
+            ruleId: missingComponentDef.id,
+            nodeId: node.id,
+            nodePath: context.path.join(" > "),
+            message: `"${node.name}" appears ${sameNameFrames2.length} times — consider making it a component`,
+          };
+        }
       }
     }
 

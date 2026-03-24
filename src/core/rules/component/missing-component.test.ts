@@ -280,9 +280,10 @@ describe("missing-component — Stage 3: Structure-based repetition", () => {
   });
 
   it("detects identical sibling structure", () => {
-    const child = makeChildFrame("c:1", "RECTANGLE");
-    const frameA = makeNode({ id: "f:1", name: "Card A", children: [child] });
-    const frameB = makeNode({ id: "f:2", name: "Card B", children: [child] });
+    const childA = makeChildFrame("c:1", "RECTANGLE");
+    const childB = makeChildFrame("c:2", "RECTANGLE");
+    const frameA = makeNode({ id: "f:1", name: "Card A", children: [childA] });
+    const frameB = makeNode({ id: "f:2", name: "Card B", children: [childB] });
 
     const siblings = [frameA, frameB];
     const ctx = makeContext({ siblings });
@@ -296,9 +297,10 @@ describe("missing-component — Stage 3: Structure-based repetition", () => {
   });
 
   it("only flags first matching sibling", () => {
-    const child = makeChildFrame("c:1", "RECTANGLE");
-    const frameA = makeNode({ id: "f:1", name: "Card A", children: [child] });
-    const frameB = makeNode({ id: "f:2", name: "Card B", children: [child] });
+    const childA = makeChildFrame("c:1", "RECTANGLE");
+    const childB = makeChildFrame("c:2", "RECTANGLE");
+    const frameA = makeNode({ id: "f:1", name: "Card A", children: [childA] });
+    const frameB = makeNode({ id: "f:2", name: "Card B", children: [childB] });
 
     const siblings = [frameA, frameB];
     const ctxB = makeContext({ siblings });
@@ -307,10 +309,12 @@ describe("missing-component — Stage 3: Structure-based repetition", () => {
   });
 
   it("skips inside INSTANCE subtree", () => {
-    const child = makeChildFrame("c:1", "RECTANGLE");
-    const frameA = makeNode({ id: "f:1", children: [child] });
-    const frameB = makeNode({ id: "f:2", children: [child] });
-    const frameC = makeNode({ id: "f:3", children: [child] });
+    const childA = makeChildFrame("c:1", "RECTANGLE");
+    const childB = makeChildFrame("c:2", "RECTANGLE");
+    const childC = makeChildFrame("c:3", "RECTANGLE");
+    const frameA = makeNode({ id: "f:1", children: [childA] });
+    const frameB = makeNode({ id: "f:2", children: [childB] });
+    const frameC = makeNode({ id: "f:3", children: [childC] });
 
     const instanceParent: AnalysisNode = {
       id: "inst:1",
@@ -328,10 +332,12 @@ describe("missing-component — Stage 3: Structure-based repetition", () => {
   });
 
   it("skips COMPONENT_SET parent", () => {
-    const child = makeChildFrame("c:1", "RECTANGLE");
-    const frameA = makeNode({ id: "f:1", children: [child] });
-    const frameB = makeNode({ id: "f:2", children: [child] });
-    const frameC = makeNode({ id: "f:3", children: [child] });
+    const childA = makeChildFrame("c:1", "RECTANGLE");
+    const childB = makeChildFrame("c:2", "RECTANGLE");
+    const childC = makeChildFrame("c:3", "RECTANGLE");
+    const frameA = makeNode({ id: "f:1", children: [childA] });
+    const frameB = makeNode({ id: "f:2", children: [childB] });
+    const frameC = makeNode({ id: "f:3", children: [childC] });
 
     const compSetParent: AnalysisNode = {
       id: "cs:1",
@@ -349,9 +355,10 @@ describe("missing-component — Stage 3: Structure-based repetition", () => {
   });
 
   it("respects structureMinRepetitions option", () => {
-    const child = makeChildFrame("c:1", "RECTANGLE");
-    const frameA = makeNode({ id: "f:1", name: "Card A", children: [child] });
-    const frameB = makeNode({ id: "f:2", name: "Card B", children: [child] });
+    const childA = makeChildFrame("c:1", "RECTANGLE");
+    const childB = makeChildFrame("c:2", "RECTANGLE");
+    const frameA = makeNode({ id: "f:1", name: "Card A", children: [childA] });
+    const frameB = makeNode({ id: "f:2", name: "Card B", children: [childB] });
 
     const siblings = [frameA, frameB];
     const ctx = makeContext({ siblings });
@@ -368,10 +375,12 @@ describe("missing-component — Stage 3: Structure-based repetition", () => {
 
   it("does NOT fire if Stage 2 already matched", () => {
     // 3 frames with same name AND same structure — Stage 2 fires first
-    const child = makeChildFrame("c:1", "RECTANGLE");
-    const frameA = makeNode({ id: "f:1", name: "Card", children: [child] });
-    const frameB = makeNode({ id: "f:2", name: "Card", children: [child] });
-    const frameC = makeNode({ id: "f:3", name: "Card", children: [child] });
+    const childA = makeChildFrame("c:1", "RECTANGLE");
+    const childB = makeChildFrame("c:2", "RECTANGLE");
+    const childC = makeChildFrame("c:3", "RECTANGLE");
+    const frameA = makeNode({ id: "f:1", name: "Card", children: [childA] });
+    const frameB = makeNode({ id: "f:2", name: "Card", children: [childB] });
+    const frameC = makeNode({ id: "f:3", name: "Card", children: [childC] });
 
     const doc = makeNode({
       id: "0:1",
@@ -411,21 +420,23 @@ describe("missing-component — Stage 3: Structure-based repetition", () => {
   });
 
   it("does not flag siblings that are not FRAME type", () => {
-    const child = makeChildFrame("c:1", "RECTANGLE");
-    const frameA = makeNode({ id: "f:1", name: "Card A", children: [child] });
+    const childA = makeChildFrame("c:1", "RECTANGLE");
+    const childB = makeChildFrame("c:2", "RECTANGLE");
+    const childC = makeChildFrame("c:3", "RECTANGLE");
+    const frameA = makeNode({ id: "f:1", name: "Card A", children: [childA] });
     const textNode: AnalysisNode = {
       id: "t:1",
       name: "Label",
       type: "TEXT",
       visible: true,
-      children: [child],
+      children: [childB],
     };
     const groupNode: AnalysisNode = {
       id: "g:1",
       name: "Group",
       type: "GROUP",
       visible: true,
-      children: [child],
+      children: [childC],
     };
 
     const siblings = [frameA, textNode, groupNode];
