@@ -1,0 +1,52 @@
+name: Feature / Refactor
+description: New functionality or improvement to existing code
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: background
+    attributes:
+      label: Background
+      description: Why is this needed? What problem does it solve?
+      placeholder: "save-fixture doesn't store component master nodes, so design-tree and analysis rules can't access component structure"
+    validations:
+      required: true
+  - type: textarea
+    id: current
+    attributes:
+      label: Current State
+      description: How does it work now? Include code snippets if helpful.
+      placeholder: |
+        ```typescript
+        // Only stores component metadata (name, description)
+        components: { "comp:1": { name: "Button", description: "" } }
+        // Missing: master node tree
+        ```
+    validations:
+      required: false
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: What should change? Be specific about the approach.
+      placeholder: |
+        1. Collect componentIds from INSTANCE nodes
+        2. Fetch master nodes via getFileNodes
+        3. Store in componentDefinitions field
+    validations:
+      required: true
+  - type: textarea
+    id: prerequisites
+    attributes:
+      label: Prerequisites
+      description: What needs to be done first?
+      placeholder: "#16 must be merged before this can work"
+    validations:
+      required: false
+  - type: textarea
+    id: related
+    attributes:
+      label: Related Issues
+      description: Link related issues or PRs
+      placeholder: "#14, #17"
+    validations:
+      required: false

@@ -1,0 +1,44 @@
+name: Bug Report
+description: Something is broken or producing wrong results
+labels: ["bug"]
+body:
+  - type: textarea
+    id: symptom
+    attributes:
+      label: Symptom
+      description: What's happening? Include error messages, wrong output, or unexpected behavior.
+      placeholder: "invisible-layer scores -10 (blocking) but hidden layers don't block implementation"
+    validations:
+      required: true
+  - type: textarea
+    id: cause
+    attributes:
+      label: Cause
+      description: Why is this happening? Root cause if known.
+      placeholder: "design-tree already skips visible:false nodes, so hidden layers have zero impact on code generation"
+    validations:
+      required: false
+  - type: textarea
+    id: fix
+    attributes:
+      label: Proposed Fix
+      description: How should it be fixed?
+      placeholder: "Change severity from blocking to suggestion, score from -10 to -1"
+    validations:
+      required: false
+  - type: textarea
+    id: files
+    attributes:
+      label: Affected Files
+      description: Which source files need changes?
+      placeholder: "src/core/rules/rule-config.ts, src/core/rules/ai-readability/index.ts"
+    validations:
+      required: false
+  - type: textarea
+    id: related
+    attributes:
+      label: Related Issues
+      description: Link related issues or PRs
+      placeholder: "#14, #15"
+    validations:
+      required: false
