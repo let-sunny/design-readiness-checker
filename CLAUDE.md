@@ -65,6 +65,7 @@ app/                          # Browser runtime
 - Output: HTML report (opens in browser)
 - Options: `--preset`, `--token`, `--output`, `--custom-rules`, `--config`
 - Also: `canicode save-fixture` to save Figma data as JSON for offline analysis
+- Also: `canicode implement` to prepare a design-to-code package (analysis + design tree + assets + prompt)
 - Component master resolution: fetches `componentDefinitions` for accurate component analysis
 - Annotations: NOT available (REST API annotations field is private beta)
 

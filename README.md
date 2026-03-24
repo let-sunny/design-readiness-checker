@@ -66,6 +66,7 @@ The rules themselves run deterministically on every analysis — no tokens consu
 | Just try it | **[Web App](https://let-sunny.github.io/canicode/)** — paste a URL, no install |
 | Analyze inside Figma | **[Figma Plugin](https://www.figma.com/community/plugin/1617144221046795292/canicode)** (under review) |
 | Use with Claude Code / Cursor | **MCP Server** or **Skill** — see below |
+| Generate code from design | **`canicode implement`** — analysis + design tree + assets + prompt |
 | Add to CI/CD | **[GitHub Action](https://github.com/marketplace/actions/canicode-action)** |
 | Full control | **CLI** |
 
@@ -110,6 +111,31 @@ Setup: `canicode init --token figd_xxxxxxxxxxxxx`
 | Dev, Full | 6 req/month | 10–20 req/min |
 
 Hitting 429 errors? Make sure the file is in a paid workspace. Or use MCP (no token, separate rate limit pool). Or `save-fixture` once and analyze locally. [Full details](https://developers.figma.com/docs/rest-api/rate-limits/)
+
+</details>
+
+<details>
+<summary><strong>Design to Code</strong> (prepare implementation package)</summary>
+
+```bash
+canicode implement ./fixtures/my-design --stack react-tailwind
+canicode implement "https://www.figma.com/design/ABC/File?node-id=1-234" --stack vue-css --image-scale 3
+```
+
+Outputs a ready-to-use package for AI code generation:
+- `analysis.json` — issues + scores
+- `design-tree.txt` — DOM-like tree with CSS styles + token estimate
+- `images/` — PNG assets with human-readable names (`hero-banner@2x.png`)
+- `vectors/` — SVG assets
+- `PROMPT.md` — stack-specific code generation prompt
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--stack` | `html-css` | Target: `html-css`, `react-tailwind`, `react-css-modules`, `vue-css` |
+| `--image-scale` | `2` | Image export scale: `2` for PC, `3` for mobile |
+| `--output` | `./canicode-implement/` | Output directory |
+
+Feed `design-tree.txt` + `PROMPT.md` to your AI assistant (Claude, Cursor, etc.) to generate code.
 
 </details>
 
