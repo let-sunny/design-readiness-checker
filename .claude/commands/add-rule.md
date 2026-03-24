@@ -23,7 +23,7 @@ Create `$RUN_DIR/activity.jsonl` with a session-start entry.
 
 ### Step 1 — Researcher
 
-Read `data/discovery-evidence.json` and filter entries whose `category` matches (case-insensitive) the concept being investigated.
+Read `data/discovery-evidence.json` and filter entries whose `category` matches (case-insensitive) the concept being investigated. These entries are pre-filtered to exclude environment/tooling noise (font CDN, DPI, network issues).
 
 Spawn the `rule-discovery-researcher` subagent. Provide:
 - The concept to investigate

@@ -27,6 +27,7 @@ You will receive:
    - Are there existing rules that use it?
 4. Check the Figma REST API spec (`@figma/rest-api-spec`) for the field's type and availability
 5. Read accumulated discovery evidence from `data/discovery-evidence.json`:
+   - These entries are pre-filtered to exclude environment/tooling noise (font CDN, DPI, network, CI issues)
    - Filter entries whose `category` matches this concept (case-insensitive)
    - Count occurrences across fixtures and sources (evaluation vs gap-analysis)
    - Note impact levels (hard, moderate, easy)

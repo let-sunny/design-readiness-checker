@@ -88,7 +88,7 @@ Calibration commands are NOT exposed as CLI commands. They run exclusively insid
 - Flow: Analysis → Converter (entire design → HTML + visual-compare) → Gap Analyzer → Evaluation → Critic → Arbitrator → Prune Evidence
 - Converter implements the full scoped design as one HTML page, runs `visual-compare` for pixel-level similarity
 - Gap Analyzer examines the diff image, categorizes pixel differences, saves to run directory
-- Cross-run evidence: Evaluation appends overscored/underscored findings to `data/calibration-evidence.json`; Gap Analyzer appends uncovered gaps to `data/discovery-evidence.json`
+- Cross-run evidence: Evaluation appends overscored/underscored findings to `data/calibration-evidence.json`; Gap Analyzer appends uncovered gaps to `data/discovery-evidence.json` (environment/tooling noise is auto-filtered)
 - After Arbitrator applies changes, evidence for applied rules is pruned (`calibrate-prune-evidence`)
 - Each run creates a self-contained directory: `logs/calibration/<fixture>--<timestamp>/`
 - No Figma MCP or API keys needed — works fully offline
@@ -221,6 +221,7 @@ Process:
 **Cross-run evidence** accumulates across sessions in `data/`:
 - `calibration-evidence.json` — overscored/underscored rules (fed to Runner for stronger proposals)
 - `discovery-evidence.json` — uncovered gaps not covered by existing rules (fed to `/add-rule` Researcher)
+- Discovery evidence is filtered to exclude environment/tooling noise (font CDN, retina/DPI, network, CI constraints)
 - Evidence is pruned after rules are applied (calibration) or new rules are created (discovery)
 
 Final score adjustments in `rule-config.ts` are always reviewed by the developer via the Arbitrator's decisions.
