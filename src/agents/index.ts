@@ -8,7 +8,6 @@ export { runEvaluationAgent } from "./evaluation-agent.js";
 export { runTuningAgent } from "./tuning-agent.js";
 export { generateCalibrationReport } from "./report-generator.js";
 export {
-  runCalibration,
   runCalibrationAnalyze,
   runCalibrationEvaluate,
 } from "./orchestrator.js";
