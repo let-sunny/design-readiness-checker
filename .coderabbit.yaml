@@ -25,8 +25,8 @@ reviews:
       - "!**/*.jpg"
 
   # Disable auto-labeling to reduce noise
-  labels:
-    enabled: false
+  suggested_labels: false
+  auto_apply_labels: false
 
   # Static analysis tools
   tools:
