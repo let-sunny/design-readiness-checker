@@ -11,6 +11,33 @@ function isComponent(node: AnalysisNode): boolean {
   return node.type === "COMPONENT" || node.type === "COMPONENT_SET";
 }
 
+/** Style properties to compare between master and instance. */
+const STYLE_COMPARE_KEYS = ["fills", "strokes", "effects", "cornerRadius", "strokeWeight", "individualStrokeWeights"] as const;
+
+/**
+ * Detect style overrides between a component master and an instance.
+ * Returns list of property names that differ.
+ */
+function detectStyleOverrides(master: AnalysisNode, instance: AnalysisNode): string[] {
+  const overrides: string[] = [];
+  for (const key of STYLE_COMPARE_KEYS) {
+    const masterVal = master[key];
+    const instanceVal = instance[key];
+    // Both undefined/null → no override
+    if (masterVal == null && instanceVal == null) continue;
+    // One exists, other doesn't → override
+    if (masterVal == null || instanceVal == null) {
+      overrides.push(key);
+      continue;
+    }
+    // Deep compare via JSON
+    if (JSON.stringify(masterVal) !== JSON.stringify(instanceVal)) {
+      overrides.push(key);
+    }
+  }
+  return overrides;
+}
+
 /**
  * Collect all frame names in the file for duplicate detection
  */
@@ -61,29 +88,7 @@ function isInsideInstance(context: {
   return context.parent?.type === "INSTANCE";
 }
 
-/**
- * Collect all INSTANCE nodes in the document tree that share a given componentId.
- */
-function collectInstancesByComponentId(
-  root: AnalysisNode,
-  componentId: string
-): AnalysisNode[] {
-  const result: AnalysisNode[] = [];
 
-  function walk(node: AnalysisNode): void {
-    if (node.type === "INSTANCE" && node.componentId === componentId) {
-      result.push(node);
-    }
-    if (node.children) {
-      for (const child of node.children) {
-        walk(child);
-      }
-    }
-  }
-
-  walk(root);
-  return result;
-}
 
 // ============================================
 // missing-component (unified 4-stage rule)
@@ -233,70 +238,24 @@ const missingComponentCheck: RuleCheckFn = (node, context, options) => {
   }
 
   // ========================================
-  // Stage 4: Instance style divergence (absorbed from nested-instance-override)
+  // Stage 4: Instance style override detection
+  // Compares instance styles against component master.
+  // Any style override (fills, strokes, effects, cornerRadius) means
+  // the designer should use a variant instead.
   // ========================================
   if (node.type === "INSTANCE" && node.componentId) {
     if (seenStage4ComponentIds.has(node.componentId)) return null;
+    seenStage4ComponentIds.add(node.componentId);
 
-    // Collect all INSTANCE nodes in document with same componentId
-    const instances = collectInstancesByComponentId(
-      context.file.document,
-      node.componentId
-    );
+    const componentDefs = context.file.componentDefinitions;
+    if (!componentDefs) return null;
 
-    // Need at least 2 instances to compare
-    if (instances.length < 2) return null;
+    const master = componentDefs[node.componentId];
+    if (!master) return null;
 
-    // Compare componentProperties across instances
-    const instancesWithProps = instances.filter(
-      (inst) =>
-        inst.componentProperties &&
-        Object.keys(inst.componentProperties).length > 0
-    );
-
-    if (instancesWithProps.length < 2) return null;
-
-    // Get all override keys across all instances
-    const allKeys = new Set<string>();
-    for (const inst of instancesWithProps) {
-      if (inst.componentProperties) {
-        for (const key of Object.keys(inst.componentProperties)) {
-          allKeys.add(key);
-        }
-      }
-    }
-
-    // Count how many instances differ from the first instance's override values
-    const referenceInst = instancesWithProps[0];
-    if (!referenceInst) return null;
-    const referenceProps = referenceInst.componentProperties ?? {};
-
-    let differingCount = 0;
-    for (let i = 1; i < instancesWithProps.length; i++) {
-      const inst = instancesWithProps[i];
-      if (!inst) continue;
-      const instProps = inst.componentProperties ?? {};
-
-      // Check if any key has a different value
-      let hasDifference = false;
-      for (const key of allKeys) {
-        const refVal = JSON.stringify(referenceProps[key]);
-        const instVal = JSON.stringify(instProps[key]);
-        if (refVal !== instVal) {
-          hasDifference = true;
-          break;
-        }
-      }
-
-      if (hasDifference) {
-        differingCount++;
-      }
-    }
-
-    // If more than half of the instances have different overrides, flag
-    if (differingCount > Math.floor(instancesWithProps.length / 2)) {
-      seenStage4ComponentIds.add(node.componentId);
-
+    // Compare style properties between master and instance
+    const overrides = detectStyleOverrides(master, node);
+    if (overrides.length > 0) {
       const componentMeta = context.file.components[node.componentId];
       const componentName = componentMeta?.name ?? node.name;
 
@@ -304,12 +263,9 @@ const missingComponentCheck: RuleCheckFn = (node, context, options) => {
         ruleId: missingComponentDef.id,
         nodeId: node.id,
         nodePath: context.path.join(" > "),
-        message: `Instances of "${componentName}" have divergent overrides (${differingCount + 1} variants found) — consider creating explicit variants`,
+        message: `"${componentName}" instance has style overrides (${overrides.join(", ")}) — use a variant instead of direct style changes`,
       };
     }
-
-    // Mark as seen even if no violation — avoid re-walking the tree for every instance
-    seenStage4ComponentIds.add(node.componentId);
     return null;
   }
 

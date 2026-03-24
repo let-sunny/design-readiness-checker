@@ -437,10 +437,10 @@ describe("missing-component — Stage 3: Structure-based repetition", () => {
 });
 
 // ============================================
-// Stage 4: Instance style divergence
+// Stage 4: Instance style override detection (master comparison)
 // ============================================
 
-describe("missing-component — Stage 4: Instance style divergence", () => {
+describe("missing-component — Stage 4: Instance style overrides", () => {
   beforeEach(() => {
     resetMissingComponentState();
   });
@@ -457,181 +457,194 @@ describe("missing-component — Stage 4: Instance style divergence", () => {
     expect(missingComponent.check(node, ctx)).toBeNull();
   });
 
-  it("returns null when no sibling shares componentId", () => {
+  it("returns null when no componentDefinitions in file", () => {
     const inst = makeNode({
       id: "inst:1",
       type: "INSTANCE",
       componentId: "comp:1",
-      componentProperties: { color: "red" },
-    });
-    const doc = makeNode({
-      id: "0:1",
-      name: "Document",
-      type: "DOCUMENT",
-      children: [inst],
+      fills: [{ type: "SOLID", color: { r: 1, g: 0, b: 0 } }],
     });
 
     const ctx = makeContext({
-      file: makeFile({ document: doc }),
+      file: makeFile({ document: inst }),
     });
 
     expect(missingComponent.check(inst, ctx)).toBeNull();
   });
 
-  it("flags when same componentId instances have different overrides", () => {
-    const inst1 = makeNode({
+  it("returns null when master not found in componentDefinitions", () => {
+    const inst = makeNode({
       id: "inst:1",
-      name: "Button",
       type: "INSTANCE",
       componentId: "comp:1",
-      componentProperties: { color: "red", size: "large" },
-    });
-    const inst2 = makeNode({
-      id: "inst:2",
-      name: "Button",
-      type: "INSTANCE",
-      componentId: "comp:1",
-      componentProperties: { color: "blue", size: "small" },
-    });
-    const inst3 = makeNode({
-      id: "inst:3",
-      name: "Button",
-      type: "INSTANCE",
-      componentId: "comp:1",
-      componentProperties: { color: "green", size: "medium" },
-    });
-    const doc = makeNode({
-      id: "0:1",
-      name: "Document",
-      type: "DOCUMENT",
-      children: [inst1, inst2, inst3],
+      fills: [{ type: "SOLID", color: { r: 1, g: 0, b: 0 } }],
     });
 
     const ctx = makeContext({
       file: makeFile({
-        document: doc,
-        components: {
-          "comp:1": { key: "comp:1", name: "Button", description: "" },
+        document: inst,
+        componentDefinitions: {
+          "comp:999": makeNode({ id: "comp:999", name: "Other", type: "COMPONENT" }),
         },
       }),
     });
 
-    const result = missingComponent.check(inst1, ctx);
-    expect(result).not.toBeNull();
-    expect(result!.ruleId).toBe("missing-component");
-    expect(result!.message).toContain("Button");
-    expect(result!.message).toContain("divergent overrides");
-    expect(result!.message).toContain("consider creating explicit variants");
+    expect(missingComponent.check(inst, ctx)).toBeNull();
   });
 
-  it("returns null when overrides are identical", () => {
-    const inst1 = makeNode({
+  it("flags when instance has different fills from master", () => {
+    const master = makeNode({
+      id: "comp:1",
+      name: "Button",
+      type: "COMPONENT",
+      fills: [{ type: "SOLID", color: { r: 0, g: 0, b: 1 } }],
+    });
+    const inst = makeNode({
       id: "inst:1",
       name: "Button",
       type: "INSTANCE",
       componentId: "comp:1",
-      componentProperties: { color: "red", size: "large" },
-    });
-    const inst2 = makeNode({
-      id: "inst:2",
-      name: "Button",
-      type: "INSTANCE",
-      componentId: "comp:1",
-      componentProperties: { color: "red", size: "large" },
-    });
-    const inst3 = makeNode({
-      id: "inst:3",
-      name: "Button",
-      type: "INSTANCE",
-      componentId: "comp:1",
-      componentProperties: { color: "red", size: "large" },
-    });
-    const doc = makeNode({
-      id: "0:1",
-      name: "Document",
-      type: "DOCUMENT",
-      children: [inst1, inst2, inst3],
+      fills: [{ type: "SOLID", color: { r: 1, g: 0, b: 0 } }],
     });
 
     const ctx = makeContext({
-      file: makeFile({ document: doc }),
+      file: makeFile({
+        document: inst,
+        components: { "comp:1": { key: "k", name: "Button", description: "" } },
+        componentDefinitions: { "comp:1": master },
+      }),
     });
 
-    expect(missingComponent.check(inst1, ctx)).toBeNull();
+    const result = missingComponent.check(inst, ctx);
+    expect(result).not.toBeNull();
+    expect(result!.message).toContain("Button");
+    expect(result!.message).toContain("fills");
+    expect(result!.message).toContain("use a variant");
+  });
+
+  it("flags when instance has different cornerRadius from master", () => {
+    const master = makeNode({
+      id: "comp:1",
+      name: "Card",
+      type: "COMPONENT",
+      cornerRadius: 8,
+    });
+    const inst = makeNode({
+      id: "inst:1",
+      name: "Card",
+      type: "INSTANCE",
+      componentId: "comp:1",
+      cornerRadius: 0,
+    });
+
+    const ctx = makeContext({
+      file: makeFile({
+        document: inst,
+        components: { "comp:1": { key: "k", name: "Card", description: "" } },
+        componentDefinitions: { "comp:1": master },
+      }),
+    });
+
+    const result = missingComponent.check(inst, ctx);
+    expect(result).not.toBeNull();
+    expect(result!.message).toContain("cornerRadius");
+  });
+
+  it("returns null when instance styles match master exactly", () => {
+    const fills = [{ type: "SOLID", color: { r: 0, g: 0, b: 1 } }];
+    const master = makeNode({
+      id: "comp:1",
+      name: "Button",
+      type: "COMPONENT",
+      fills,
+      cornerRadius: 8,
+    });
+    const inst = makeNode({
+      id: "inst:1",
+      name: "Button",
+      type: "INSTANCE",
+      componentId: "comp:1",
+      fills,
+      cornerRadius: 8,
+    });
+
+    const ctx = makeContext({
+      file: makeFile({
+        document: inst,
+        componentDefinitions: { "comp:1": master },
+      }),
+    });
+
+    expect(missingComponent.check(inst, ctx)).toBeNull();
   });
 
   it("deduplicates per componentId", () => {
+    const master = makeNode({
+      id: "comp:1",
+      name: "Button",
+      type: "COMPONENT",
+      fills: [{ type: "SOLID", color: { r: 0, g: 0, b: 1 } }],
+    });
     const inst1 = makeNode({
       id: "inst:1",
       name: "Button",
       type: "INSTANCE",
       componentId: "comp:1",
-      componentProperties: { color: "red" },
+      fills: [{ type: "SOLID", color: { r: 1, g: 0, b: 0 } }],
     });
     const inst2 = makeNode({
       id: "inst:2",
       name: "Button",
       type: "INSTANCE",
       componentId: "comp:1",
-      componentProperties: { color: "blue" },
+      fills: [{ type: "SOLID", color: { r: 0, g: 1, b: 0 } }],
     });
-    const inst3 = makeNode({
-      id: "inst:3",
-      name: "Button",
+
+    const file = makeFile({
+      document: makeNode({ id: "0:1", name: "Doc", type: "DOCUMENT", children: [inst1, inst2] }),
+      components: { "comp:1": { key: "k", name: "Button", description: "" } },
+      componentDefinitions: { "comp:1": master },
+    });
+
+    const ctx1 = makeContext({ file });
+    const ctx2 = makeContext({ file });
+
+    expect(missingComponent.check(inst1, ctx1)).not.toBeNull();
+    expect(missingComponent.check(inst2, ctx2)).toBeNull();
+  });
+
+  it("lists multiple overridden properties in message", () => {
+    const master = makeNode({
+      id: "comp:1",
+      name: "Card",
+      type: "COMPONENT",
+      fills: [{ type: "SOLID", color: { r: 1, g: 1, b: 1 } }],
+      cornerRadius: 8,
+      strokes: [{ type: "SOLID", color: { r: 0, g: 0, b: 0 } }],
+    });
+    const inst = makeNode({
+      id: "inst:1",
+      name: "Card",
       type: "INSTANCE",
       componentId: "comp:1",
-      componentProperties: { color: "green" },
-    });
-    const doc = makeNode({
-      id: "0:1",
-      name: "Document",
-      type: "DOCUMENT",
-      children: [inst1, inst2, inst3],
+      fills: [{ type: "SOLID", color: { r: 0, g: 0, b: 0 } }],
+      cornerRadius: 0,
+      strokes: [],
     });
 
     const ctx = makeContext({
       file: makeFile({
-        document: doc,
-        components: {
-          "comp:1": { key: "comp:1", name: "Button", description: "" },
-        },
+        document: inst,
+        components: { "comp:1": { key: "k", name: "Card", description: "" } },
+        componentDefinitions: { "comp:1": master },
       }),
     });
 
-    // First call should flag
-    const result1 = missingComponent.check(inst1, ctx);
-    expect(result1).not.toBeNull();
-
-    // Second call with same componentId should be deduped
-    const result2 = missingComponent.check(inst2, ctx);
-    expect(result2).toBeNull();
-  });
-
-  it("returns null when instances have no componentProperties", () => {
-    const inst1 = makeNode({
-      id: "inst:1",
-      name: "Button",
-      type: "INSTANCE",
-      componentId: "comp:1",
-    });
-    const inst2 = makeNode({
-      id: "inst:2",
-      name: "Button",
-      type: "INSTANCE",
-      componentId: "comp:1",
-    });
-    const doc = makeNode({
-      id: "0:1",
-      name: "Document",
-      type: "DOCUMENT",
-      children: [inst1, inst2],
-    });
-
-    const ctx = makeContext({
-      file: makeFile({ document: doc }),
-    });
-
-    expect(missingComponent.check(inst1, ctx)).toBeNull();
+    const result = missingComponent.check(inst, ctx);
+    expect(result).not.toBeNull();
+    expect(result!.message).toContain("fills");
+    expect(result!.message).toContain("strokes");
+    expect(result!.message).toContain("cornerRadius");
   });
 });
 
