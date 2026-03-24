@@ -169,18 +169,15 @@ export function runTuningAgent(
       ? ` (+ ${priorData.overscoredCount} case(s) from prior runs)`
       : "";
 
-    const disable = proposedScore >= 0;
-
     adjustments.push({
       ruleId,
       currentScore: ruleInfo.score,
       proposedScore,
       currentSeverity,
       proposedSeverity: newSeverity,
-      reasoning: `Overscored in ${cases.length} case(s)${priorNote}. Actual difficulties: [${allDifficulties.join(", ")}]. Current score ${ruleInfo.score} is too harsh.${disable ? " Score converged to 0 — rule has no measurable impact on conversion difficulty. Recommend disabling." : ""}`,
+      reasoning: `Overscored in ${cases.length} case(s)${priorNote}. Actual difficulties: [${allDifficulties.join(", ")}]. Current score ${ruleInfo.score} is too harsh.`,
       confidence: getConfidence(totalCases),
       supportingCases: totalCases,
-      ...(disable ? { disable: true } : {}),
     });
   }
 

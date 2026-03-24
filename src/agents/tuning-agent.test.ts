@@ -300,42 +300,7 @@ describe("runTuningAgent", () => {
     expect(adj.reasoning).toContain("+ 3 case(s) from prior runs");
   });
 
-  it("sets disable=true when proposedScore >= 0", () => {
-    // All easy difficulties → proposedScore = -2, clamped to 0 floor for easy
-    // Actually easy → midpoint -2, floor 0 → min(-2, 0) = -2
-    // We need a scenario where score converges to >= 0
-    // proposedScoreFromDifficulties with all "easy" → -2, floor 0 → -2
-    // So disable won't trigger with just "easy". Let's test with prior evidence
-    // where the rule currently has score -2 and evidence says easy
-    const input: TuningAgentInput = {
-      mismatches: [],
-      ruleScores: {
-        "no-dev-status": { score: -2, severity: "suggestion" },
-      },
-      priorEvidence: {
-        "no-dev-status": {
-          overscoredCount: 3,
-          underscoredCount: 0,
-          // Difficulties that would make proposed score >= 0
-          // proposedScoreFromDifficulties: easy → -2, floor 0 → -2
-          // So with "easy" the score is -2, not >= 0.
-          // The disable logic checks proposedScore >= 0
-          // Since min(-2, 0) = -2, disable won't be true with "easy"
-          overscoredDifficulties: ["easy", "easy", "easy"],
-          underscoredDifficulties: [],
-        },
-      },
-    };
-
-    const result = runTuningAgent(input);
-
-    // proposedScore = -2 (easy midpoint), not >= 0, so disable should NOT be set
-    const adj = result.adjustments[0]!;
-    expect(adj.proposedScore).toBe(-2);
-    expect(adj.disable).toBeUndefined();
-  });
-
-  it("does not set disable when proposedScore < 0", () => {
+  it("does not include disable field in adjustments", () => {
     const input: TuningAgentInput = {
       mismatches: [
         makeMismatch({
@@ -343,8 +308,8 @@ describe("runTuningAgent", () => {
           ruleId: "some-rule",
           currentScore: -8,
           currentSeverity: "blocking",
-          actualDifficulty: "moderate",
-          reasoning: "moderate difficulty",
+          actualDifficulty: "easy",
+          reasoning: "easy difficulty",
         }),
       ],
       ruleScores: {
@@ -354,8 +319,7 @@ describe("runTuningAgent", () => {
 
     const result = runTuningAgent(input);
     const adj = result.adjustments[0]!;
-    expect(adj.proposedScore).toBeLessThan(0);
-    expect(adj.disable).toBeUndefined();
+    expect(adj).not.toHaveProperty("disable");
   });
 
   it("ignores validated mismatches and only processes overscored/underscored/missing-rule", () => {

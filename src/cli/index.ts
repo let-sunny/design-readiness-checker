@@ -636,6 +636,10 @@ cli
     "Prune evidence for rules applied by the Arbitrator in the given run"
   )
   .action((runDir: string) => {
+    if (!existsSync(resolve(runDir))) {
+      console.log(`Run directory not found: ${runDir}`);
+      return;
+    }
     const debate = parseDebateResult(resolve(runDir));
     if (!debate) {
       console.log("No debate.json found — nothing to prune.");

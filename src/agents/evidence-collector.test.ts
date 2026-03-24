@@ -1,5 +1,6 @@
 import { mkdirSync, rmSync, writeFileSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { tmpdir } from "node:os";
 import {
   loadCalibrationEvidence,
   appendCalibrationEvidence,
@@ -14,7 +15,7 @@ import type {
 } from "./evidence-collector.js";
 
 describe("evidence-collector", () => {
-  const tmpDir = join(process.cwd(), "logs/.evidence-test");
+  const tmpDir = join(tmpdir(), "canicode-evidence-test");
   const calPath = join(tmpDir, "calibration-evidence.json");
   const disPath = join(tmpDir, "discovery-evidence.json");
 

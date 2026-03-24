@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { SeveritySchema } from "@/core/contracts/severity.js";
+import type { CrossRunEvidence } from "./evidence.js";
 
 export const ConfidenceSchema = z.enum(["high", "medium", "low"]);
 export type Confidence = z.infer<typeof ConfidenceSchema>;
@@ -13,7 +14,6 @@ export const ScoreAdjustmentSchema = z.object({
   reasoning: z.string(),
   confidence: ConfidenceSchema,
   supportingCases: z.number(),
-  disable: z.boolean().optional(),
 });
 
 export type ScoreAdjustment = z.infer<typeof ScoreAdjustmentSchema>;
@@ -42,12 +42,7 @@ export interface TuningAgentInput {
     reasoning: string;
   }>;
   ruleScores: Record<string, { score: number; severity: string }>;
-  priorEvidence?: Record<string, {
-    overscoredCount: number;
-    underscoredCount: number;
-    overscoredDifficulties: string[];
-    underscoredDifficulties: string[];
-  }>;
+  priorEvidence?: CrossRunEvidence;
 }
 
 export interface TuningAgentOutput {

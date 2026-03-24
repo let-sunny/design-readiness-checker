@@ -269,48 +269,52 @@ export function runCalibrationEvaluate(
   };
   const tuningOutput = runTuningAgent(tuningInput);
 
-  // Collect evidence from this run
+  // Collect evidence from this run (non-fatal — pipeline continues on I/O failure)
   if (options?.collectEvidence) {
-    const timestamp = new Date().toISOString();
-    const fixture = options.fixtureName ?? analysisJson.fileKey;
+    try {
+      const timestamp = new Date().toISOString();
+      const fixture = options.fixtureName ?? analysisJson.fileKey;
 
-    // Append calibration evidence (overscored/underscored)
-    const calibrationEntries: CalibrationEvidenceEntry[] = [];
-    for (const m of evaluationOutput.mismatches) {
-      if ((m.type === "overscored" || m.type === "underscored") && m.ruleId) {
-        calibrationEntries.push({
-          ruleId: m.ruleId,
-          type: m.type,
-          actualDifficulty: m.actualDifficulty,
-          fixture,
-          timestamp,
-        });
+      // Append calibration evidence (overscored/underscored)
+      const calibrationEntries: CalibrationEvidenceEntry[] = [];
+      for (const m of evaluationOutput.mismatches) {
+        if ((m.type === "overscored" || m.type === "underscored") && m.ruleId) {
+          calibrationEntries.push({
+            ruleId: m.ruleId,
+            type: m.type,
+            actualDifficulty: m.actualDifficulty,
+            fixture,
+            timestamp,
+          });
+        }
       }
-    }
-    appendCalibrationEvidence(calibrationEntries);
+      appendCalibrationEvidence(calibrationEntries);
 
-    // Append discovery evidence (missing-rule), filtering out environment/tooling noise
-    const discoveryEntries: DiscoveryEvidenceEntry[] = [];
-    for (const m of evaluationOutput.mismatches) {
-      if (m.type === "missing-rule") {
-        const isNoise = ENVIRONMENT_NOISE_PATTERNS.some(p => p.test(m.reasoning));
-        if (isNoise) continue;
+      // Append discovery evidence (missing-rule), filtering out environment/tooling noise
+      const discoveryEntries: DiscoveryEvidenceEntry[] = [];
+      for (const m of evaluationOutput.mismatches) {
+        if (m.type === "missing-rule") {
+          const isNoise = ENVIRONMENT_NOISE_PATTERNS.some(p => p.test(m.reasoning));
+          if (isNoise) continue;
 
-        const categoryMatch = m.reasoning.match(/category:\s*([^,)]+)/);
-        const category = categoryMatch?.[1]?.trim() ?? "unknown";
-        const descMatch = m.reasoning.match(/Uncovered struggle: "([^"]+)"/);
-        const description = descMatch?.[1] ?? m.reasoning;
-        discoveryEntries.push({
-          description,
-          category,
-          impact: m.actualDifficulty,
-          fixture,
-          timestamp,
-          source: "evaluation",
-        });
+          const categoryMatch = m.reasoning.match(/category:\s*([^,)]+)/);
+          const category = categoryMatch?.[1]?.trim() ?? "unknown";
+          const descMatch = m.reasoning.match(/Uncovered struggle: "([^"]+)"/);
+          const description = descMatch?.[1] ?? m.reasoning;
+          discoveryEntries.push({
+            description,
+            category,
+            impact: m.actualDifficulty,
+            fixture,
+            timestamp,
+            source: "evaluation",
+          });
+        }
       }
+      appendDiscoveryEvidence(discoveryEntries);
+    } catch (err) {
+      console.warn("[evidence] Failed to collect evidence (non-fatal):", err);
     }
-    appendDiscoveryEvidence(discoveryEntries);
   }
 
   const report = generateCalibrationReport({
