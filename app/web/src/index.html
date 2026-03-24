@@ -321,7 +321,7 @@
           setLoading(false);
           if (res.status === 403) { showError('Access denied', 'Your token does not have access to this file.'); return; }
           if (res.status === 404) { showError('File not found', 'Check the Figma URL.'); return; }
-          if (res.status === 429) { showError('Rate limited', 'Figma API rate limit reached. Rate limits depend on your plan and where the file lives. <a href="https://developers.figma.com/docs/rest-api/rate-limits/" target="_blank">Check your plan limits</a>'); return; }
+          if (res.status === 429) { showError('Rate limited', 'Figma API rate limit reached. Rate limits depend on your plan and where the file lives.'); document.getElementById('error-detail').insertAdjacentHTML('beforeend', ' <a href="https://developers.figma.com/docs/rest-api/rate-limits/" target="_blank" class="underline text-blue-400 hover:text-blue-300">Check your plan limits</a>'); return; }
           showError('Figma API error (' + res.status + ')', await res.text().catch(function() { return ''; }));
           return;
         }
