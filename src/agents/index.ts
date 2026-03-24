@@ -2,8 +2,6 @@
 
 export * from "./contracts/index.js";
 export { runAnalysisAgent, extractRuleScores } from "./analysis-agent.js";
-export { runConversionAgent } from "./node-conversion-agent.js";
-export { buildConversionPrompt } from "./node-conversion-agent.prompt.js";
 export { runEvaluationAgent } from "./evaluation-agent.js";
 export { runTuningAgent } from "./tuning-agent.js";
 export { generateCalibrationReport } from "./report-generator.js";

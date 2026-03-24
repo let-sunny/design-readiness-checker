@@ -32,30 +32,3 @@ export const ConversionRecordSchema = z.object({
 
 export type ConversionRecord = z.infer<typeof ConversionRecordSchema>;
 
-export interface ConversionExecutorResult {
-  generatedCode: string;
-  difficulty: Difficulty;
-  notes: string;
-  ruleRelatedStruggles: RuleRelatedStruggle[];
-  uncoveredStruggles: UncoveredStruggle[];
-}
-
-export type ConversionExecutor = (
-  nodeId: string,
-  fileKey: string,
-  flaggedRuleIds: string[]
-) => Promise<ConversionExecutorResult>;
-
-export interface ConversionAgentInput {
-  fileKey: string;
-  nodes: Array<{
-    nodeId: string;
-    nodePath: string;
-    flaggedRuleIds: string[];
-  }>;
-}
-
-export interface ConversionAgentOutput {
-  records: ConversionRecord[];
-  skippedNodeIds: string[];
-}
