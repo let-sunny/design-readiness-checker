@@ -2,7 +2,7 @@ import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { rm } from "node:fs/promises";
-import { generateDesignTree } from "./design-tree.js";
+import { generateDesignTree, generateDesignTreeWithStats } from "./design-tree.js";
 import type { AnalysisFile, AnalysisNode } from "../contracts/figma-node.js";
 
 function makeFile(document: AnalysisNode): AnalysisFile {
@@ -23,6 +23,41 @@ function makeNode(overrides: Partial<AnalysisNode> & { id: string; name: string;
     ...overrides,
   };
 }
+
+describe("generateDesignTreeWithStats", () => {
+  it("returns tree string, estimatedTokens, and bytes", () => {
+    const file = makeFile(
+      makeNode({
+        id: "1:1",
+        name: "Frame",
+        type: "FRAME",
+        absoluteBoundingBox: { x: 0, y: 0, width: 400, height: 300 },
+        children: [
+          makeNode({ id: "1:2", name: "Child", type: "TEXT", characters: "Hello", absoluteBoundingBox: { x: 0, y: 0, width: 100, height: 20 } }),
+        ],
+      })
+    );
+
+    const stats = generateDesignTreeWithStats(file);
+
+    expect(stats.tree).toContain("# Design Tree");
+    expect(stats.tree).toContain("Frame (FRAME, 400x300)");
+    expect(stats.bytes).toBeGreaterThan(0);
+    expect(stats.estimatedTokens).toBeGreaterThan(0);
+    expect(stats.estimatedTokens).toBe(Math.ceil(stats.tree.length / 4));
+  });
+
+  it("tree output matches generateDesignTree", () => {
+    const file = makeFile(
+      makeNode({ id: "1:1", name: "Root", type: "FRAME" })
+    );
+
+    const tree = generateDesignTree(file);
+    const stats = generateDesignTreeWithStats(file);
+
+    expect(stats.tree).toBe(tree);
+  });
+});
 
 describe("generateDesignTree", () => {
   describe("header generation", () => {
