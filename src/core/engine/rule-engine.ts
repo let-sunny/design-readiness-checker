@@ -9,7 +9,7 @@ import type {
 import { supportsDepthWeight } from "../contracts/rule.js";
 import { ruleRegistry } from "../rules/rule-registry.js";
 import { RULE_CONFIGS } from "../rules/rule-config.js";
-import { resetMissingComponentState } from "../rules/component/index.js";
+import { resetMissingComponentState, resetMissingComponentDescriptionState } from "../rules/component/index.js";
 
 /**
  * Analysis issue with calculated score and metadata
@@ -148,6 +148,7 @@ export class RuleEngine {
   analyze(file: AnalysisFile): AnalysisResult {
     // Reset module-level dedup state for rules that track seen patterns
     resetMissingComponentState();
+    resetMissingComponentDescriptionState();
 
     // Find target node if specified
     let rootNode = file.document;

@@ -624,6 +624,46 @@ describe("missing-component — Stage 4: Instance style overrides", () => {
     expect(missingComponent.check(inst2, ctx2)).toBeNull();
   });
 
+  it("flags later instance when first instance has no overrides", () => {
+    const masterFills = [{ type: "SOLID", color: { r: 0, g: 0, b: 1 } }];
+    const master = makeNode({
+      id: "comp:1",
+      name: "Button",
+      type: "COMPONENT",
+      fills: masterFills,
+    });
+    // inst1 matches master — no override
+    const inst1 = makeNode({
+      id: "inst:1",
+      name: "Button",
+      type: "INSTANCE",
+      componentId: "comp:1",
+      fills: masterFills,
+    });
+    // inst2 has different fills — override
+    const inst2 = makeNode({
+      id: "inst:2",
+      name: "Button",
+      type: "INSTANCE",
+      componentId: "comp:1",
+      fills: [{ type: "SOLID", color: { r: 1, g: 0, b: 0 } }],
+    });
+
+    const file = makeFile({
+      document: makeNode({ id: "0:1", name: "Doc", type: "DOCUMENT", children: [inst1, inst2] }),
+      components: { "comp:1": { key: "k", name: "Button", description: "" } },
+      componentDefinitions: { "comp:1": master },
+    });
+
+    const ctx1 = makeContext({ file });
+    const ctx2 = makeContext({ file });
+
+    // First instance matches master — no violation
+    expect(missingComponent.check(inst1, ctx1)).toBeNull();
+    // Second instance has override — should flag (not deduped)
+    expect(missingComponent.check(inst2, ctx2)).not.toBeNull();
+  });
+
   it("lists multiple overridden properties in message", () => {
     const master = makeNode({
       id: "comp:1",

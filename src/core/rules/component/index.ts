@@ -136,19 +136,20 @@ const missingComponentCheck: RuleCheckFn = (node, context, options) => {
       (c) => c.name.toLowerCase() === node.name.toLowerCase()
     );
 
-    if (matchingComponent) {
-      const frameNames = collectFrameNames(context.file.document);
-      const sameNameFrames = frameNames.get(node.name);
+    // Collect frame names once for Stage 1 and Stage 2
+    const frameNames = collectFrameNames(context.file.document);
+    const sameNameFrames = frameNames.get(node.name);
+    const firstFrame = sameNameFrames?.[0];
 
-      const first = sameNameFrames?.[0];
+    if (matchingComponent) {
       if (
         sameNameFrames &&
-        first !== undefined &&
+        firstFrame !== undefined &&
         sameNameFrames.length >= 2 &&
         !seenStage1ComponentNames.has(node.name.toLowerCase())
       ) {
         seenStage1ComponentNames.add(node.name.toLowerCase());
-        if (first === node.id) {
+        if (firstFrame === node.id) {
           return {
             ruleId: missingComponentDef.id,
             nodeId: node.id,
@@ -164,20 +165,14 @@ const missingComponentCheck: RuleCheckFn = (node, context, options) => {
       (options?.["minRepetitions"] as number | undefined) ??
       getRuleOption("missing-component", "minRepetitions", 3);
 
-    {
-      const frameNames2 = collectFrameNames(context.file.document);
-      const sameNameFrames2 = frameNames2.get(node.name);
-      const first2 = sameNameFrames2?.[0];
-
-      if (sameNameFrames2 && first2 !== undefined && sameNameFrames2.length >= minRepetitions) {
-        if (first2 === node.id) {
-          return {
-            ruleId: missingComponentDef.id,
-            nodeId: node.id,
-            nodePath: context.path.join(" > "),
-            message: `"${node.name}" appears ${sameNameFrames2.length} times — consider making it a component`,
-          };
-        }
+    if (sameNameFrames && firstFrame !== undefined && sameNameFrames.length >= minRepetitions) {
+      if (firstFrame === node.id) {
+        return {
+          ruleId: missingComponentDef.id,
+          nodeId: node.id,
+          nodePath: context.path.join(" > "),
+          message: `"${node.name}" appears ${sameNameFrames.length} times — consider making it a component`,
+        };
       }
     }
 
@@ -253,7 +248,6 @@ const missingComponentCheck: RuleCheckFn = (node, context, options) => {
   // ========================================
   if (node.type === "INSTANCE" && node.componentId) {
     if (seenStage4ComponentIds.has(node.componentId)) return null;
-    seenStage4ComponentIds.add(node.componentId);
 
     const componentDefs = context.file.componentDefinitions;
     if (!componentDefs) return null;
@@ -264,6 +258,8 @@ const missingComponentCheck: RuleCheckFn = (node, context, options) => {
     // Compare style properties between master and instance
     const overrides = detectStyleOverrides(master, node);
     if (overrides.length > 0) {
+      // Only mark as seen when we actually flag — allows other instances to be checked
+      seenStage4ComponentIds.add(node.componentId);
       const componentMeta = context.file.components[node.componentId];
       const componentName = componentMeta?.name ?? node.name;
 
