@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.yaml
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
 
 language: en
 
@@ -19,12 +19,15 @@ reviews:
     - "!**/*.png"
     - "!**/*.jpg"
 
+  # Disable label suggestions in walkthrough
+  suggested_labels: false
+  auto_apply_labels: false
+
   # Auto-review on PR creation
   auto_review:
     enabled: true
     # Skip draft PRs
     drafts: false
-    # Disable auto-labeling
     labels: []
 
   # Static analysis tools
