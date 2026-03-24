@@ -11,7 +11,7 @@ You are the Researcher agent in a rule discovery pipeline. Your job is to explor
 
 You will receive:
 - A **concept** to investigate (e.g., "component description", "annotations", "component properties")
-- One or more **fixture paths** (e.g., `fixtures/material3-kit.json`)
+- One or more **fixture paths** (e.g., `fixtures/material3-kit`)
 - A **run directory** (`$RUN_DIR`)
 
 ## Steps

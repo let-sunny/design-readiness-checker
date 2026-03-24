@@ -23,12 +23,20 @@ function getDateString(): string {
 }
 
 /**
- * Extract a short fixture name from a file path.
- * e.g. "fixtures/http-design.json" → "http-design"
+ * Extract a short fixture name from a fixture path.
+ * e.g. "fixtures/http-design" → "http-design"
+ *      "fixtures/http-design/data.json" → "http-design"
  */
 export function extractFixtureName(fixturePath: string): string {
-  const fileName = fixturePath.split("/").pop() ?? fixturePath;
-  return fileName.replace(/\.json$/, "");
+  // Remove trailing slash
+  const cleaned = fixturePath.replace(/\/+$/, "");
+  const last = cleaned.split("/").pop() ?? cleaned;
+  // If pointing to data.json, use parent directory name
+  if (last === "data.json") {
+    const parts = cleaned.split("/");
+    return parts[parts.length - 2] ?? last;
+  }
+  return last.replace(/\.json$/, "");
 }
 
 /**

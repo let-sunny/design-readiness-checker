@@ -1,3 +1,7 @@
+import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
+import { rm } from "node:fs/promises";
 import { generateDesignTree } from "./design-tree.js";
 import type { AnalysisFile, AnalysisNode } from "../contracts/figma-node.js";
 
@@ -591,6 +595,120 @@ describe("generateDesignTree", () => {
       const output = generateDesignTree(file);
 
       expect(output).not.toContain("box-shadow:");
+    });
+  });
+
+  describe("vector SVG inlining", () => {
+    let tempDir: string;
+
+    beforeEach(() => {
+      tempDir = mkdtempSync(join(tmpdir(), "design-tree-vector-"));
+    });
+
+    afterEach(async () => {
+      await rm(tempDir, { recursive: true, force: true });
+    });
+
+    it("inlines SVG content for VECTOR nodes when vectorDir is provided", () => {
+      const vectorDir = join(tempDir, "vectors");
+      mkdirSync(vectorDir);
+      writeFileSync(join(vectorDir, "1-2.svg"), '<svg viewBox="0 0 24 24"><path d="M0 0h24v24H0z"/></svg>');
+
+      const file = makeFile(
+        makeNode({
+          id: "1:1",
+          name: "Container",
+          type: "FRAME",
+          absoluteBoundingBox: { x: 0, y: 0, width: 100, height: 100 },
+          children: [
+            makeNode({
+              id: "1:2",
+              name: "Icon",
+              type: "VECTOR",
+              absoluteBoundingBox: { x: 0, y: 0, width: 24, height: 24 },
+            }),
+          ],
+        })
+      );
+
+      const output = generateDesignTree(file, { vectorDir });
+
+      expect(output).toContain("svg:");
+      expect(output).toContain('<svg viewBox="0 0 24 24">');
+    });
+
+    it("does not include svg: when vectorDir is not provided", () => {
+      const file = makeFile(
+        makeNode({
+          id: "1:1",
+          name: "Icon",
+          type: "VECTOR",
+          absoluteBoundingBox: { x: 0, y: 0, width: 24, height: 24 },
+        })
+      );
+
+      const output = generateDesignTree(file);
+
+      expect(output).not.toContain("svg:");
+    });
+
+    it("skips SVG when file does not exist for the node ID", () => {
+      const vectorDir = join(tempDir, "vectors");
+      mkdirSync(vectorDir);
+      // No SVG file for node 1:1
+
+      const file = makeFile(
+        makeNode({
+          id: "1:1",
+          name: "MissingIcon",
+          type: "VECTOR",
+          absoluteBoundingBox: { x: 0, y: 0, width: 24, height: 24 },
+        })
+      );
+
+      const output = generateDesignTree(file, { vectorDir });
+
+      expect(output).not.toContain("svg:");
+    });
+
+    it("converts colon in node ID to hyphen for SVG filename", () => {
+      const vectorDir = join(tempDir, "vectors");
+      mkdirSync(vectorDir);
+      // Node ID "10:20" → filename "10-20.svg"
+      writeFileSync(join(vectorDir, "10-20.svg"), '<svg><circle r="5"/></svg>');
+
+      const file = makeFile(
+        makeNode({
+          id: "10:20",
+          name: "DotIcon",
+          type: "VECTOR",
+          absoluteBoundingBox: { x: 0, y: 0, width: 16, height: 16 },
+        })
+      );
+
+      const output = generateDesignTree(file, { vectorDir });
+
+      expect(output).toContain("svg:");
+      expect(output).toContain('<circle r="5"/>');
+    });
+
+    it("does not inline SVG for non-VECTOR node types", () => {
+      const vectorDir = join(tempDir, "vectors");
+      mkdirSync(vectorDir);
+      writeFileSync(join(vectorDir, "1-1.svg"), '<svg><rect/></svg>');
+
+      const file = makeFile(
+        makeNode({
+          id: "1:1",
+          name: "NotVector",
+          type: "RECTANGLE",
+          absoluteBoundingBox: { x: 0, y: 0, width: 24, height: 24 },
+        })
+      );
+
+      const output = generateDesignTree(file, { vectorDir });
+
+      expect(output).not.toContain("svg:");
     });
   });
 });

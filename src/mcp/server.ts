@@ -332,8 +332,8 @@ Generate a DOM-like design tree from a Figma fixture. Converts the node tree to 
 
 ## Usage
 \`\`\`bash
-canicode design-tree ./fixtures/design.json
-canicode design-tree ./fixtures/design.json --output tree.txt
+canicode design-tree ./fixtures/design
+canicode design-tree ./fixtures/design --output tree.txt
 canicode design-tree "https://www.figma.com/design/ABC/File?node-id=1-234"
 \`\`\`
 

@@ -84,7 +84,7 @@ Calibration commands are NOT exposed as CLI commands. They run exclusively insid
 
 **`/calibrate-loop` (Claude Code command)**
 - Role: Autonomous rule-config.ts improvement via fixture-based calibration
-- Input: fixture JSON path (e.g. `fixtures/material3-kit.json`)
+- Input: fixture directory path (e.g. `fixtures/material3-kit`)
 - Flow: Analysis → Converter (entire design → HTML + visual-compare) → Gap Analyzer → Evaluation → Critic → Arbitrator
 - Converter implements the full scoped design as one HTML page, runs `visual-compare` for pixel-level similarity
 - Gap Analyzer examines the diff image, categorizes pixel differences, saves to run directory
@@ -99,12 +99,12 @@ Calibration commands are NOT exposed as CLI commands. They run exclusively insid
 
 **`/calibrate-night` (Claude Code command)**
 - Role: Run calibration on multiple fixtures sequentially, then generate aggregate report
-- Input: comma-separated fixture paths (e.g. `fixtures/a.json,fixtures/b.json`)
+- Input: comma-separated fixture paths (e.g. `fixtures/a,fixtures/b`)
 - Flow: sequential `/calibrate-loop` per fixture → `calibrate-gap-report` → `logs/calibration/REPORT.md`
 
 **`/add-rule` (Claude Code command)**
 - Role: Research, design, implement, and evaluate new analysis rules
-- Input: concept + fixture path (e.g. `"component description" fixtures/material3-kit.json`)
+- Input: concept + fixture path (e.g. `"component description" fixtures/material3-kit`)
 - Flow: Researcher → Designer → Implementer → A/B Visual Validation → Evaluator → Critic
 - Researcher reads accumulated gap data from `logs/calibration/*/gaps.json` to find recurring patterns
 - Each run creates a directory: `logs/rule-discovery/<concept>--<date>/`

@@ -205,13 +205,17 @@ export async function visualCompare(options: VisualCompareOptions): Promise<Visu
   const nodeId = nodeIdMatch?.[1]?.replace(/-/g, ":");
   if (!nodeId) throw new Error("Invalid Figma URL — missing node-id");
 
-  // Step 1: Fetch Figma screenshot first to get its dimensions
-  await fetchFigmaScreenshot(fileKey, nodeId, options.figmaToken, figmaScreenshotPath);
+  // Step 1: Fetch Figma screenshot (skip if already cached in output dir)
+  if (existsSync(figmaScreenshotPath)) {
+    // Reuse cached figma.png — same design, no need to re-fetch
+  } else {
+    await fetchFigmaScreenshot(fileKey, nodeId, options.figmaToken, figmaScreenshotPath);
+    if (!existsSync(figmaScreenshotPath)) {
+      throw new Error(`Figma screenshot was not created at expected path: ${figmaScreenshotPath}`);
+    }
+  }
 
   // Step 2: Read Figma screenshot dimensions, use as viewport for code rendering
-  if (!existsSync(figmaScreenshotPath)) {
-    throw new Error(`Figma screenshot was not created at expected path: ${figmaScreenshotPath}`);
-  }
   const figmaPng = PNG.sync.read(readFileSync(figmaScreenshotPath));
   const viewport = options.viewport ?? { width: figmaPng.width, height: figmaPng.height };
 

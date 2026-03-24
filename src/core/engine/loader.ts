@@ -1,5 +1,5 @@
-import { existsSync } from "node:fs";
-import { resolve } from "node:path";
+import { existsSync, statSync } from "node:fs";
+import { resolve, join } from "node:path";
 import { FigmaClient } from "../adapters/figma-client.js";
 import { loadFigmaFileFromJson } from "../adapters/figma-file-loader.js";
 import { transformFigmaResponse, transformFileNodesResponse } from "../adapters/figma-transformer.js";
@@ -20,12 +20,35 @@ export function isJsonFile(input: string): boolean {
   return input.endsWith(".json");
 }
 
+/**
+ * Check if input is a fixture directory (contains data.json).
+ */
+export function isFixtureDir(input: string): boolean {
+  const resolved = resolve(input);
+  if (!existsSync(resolved)) return false;
+  try {
+    if (!statSync(resolved).isDirectory()) return false;
+  } catch {
+    return false;
+  }
+  return existsSync(join(resolved, "data.json"));
+}
+
+/**
+ * Resolve fixture input to data.json path.
+ * Input: fixtures/name/ or fixtures/name → fixtures/name/data.json
+ */
+export function resolveFixturePath(input: string): string {
+  if (isJsonFile(input)) return resolve(input);
+  return resolve(join(input, "data.json"));
+}
+
 export async function loadFile(
   input: string,
   token?: string,
 ): Promise<LoadResult> {
-  if (isJsonFile(input)) {
-    const filePath = resolve(input);
+  if (isJsonFile(input) || isFixtureDir(input)) {
+    const filePath = resolveFixturePath(input);
     if (!existsSync(filePath)) {
       throw new Error(`File not found: ${filePath}`);
     }
@@ -39,7 +62,7 @@ export async function loadFile(
   }
 
   throw new Error(
-    `Invalid input: ${input}. Provide a Figma URL or JSON file path.`
+    `Invalid input: ${input}. Provide a Figma URL or fixture directory path.`
   );
 }
 

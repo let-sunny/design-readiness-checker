@@ -33,14 +33,24 @@ npx canicode calibrate-analyze "$ARGUMENTS" --run-dir $RUN_DIR
 
 Read `$RUN_DIR/analysis.json`. If `issueCount` is 0, stop here.
 
+Check the grade from `scoreReport.overall.grade` and `scoreReport.overall.percentage`:
+- **B+ or higher (percentage >= 78)**: proceed to Step 2 (Converter + visual-compare)
+- **Below B+ (percentage < 78)**: skip Steps 2-3 (Converter + Gap Analysis). Jump to Step 4 (Evaluation).
+
 Append to `$RUN_DIR/activity.jsonl`:
 ```json
-{"step":"Analysis","timestamp":"<ISO8601>","result":"nodes=<N> issues=<N> grade=<X>","durationMs":<ms>}
+{"step":"Analysis","timestamp":"<ISO8601>","result":"nodes=<N> issues=<N> grade=<X> (<N>%)","durationMs":<ms>}
+```
+
+If skipping visual-compare, also append:
+```json
+{"step":"Converter","timestamp":"<ISO8601>","result":"SKIPPED — grade below B+ (<percentage>%)","durationMs":0}
+{"step":"Gap Analyzer","timestamp":"<ISO8601>","result":"SKIPPED — no visual-compare data","durationMs":0}
 ```
 
 ### Step 2 — Converter
 
-Read the analysis JSON to extract `fileKey`. Parse the root nodeId from the Figma URL.
+Read the analysis JSON to extract `fileKey`. Parse the root nodeId from the Figma URL. Extract a short fixture name from the URL for cache lookup.
 
 Spawn a `general-purpose` subagent. In the prompt, include the full converter instructions from `.claude/agents/calibration/converter.md` and add:
 

@@ -1,8 +1,22 @@
 import { readFile } from "node:fs/promises";
-import { basename } from "node:path";
+import { basename, dirname } from "node:path";
 import type { GetFileResponse } from "@figma/rest-api-spec";
 import type { AnalysisFile } from "../contracts/figma-node.js";
 import { transformFigmaResponse } from "./figma-transformer.js";
+
+/**
+ * Extract fileKey from fixture path.
+ * - fixtures/name/data.json → name (directory-based fixture)
+ * - fixtures/name.json → name (legacy flat fixture)
+ */
+function extractFileKey(filePath: string): string {
+  const fileName = basename(filePath, ".json");
+  if (fileName === "data") {
+    // Directory-based fixture: use parent directory name
+    return basename(dirname(filePath));
+  }
+  return fileName;
+}
 
 /**
  * Load Figma data from a JSON file
@@ -14,8 +28,7 @@ export async function loadFigmaFileFromJson(
   const content = await readFile(filePath, "utf-8");
   const data = JSON.parse(content) as GetFileResponse;
 
-  // Extract fileKey from filename (e.g., ABC123.json -> ABC123)
-  const fileKey = basename(filePath, ".json");
+  const fileKey = extractFileKey(filePath);
 
   return transformFigmaResponse(fileKey, data);
 }

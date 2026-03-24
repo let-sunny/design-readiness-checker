@@ -1,6 +1,6 @@
-Run a calibration debate loop using local fixture JSON files. No Figma MCP needed.
+Run a calibration debate loop using local fixture directories. No Figma MCP needed.
 
-Input: $ARGUMENTS (fixture path, e.g. `fixtures/material3-kit.json`)
+Input: $ARGUMENTS (fixture directory path, e.g. `fixtures/material3-kit`)
 
 ## Instructions
 
@@ -10,7 +10,7 @@ You are the orchestrator. Do NOT make calibration decisions yourself. Only pass 
 
 ### Step 0 — Setup
 
-Extract the fixture name (e.g. `fixtures/material3-kit.json` → `material3-kit`). Create the run directory:
+Extract the fixture name from the directory (e.g. `fixtures/material3-kit` → `material3-kit`). Create the run directory:
 
 ```
 RUN_DIR=logs/calibration/<fixture-name>--<YYYY-MM-DD-HHMM>/
@@ -33,25 +33,42 @@ npx canicode calibrate-analyze $ARGUMENTS --run-dir $RUN_DIR
 
 Read `$RUN_DIR/analysis.json`. If `issueCount` is 0, stop here.
 
+Check the grade from `scoreReport.overall.grade` and `scoreReport.overall.percentage`:
+- **B+ or higher (percentage >= 78)**: proceed to Step 2 (Converter + visual-compare)
+- **Below B+ (percentage < 78)**: skip Steps 2-3 (Converter + Gap Analysis). The score is low enough that pixel differences are expected and visual-compare won't provide useful signal. Jump to Step 4 (Evaluation) — the score-based evaluation still runs.
+
 Append to `$RUN_DIR/activity.jsonl`:
 ```json
-{"step":"Analysis","timestamp":"<ISO8601>","result":"nodes=<N> issues=<N> grade=<X>","durationMs":<ms>}
+{"step":"Analysis","timestamp":"<ISO8601>","result":"nodes=<N> issues=<N> grade=<X> (<N>%)","durationMs":<ms>}
+```
+
+If skipping visual-compare, also append:
+```json
+{"step":"Converter","timestamp":"<ISO8601>","result":"SKIPPED — grade below B+ (<percentage>%)","durationMs":0}
+{"step":"Gap Analyzer","timestamp":"<ISO8601>","result":"SKIPPED — no visual-compare data","durationMs":0}
 ```
 
 ### Step 2 — Converter
 
 Read the analysis JSON to extract `fileKey`. Also determine the root nodeId — if the input was a Figma URL, parse the node-id from it. If it was a fixture, use the document root id.
 
+**Copy fixture screenshot**: The fixture directory contains `screenshot.png` (saved by `save-fixture`). Copy it to the run directory so `visual-compare` can reuse it without API calls:
+
+```bash
+cp <fixture-dir>/screenshot.png $RUN_DIR/figma.png
+```
+
 Spawn a `general-purpose` subagent. In the prompt, include the full converter instructions from `.claude/agents/calibration/converter.md` and add:
 
 ```
-Fixture path: <paste input path here>
+Fixture directory: <paste input path here>
 fileKey: <extracted fileKey>
 Root nodeId: <extracted nodeId>
 Run directory: <paste RUN_DIR here>
+figma.png is already in the run directory (copied from fixture screenshot). visual-compare will reuse it.
 ```
 
-The Converter writes `output.html`, `conversion.json`, `design-tree.txt` to $RUN_DIR and runs `visual-compare --output $RUN_DIR` which creates `figma.png`, `code.png`, `diff.png`.
+The Converter writes `output.html`, `conversion.json`, `design-tree.txt` to $RUN_DIR and runs `visual-compare --output $RUN_DIR` which creates `figma.png` (or reuses cached), `code.png`, `diff.png`.
 
 After the Converter returns, **verify** these files exist in $RUN_DIR:
 ```bash

@@ -4,10 +4,6 @@ import { resolve } from "node:path";
 
 import type { AnalysisFile, AnalysisNode, AnalysisNodeType } from "@/core/contracts/figma-node.js";
 import { analyzeFile } from "@/core/engine/rule-engine.js";
-import { FigmaClient } from "@/core/adapters/figma-client.js";
-import { loadFigmaFileFromJson } from "@/core/adapters/figma-file-loader.js";
-import { transformFigmaResponse } from "@/core/adapters/figma-transformer.js";
-import { parseFigmaUrl } from "@/core/adapters/figma-url-parser.js";
 import { RULE_CONFIGS } from "@/core/rules/rule-config.js";
 
 import type {
@@ -191,47 +187,15 @@ export function filterConversionCandidates(
   });
 }
 
-function isFigmaUrl(input: string): boolean {
-  return input.includes("figma.com/");
-}
+// Reuse loader from core engine
+import { loadFile as coreLoadFile } from "@/core/engine/loader.js";
 
-function isJsonFile(input: string): boolean {
-  return input.endsWith(".json");
-}
-
-/**
- * Load a Figma file from URL or JSON path
- */
 async function loadFile(
   input: string,
   token?: string
 ): Promise<{ file: AnalysisFile; fileKey: string; nodeId: string | undefined }> {
-  if (isJsonFile(input)) {
-    const filePath = resolve(input);
-    if (!existsSync(filePath)) {
-      throw new Error(`File not found: ${filePath}`);
-    }
-    const file = await loadFigmaFileFromJson(filePath);
-    return { file, fileKey: file.fileKey, nodeId: undefined };
-  }
-
-  if (isFigmaUrl(input)) {
-    const { fileKey, nodeId } = parseFigmaUrl(input);
-    const figmaToken = token ?? process.env["FIGMA_TOKEN"];
-    if (!figmaToken) {
-      throw new Error(
-        "Figma token required. Provide token or set FIGMA_TOKEN environment variable."
-      );
-    }
-    const client = new FigmaClient({ token: figmaToken });
-    const response = await client.getFile(fileKey);
-    const file = transformFigmaResponse(fileKey, response);
-    return { file, fileKey, nodeId };
-  }
-
-  throw new Error(
-    `Invalid input: ${input}. Provide a Figma URL or JSON file path.`
-  );
+  const { file, nodeId } = await coreLoadFile(input, token);
+  return { file, fileKey: file.fileKey, nodeId };
 }
 
 /**

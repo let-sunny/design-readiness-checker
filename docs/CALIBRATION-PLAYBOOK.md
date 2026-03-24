@@ -10,19 +10,22 @@ Save Figma designs as local JSON fixtures for offline analysis:
 
 ```bash
 npx canicode save-fixture "https://www.figma.com/design/ABC123/MyDesign?node-id=1-234"
-# → fixtures/ABC123.json (includes sourceUrl for future reference)
+# → fixtures/ABC123/
+#     ├── data.json          (node tree + sourceUrl)
+#     ├── screenshot.png     (Figma screenshot)
+#     └── vectors/           (SVG exports)
 ```
 
 - One fixture = one scoped section or page (not a full file)
 - Add `?node-id=` to scope to a specific section
-- Fixtures in `fixtures/` are active; converged ones get moved to `fixtures/done/`
+- Fixture directories in `fixtures/` are active; converged ones get moved to `fixtures/done/`
 
 ---
 
 ## 2. Single Calibration Run
 
 ```
-/calibrate-loop fixtures/material3-kit-1.json
+/calibrate-loop fixtures/material3-kit-1
 ```
 
 ### What happens
@@ -69,16 +72,16 @@ None — fully automatic. Review the commit if you want.
 ### What happens
 
 ```
-Scan fixtures/*.json → 6 active fixtures found
+Scan fixtures/*/data.json → 6 active fixtures found
 
-[1/6] fixtures/material3-kit-1.json    — Complete (applied=2)
-[2/6] fixtures/material3-kit-2.json    — Complete (applied=0, converged)
+[1/6] fixtures/material3-kit-1    — Complete (applied=2)
+[2/6] fixtures/material3-kit-2    — Complete (applied=0, converged)
   → moved to fixtures/done/
-[3/6] fixtures/simple-ds-card-grid.json — Complete (applied=1)
-[4/6] fixtures/simple-ds-page.json     — Complete (applied=0, converged)
+[3/6] fixtures/simple-ds-card-grid — Complete (applied=1)
+[4/6] fixtures/simple-ds-page     — Complete (applied=0, converged)
   → moved to fixtures/done/
-[5/6] fixtures/simple-ds-panel.json    — Failed (timeout)
-[6/6] fixtures/figma-ui3-kit.json      — Complete (applied=3)
+[5/6] fixtures/simple-ds-panel    — Failed (timeout)
+[6/6] fixtures/figma-ui3-kit      — Complete (applied=3)
 
 Phase 2: logs/calibration/REPORT.md generated
 ```
@@ -114,7 +117,7 @@ Open `logs/calibration/REPORT.md` the next morning. Key sections:
 When the report identifies a new pattern worth codifying:
 
 ```
-/add-rule "text-alignment-mismatch" fixtures/material3-kit-1.json
+/add-rule "text-alignment-mismatch" fixtures/material3-kit-1
 ```
 
 ### What happens
@@ -196,7 +199,7 @@ summary.md          # Human-readable summary
  Prepare fixtures (save-fixture)
          ↓
  Nightly (/calibrate-night) ←────────────────┐
-   scan fixtures/*.json                       │
+   scan fixtures/*/data.json                       │
    run /calibrate-loop per fixture            │
    converged → fixtures/done/                 │
    generate REPORT.md                         │

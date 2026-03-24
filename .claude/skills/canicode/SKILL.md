@@ -102,16 +102,16 @@ Both calls can be made in parallel.
    - Auto-layout presence and direction
    - Node type confirmation
 
-4. Save to `fixtures/_mcp-temp.json`
-5. Run: `npx canicode analyze fixtures/_mcp-temp.json [options]`
-6. Clean up: delete `fixtures/_mcp-temp.json` after analysis
+4. Save to `fixtures/_mcp-temp/data.json` (create directory if needed)
+5. Run: `npx canicode analyze fixtures/_mcp-temp [options]`
+6. Clean up: delete `fixtures/_mcp-temp/` directory after analysis
 
 **IMPORTANT:** Do NOT use `npx canicode analyze <url> --mcp`. The `--mcp` CLI flag has been removed.
 
 ## Analyzing a JSON fixture (no MCP needed)
 
 ```bash
-npx canicode analyze fixtures/my-design.json
+npx canicode analyze fixtures/my-design
 ```
 
 ## Analysis Options

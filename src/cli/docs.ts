@@ -242,8 +242,8 @@ function printDocsDesignTree(): void {
 DESIGN TREE — Generate DOM-like design tree from Figma fixture
 
 USAGE
-  canicode design-tree ./fixtures/design.json
-  canicode design-tree ./fixtures/design.json --output tree.txt
+  canicode design-tree ./fixtures/design
+  canicode design-tree ./fixtures/design --output tree.txt
   canicode design-tree "https://www.figma.com/design/ABC/File?node-id=1-234"
 
 OPTIONS

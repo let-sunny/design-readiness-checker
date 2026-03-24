@@ -11,20 +11,20 @@ import {
 } from "./run-directory.js";
 
 describe("extractFixtureName", () => {
-  it("extracts name from path with directory and .json", () => {
-    expect(extractFixtureName("fixtures/material3-kit.json")).toBe("material3-kit");
+  it("extracts name from fixture directory path", () => {
+    expect(extractFixtureName("fixtures/material3-kit")).toBe("material3-kit");
   });
 
-  it("extracts name from bare filename", () => {
-    expect(extractFixtureName("my-design.json")).toBe("my-design");
+  it("extracts name from data.json path", () => {
+    expect(extractFixtureName("fixtures/material3-kit/data.json")).toBe("material3-kit");
   });
 
-  it("returns as-is when no .json extension", () => {
-    expect(extractFixtureName("fixtures/something")).toBe("something");
+  it("handles trailing slash", () => {
+    expect(extractFixtureName("fixtures/something/")).toBe("something");
   });
 
-  it("handles nested paths", () => {
-    expect(extractFixtureName("a/b/c/deep-nested.json")).toBe("deep-nested");
+  it("handles nested directory paths", () => {
+    expect(extractFixtureName("a/b/c/deep-nested")).toBe("deep-nested");
   });
 });
 

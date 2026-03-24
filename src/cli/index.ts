@@ -13,7 +13,7 @@ import { parseFigmaUrl } from "../core/adapters/figma-url-parser.js";
 import type { AnalysisFile } from "../core/contracts/figma-node.js";
 import type { RuleConfig, RuleId } from "../core/contracts/rule.js";
 import { analyzeFile } from "../core/engine/rule-engine.js";
-import { loadFile, isFigmaUrl, isJsonFile } from "../core/engine/loader.js";
+import { loadFile, isFigmaUrl, isJsonFile, isFixtureDir } from "../core/engine/loader.js";
 import {
   getFigmaToken, initAiready, getConfigPath, getReportsDir, ensureReportsDir,
   readConfig, getTelemetryEnabled, setTelemetryEnabled, getPosthogApiKey, getSentryDsn, getDeviceId,
@@ -92,6 +92,17 @@ function pickRandomScope(root: AnalysisFile["document"]): AnalysisFile["document
   return candidates[idx] ?? null;
 }
 
+function collectVectorNodeIds(node: { id: string; type: string; children?: readonly unknown[] | undefined }): string[] {
+  const ids: string[] = [];
+  if (node.type === "VECTOR") ids.push(node.id);
+  if (node.children) {
+    for (const child of node.children) {
+      ids.push(...collectVectorNodeIds(child as typeof node));
+    }
+  }
+  return ids;
+}
+
 function countNodes(node: { children?: readonly unknown[] | undefined }): number {
   let count = 1;
   if (node.children) {
@@ -127,15 +138,15 @@ cli
   .option("--json", "Output JSON results to stdout (same format as MCP)")
   .example("  canicode analyze https://www.figma.com/design/ABC123/MyDesign")
   .example("  canicode analyze https://www.figma.com/design/ABC123/MyDesign --api --token YOUR_TOKEN")
-  .example("  canicode analyze ./fixtures/design.json --output report.html")
-  .example("  canicode analyze ./fixtures/design.json --custom-rules ./my-rules.json")
-  .example("  canicode analyze ./fixtures/design.json --config ./my-config.json")
+  .example("  canicode analyze ./fixtures/my-design --output report.html")
+  .example("  canicode analyze ./fixtures/my-design --custom-rules ./my-rules.json")
+  .example("  canicode analyze ./fixtures/my-design --config ./my-config.json")
   .action(async (input: string, options: AnalyzeOptions) => {
     const analysisStart = Date.now();
-    trackEvent(EVENTS.ANALYSIS_STARTED, { source: isJsonFile(input) ? "fixture" : "figma" });
+    trackEvent(EVENTS.ANALYSIS_STARTED, { source: isJsonFile(input) || isFixtureDir(input) ? "fixture" : "figma" });
     try {
       // Check init
-      if (!options.token && !getFigmaToken() && !isJsonFile(input)) {
+      if (!options.token && !getFigmaToken() && !isJsonFile(input) && !isFixtureDir(input)) {
         throw new Error(
           "canicode is not configured. Run 'canicode init --token YOUR_TOKEN' first."
         );
@@ -160,7 +171,7 @@ cli
       let effectiveNodeId = nodeId;
 
       if (!effectiveNodeId && totalNodes > MAX_NODES_WITHOUT_SCOPE) {
-        if (isJsonFile(input)) {
+        if (isJsonFile(input) || isFixtureDir(input)) {
           // Fixture: auto-pick a random suitable FRAME
           const picked = pickRandomScope(file.document);
           if (picked) {
@@ -632,39 +643,86 @@ interface SaveFixtureOptions {
 cli
   .command(
     "save-fixture <input>",
-    "Save Figma file data as a JSON fixture for offline analysis"
+    "Save Figma design as a fixture directory for offline analysis"
   )
-  .option("--output <path>", "Output JSON path (default: fixtures/<filekey>.json)")
+  .option("--output <path>", "Output directory (default: fixtures/<name>/)")
+  .option("--name <name>", "Fixture name (default: extracted from URL)")
   .option("--token <token>", "Figma API token (or use FIGMA_TOKEN env var)")
-  .example("  canicode save-fixture https://www.figma.com/design/ABC123/MyDesign")
-  .example("  canicode save-fixture https://www.figma.com/design/ABC123/MyDesign --token YOUR_TOKEN")
-  .action(async (input: string, options: SaveFixtureOptions) => {
+  .example("  canicode save-fixture https://www.figma.com/design/ABC123/MyDesign?node-id=1-234")
+  .example("  canicode save-fixture https://www.figma.com/design/ABC123/MyDesign?node-id=1-234 --name my-design")
+  .action(async (input: string, options: SaveFixtureOptions & { name?: string }) => {
     try {
-      if (isFigmaUrl(input) && !parseFigmaUrl(input).nodeId) {
+      if (!isFigmaUrl(input)) {
+        throw new Error("save-fixture requires a Figma URL as input.");
+      }
+
+      if (!parseFigmaUrl(input).nodeId) {
         console.warn("\nWarning: No node-id specified. Saving entire file as fixture.");
         console.warn("Tip: Add ?node-id=XXX to save a specific section.\n");
       }
 
       const { file } = await loadFile(input, options.token);
+      file.sourceUrl = input;
 
-      // Store original Figma URL in fixture for future reference
-      if (isFigmaUrl(input)) {
-        file.sourceUrl = input;
+      const fixtureName = options.name ?? file.fileKey;
+      const fixtureDir = resolve(options.output ?? `fixtures/${fixtureName}`);
+      mkdirSync(fixtureDir, { recursive: true });
+
+      // 1. Save data.json
+      const dataPath = resolve(fixtureDir, "data.json");
+      await writeFile(dataPath, JSON.stringify(file, null, 2), "utf-8");
+      console.log(`Fixture saved: ${fixtureDir}/`);
+      console.log(`  data.json: ${file.name} (${countNodes(file.document)} nodes)`);
+
+      // 2. Download screenshot
+      const figmaToken = options.token ?? getFigmaToken();
+      if (figmaToken) {
+        const { FigmaClient } = await import("../core/adapters/figma-client.js");
+        const client = new FigmaClient({ token: figmaToken });
+        const { nodeId } = parseFigmaUrl(input);
+        const rootNodeId = nodeId?.replace(/-/g, ":") ?? file.document.id;
+
+        try {
+          const imageUrls = await client.getNodeImages(file.fileKey, [rootNodeId], { format: "png", scale: 2 });
+          const url = imageUrls[rootNodeId];
+          if (url) {
+            const resp = await fetch(url);
+            if (resp.ok) {
+              const buffer = Buffer.from(await resp.arrayBuffer());
+              const { writeFile: writeFileSync } = await import("node:fs/promises");
+              await writeFileSync(resolve(fixtureDir, "screenshot.png"), buffer);
+              console.log(`  screenshot.png: saved`);
+            }
+          }
+        } catch {
+          console.warn("  screenshot.png: failed to download (continuing)");
+        }
+
+        // 3. Download SVGs for VECTOR nodes
+        const vectorNodeIds = collectVectorNodeIds(file.document);
+        if (vectorNodeIds.length > 0) {
+          const vectorDir = resolve(fixtureDir, "vectors");
+          mkdirSync(vectorDir, { recursive: true });
+
+          const svgUrls = await client.getNodeImages(file.fileKey, vectorNodeIds, { format: "svg" });
+          let downloaded = 0;
+          for (const [id, svgUrl] of Object.entries(svgUrls)) {
+            if (!svgUrl) continue;
+            try {
+              const resp = await fetch(svgUrl);
+              if (resp.ok) {
+                const svg = await resp.text();
+                const safeId = id.replace(/:/g, "-");
+                await writeFile(resolve(vectorDir, `${safeId}.svg`), svg, "utf-8");
+                downloaded++;
+              }
+            } catch {
+              // Skip failed downloads
+            }
+          }
+          console.log(`  vectors/: ${downloaded}/${vectorNodeIds.length} SVGs`);
+        }
       }
-
-      const outputPath = resolve(
-        options.output ?? `fixtures/${file.fileKey}.json`
-      );
-      const outputDir = dirname(outputPath);
-      if (!existsSync(outputDir)) {
-        mkdirSync(outputDir, { recursive: true });
-      }
-
-      await writeFile(outputPath, JSON.stringify(file, null, 2), "utf-8");
-
-      console.log(`Fixture saved: ${outputPath}`);
-      console.log(`  File: ${file.name}`);
-      console.log(`  Nodes: ${countNodes(file.document)}`);
     } catch (error) {
       console.error(
         "\nError:",
@@ -685,13 +743,25 @@ cli
   )
   .option("--token <token>", "Figma API token (or use FIGMA_TOKEN env var)")
   .option("--output <path>", "Output file path (default: stdout)")
-  .example("  canicode design-tree ./fixtures/design.json")
+  .option("--vector-dir <path>", "Directory with SVG files for VECTOR nodes (auto-detected from fixture path)")
+  .example("  canicode design-tree ./fixtures/my-design")
   .example("  canicode design-tree https://www.figma.com/design/ABC/File?node-id=1-234 --output tree.txt")
-  .action(async (input: string, options: { token?: string; output?: string }) => {
+  .action(async (input: string, options: { token?: string; output?: string; vectorDir?: string }) => {
     try {
       const { file } = await loadFile(input, options.token);
       const { generateDesignTree } = await import("../core/engine/design-tree.js");
-      const tree = generateDesignTree(file);
+
+      // Auto-detect vector dir from fixture path
+      let vectorDir = options.vectorDir;
+      if (!vectorDir) {
+        // fixtures/name/data.json → fixtures/name/vectors/
+        // fixtures/name/ → fixtures/name/vectors/
+        const fixtureBase = isJsonFile(input) ? dirname(resolve(input)) : resolve(input);
+        const autoDir = resolve(fixtureBase, "vectors");
+        if (existsSync(autoDir)) vectorDir = autoDir;
+      }
+
+      const tree = generateDesignTree(file, vectorDir ? { vectorDir } : undefined);
 
       if (options.output) {
         const outputDir = dirname(resolve(options.output));

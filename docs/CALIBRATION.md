@@ -107,7 +107,7 @@ Calibration runs inside Claude Code using the `/calibrate-loop` command:
 
 ```bash
 # In Claude Code:
-/calibrate-loop fixtures/my-design.json
+/calibrate-loop fixtures/my-design
 ```
 
 For live Figma data with MCP:

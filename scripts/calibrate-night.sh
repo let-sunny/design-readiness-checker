@@ -5,7 +5,7 @@ set -euo pipefail
 #
 # Each /calibrate-loop invocation creates its own run directory under logs/calibration/<name>--<timestamp>/.
 #
-# Phase 1 — For each active fixture (fixtures/*.json): run calibration.
+# Phase 1 — For each active fixture (fixtures/*/data.json): run calibration.
 #           If applied=0 (converged), move fixture to fixtures/done/.
 # Phase 2 — canicode calibrate-gap-report → logs/calibration/REPORT.md
 # Phase 3 — Manual: review the report, then run /add-rule in Claude Code.
@@ -46,14 +46,17 @@ if [ -f "$PROJECT_ROOT/.env" ]; then
   set +a
 fi
 
-# Discover active fixtures (skip done/)
+# Discover active fixture directories (skip done/)
 FIXTURES=()
-for f in "$FIXTURE_DIR"/*.json; do
-  [ -f "$f" ] && FIXTURES+=("$f")
+for f in "$FIXTURE_DIR"/*/data.json; do
+  dir="$(dirname "$f")"
+  # Skip done/ subdirectory
+  case "$dir" in "$FIXTURE_DIR"/done/*) continue ;; esac
+  [ -f "$f" ] && FIXTURES+=("$dir")
 done
 
 if [ ${#FIXTURES[@]} -eq 0 ]; then
-  echo "No active fixtures found in $FIXTURE_DIR/*.json"
+  echo "No active fixtures found in $FIXTURE_DIR/*/data.json"
   echo "All fixtures may have converged (moved to $FIXTURE_DIR/done/)."
   exit 0
 fi
@@ -101,7 +104,7 @@ CONVERGED_LIST=""
 for i in "${!FIXTURES[@]}"; do
   fixture="${FIXTURES[$i]}"
   idx=$((i + 1))
-  base="$(basename "$fixture" .json)"
+  base="$(basename "$fixture")"
 
   echo "  [$idx/${#FIXTURES[@]}] $fixture"
   log "Fixture $idx start" "File: $fixture"
@@ -188,7 +191,7 @@ else
 fi
 
 TOTAL_DURATION=$(( SECONDS - TOTAL_START ))
-REMAINING=$(ls "$FIXTURE_DIR"/*.json 2>/dev/null | wc -l | tr -d ' ')
+REMAINING=$(find "$FIXTURE_DIR" -maxdepth 2 -name data.json -not -path "*/done/*" 2>/dev/null | wc -l | tr -d ' ')
 log "Nightly finished" "Total: ${TOTAL_DURATION}s | Remaining active: $REMAINING | Converged: $CONVERGED"
 
 echo "Log: $NIGHTLY_LOG"

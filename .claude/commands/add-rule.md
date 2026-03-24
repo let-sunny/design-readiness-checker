@@ -1,6 +1,6 @@
 Run a rule discovery pipeline to research, design, implement, and evaluate a new analysis rule.
 
-Input: $ARGUMENTS (concept + fixture path, e.g. `"component description" fixtures/material3-kit.json`)
+Input: $ARGUMENTS (concept + fixture path, e.g. `"component description" fixtures/material3-kit`)
 
 ## Instructions
 

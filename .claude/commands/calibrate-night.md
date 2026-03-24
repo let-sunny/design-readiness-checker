@@ -11,12 +11,12 @@ You are the nightly orchestrator. Scan for active fixtures, run `/calibrate-loop
 Determine the fixture directory from the input (default: `fixtures`).
 
 ```bash
-ls <fixture-dir>/*.json
+ls <fixture-dir>/*/data.json
 ```
 
-These are the **active** fixtures to calibrate. Fixtures in `<fixture-dir>/done/` have already converged and are skipped.
+These are the **active** fixture directories to calibrate. Fixtures in `<fixture-dir>/done/` have already converged and are skipped.
 
-If no `.json` files found, stop with a message: "No active fixtures found."
+If no fixture directories found, stop with a message: "No active fixtures found."
 
 ### Step 1 — Run calibration for each fixture
 
@@ -28,9 +28,9 @@ For each active fixture, run `/calibrate-loop` with that fixture path.
 
 After each fixture, briefly report:
 ```
-[1/6] fixtures/material3-kit.json — Complete (applied=2)
-[2/6] fixtures/simple-ds.json — Complete (applied=0, converged)
-[3/6] fixtures/figma-ui3-kit.json — Failed (reason)
+[1/6] fixtures/material3-kit — Complete (applied=2)
+[2/6] fixtures/simple-ds — Complete (applied=0, converged)
+[3/6] fixtures/figma-ui3-kit — Failed (reason)
 ```
 
 ### Step 2 — Move converged fixtures
