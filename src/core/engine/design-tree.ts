@@ -4,6 +4,8 @@
  * AI reads this 1:1 to generate HTML+CSS — no information loss, 50-100x smaller.
  */
 
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import type { AnalysisFile, AnalysisNode } from "../contracts/figma-node.js";
 
 function rgbaToHex(color: { r?: number; g?: number; b?: number; a?: number }): string | null {
@@ -62,7 +64,7 @@ function mapAlign(figmaAlign: string): string {
   return map[figmaAlign] ?? figmaAlign;
 }
 
-function renderNode(node: AnalysisNode, indent: number): string {
+function renderNode(node: AnalysisNode, indent: number, vectorDir?: string): string {
   if (node.visible === false) return "";
 
   const prefix = "  ".repeat(indent);
@@ -138,6 +140,16 @@ function renderNode(node: AnalysisNode, indent: number): string {
     styles.push(`text: "${node.characters}"`);
   }
 
+  // Vector SVG inline (when vector dir with downloaded SVGs is available)
+  if (node.type === "VECTOR" && vectorDir) {
+    const safeId = node.id.replace(/:/g, "-");
+    const svgPath = join(vectorDir, `${safeId}.svg`);
+    if (existsSync(svgPath)) {
+      const svg = readFileSync(svgPath, "utf-8").trim();
+      styles.push(`svg: ${svg}`);
+    }
+  }
+
   if (styles.length > 0) {
     lines.push(`${prefix}  style: ${styles.join("; ")}`);
   }
@@ -145,7 +157,7 @@ function renderNode(node: AnalysisNode, indent: number): string {
   // Children
   if (node.children) {
     for (const child of node.children) {
-      const childOutput = renderNode(child, indent + 1);
+      const childOutput = renderNode(child, indent + 1, vectorDir);
       if (childOutput) lines.push(childOutput);
     }
   }
@@ -153,15 +165,20 @@ function renderNode(node: AnalysisNode, indent: number): string {
   return lines.join("\n");
 }
 
+export interface DesignTreeOptions {
+  /** Directory containing <nodeId>.svg files for VECTOR nodes */
+  vectorDir?: string;
+}
+
 /**
  * Generate a design tree string from an AnalysisFile.
  */
-export function generateDesignTree(file: AnalysisFile): string {
+export function generateDesignTree(file: AnalysisFile, options?: DesignTreeOptions): string {
   const root = file.document;
   const w = root.absoluteBoundingBox ? Math.round(root.absoluteBoundingBox.width) : 0;
   const h = root.absoluteBoundingBox ? Math.round(root.absoluteBoundingBox.height) : 0;
 
-  const tree = renderNode(root, 0);
+  const tree = renderNode(root, 0, options?.vectorDir);
 
   return [
     "# Design Tree",

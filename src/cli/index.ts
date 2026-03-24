@@ -92,6 +92,17 @@ function pickRandomScope(root: AnalysisFile["document"]): AnalysisFile["document
   return candidates[idx] ?? null;
 }
 
+function collectVectorNodeIds(node: { id: string; type: string; children?: readonly unknown[] | undefined }): string[] {
+  const ids: string[] = [];
+  if (node.type === "VECTOR") ids.push(node.id);
+  if (node.children) {
+    for (const child of node.children) {
+      ids.push(...collectVectorNodeIds(child as typeof node));
+    }
+  }
+  return ids;
+}
+
 function countNodes(node: { children?: readonly unknown[] | undefined }): number {
   let count = 1;
   if (node.children) {
@@ -651,6 +662,7 @@ cli
       if (isFigmaUrl(input)) {
         file.sourceUrl = input;
       }
+      const fileKey = file.fileKey;
 
       const outputPath = resolve(
         options.output ?? `fixtures/${file.fileKey}.json`
@@ -665,6 +677,39 @@ cli
       console.log(`Fixture saved: ${outputPath}`);
       console.log(`  File: ${file.name}`);
       console.log(`  Nodes: ${countNodes(file.document)}`);
+
+      // Download SVG for VECTOR nodes
+      if (isFigmaUrl(input)) {
+        const vectorNodeIds = collectVectorNodeIds(file.document);
+        if (vectorNodeIds.length > 0) {
+          const figmaToken = options.token ?? getFigmaToken();
+          if (figmaToken) {
+            const { FigmaClient } = await import("../core/adapters/figma-client.js");
+            const client = new FigmaClient({ token: figmaToken });
+            const baseName = outputPath.replace(/\.json$/, "");
+            const vectorDir = `${baseName}-vectors`;
+            mkdirSync(vectorDir, { recursive: true });
+
+            const imageUrls = await client.getNodeImages(fileKey, vectorNodeIds, { format: "svg" });
+            let downloaded = 0;
+            for (const [nodeId, url] of Object.entries(imageUrls)) {
+              if (!url) continue;
+              try {
+                const resp = await fetch(url);
+                if (resp.ok) {
+                  const svg = await resp.text();
+                  const safeId = nodeId.replace(/:/g, "-");
+                  await writeFile(resolve(vectorDir, `${safeId}.svg`), svg, "utf-8");
+                  downloaded++;
+                }
+              } catch {
+                // Skip failed downloads
+              }
+            }
+            console.log(`  Vectors: ${downloaded}/${vectorNodeIds.length} SVGs saved to ${vectorDir}/`);
+          }
+        }
+      }
     } catch (error) {
       console.error(
         "\nError:",
@@ -685,13 +730,22 @@ cli
   )
   .option("--token <token>", "Figma API token (or use FIGMA_TOKEN env var)")
   .option("--output <path>", "Output file path (default: stdout)")
+  .option("--vector-dir <path>", "Directory with SVG files for VECTOR nodes (auto-detected from fixture path)")
   .example("  canicode design-tree ./fixtures/design.json")
   .example("  canicode design-tree https://www.figma.com/design/ABC/File?node-id=1-234 --output tree.txt")
-  .action(async (input: string, options: { token?: string; output?: string }) => {
+  .action(async (input: string, options: { token?: string; output?: string; vectorDir?: string }) => {
     try {
       const { file } = await loadFile(input, options.token);
       const { generateDesignTree } = await import("../core/engine/design-tree.js");
-      const tree = generateDesignTree(file);
+
+      // Auto-detect vector dir from fixture path if not specified
+      let vectorDir = options.vectorDir;
+      if (!vectorDir && isJsonFile(input)) {
+        const autoDir = resolve(input).replace(/\.json$/, "-vectors");
+        if (existsSync(autoDir)) vectorDir = autoDir;
+      }
+
+      const tree = generateDesignTree(file, vectorDir ? { vectorDir } : undefined);
 
       if (options.output) {
         const outputDir = dirname(resolve(options.output));
