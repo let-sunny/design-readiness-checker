@@ -21,7 +21,7 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
     enabled: true,
   },
   "fixed-width-in-responsive-context": {
-    severity: "risk",
+    severity: "missing-info",
     score: -2,
     depthWeight: 1.3,
     enabled: true,
@@ -137,7 +137,7 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
     enabled: true,
   },
   "nested-instance-override": {
-    severity: "risk",
+    severity: "missing-info",
     score: -2,
     enabled: true,
   },
