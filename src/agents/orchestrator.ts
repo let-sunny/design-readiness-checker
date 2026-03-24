@@ -327,6 +327,10 @@ export function runCalibrationEvaluate(
 /**
  * Run the full calibration pipeline
  *
+ * @deprecated Use the `/calibrate-loop` command instead. This function duplicates the
+ * orchestration logic that is now handled by the command + subagent pipeline.
+ * Kept temporarily for backward compatibility — will be removed in a future version.
+ *
  * Sequence: validate -> load file -> analysis -> node selection -> conversion -> evaluation -> tuning -> report
  */
 export async function runCalibration(

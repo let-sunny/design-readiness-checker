@@ -122,7 +122,9 @@ export function runEvaluationAgent(
       });
     }
 
-    // Process flagged rules that had NO struggle reported (potential overscoring)
+    // Process flagged rules that had NO struggle reported
+    // Not mentioned ≠ overscored. Only classify as overscored when the Converter
+    // explicitly reported actualImpact: "easy" for this rule. Otherwise validate.
     if (summary) {
       const struggledRuleIds = new Set(
         record.ruleRelatedStruggles.map((s) => s.ruleId)
@@ -134,33 +136,18 @@ export function runEvaluationAgent(
         const ruleInfo = input.ruleScores[ruleId];
         if (!ruleInfo) continue;
 
-        // Rule was flagged but conversion had no struggle with it
-        // Use overall node difficulty as reference, but lean toward "overscored"
-        if (difficulty === "easy" || difficulty === "moderate") {
-          mismatches.push({
-            type: "overscored",
-            nodeId: record.nodeId,
-            nodePath: record.nodePath,
-            ruleId,
-            currentScore: ruleInfo.score,
-            currentSeverity: ruleInfo.severity as Severity,
-            actualDifficulty: "easy",
-            reasoning: `Rule "${ruleId}" was flagged but caused no struggle during conversion (overall node difficulty: "${difficulty}").`,
-          });
-        } else {
-          // Hard/failed overall but this specific rule wasn't mentioned — validate it conservatively
-          validatedRuleSet.add(ruleId);
-          mismatches.push({
-            type: "validated",
-            nodeId: record.nodeId,
-            nodePath: record.nodePath,
-            ruleId,
-            currentScore: ruleInfo.score,
-            currentSeverity: ruleInfo.severity as Severity,
-            actualDifficulty: difficulty,
-            reasoning: `Rule "${ruleId}" was flagged and overall conversion was "${difficulty}" — conservatively validated.`,
-          });
-        }
+        // Rule was flagged but conversion had no struggle with it — validate conservatively
+        validatedRuleSet.add(ruleId);
+        mismatches.push({
+          type: "validated",
+          nodeId: record.nodeId,
+          nodePath: record.nodePath,
+          ruleId,
+          currentScore: ruleInfo.score,
+          currentSeverity: ruleInfo.severity as Severity,
+          actualDifficulty: difficulty,
+          reasoning: `Rule "${ruleId}" was flagged but not mentioned in conversion struggles (overall: "${difficulty}") — validated (no explicit easy signal).`,
+        });
       }
     }
 

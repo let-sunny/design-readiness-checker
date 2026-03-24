@@ -128,7 +128,7 @@ describe("runEvaluationAgent", () => {
     expect(result.validatedRules).toHaveLength(0);
   });
 
-  it("overscores a flagged rule with no struggle when overall difficulty is easy", () => {
+  it("validates a flagged rule with no struggle even when overall difficulty is easy", () => {
     const input: EvaluationAgentInput = {
       nodeIssueSummaries: [
         { nodeId: "node-1", nodePath: "Page > Frame", flaggedRuleIds: ["rule-a"] },
@@ -153,9 +153,10 @@ describe("runEvaluationAgent", () => {
       (m) => m.ruleId === "rule-a" && m.nodeId === "node-1"
     );
     expect(match).toBeDefined();
-    expect(match!.type).toBe("overscored");
+    // No explicit easy signal from Converter → validated, not overscored
+    expect(match!.type).toBe("validated");
     expect(match!.actualDifficulty).toBe("easy");
-    expect(result.validatedRules).not.toContain("rule-a");
+    expect(result.validatedRules).toContain("rule-a");
   });
 
   it("conservatively validates a flagged rule with no struggle when overall difficulty is hard", () => {

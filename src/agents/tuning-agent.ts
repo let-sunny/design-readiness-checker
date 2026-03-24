@@ -37,26 +37,37 @@ function getConfidence(caseCount: number): Confidence {
 }
 
 /**
- * Propose a score based on the dominant actual difficulty
+ * Score range for worst-case floor clamping
+ */
+const DIFFICULTY_SCORE_MAX: Record<string, number> = {
+  easy: 0,
+  moderate: -4,
+  hard: -8,
+  failed: -8,
+};
+
+/**
+ * Propose a score based on weighted average of actual difficulties,
+ * with a worst-case floor so hard cases aren't drowned out by easy ones.
  */
 function proposedScoreFromDifficulties(difficulties: string[]): number {
-  // Count occurrences of each difficulty
-  const counts: Record<string, number> = {};
+  if (difficulties.length === 0) return -5;
+
+  // Weighted average: Σ(midpoint × count) / total
+  let sum = 0;
+  let worstFloor = 0;
   for (const d of difficulties) {
-    counts[d] = (counts[d] ?? 0) + 1;
+    const midpoint = DIFFICULTY_MIDPOINT[d] ?? -5;
+    sum += midpoint;
+    // Track the harshest floor from any observed difficulty
+    const floor = DIFFICULTY_SCORE_MAX[d] ?? -5;
+    if (floor < worstFloor) worstFloor = floor;
   }
 
-  // Find the dominant difficulty
-  let dominant = difficulties[0] ?? "moderate";
-  let maxCount = 0;
-  for (const [difficulty, count] of Object.entries(counts)) {
-    if (count > maxCount) {
-      maxCount = count;
-      dominant = difficulty;
-    }
-  }
+  const weightedAvg = Math.round(sum / difficulties.length);
 
-  return DIFFICULTY_MIDPOINT[dominant] ?? -5;
+  // Clamp: proposed score must be at least as harsh as the worst observed difficulty's range start
+  return Math.min(weightedAvg, worstFloor);
 }
 
 /**

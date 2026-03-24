@@ -23,7 +23,10 @@ You receive the Runner's proposals and challenge each one independently.
 Reject if ANY of these apply:
 
 1. **Insufficient evidence**: `confidence` is `low` AND `supportingCases < 2`
-2. **Excessive change**: proposed change is more than 50% of current value (e.g. -10 → -3 is 70% change, reject)
+2. **Excessive change** (confidence-scaled):
+   - `confidence: high` AND `supportingCases >= 3` → no change limit (evidence is strong)
+   - `confidence: medium` → reject if change exceeds 50% of current value
+   - `confidence: low` → reject if change exceeds 30% of current value
 3. **Severity jump without evidence**: severity change proposed without `confidence: high`
 
 ## Decisions

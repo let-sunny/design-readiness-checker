@@ -3,6 +3,7 @@ import { join, resolve } from "node:path";
 import { RULE_CONFIGS } from "../core/rules/rule-config.js";
 import type { RuleId } from "../core/contracts/rule.js";
 import { runCalibrationEvaluate } from "./orchestrator.js";
+import { GapAnalyzerOutputSchema } from "./contracts/gap-analyzer.js";
 
 type CalibrationAnalysisJson = Parameters<typeof runCalibrationEvaluate>[0] & {
   ruleScores: Record<string, { score: number; severity: string }>;
@@ -87,7 +88,15 @@ function normalizeGapEntry(
 function parseGapFile(runDir: string, gapsPath: string): ParsedGapFile | null {
   let raw: Record<string, unknown>;
   try {
-    raw = JSON.parse(readFileSync(gapsPath, "utf-8")) as Record<string, unknown>;
+    const parsed = JSON.parse(readFileSync(gapsPath, "utf-8")) as unknown;
+    // Validate with Zod schema; fall back to best-effort parsing on failure
+    const validation = GapAnalyzerOutputSchema.safeParse(parsed);
+    if (validation.success) {
+      raw = validation.data as unknown as Record<string, unknown>;
+    } else {
+      // Schema validation failed — use raw data with best-effort parsing
+      raw = parsed as Record<string, unknown>;
+    }
   } catch {
     return null;
   }

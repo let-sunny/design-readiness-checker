@@ -94,7 +94,7 @@ async function fetchFigmaScreenshot(
 /**
  * Render HTML file with Playwright and take a screenshot.
  */
-async function renderCodeScreenshot(
+export async function renderCodeScreenshot(
   codePath: string,
   outputPath: string,
   viewport: { width: number; height: number },
@@ -151,25 +151,23 @@ function compareScreenshots(
   const raw1 = PNG.sync.read(readFileSync(path1));
   const raw2 = PNG.sync.read(readFileSync(path2));
 
-  // Size mismatch = implementation failure
+  // Size mismatch — resize both to the larger canvas, compute actual similarity with penalty
   if (raw1.width !== raw2.width || raw1.height !== raw2.height) {
-    // Still generate a diff image for debugging (resize to larger)
     const width = Math.max(raw1.width, raw2.width);
     const height = Math.max(raw1.height, raw2.height);
     const img1 = resizePng(raw1, width, height);
     const img2 = resizePng(raw2, width, height);
     const diff = new PNG({ width, height });
-    pixelmatch(img1.data, img2.data, diff.data, width, height, { threshold: 0.1 });
+    const diffPixels = pixelmatch(img1.data, img2.data, diff.data, width, height, { threshold: 0.1 });
     mkdirSync(dirname(diffOutputPath), { recursive: true });
     writeFileSync(diffOutputPath, PNG.sync.write(diff));
 
-    return {
-      similarity: 0,
-      diffPixels: width * height,
-      totalPixels: width * height,
-      width,
-      height,
-    };
+    const totalPixels = width * height;
+    const baseSimilarity = Math.round((1 - diffPixels / totalPixels) * 100);
+    // Apply 5% penalty for size mismatch (the resize itself introduces noise)
+    const similarity = Math.max(0, baseSimilarity - 5);
+
+    return { similarity, diffPixels, totalPixels, width, height };
   }
 
   const { width, height } = raw1;

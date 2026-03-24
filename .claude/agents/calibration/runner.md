@@ -15,16 +15,11 @@ You are the Runner agent in a calibration pipeline. You perform analysis only �
 
 ## Output
 
-Append your report to `$RUN_DIR/activity.jsonl` (the run directory is provided by the orchestrator).
-
-The log uses **JSON Lines format** — append exactly one JSON object on a single line:
-
-```json
-{"step":"Runner","timestamp":"<ISO8601>","result":"nodes=<N> issues=<N> grade=<X>","durationMs":<ms>,"fixture":"<input>","analysisOutput":"$RUN_DIR/analysis.json"}
-```
+Return your report text so the orchestrator can proceed. **Do NOT write to `activity.jsonl`** — the orchestrator handles all logging.
 
 ## Rules
 
-- Do NOT modify any source files. Only write to the run directory.
+- Do NOT modify any source files.
+- Do NOT write to `activity.jsonl` — the orchestrator appends log entries.
 - Return your full report text so the orchestrator can proceed.
 - If the analysis produces zero issues, return: "No issues found — calibration not needed."

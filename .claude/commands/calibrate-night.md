@@ -37,14 +37,34 @@ After each fixture, briefly report:
 
 After each successful run, check the run's `debate.json` for the Arbitrator's summary.
 
-If `applied=0` (no score changes were made), this fixture has converged:
+A fixture has converged ONLY when `applied=0` AND `rejected=0` (no changes and no disagreements):
 
 ```bash
 mkdir -p <fixture-dir>/done
 mv <fixture-path> <fixture-dir>/done/
 ```
 
+If `applied=0` but `rejected>0`, the fixture is still **active** — proposals are being debated. Do NOT move it to `done/`.
+
 Report which fixtures were moved to `done/`.
+
+### Step 2.5 — Regression check
+
+After all fixtures are processed, re-run `calibrate-evaluate` for each completed fixture to verify that score changes from earlier fixtures didn't regress later ones:
+
+```bash
+for dir in logs/calibration/<latest-run-dirs>; do
+  npx canicode calibrate-evaluate _ _ --run-dir "$dir" 2>/dev/null
+done
+```
+
+Compare the fresh evaluation output with the original. If a previously **validated** rule now shows as **overscored** or **underscored**, log a warning:
+
+```
+⚠ Regression: rule <ruleId> was validated in <fixture-A> but is now <type> after changes from <fixture-B>
+```
+
+This is informational — do not revert changes, just report regressions in the summary.
 
 ### Step 3 — Generate aggregate report
 
@@ -70,4 +90,4 @@ Report:
 - If a fixture fails, continue to the next — don't stop the whole run.
 - Each `/calibrate-loop` creates its own run directory under `logs/calibration/`.
 - Do NOT modify source files yourself — `/calibrate-loop` handles that via its agent pipeline.
-- Only move a fixture to `done/` when `applied=0` — meaning the Arbitrator made zero changes.
+- Only move a fixture to `done/` when `applied=0 AND rejected=0` — meaning all proposals were validated with no disagreements.
