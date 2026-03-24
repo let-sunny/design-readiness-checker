@@ -301,3 +301,86 @@ export const multipleFillColors = defineRule({
   definition: multipleFillColorsDef,
   check: multipleFillColorsCheck,
 });
+
+// ============================================
+// inconsistent-border-radius
+// ============================================
+
+const inconsistentBorderRadiusDef: RuleDefinition = {
+  id: "inconsistent-border-radius",
+  name: "Inconsistent Border Radius",
+  category: "token",
+  why: "Sibling elements of the same type should share a consistent corner radius to signal a unified design token",
+  impact: "Mixed radii among similar elements force developers to guess which value is intentional",
+  fix: "Align corner radius values across sibling elements of the same type, or extract them into a shared token",
+};
+
+const inconsistentBorderRadiusCheck: RuleCheckFn = (node, context, options) => {
+  const circleIdiomThreshold = (options?.["circleIdiomThreshold"] as number) ?? getRuleOption("inconsistent-border-radius", "circleIdiomThreshold", 100);
+
+  // Skip nodes without cornerRadius
+  if (node.cornerRadius === undefined) return null;
+
+  // Skip if not enough siblings to compare
+  if (!context.siblings || context.siblings.length < 2) return null;
+
+  // Exclude circle idiom
+  if (node.cornerRadius >= circleIdiomThreshold) return null;
+
+  // Filter siblings: same type, defined cornerRadius, not circles
+  const qualifyingSiblings = context.siblings.filter(
+    (s) =>
+      s.id !== node.id &&
+      s.type === node.type &&
+      s.cornerRadius !== undefined &&
+      s.cornerRadius < circleIdiomThreshold
+  );
+
+  // Need at least 1 qualifying sibling to compare against
+  if (qualifyingSiblings.length < 1) return null;
+
+  // Collect all radii from qualifying siblings (including current node)
+  const allRadii = qualifyingSiblings.map((s) => s.cornerRadius as number);
+
+  // If all are identical and match this node, no violation
+  const allSame = allRadii.every((r) => r === node.cornerRadius);
+  if (allSame) return null;
+
+  // Find majority radius among siblings (excluding current node)
+  const frequencyMap = new Map<number, number>();
+  for (const r of allRadii) {
+    frequencyMap.set(r, (frequencyMap.get(r) ?? 0) + 1);
+  }
+
+  // Find majority: highest frequency, ties broken by lower value
+  let majorityRadius: number | undefined;
+  let majorityCount = 0;
+  for (const [radius, count] of frequencyMap.entries()) {
+    if (
+      count > majorityCount ||
+      (count === majorityCount && majorityRadius !== undefined && radius < majorityRadius)
+    ) {
+      majorityRadius = radius;
+      majorityCount = count;
+    }
+  }
+
+  if (majorityRadius === undefined) return null;
+
+  // Only fire if current node differs from majority
+  if (node.cornerRadius === majorityRadius) return null;
+
+  const siblingCount = qualifyingSiblings.length;
+
+  return {
+    ruleId: inconsistentBorderRadiusDef.id,
+    nodeId: node.id,
+    nodePath: context.path.join(" > "),
+    message: `"${node.name}" has corner radius ${node.cornerRadius}px while ${siblingCount} sibling(s) of the same type use ${majorityRadius}px`,
+  };
+};
+
+export const inconsistentBorderRadius = defineRule({
+  definition: inconsistentBorderRadiusDef,
+  check: inconsistentBorderRadiusCheck,
+});
