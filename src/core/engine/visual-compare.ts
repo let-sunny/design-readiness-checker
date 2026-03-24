@@ -24,7 +24,16 @@ export interface VisualCompareOptions {
   figmaToken: string;
   codePath: string;
   outputDir?: string | undefined;
-  viewport?: { width: number; height: number } | undefined;
+  /**
+   * Logical CSS viewport (CSS pixels). Omit a dimension to infer from the Figma PNG
+   * using `figmaExportScale`. When the whole object is omitted, both dimensions are inferred.
+   */
+  viewport?: { width?: number; height?: number } | undefined;
+  /**
+   * Figma Images API `scale` and assumed scale for fixture `figma.png` (e.g. from `save-fixture`).
+   * Default 2 matches REST exports and avoids comparing a @2x PNG against a 1× Playwright capture.
+   */
+  figmaExportScale?: number | undefined;
 }
 
 const FIGMA_CACHE_DIR = "/tmp/canicode-figma-cache";
@@ -33,10 +42,10 @@ const FIGMA_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 /**
  * Get the cache path for a given fileKey + nodeId combination.
  */
-function getFigmaCachePath(fileKey: string, nodeId: string): string {
+function getFigmaCachePath(fileKey: string, nodeId: string, scale: number): string {
   // Sanitize nodeId for use as filename (replace : with -)
   const safeNodeId = nodeId.replace(/:/g, "-");
-  return resolve(FIGMA_CACHE_DIR, `${fileKey}_${safeNodeId}.png`);
+  return resolve(FIGMA_CACHE_DIR, `${fileKey}_${safeNodeId}@${scale}x.png`);
 }
 
 /**
@@ -57,8 +66,9 @@ async function fetchFigmaScreenshot(
   nodeId: string,
   token: string,
   outputPath: string,
+  scale: number,
 ): Promise<void> {
-  const cachePath = getFigmaCachePath(fileKey, nodeId);
+  const cachePath = getFigmaCachePath(fileKey, nodeId, scale);
 
   // Return cached version if fresh
   if (isCacheFresh(cachePath)) {
@@ -68,7 +78,7 @@ async function fetchFigmaScreenshot(
   }
 
   const res = await fetch(
-    `https://api.figma.com/v1/images/${fileKey}?ids=${nodeId}&format=png&scale=1`,
+    `https://api.figma.com/v1/images/${fileKey}?ids=${nodeId}&format=png&scale=${scale}`,
     { headers: { "X-Figma-Token": token } },
   );
   if (!res.ok) throw new Error(`Figma Images API: ${res.status} ${res.statusText}`);
@@ -92,17 +102,44 @@ async function fetchFigmaScreenshot(
 }
 
 /**
+ * Infer device pixel ratio so the Playwright screenshot matches Figma PNG pixel dimensions.
+ */
+function inferDeviceScaleFactor(
+  pngW: number,
+  pngH: number,
+  logicalW: number,
+  logicalH: number,
+  fallback: number,
+): number {
+  if (logicalW <= 0 || logicalH <= 0) return 1;
+  const sx = pngW / logicalW;
+  const sy = pngH / logicalH;
+  const rounded = Math.round((sx + sy) / 2);
+  if (rounded >= 2 && Math.abs(sx - rounded) < 0.08 && Math.abs(sy - rounded) < 0.08) {
+    return rounded;
+  }
+  if (Math.abs(sx - 1) < 0.02 && Math.abs(sy - 1) < 0.02) return 1;
+  return fallback >= 2 ? fallback : Math.max(1, Math.round(sx));
+}
+
+/**
  * Render HTML file with Playwright and take a screenshot.
+ * @param deviceScaleFactor - Pass 2 when the Figma reference is @2x and `viewport` is logical CSS size.
  */
 export async function renderCodeScreenshot(
   codePath: string,
   outputPath: string,
-  viewport: { width: number; height: number },
+  logicalViewport: { width: number; height: number },
+  deviceScaleFactor: number = 1,
 ): Promise<void> {
   // Dynamic import — playwright is an optional dependency
   const { chromium } = await import("playwright");
   const browser = await chromium.launch();
-  const page = await browser.newPage({ viewport });
+  const context = await browser.newContext({
+    viewport: logicalViewport,
+    deviceScaleFactor,
+  });
+  const page = await context.newPage();
 
   await page.goto(`file://${resolve(codePath)}`, {
     waitUntil: "networkidle",
@@ -209,22 +246,50 @@ export async function visualCompare(options: VisualCompareOptions): Promise<Visu
   const nodeId = nodeIdMatch?.[1]?.replace(/-/g, ":");
   if (!nodeId) throw new Error("Invalid Figma URL — missing node-id");
 
+  const exportScale = options.figmaExportScale ?? 2;
+
   // Step 1: Fetch Figma screenshot (skip if already cached in output dir)
   if (existsSync(figmaScreenshotPath)) {
     // Reuse cached figma.png — same design, no need to re-fetch
   } else {
-    await fetchFigmaScreenshot(fileKey, nodeId, options.figmaToken, figmaScreenshotPath);
+    await fetchFigmaScreenshot(fileKey, nodeId, options.figmaToken, figmaScreenshotPath, exportScale);
     if (!existsSync(figmaScreenshotPath)) {
       throw new Error(`Figma screenshot was not created at expected path: ${figmaScreenshotPath}`);
     }
   }
 
-  // Step 2: Read Figma screenshot dimensions, use as viewport for code rendering
+  // Step 2: Logical viewport + deviceScaleFactor so code.png matches figma.png pixels (@2x, etc.)
   const figmaPng = PNG.sync.read(readFileSync(figmaScreenshotPath));
-  const viewport = options.viewport ?? { width: figmaPng.width, height: figmaPng.height };
+  const hasViewportOverride = options.viewport !== undefined;
+  let logicalW: number;
+  let logicalH: number;
+  let deviceScaleFactor: number;
 
-  // Step 3: Render code screenshot at the same size
-  await renderCodeScreenshot(options.codePath, codeScreenshotPath, viewport);
+  if (!hasViewportOverride) {
+    logicalW = Math.max(1, Math.round(figmaPng.width / exportScale));
+    logicalH = Math.max(1, Math.round(figmaPng.height / exportScale));
+    deviceScaleFactor = exportScale;
+  } else {
+    logicalW =
+      options.viewport!.width ?? Math.max(1, Math.round(figmaPng.width / exportScale));
+    logicalH =
+      options.viewport!.height ?? Math.max(1, Math.round(figmaPng.height / exportScale));
+    deviceScaleFactor = inferDeviceScaleFactor(
+      figmaPng.width,
+      figmaPng.height,
+      logicalW,
+      logicalH,
+      exportScale,
+    );
+  }
+
+  // Step 3: Render code screenshot at matching physical resolution
+  await renderCodeScreenshot(
+    options.codePath,
+    codeScreenshotPath,
+    { width: logicalW, height: logicalH },
+    deviceScaleFactor,
+  );
 
   // Validate both screenshots exist before comparing
   if (!existsSync(codeScreenshotPath)) {

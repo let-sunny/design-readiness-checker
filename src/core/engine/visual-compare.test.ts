@@ -38,9 +38,9 @@ import pixelmatch from "pixelmatch";
 const FIGMA_CACHE_DIR = "/tmp/canicode-figma-cache";
 
 /** Mirror of the private getFigmaCachePath in visual-compare.ts */
-function getFigmaCachePath(fileKey: string, nodeId: string): string {
+function getFigmaCachePath(fileKey: string, nodeId: string, scale: number = 2): string {
   const safeNodeId = nodeId.replace(/:/g, "-");
-  return resolve(FIGMA_CACHE_DIR, `${fileKey}_${safeNodeId}.png`);
+  return resolve(FIGMA_CACHE_DIR, `${fileKey}_${safeNodeId}@${scale}x.png`);
 }
 
 /** Mirror of the private isCacheFresh in visual-compare.ts */
@@ -133,24 +133,24 @@ function makeSolidPng(width: number, height: number, r: number, g: number, b: nu
 
 describe("getFigmaCachePath", () => {
   it("places the cache file inside FIGMA_CACHE_DIR", () => {
-    const path = getFigmaCachePath("abc123", "1:2");
+    const path = getFigmaCachePath("abc123", "1:2", 2);
     expect(path.startsWith(FIGMA_CACHE_DIR)).toBe(true);
   });
 
   it("replaces colons in nodeId with hyphens", () => {
-    const path = getFigmaCachePath("file", "10:20");
+    const path = getFigmaCachePath("file", "10:20", 2);
     expect(path).toContain("10-20");
     expect(path).not.toContain("10:20");
   });
 
-  it("combines fileKey and sanitized nodeId in the filename", () => {
-    const path = getFigmaCachePath("myfile", "3:45");
-    expect(path).toContain("myfile_3-45.png");
+  it("combines fileKey, sanitized nodeId, and scale in the filename", () => {
+    const path = getFigmaCachePath("myfile", "3:45", 2);
+    expect(path).toContain("myfile_3-45@2x.png");
   });
 
   it("handles nodeId without colons unchanged", () => {
-    const path = getFigmaCachePath("key", "node123");
-    expect(path).toContain("key_node123.png");
+    const path = getFigmaCachePath("key", "node123", 2);
+    expect(path).toContain("key_node123@2x.png");
   });
 });
 

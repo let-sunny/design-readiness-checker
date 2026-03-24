@@ -1,4 +1,4 @@
-import { mkdtempSync, existsSync } from "node:fs";
+import { mkdtempSync, existsSync, writeFileSync } from "node:fs";
 import { join, basename } from "node:path";
 import { tmpdir } from "node:os";
 import { rm } from "node:fs/promises";
@@ -8,6 +8,8 @@ import {
   createCalibrationRunDir,
   createRuleDiscoveryRunDir,
   listCalibrationRuns,
+  extractAppliedRuleIds,
+  isConverged,
 } from "./run-directory.js";
 
 describe("extractFixtureName", () => {
@@ -96,6 +98,61 @@ describe("createRuleDiscoveryRunDir", () => {
 
     const dirName = basename(runDir);
     expect(dirName).toMatch(/^text-alignment--\d{4}-\d{2}-\d{2}$/);
+  });
+});
+
+describe("extractAppliedRuleIds", () => {
+  it("trims ruleId and normalizes decision casing", () => {
+    const ids = extractAppliedRuleIds({
+      critic: null,
+      arbitrator: {
+        summary: "test",
+        decisions: [
+          { ruleId: "  my-rule  ", decision: "Applied" },
+          { ruleId: "b", decision: "REVISED" },
+          { ruleId: "c", decision: "rejected" },
+        ],
+      },
+    });
+    expect(ids).toEqual(["my-rule", "b"]);
+  });
+});
+
+describe("isConverged", () => {
+  let tempDir: string;
+
+  beforeEach(() => {
+    tempDir = mkdtempSync(join(tmpdir(), "converge-test-"));
+  });
+
+  afterEach(async () => {
+    await rm(tempDir, { recursive: true, force: true });
+  });
+
+  it("strict: false when rejections remain with no applies", () => {
+    writeFileSync(
+      join(tempDir, "debate.json"),
+      JSON.stringify({
+        arbitrator: {
+          summary: "applied=0 rejected=1",
+          decisions: [{ ruleId: "x", decision: "rejected" }],
+        },
+      }),
+    );
+    expect(isConverged(tempDir)).toBe(false);
+  });
+
+  it("lenient: true when no applied/revised even if rejected", () => {
+    writeFileSync(
+      join(tempDir, "debate.json"),
+      JSON.stringify({
+        arbitrator: {
+          summary: "applied=0 rejected=1",
+          decisions: [{ ruleId: "x", decision: "rejected" }],
+        },
+      }),
+    );
+    expect(isConverged(tempDir, { lenient: true })).toBe(true);
   });
 });
 

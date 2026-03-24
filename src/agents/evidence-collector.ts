@@ -85,8 +85,10 @@ export function appendCalibrationEvidence(
 ): void {
   if (entries.length === 0) return;
   const existing = readValidatedArray(evidencePath, CalibrationEvidenceEntrySchema);
-  existing.push(...entries);
-  writeJsonArray(evidencePath, existing);
+  const keys = new Set(entries.map((e) => `${e.ruleId.trim()}\0${e.fixture}`));
+  const withoutDupes = existing.filter((e) => !keys.has(`${e.ruleId.trim()}\0${e.fixture}`));
+  withoutDupes.push(...entries);
+  writeJsonArray(evidencePath, withoutDupes);
 }
 
 /**
@@ -97,9 +99,9 @@ export function pruneCalibrationEvidence(
   evidencePath: string = DEFAULT_CALIBRATION_PATH
 ): void {
   if (appliedRuleIds.length === 0) return;
-  const ruleSet = new Set(appliedRuleIds);
+  const ruleSet = new Set(appliedRuleIds.map((id) => id.trim()).filter((id) => id.length > 0));
   const existing = readValidatedArray(evidencePath, CalibrationEvidenceEntrySchema);
-  const pruned = existing.filter((e) => !ruleSet.has(e.ruleId));
+  const pruned = existing.filter((e) => !ruleSet.has(e.ruleId.trim()));
   writeJsonArray(evidencePath, pruned);
 }
 

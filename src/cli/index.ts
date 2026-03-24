@@ -607,13 +607,23 @@ cli
   .option("--fixtures-dir <path>", "Fixtures root directory", { default: "fixtures" })
   .option("--force", "Skip convergence check")
   .option("--run-dir <path>", "Run directory to check for convergence")
-  .action((fixturePath: string, options: { fixturesDir?: string; force?: boolean; runDir?: string }) => {
+  .option(
+    "--lenient-convergence",
+    "Converged when no applied/revised decisions (ignore rejected; see calibration issue #14)"
+  )
+  .action(
+    (fixturePath: string, options: {
+      fixturesDir?: string;
+      force?: boolean;
+      runDir?: string;
+      lenientConvergence?: boolean;
+    }) => {
     if (!options.force) {
       if (!options.runDir) {
         console.error("Error: --run-dir required to check convergence (or use --force to skip check)");
         process.exit(1);
       }
-      if (!isConverged(resolve(options.runDir))) {
+      if (!isConverged(resolve(options.runDir), { lenient: options.lenientConvergence })) {
         const debate = parseDebateResult(resolve(options.runDir));
         const summary = debate?.arbitrator?.summary ?? debate?.skipped ?? "no debate.json found";
         console.error(`Error: fixture has not converged (${summary}). Use --force to override.`);
@@ -903,10 +913,11 @@ cli
   .option("--figma-url <url>", "Figma URL with node-id (required)")
   .option("--token <token>", "Figma API token (or use FIGMA_TOKEN env var)")
   .option("--output <dir>", "Output directory for screenshots and diff (default: /tmp/canicode-visual-compare)")
-  .option("--width <px>", "Viewport width (default: 1440)")
-  .option("--height <px>", "Viewport height (default: 900)")
+  .option("--width <px>", "Logical viewport width in CSS px (default: infer from Figma PNG ÷ export scale)")
+  .option("--height <px>", "Logical viewport height in CSS px (default: infer from Figma PNG ÷ export scale)")
+  .option("--figma-scale <n>", "Figma export scale (default: 2, matches save-fixture / @2x PNGs)")
   .example("  canicode visual-compare ./generated/index.html --figma-url 'https://www.figma.com/design/ABC/File?node-id=1-234'")
-  .action(async (codePath: string, options: VisualCompareOptions) => {
+  .action(async (codePath: string, options: VisualCompareOptions & { figmaScale?: string }) => {
     try {
       if (!options.figmaUrl) {
         console.error("Error: --figma-url is required");
@@ -921,16 +932,30 @@ cli
 
       const { visualCompare } = await import("../core/engine/visual-compare.js");
 
+      const exportScale =
+        options.figmaScale !== undefined ? Number(options.figmaScale) : undefined;
+      if (exportScale !== undefined && (!Number.isFinite(exportScale) || exportScale < 1)) {
+        console.error("Error: --figma-scale must be a number >= 1");
+        process.exit(1);
+      }
+
+      const hasViewportOverride = options.width !== undefined || options.height !== undefined;
+
       console.log("Comparing...");
       const result = await visualCompare({
         figmaUrl: options.figmaUrl,
         figmaToken: token,
         codePath: resolve(codePath),
         outputDir: options.output,
-        viewport: {
-          width: options.width ?? 1440,
-          height: options.height ?? 900,
-        },
+        ...(exportScale !== undefined ? { figmaExportScale: exportScale } : {}),
+        ...(hasViewportOverride
+          ? {
+              viewport: {
+                ...(options.width !== undefined ? { width: options.width } : {}),
+                ...(options.height !== undefined ? { height: options.height } : {}),
+              },
+            }
+          : {}),
       });
 
       // JSON output for programmatic use

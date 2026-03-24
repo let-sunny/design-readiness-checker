@@ -203,13 +203,14 @@ OPTIONS
   --figma-url <url>   Figma URL with node-id (required)
   --token <token>     Figma API token (or FIGMA_TOKEN env var)
   --output <dir>      Output directory (default: /tmp/canicode-visual-compare)
-  --width <px>        Viewport width override (default: match Figma screenshot)
-  --height <px>       Viewport height override (default: match Figma screenshot)
+  --width <px>        Logical viewport width in CSS px (omit = infer from Figma PNG ÷ export scale)
+  --height <px>       Logical viewport height in CSS px (omit = infer from Figma PNG ÷ export scale)
+  --figma-scale <n>   Figma Images API scale (default: 2, matches save-fixture @2x PNGs)
 
 OUTPUT FILES
   /tmp/canicode-visual-compare/
-    figma.png         Figma screenshot (scale=2)
-    code.png          Playwright render of your HTML
+    figma.png         Figma screenshot (default scale=2)
+    code.png          Playwright render (devicePixelRatio matched to export scale)
     diff.png          Pixel diff (red = different pixels)
 
 JSON OUTPUT (stdout)
@@ -225,9 +226,9 @@ JSON OUTPUT (stdout)
   }
 
 HOW IT WORKS
-  1. Fetches Figma screenshot via REST API (scale=2)
-  2. Reads screenshot dimensions
-  3. Renders your HTML with Playwright at the same viewport size
+  1. Fetches Figma screenshot via REST API (default scale=2)
+  2. Infers logical CSS viewport (PNG size ÷ scale) unless --width/--height are set
+  3. Renders HTML in Playwright with matching devicePixelRatio so code.png matches figma.png pixels
   4. Compares pixel-by-pixel with pixelmatch (threshold: 0.1)
   5. Returns similarity % and diff image
 

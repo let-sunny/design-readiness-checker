@@ -210,22 +210,43 @@ export function parseDebateResult(runDir: string): DebateResult | null {
 export function extractAppliedRuleIds(debate: DebateResult): string[] {
   if (!debate.arbitrator) return [];
   return debate.arbitrator.decisions
-    .filter((d) => d.decision === "applied" || d.decision === "revised")
-    .map((d) => d.ruleId);
+    .filter((d) => {
+      const dec = (d.decision ?? "").trim().toLowerCase();
+      return dec === "applied" || dec === "revised";
+    })
+    .map((d) => d.ruleId.trim())
+    .filter((id) => id.length > 0);
+}
+
+export interface ConvergenceOptions {
+  /**
+   * When true, converged iff no applied/revised decisions (ignore rejected count).
+   * Use when repeated reject loops block `fixture-done` but scores are stable (see issue #14).
+   */
+  lenient?: boolean | undefined;
 }
 
 /**
  * Check if a calibration run has converged.
- * Converged = debate exists AND applied=0 AND rejected=0.
- * This means all proposals were validated — no changes and no disagreements.
+ * Strict: no applied/revised AND no rejected decisions.
+ * Lenient: no applied/revised only (rejected proposals allowed).
  */
-export function isConverged(runDir: string): boolean {
+export function isConverged(runDir: string, options?: ConvergenceOptions): boolean {
   const debate = parseDebateResult(runDir);
   if (!debate) return false;
   if (debate.skipped) return true; // zero proposals = converged
   if (!debate.arbitrator) return false;
   const decisions = debate.arbitrator.decisions;
-  const applied = decisions.filter((d) => d.decision === "applied" || d.decision === "revised").length;
-  const rejected = decisions.filter((d) => d.decision === "rejected").length;
-  return applied === 0 && rejected === 0;
+  const changed = decisions.filter((d) => {
+    const dec = (d.decision ?? "").trim().toLowerCase();
+    return dec === "applied" || dec === "revised";
+  }).length;
+  const rejected = decisions.filter((d) => {
+    const dec = (d.decision ?? "").trim().toLowerCase();
+    return dec === "rejected";
+  }).length;
+  if (options?.lenient) {
+    return changed === 0;
+  }
+  return changed === 0 && rejected === 0;
 }
