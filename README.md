@@ -12,6 +12,7 @@
   <a href="https://www.figma.com/community/plugin/1617144221046795292/canicode"><img src="https://img.shields.io/badge/Figma_Plugin-under_review-orange" alt="Figma Plugin"></a>
   <a href="https://github.com/let-sunny/canicode#mcp-server-claude-code--cursor--claude-desktop"><img src="https://img.shields.io/badge/MCP_Registry-published-green" alt="MCP Registry"></a>
   <a href="https://github.com/marketplace/actions/canicode-action"><img src="https://img.shields.io/badge/GitHub_Action-Marketplace-2088FF" alt="GitHub Action"></a>
+[![Hypercommit](https://img.shields.io/badge/Hypercommit-DB2475)](https://hypercommit.com/canicode)
 </p>
 
 <p align="center">The design linter that scores how easily your Figma design can be implemented by AI or developers — before a single line of code is written.</p>
