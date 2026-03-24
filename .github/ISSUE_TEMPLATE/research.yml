@@ -1,0 +1,50 @@
+name: Research / Investigation
+description: Needs exploration before implementation — API feasibility, impact measurement, etc.
+labels: ["research"]
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: Research Question
+      description: What are we trying to find out?
+      placeholder: "Does Figma's annotation data improve AI implementation accuracy?"
+    validations:
+      required: true
+  - type: textarea
+    id: method
+    attributes:
+      label: Method
+      description: How will we investigate? Include test fixtures, A/B approach, API calls, etc.
+      placeholder: |
+        A/B test:
+        - Test A: implement without annotations
+        - Test B: implement with annotations
+        - Compare: similarity + token consumption
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Outcome
+      description: What will the result tell us? How will it inform next steps?
+      placeholder: |
+        - If annotations improve accuracy → add annotation-related rules
+        - If no difference → annotations are human-only, not AI-relevant
+    validations:
+      required: true
+  - type: textarea
+    id: blockers
+    attributes:
+      label: Blockers
+      description: Anything that might prevent this research?
+      placeholder: "REST API annotations field is private beta — may need MCP-only path"
+    validations:
+      required: false
+  - type: textarea
+    id: related
+    attributes:
+      label: Related Issues
+      description: Link related issues or PRs
+      placeholder: "#14, #20"
+    validations:
+      required: false
