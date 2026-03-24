@@ -102,6 +102,18 @@ async function fetchFigmaScreenshot(
 }
 
 /**
+ * Tolerance for detecting integer scale factors (@2x, @3x).
+ * Broader tolerance because render/rounding errors accumulate at higher scales.
+ */
+const SCALE_ROUNDING_TOLERANCE = 0.08;
+
+/**
+ * Tolerance for detecting 1x (unity) scale.
+ * Tighter to avoid false positives — misidentifying a scaled PNG as 1x.
+ */
+const UNITY_SCALE_TOLERANCE = 0.02;
+
+/**
  * Infer device pixel ratio so the Playwright screenshot matches Figma PNG pixel dimensions.
  */
 function inferDeviceScaleFactor(
@@ -115,10 +127,10 @@ function inferDeviceScaleFactor(
   const sx = pngW / logicalW;
   const sy = pngH / logicalH;
   const rounded = Math.round((sx + sy) / 2);
-  if (rounded >= 2 && Math.abs(sx - rounded) < 0.08 && Math.abs(sy - rounded) < 0.08) {
+  if (rounded >= 2 && Math.abs(sx - rounded) < SCALE_ROUNDING_TOLERANCE && Math.abs(sy - rounded) < SCALE_ROUNDING_TOLERANCE) {
     return rounded;
   }
-  if (Math.abs(sx - 1) < 0.02 && Math.abs(sy - 1) < 0.02) return 1;
+  if (Math.abs(sx - 1) < UNITY_SCALE_TOLERANCE && Math.abs(sy - 1) < UNITY_SCALE_TOLERANCE) return 1;
   return fallback >= 2 ? fallback : Math.max(1, Math.round(sx));
 }
 

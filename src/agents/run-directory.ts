@@ -188,18 +188,25 @@ export interface DebateResult {
 /**
  * Parse a debate.json file from a run directory.
  * Returns null if the file doesn't exist or is malformed.
+ * Treats debate.json as external input — validates shape defensively.
  */
 export function parseDebateResult(runDir: string): DebateResult | null {
   const debatePath = join(runDir, "debate.json");
   if (!existsSync(debatePath)) return null;
   try {
-    const raw = JSON.parse(readFileSync(debatePath, "utf-8")) as Record<string, unknown>;
+    const raw: unknown = JSON.parse(readFileSync(debatePath, "utf-8"));
+    if (raw === null || typeof raw !== "object") {
+      console.debug(`[parseDebateResult] invalid debate format in ${runDir}: expected object, got ${typeof raw}`);
+      return null;
+    }
+    const obj = raw as Record<string, unknown>;
     return {
-      critic: raw["critic"] as DebateResult["critic"] ?? null,
-      arbitrator: raw["arbitrator"] as DebateResult["arbitrator"] ?? null,
-      ...(typeof raw["skipped"] === "string" ? { skipped: raw["skipped"] } : {}),
+      critic: (obj["critic"] as DebateResult["critic"]) ?? null,
+      arbitrator: (obj["arbitrator"] as DebateResult["arbitrator"]) ?? null,
+      ...(typeof obj["skipped"] === "string" ? { skipped: obj["skipped"] } : {}),
     };
-  } catch {
+  } catch (err) {
+    console.debug(`[parseDebateResult] failed to parse debate.json in ${runDir}:`, err);
     return null;
   }
 }
