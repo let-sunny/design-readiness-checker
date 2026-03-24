@@ -16,13 +16,38 @@ function rgbaToHex(color: { r?: number; g?: number; b?: number; a?: number }): s
   return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`.toUpperCase();
 }
 
-function getFill(node: AnalysisNode): string | null {
-  if (!node.fills || !Array.isArray(node.fills)) return null;
+interface FillInfo {
+  color: string | null;
+  hasImage: boolean;
+}
+
+function getFillInfo(node: AnalysisNode): FillInfo {
+  const result: FillInfo = { color: null, hasImage: false };
+  if (!node.fills || !Array.isArray(node.fills)) return result;
   for (const fill of node.fills) {
-    const f = fill as { type?: string; color?: { r?: number; g?: number; b?: number } };
-    if (f.type === "SOLID" && f.color) return rgbaToHex(f.color);
+    const f = fill as { type?: string; visible?: boolean; color?: { r?: number; g?: number; b?: number; a?: number }; opacity?: number };
+    // Skip invisible fills
+    if (f.visible === false) continue;
+    if (f.type === "SOLID" && f.color) {
+      const opacity = f.opacity ?? f.color.a ?? 1;
+      if (opacity < 1) {
+        const r = Math.round((f.color.r ?? 0) * 255);
+        const g = Math.round((f.color.g ?? 0) * 255);
+        const b = Math.round((f.color.b ?? 0) * 255);
+        result.color = `rgba(${r}, ${g}, ${b}, ${opacity})`;
+      } else {
+        result.color = rgbaToHex(f.color);
+      }
+    } else if (f.type === "IMAGE") {
+      result.hasImage = true;
+    }
   }
-  return null;
+  return result;
+}
+
+/** @deprecated Use getFillInfo instead for full fill details */
+function getFill(node: AnalysisNode): string | null {
+  return getFillInfo(node).color;
 }
 
 function getStroke(node: AnalysisNode): string | null {
@@ -102,12 +127,26 @@ function renderNode(node: AnalysisNode, indent: number, vectorDir?: string): str
   if (node.layoutSizingVertical === "FILL") styles.push("height: 100%");
 
   // Fill (not for TEXT — text fill is color)
-  const fill = getFill(node);
-  if (fill && node.type !== "TEXT") styles.push(`background: ${fill}`);
+  const fillInfo = getFillInfo(node);
+  if (fillInfo.color && node.type !== "TEXT") styles.push(`background: ${fillInfo.color}`);
+  if (fillInfo.hasImage) styles.push("background-image: [IMAGE]");
 
-  // Border
+  // Border — respect per-side stroke weights
   const stroke = getStroke(node);
-  if (stroke) styles.push(`border: 1px solid ${stroke}`);
+  if (stroke) {
+    const isw = node.individualStrokeWeights as
+      | { top?: number; right?: number; bottom?: number; left?: number }
+      | undefined;
+    const sw = (node.strokeWeight as number | undefined) ?? 1;
+    if (isw) {
+      if (isw.top) styles.push(`border-top: ${isw.top}px solid ${stroke}`);
+      if (isw.right) styles.push(`border-right: ${isw.right}px solid ${stroke}`);
+      if (isw.bottom) styles.push(`border-bottom: ${isw.bottom}px solid ${stroke}`);
+      if (isw.left) styles.push(`border-left: ${isw.left}px solid ${stroke}`);
+    } else {
+      styles.push(`border: ${sw}px solid ${stroke}`);
+    }
+  }
 
   // Border radius
   if (node.cornerRadius) styles.push(`border-radius: ${node.cornerRadius}px`);
@@ -129,6 +168,10 @@ function renderNode(node: AnalysisNode, indent: number, vectorDir?: string): str
     if (s["letterSpacing"]) {
       const ls = s["letterSpacing"] as number;
       styles.push(`letter-spacing: ${Math.round(ls * 100) / 100}px`);
+    }
+    if (s["textDecoration"]) {
+      const td = (s["textDecoration"] as string).toLowerCase();
+      if (td !== "none") styles.push(`text-decoration: ${td}`);
     }
 
     const textColor = getFill(node);

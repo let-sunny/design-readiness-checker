@@ -99,6 +99,12 @@ function transformNode(node: Node): AnalysisNode {
   if ("strokes" in node) {
     base.strokes = node.strokes as unknown[];
   }
+  if ("strokeWeight" in node && typeof node.strokeWeight === "number") {
+    base.strokeWeight = node.strokeWeight;
+  }
+  if ("individualStrokeWeights" in node && node.individualStrokeWeights) {
+    base.individualStrokeWeights = node.individualStrokeWeights as Record<string, number>;
+  }
   if ("effects" in node) {
     base.effects = node.effects as unknown[];
   }

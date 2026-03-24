@@ -89,6 +89,8 @@ const BaseAnalysisNodeSchema = z.object({
   styles: z.record(z.string(), z.string()).optional(),
   fills: z.array(z.unknown()).optional(),
   strokes: z.array(z.unknown()).optional(),
+  strokeWeight: z.number().optional(),
+  individualStrokeWeights: z.record(z.string(), z.number()).optional(),
   effects: z.array(z.unknown()).optional(),
   cornerRadius: z.number().optional(),
 

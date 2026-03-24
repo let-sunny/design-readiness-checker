@@ -142,6 +142,40 @@ describe("generateDesignTree", () => {
       expect(output).toContain("line-height: 24px");
       expect(output).toContain("letter-spacing: 0.5px");
     });
+
+    it("TEXT nodes include textDecoration when set", () => {
+      const file = makeFile(
+        makeNode({
+          id: "1:1",
+          name: "Link",
+          type: "TEXT",
+          characters: "Read our T&Cs",
+          style: { fontFamily: "Inter", textDecoration: "UNDERLINE" },
+          absoluteBoundingBox: { x: 0, y: 0, width: 100, height: 20 },
+        })
+      );
+
+      const output = generateDesignTree(file);
+
+      expect(output).toContain("text-decoration: underline");
+    });
+
+    it("TEXT nodes skip textDecoration: NONE", () => {
+      const file = makeFile(
+        makeNode({
+          id: "1:1",
+          name: "Normal",
+          type: "TEXT",
+          characters: "Normal text",
+          style: { fontFamily: "Inter", textDecoration: "NONE" },
+          absoluteBoundingBox: { x: 0, y: 0, width: 100, height: 20 },
+        })
+      );
+
+      const output = generateDesignTree(file);
+
+      expect(output).not.toContain("text-decoration");
+    });
   });
 
   describe("layout nodes", () => {
@@ -310,7 +344,24 @@ describe("generateDesignTree", () => {
   });
 
   describe("strokes", () => {
-    it("stroke outputs as border with 1px solid and hex color", () => {
+    it("stroke outputs as border with strokeWeight and hex color", () => {
+      const file = makeFile(
+        makeNode({
+          id: "1:1",
+          name: "BorderedBox",
+          type: "RECTANGLE",
+          strokes: [{ type: "SOLID", color: { r: 1, g: 0, b: 0 } }],
+          strokeWeight: 2,
+          absoluteBoundingBox: { x: 0, y: 0, width: 100, height: 100 },
+        })
+      );
+
+      const output = generateDesignTree(file);
+
+      expect(output).toContain("border: 2px solid #FF0000");
+    });
+
+    it("defaults to 1px when strokeWeight is not set", () => {
       const file = makeFile(
         makeNode({
           id: "1:1",
@@ -324,6 +375,27 @@ describe("generateDesignTree", () => {
       const output = generateDesignTree(file);
 
       expect(output).toContain("border: 1px solid #FF0000");
+    });
+
+    it("individualStrokeWeights outputs per-side borders", () => {
+      const file = makeFile(
+        makeNode({
+          id: "1:1",
+          name: "BottomBorder",
+          type: "FRAME",
+          strokes: [{ type: "SOLID", color: { r: 0.85, g: 0.85, b: 0.85 } }],
+          individualStrokeWeights: { top: 0, right: 0, bottom: 1, left: 0 },
+          absoluteBoundingBox: { x: 0, y: 0, width: 200, height: 50 },
+        })
+      );
+
+      const output = generateDesignTree(file);
+
+      expect(output).toContain("border-bottom: 1px solid");
+      expect(output).not.toContain("border-top:");
+      expect(output).not.toContain("border-right:");
+      expect(output).not.toContain("border-left:");
+      expect(output).not.toContain("border: ");
     });
   });
 
@@ -343,6 +415,58 @@ describe("generateDesignTree", () => {
 
       expect(output).toContain("background: #");
       expect(output).not.toContain("color: #");
+    });
+
+    it("skips fills with visible: false", () => {
+      const file = makeFile(
+        makeNode({
+          id: "1:1",
+          name: "InvisibleFill",
+          type: "FRAME",
+          fills: [{ type: "SOLID", visible: false, color: { r: 1, g: 1, b: 1 } }],
+          absoluteBoundingBox: { x: 0, y: 0, width: 200, height: 200 },
+        })
+      );
+
+      const output = generateDesignTree(file);
+
+      expect(output).not.toContain("background:");
+    });
+
+    it("IMAGE fill type outputs background-image: [IMAGE]", () => {
+      const file = makeFile(
+        makeNode({
+          id: "1:1",
+          name: "ImageFrame",
+          type: "FRAME",
+          fills: [{ type: "IMAGE", scaleMode: "FILL", imageRef: "abc123" }],
+          absoluteBoundingBox: { x: 0, y: 0, width: 200, height: 200 },
+        })
+      );
+
+      const output = generateDesignTree(file);
+
+      expect(output).toContain("background-image: [IMAGE]");
+    });
+
+    it("shows both background and background-image when both fill types exist", () => {
+      const file = makeFile(
+        makeNode({
+          id: "1:1",
+          name: "MixedFill",
+          type: "FRAME",
+          fills: [
+            { type: "SOLID", color: { r: 0.9, g: 0.9, b: 0.95 } },
+            { type: "IMAGE", scaleMode: "FILL", imageRef: "xyz" },
+          ],
+          absoluteBoundingBox: { x: 0, y: 0, width: 200, height: 200 },
+        })
+      );
+
+      const output = generateDesignTree(file);
+
+      expect(output).toContain("background: #");
+      expect(output).toContain("background-image: [IMAGE]");
     });
   });
 
