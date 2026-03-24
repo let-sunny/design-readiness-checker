@@ -85,9 +85,11 @@ Calibration commands are NOT exposed as CLI commands. They run exclusively insid
 **`/calibrate-loop` (Claude Code command)**
 - Role: Autonomous rule-config.ts improvement via fixture-based calibration
 - Input: fixture directory path (e.g. `fixtures/material3-kit`)
-- Flow: Analysis → Converter (entire design → HTML + visual-compare) → Gap Analyzer → Evaluation → Critic → Arbitrator
+- Flow: Analysis → Converter (entire design → HTML + visual-compare) → Gap Analyzer → Evaluation → Critic → Arbitrator → Prune Evidence
 - Converter implements the full scoped design as one HTML page, runs `visual-compare` for pixel-level similarity
 - Gap Analyzer examines the diff image, categorizes pixel differences, saves to run directory
+- Cross-run evidence: Evaluation appends overscored/underscored findings to `data/calibration-evidence.json`; Gap Analyzer appends uncovered gaps to `data/discovery-evidence.json`
+- After Arbitrator applies changes, evidence for applied rules is pruned (`calibrate-prune-evidence`)
 - Each run creates a self-contained directory: `logs/calibration/<fixture>--<timestamp>/`
 - No Figma MCP or API keys needed — works fully offline
 - Auto-commits agreed score changes
@@ -99,14 +101,15 @@ Calibration commands are NOT exposed as CLI commands. They run exclusively insid
 
 **`/calibrate-night` (Claude Code command)**
 - Role: Run calibration on multiple fixtures sequentially, then generate aggregate report
-- Input: comma-separated fixture paths (e.g. `fixtures/a,fixtures/b`)
-- Flow: sequential `/calibrate-loop` per fixture → `calibrate-gap-report` → `logs/calibration/REPORT.md`
+- Input: fixture directory path (e.g. `fixtures/my-designs`) — auto-discovers active fixtures
+- Flow: `fixture-list` → sequential `/calibrate-loop` per fixture → `fixture-done` (converged) → `calibrate-gap-report` → `logs/calibration/REPORT.md`
 
 **`/add-rule` (Claude Code command)**
 - Role: Research, design, implement, and evaluate new analysis rules
 - Input: concept + fixture path (e.g. `"component description" fixtures/material3-kit`)
 - Flow: Researcher → Designer → Implementer → A/B Visual Validation → Evaluator → Critic
-- Researcher reads accumulated gap data from `logs/calibration/*/gaps.json` to find recurring patterns
+- Researcher reads accumulated discovery evidence from `data/discovery-evidence.json` to find recurring patterns
+- After KEEP/ADJUST, discovery evidence for the rule's category is pruned (`discovery-prune-evidence`)
 - Each run creates a directory: `logs/rule-discovery/<concept>--<date>/`
 - A/B Validation: implements entire design with/without the rule's data, compares similarity
 - Critic decides KEEP / ADJUST / DROP
@@ -114,6 +117,8 @@ Calibration commands are NOT exposed as CLI commands. They run exclusively insid
 ### File Output Structure
 
 ```
+data/calibration-evidence.json              # Cross-run calibration evidence (overscored/underscored rules)
+data/discovery-evidence.json                # Cross-run discovery evidence (uncovered gaps for /add-rule)
 reports/                                    # HTML reports (canicode analyze)
 logs/calibration/                           # Calibration runs (internal)
 logs/calibration/<name>--<timestamp>/       # One calibration run = one folder
@@ -213,7 +218,10 @@ Process:
 5. Compare conversion difficulty vs rule scores (`canicode calibrate-evaluate`)
 6. 6-agent debate loop (`/calibrate-loop`): Analysis → Converter → Gap Analyzer → Evaluation → Critic → Arbitrator
 
-Gap data accumulates in each run's `gaps.json` and feeds into rule discovery (`/add-rule`).
+**Cross-run evidence** accumulates across sessions in `data/`:
+- `calibration-evidence.json` — overscored/underscored rules (fed to Runner for stronger proposals)
+- `discovery-evidence.json` — uncovered gaps not covered by existing rules (fed to `/add-rule` Researcher)
+- Evidence is pruned after rules are applied (calibration) or new rules are created (discovery)
 
 Final score adjustments in `rule-config.ts` are always reviewed by the developer via the Arbitrator's decisions.
 
