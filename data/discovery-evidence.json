@@ -1,1 +1,18 @@
-[]
+[
+  {
+    "description": "Rendering environment font availability: Google Fonts CDN blocked, causing system font fallback that accounts for the remaining 6% pixel difference. This is an environment constraint, not a design issue, but it's worth noting that font fidelity cannot be validated offline.",
+    "category": "handoff-risk",
+    "impact": "moderate",
+    "fixture": "simple-ds-card-grid",
+    "timestamp": "2026-03-24T08:53:43.385Z",
+    "source": "evaluation"
+  },
+  {
+    "description": "The Figma screenshot is at 2x retina resolution (640x1114 for a 320x557 design). The visual-compare tool uses the figma.png dimensions as the viewport, which would yield 1:1 at normal DPI. A mismatch between expected render scale and actual component size requires careful calibration of deviceScaleFactor.",
+    "category": "handoff-risk",
+    "impact": "easy",
+    "fixture": "simple-ds-card-grid",
+    "timestamp": "2026-03-24T08:53:43.385Z",
+    "source": "evaluation"
+  }
+]
