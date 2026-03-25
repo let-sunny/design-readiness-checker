@@ -93,5 +93,11 @@ reviews:
         CI workflows. This project uses pnpm as package manager and Node.js 24.
         Ensure workflows use pnpm/action-setup@v4 and --frozen-lockfile.
 
+  # Pre-merge check overrides
+  # TypeScript strict types serve as documentation; 80% docstring threshold is excessive
+  pre_merge_checks:
+    docstring_coverage:
+      threshold: 40
+
 chat:
   auto_reply: true
