@@ -157,11 +157,9 @@ describe("RuleEngine.analyze — node exclusion", () => {
       (i) => i.violation.nodeId === "t:1"
     );
 
-    expect(textIssuesExcluded.length).toBeLessThanOrEqual(textIssuesAll.length);
-    // If TEXT generated any issues, they should be filtered out
-    if (textIssuesAll.length > 0) {
-      expect(textIssuesExcluded.length).toBe(0);
-    }
+    // Baseline must have issues from TEXT node to validate the filter
+    expect(textIssuesAll.length).toBeGreaterThan(0);
+    expect(textIssuesExcluded.length).toBe(0);
   });
 
   it("skips nodes matching excludeNodeNames pattern", () => {
@@ -228,10 +226,9 @@ describe("RuleEngine.analyze — rule filtering", () => {
       (i) => i.violation.ruleId === "default-name"
     );
 
-    // default-name issues should be absent when disabled
-    if (defaultNameAll.length > 0) {
-      expect(defaultNameDisabled.length).toBe(0);
-    }
+    // Baseline must have default-name issues to validate the filter
+    expect(defaultNameAll.length).toBeGreaterThan(0);
+    expect(defaultNameDisabled.length).toBe(0);
   });
 
   it("skips rules disabled in config (enabled: false)", () => {
