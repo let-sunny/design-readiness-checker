@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { SeveritySchema } from "@/core/contracts/severity.js";
+import { SeveritySchema } from "../../core/contracts/severity.js";
 import type { CrossRunEvidence } from "./evidence.js";
 
 export const ConfidenceSchema = z.enum(["high", "medium", "low"]);

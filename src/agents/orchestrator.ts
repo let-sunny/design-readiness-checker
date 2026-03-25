@@ -1,11 +1,11 @@
-import type { AnalysisFile, AnalysisNode, AnalysisNodeType } from "@/core/contracts/figma-node.js";
-import { analyzeFile } from "@/core/engine/rule-engine.js";
-import { RULE_CONFIGS } from "@/core/rules/rule-config.js";
+import type { AnalysisFile, AnalysisNode, AnalysisNodeType } from "../core/contracts/figma-node.js";
+import { analyzeFile } from "../core/engine/rule-engine.js";
+import { RULE_CONFIGS } from "../core/rules/rule-config.js";
 
 import type { CalibrationConfig } from "./contracts/calibration.js";
 import { CalibrationConfigSchema } from "./contracts/calibration.js";
 import type { NodeIssueSummary } from "./contracts/analysis-agent.js";
-import type { ScoreReport } from "@/core/engine/scoring.js";
+import type { ScoreReport } from "../core/engine/scoring.js";
 
 import { runAnalysisAgent, extractRuleScores } from "./analysis-agent.js";
 import { runEvaluationAgent } from "./evaluation-agent.js";
@@ -89,7 +89,7 @@ const ELIGIBLE_NODE_TYPES: Set<AnalysisNodeType> = new Set([
   "INSTANCE",
 ]);
 
-import { isExcludedName } from "@/core/rules/excluded-names.js";
+import { isExcludedName } from "../core/rules/excluded-names.js";
 
 /**
  * Filter node summaries to meaningful conversion candidates.
@@ -147,7 +147,7 @@ export function filterConversionCandidates(
 }
 
 // Reuse loader from core engine
-import { loadFile as coreLoadFile } from "@/core/engine/loader.js";
+import { loadFile as coreLoadFile } from "../core/engine/loader.js";
 
 async function loadFile(
   input: string,

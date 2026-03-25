@@ -1,6 +1,6 @@
 import { writeFileSync, readFileSync, mkdirSync } from "node:fs";
 import { resolve } from "node:path";
-import { renderCodeScreenshot } from "@/core/engine/visual-compare.js";
+import { renderCodeScreenshot } from "../core/engine/visual-compare.js";
 
 /**
  * Render generated HTML/CSS/React code to a PNG screenshot.

@@ -1,4 +1,4 @@
-import type { ScoreReport } from "@/core/engine/scoring.js";
+import type { ScoreReport } from "../core/engine/scoring.js";
 import type { MismatchCase } from "./contracts/evaluation-agent.js";
 import type { ScoreAdjustment, NewRuleProposal } from "./contracts/tuning-agent.js";
 

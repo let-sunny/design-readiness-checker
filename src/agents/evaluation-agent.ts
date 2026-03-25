@@ -5,7 +5,7 @@ import type {
   MismatchType,
 } from "./contracts/evaluation-agent.js";
 import type { Difficulty } from "./contracts/conversion-agent.js";
-import type { Severity } from "@/core/contracts/severity.js";
+import type { Severity } from "../core/contracts/severity.js";
 
 /**
  * Difficulty-to-score range mapping.

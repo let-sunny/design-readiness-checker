@@ -1,8 +1,8 @@
-import type { AnalysisFile } from "@/core/contracts/figma-node.js";
+import type { AnalysisFile } from "../core/contracts/figma-node.js";
 import { runCalibrationEvaluate, ENVIRONMENT_NOISE_PATTERNS } from "./orchestrator.js";
 
 // Register rules so RULE_CONFIGS is populated
-import "@/core/rules/index.js";
+import "../core/rules/index.js";
 
 vi.mock("node:fs/promises", async (importOriginal) => {
   const original = await importOriginal<typeof import("node:fs/promises")>();

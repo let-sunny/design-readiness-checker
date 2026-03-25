@@ -1,7 +1,7 @@
-import type { AnalysisResult } from "@/core/engine/rule-engine.js";
-import { calculateScores } from "@/core/engine/scoring.js";
-import type { RuleId } from "@/core/contracts/rule.js";
-import type { Severity } from "@/core/contracts/severity.js";
+import type { AnalysisResult } from "../core/engine/rule-engine.js";
+import { calculateScores } from "../core/engine/scoring.js";
+import type { RuleId } from "../core/contracts/rule.js";
+import type { Severity } from "../core/contracts/severity.js";
 import type {
   AnalysisAgentInput,
   AnalysisAgentOutput,

@@ -1,4 +1,4 @@
-import type { Severity } from "@/core/contracts/severity.js";
+import type { Severity } from "../core/contracts/severity.js";
 import type { Confidence } from "./contracts/tuning-agent.js";
 import type {
   TuningAgentInput,

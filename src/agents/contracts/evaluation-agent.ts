@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { DifficultySchema } from "./conversion-agent.js";
-import { SeveritySchema } from "@/core/contracts/severity.js";
+import { SeveritySchema } from "../../core/contracts/severity.js";
 
 export const MismatchTypeSchema = z.enum([
   "overscored",
