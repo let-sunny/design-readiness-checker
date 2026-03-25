@@ -46,7 +46,7 @@ describe("missing-layout-hint", () => {
     expect(missingLayoutHint.check(node, makeContext())).toBeNull();
   });
 
-  it("flags when only one of two nested containers has auto layout", () => {
+  it("does not flag when only one of two nested containers has auto layout", () => {
     const childA = makeNode({ id: "c:1", type: "FRAME", layoutMode: "HORIZONTAL" });
     const childB = makeNode({ id: "c:2", type: "FRAME" });
     const node = makeNode({

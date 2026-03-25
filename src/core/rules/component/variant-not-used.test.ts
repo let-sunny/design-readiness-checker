@@ -1,4 +1,3 @@
-import { makeNode, makeFile, makeContext } from "../test-helpers.js";
 import { variantNotUsed } from "./index.js";
 
 describe("variant-not-used", () => {
