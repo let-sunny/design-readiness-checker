@@ -138,11 +138,6 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
     score: -3,
     enabled: true,
   },
-  "single-use-component": {
-    severity: "suggestion",
-    score: -1,
-    enabled: true,
-  },
   "missing-component-description": {
     severity: "missing-info",
     score: -2,

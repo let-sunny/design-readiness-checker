@@ -109,11 +109,10 @@ export type RuleId =
   | "raw-shadow"
   | "raw-opacity"
   | "multiple-fill-colors"
-  // Component (5)
+  // Component (4)
   | "missing-component"
   | "detached-instance"
   | "variant-not-used"
-  | "single-use-component"
   | "missing-component-description"
   // Naming (5)
   | "default-name"

@@ -75,7 +75,7 @@ const SEVERITY_DENSITY_WEIGHT: Record<Severity, number> = {
 const TOTAL_RULES_PER_CATEGORY: Record<Category, number> = {
   layout: 10,
   token: 7,
-  component: 5,
+  component: 4,
   naming: 5,
   "ai-readability": 5,
   "handoff-risk": 5,

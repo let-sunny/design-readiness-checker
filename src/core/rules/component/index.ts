@@ -8,9 +8,6 @@ import { getRuleOption } from "../rule-config.js";
 // Helper functions
 // ============================================
 
-function isComponent(node: AnalysisNode): boolean {
-  return node.type === "COMPONENT" || node.type === "COMPONENT_SET";
-}
 
 /** Style properties to compare between master and instance. */
 const STYLE_COMPARE_KEYS = ["fills", "strokes", "effects", "cornerRadius", "strokeWeight", "individualStrokeWeights"] as const;
@@ -340,55 +337,6 @@ const variantNotUsedCheck: RuleCheckFn = (_node, _context) => {
 export const variantNotUsed = defineRule({
   definition: variantNotUsedDef,
   check: variantNotUsedCheck,
-});
-
-// ============================================
-// single-use-component
-// ============================================
-
-const singleUseComponentDef: RuleDefinition = {
-  id: "single-use-component",
-  name: "Single Use Component",
-  category: "component",
-  why: "Components used only once add complexity without reuse benefit",
-  impact: "Unnecessary abstraction increases maintenance overhead",
-  fix: "Consider inlining if this component won't be reused",
-};
-
-const singleUseComponentCheck: RuleCheckFn = (node, context) => {
-  if (!isComponent(node)) return null;
-
-  // Count instances of this component in the file
-  let instanceCount = 0;
-
-  function countInstances(n: AnalysisNode): void {
-    if (n.type === "INSTANCE" && n.componentId === node.id) {
-      instanceCount++;
-    }
-    if (n.children) {
-      for (const child of n.children) {
-        countInstances(child);
-      }
-    }
-  }
-
-  countInstances(context.file.document);
-
-  if (instanceCount === 1) {
-    return {
-      ruleId: singleUseComponentDef.id,
-      nodeId: node.id,
-      nodePath: context.path.join(" > "),
-      message: `Component "${node.name}" is only used once`,
-    };
-  }
-
-  return null;
-};
-
-export const singleUseComponent = defineRule({
-  definition: singleUseComponentDef,
-  check: singleUseComponentCheck,
 });
 
 // ============================================

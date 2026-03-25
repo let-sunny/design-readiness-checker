@@ -118,14 +118,13 @@ Override score, severity, or enable/disable individual rules:
 | `raw-opacity` | -5 | risk |
 | `multiple-fill-colors` | -3 | missing-info |
 
-**Component (5 rules)**
+**Component (4 rules)**
 
 | Rule ID | Default Score | Default Severity |
 |---------|--------------|-----------------|
 | `missing-component` | -7 | risk |
 | `detached-instance` | -5 | risk |
 | `variant-not-used` | -3 | suggestion |
-| `single-use-component` | -2 | suggestion |
 | `missing-component-description` | -2 | missing-info |
 
 **Naming (5 rules)**
