@@ -120,14 +120,12 @@ export function registerEvidencePrune(cli: CAC): void {
     )
     .action((runDir: string) => {
       if (!existsSync(resolve(runDir))) {
-        console.error(`Run directory not found: ${runDir}`);
-        process.exitCode = 1;
+        console.log(`Run directory not found: ${runDir}`);
         return;
       }
       const debate = parseDebateResult(resolve(runDir));
       if (!debate) {
-        console.error("No debate.json found — nothing to prune.");
-        process.exitCode = 1;
+        console.log("No debate.json found — nothing to prune.");
         return;
       }
 
