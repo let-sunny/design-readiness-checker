@@ -69,6 +69,47 @@ function transformNode(node: Node): AnalysisNode {
     base.paddingBottom = node.paddingBottom as number;
   }
 
+  // Size constraints (responsive)
+  if ("minWidth" in node && typeof node.minWidth === "number") {
+    base.minWidth = node.minWidth;
+  }
+  if ("maxWidth" in node && typeof node.maxWidth === "number") {
+    base.maxWidth = node.maxWidth;
+  }
+  if ("minHeight" in node && typeof node.minHeight === "number") {
+    base.minHeight = node.minHeight;
+  }
+  if ("maxHeight" in node && typeof node.maxHeight === "number") {
+    base.maxHeight = node.maxHeight;
+  }
+  if ("layoutGrow" in node && node.layoutGrow !== undefined) {
+    base.layoutGrow = node.layoutGrow as 0 | 1;
+  }
+  if ("constraints" in node && node.constraints) {
+    base.constraints = node.constraints as AnalysisNode["constraints"];
+  }
+
+  // Wrap (flex-wrap)
+  if ("layoutWrap" in node && node.layoutWrap) {
+    base.layoutWrap = node.layoutWrap as AnalysisNode["layoutWrap"];
+  }
+  if ("counterAxisSpacing" in node && typeof node.counterAxisSpacing === "number") {
+    base.counterAxisSpacing = node.counterAxisSpacing;
+  }
+  if ("counterAxisAlignContent" in node && node.counterAxisAlignContent) {
+    base.counterAxisAlignContent =
+      node.counterAxisAlignContent as AnalysisNode["counterAxisAlignContent"];
+  }
+
+  // Overflow / clip
+  if ("clipsContent" in node && typeof node.clipsContent === "boolean") {
+    base.clipsContent = node.clipsContent;
+  }
+  if ("overflowDirection" in node && node.overflowDirection) {
+    base.overflowDirection =
+      node.overflowDirection as AnalysisNode["overflowDirection"];
+  }
+
   // Size/position
   if ("absoluteBoundingBox" in node && node.absoluteBoundingBox) {
     base.absoluteBoundingBox = node.absoluteBoundingBox;

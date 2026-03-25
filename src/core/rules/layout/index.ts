@@ -246,9 +246,22 @@ const fixedSizeInAutoLayoutCheck: RuleCheckFn = (node, context) => {
   const { width, height } = node.absoluteBoundingBox;
   if (width <= 48 && height <= 48) return null;
 
-  // This is a heuristic - in practice you'd check layoutSizingHorizontal/Vertical
-  // For now, we flag containers that might benefit from flexible sizing
-  return null; // Disabled for now - needs more context from Figma API
+  // Both axes must be FIXED for this to be a problem
+  const hFixed =
+    node.layoutSizingHorizontal === "FIXED" || node.layoutSizingHorizontal === undefined;
+  const vFixed =
+    node.layoutSizingVertical === "FIXED" || node.layoutSizingVertical === undefined;
+  if (!hFixed || !vFixed) return null;
+
+  // Skip if it has children — only flag leaf-like containers with no auto-layout of their own
+  if (node.layoutMode && node.layoutMode !== "NONE") return null;
+
+  return {
+    ruleId: fixedSizeInAutoLayoutDef.id,
+    nodeId: node.id,
+    nodePath: context.path.join(" > "),
+    message: `Container "${node.name}" (${width}×${height}) uses fixed size on both axes inside Auto Layout. Consider HUG or FILL for at least one axis.`,
+  };
 };
 
 export const fixedSizeInAutoLayout = defineRule({
@@ -280,9 +293,18 @@ const missingMinWidthCheck: RuleCheckFn = (node, context) => {
   // Skip if not in Auto Layout context
   if (!context.parent || !hasAutoLayout(context.parent)) return null;
 
-  // Check for min-width in boundVariables or explicit constraint
-  // This is a simplified check - full implementation needs more Figma data
-  return null; // Needs minWidth property from Figma API
+  // Only flag FILL containers — FIXED/HUG don't need min-width
+  if (node.layoutSizingHorizontal !== "FILL") return null;
+
+  // Has minWidth set — no issue
+  if (node.minWidth !== undefined) return null;
+
+  return {
+    ruleId: missingMinWidthDef.id,
+    nodeId: node.id,
+    nodePath: context.path.join(" > "),
+    message: `"${node.name}" uses FILL width without a min-width constraint. It may collapse on narrow screens.`,
+  };
 };
 
 export const missingMinWidth = defineRule({
@@ -303,7 +325,7 @@ const missingMaxWidthDef: RuleDefinition = {
   fix: "Set a maximum width constraint, especially for text containers",
 };
 
-const missingMaxWidthCheck: RuleCheckFn = (node, _context) => {
+const missingMaxWidthCheck: RuleCheckFn = (node, context) => {
   // Only check containers and text-containing nodes
   if (!isContainerNode(node) && !hasTextContent(node)) return null;
   // Skip small elements
@@ -312,9 +334,18 @@ const missingMaxWidthCheck: RuleCheckFn = (node, _context) => {
     if (width <= 200) return null;
   }
 
-  // Check for max-width constraint
-  // This is a simplified check - full implementation needs more Figma data
-  return null; // Needs maxWidth property from Figma API
+  // Only flag FILL containers — FIXED/HUG don't need max-width
+  if (node.layoutSizingHorizontal !== "FILL") return null;
+
+  // Has maxWidth set — no issue
+  if (node.maxWidth !== undefined) return null;
+
+  return {
+    ruleId: missingMaxWidthDef.id,
+    nodeId: node.id,
+    nodePath: context.path.join(" > "),
+    message: `"${node.name}" uses FILL width without a max-width constraint. Content may stretch too wide on large screens.`,
+  };
 };
 
 export const missingMaxWidth = defineRule({

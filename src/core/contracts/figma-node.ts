@@ -36,7 +36,7 @@ export const AnalysisNodeTypeSchema = z.enum([
 
 export type AnalysisNodeType = z.infer<typeof AnalysisNodeTypeSchema>;
 
-export const LayoutModeSchema = z.enum(["NONE", "HORIZONTAL", "VERTICAL"]);
+export const LayoutModeSchema = z.enum(["NONE", "HORIZONTAL", "VERTICAL", "GRID"]);
 export type LayoutMode = z.infer<typeof LayoutModeSchema>;
 
 export const LayoutAlignSchema = z.enum(["MIN", "CENTER", "MAX", "STRETCH", "INHERIT"]);
@@ -44,6 +44,23 @@ export type LayoutAlign = z.infer<typeof LayoutAlignSchema>;
 
 export const LayoutPositioningSchema = z.enum(["AUTO", "ABSOLUTE"]);
 export type LayoutPositioning = z.infer<typeof LayoutPositioningSchema>;
+
+export const LayoutConstraintSchema = z.object({
+  horizontal: z.enum(["LEFT", "RIGHT", "CENTER", "LEFT_RIGHT", "SCALE"]),
+  vertical: z.enum(["TOP", "BOTTOM", "CENTER", "TOP_BOTTOM", "SCALE"]),
+});
+export type LayoutConstraint = z.infer<typeof LayoutConstraintSchema>;
+
+export const LayoutWrapSchema = z.enum(["NO_WRAP", "WRAP"]);
+export type LayoutWrap = z.infer<typeof LayoutWrapSchema>;
+
+export const OverflowDirectionSchema = z.enum([
+  "HORIZONTAL_SCROLLING",
+  "VERTICAL_SCROLLING",
+  "HORIZONTAL_AND_VERTICAL_SCROLLING",
+  "NONE",
+]);
+export type OverflowDirection = z.infer<typeof OverflowDirectionSchema>;
 
 /**
  * Lightweight FigmaNode type for analysis
@@ -69,6 +86,23 @@ const BaseAnalysisNodeSchema = z.object({
   paddingRight: z.number().optional(),
   paddingTop: z.number().optional(),
   paddingBottom: z.number().optional(),
+
+  // Size constraints (responsive)
+  minWidth: z.number().optional(),
+  maxWidth: z.number().optional(),
+  minHeight: z.number().optional(),
+  maxHeight: z.number().optional(),
+  layoutGrow: z.union([z.literal(0), z.literal(1)]).optional(),
+  constraints: LayoutConstraintSchema.optional(),
+
+  // Wrap (flex-wrap)
+  layoutWrap: LayoutWrapSchema.optional(),
+  counterAxisSpacing: z.number().optional(),
+  counterAxisAlignContent: z.enum(["AUTO", "SPACE_BETWEEN"]).optional(),
+
+  // Overflow / clip
+  clipsContent: z.boolean().optional(),
+  overflowDirection: OverflowDirectionSchema.optional(),
 
   // Size/position analysis
   absoluteBoundingBox: z
