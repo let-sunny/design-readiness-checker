@@ -65,9 +65,9 @@ const defaultNameDef: RuleDefinition = {
   id: "default-name",
   name: "Default Name",
   category: "naming",
-  why: "Default names like 'Frame 123' provide no context about the element's purpose",
-  impact: "Designers and developers cannot understand the structure",
-  fix: "Rename with a descriptive, semantic name (e.g., 'Header', 'ProductCard')",
+  why: "Default names like 'Frame 123' give AI no semantic context to choose appropriate HTML tags or class names",
+  impact: "AI generates generic <div> wrappers instead of semantic elements like <header>, <nav>, <article>",
+  fix: "Rename with a descriptive name (e.g., 'Header', 'ProductCard') so AI can infer semantic structure",
 };
 
 const defaultNameCheck: RuleCheckFn = (node, context) => {
@@ -96,9 +96,9 @@ const nonSemanticNameDef: RuleDefinition = {
   id: "non-semantic-name",
   name: "Non-Semantic Name",
   category: "naming",
-  why: "Names like 'Rectangle' describe shape, not purpose",
-  impact: "Structure is hard to understand without context",
-  fix: "Use names that describe what the element represents (e.g., 'Divider', 'Avatar')",
+  why: "Shape names like 'Rectangle' tell AI nothing about the element's role in the UI",
+  impact: "AI cannot distinguish a divider from a background from a border — all look like 'Rectangle'",
+  fix: "Use purpose-driven names (e.g., 'Divider', 'Avatar') so AI generates meaningful markup",
 };
 
 const nonSemanticNameCheck: RuleCheckFn = (node, context) => {
@@ -133,8 +133,8 @@ const inconsistentNamingConventionDef: RuleDefinition = {
   id: "inconsistent-naming-convention",
   name: "Inconsistent Naming Convention",
   category: "naming",
-  why: "Mixed naming conventions at the same level create confusion",
-  impact: "Harder to navigate and maintain the design",
+  why: "Mixed naming conventions (camelCase + kebab-case + Title Case) at the same level confuse AI pattern recognition",
+  impact: "AI generates inconsistent class/component names, making the codebase harder to maintain",
   fix: "Use a consistent naming convention for sibling elements",
 };
 
@@ -192,9 +192,9 @@ const numericSuffixNameDef: RuleDefinition = {
   id: "numeric-suffix-name",
   name: "Numeric Suffix Name",
   category: "naming",
-  why: "Names with numeric suffixes often indicate copy-paste duplication",
-  impact: "Suggests the element might need componentization",
-  fix: "Remove the suffix or create a component if duplicated",
+  why: "Names like 'Card 2', 'Card 3' signal copy-paste patterns that should be components",
+  impact: "AI reproduces each copy independently instead of generating a reusable component",
+  fix: "Remove the suffix and create a component, or rename to describe the difference",
 };
 
 const numericSuffixNameCheck: RuleCheckFn = (node, context) => {
@@ -224,9 +224,9 @@ const tooLongNameDef: RuleDefinition = {
   id: "too-long-name",
   name: "Too Long Name",
   category: "naming",
-  why: "Very long names are hard to read and use in code",
-  impact: "Clutters the layer panel and makes selectors unwieldy",
-  fix: "Shorten the name while keeping it descriptive",
+  why: "Excessively long names consume AI context tokens without adding proportional value",
+  impact: "Wastes token budget in the design tree — especially costly in large pages with hundreds of nodes",
+  fix: "Shorten the name while keeping it descriptive (under 50 characters)",
 };
 
 const tooLongNameCheck: RuleCheckFn = (node, context, options) => {

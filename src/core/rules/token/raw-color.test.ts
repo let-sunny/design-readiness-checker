@@ -6,8 +6,8 @@ describe("raw-color", () => {
     const def = rawColor.definition;
     expect(def.id).toBe("raw-color");
     expect(def.category).toBe("token");
-    expect(def.why).toContain("Raw hex colors");
-    expect(def.fix).toContain("color style or variable");
+    expect(def.why).toContain("Raw hex");
+    expect(def.fix).toContain("color style");
   });
 
   it("returns null for nodes without fills", () => {

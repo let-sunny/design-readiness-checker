@@ -27,9 +27,9 @@ const noAutoLayoutDef: RuleDefinition = {
   id: "no-auto-layout",
   name: "No Auto Layout",
   category: "layout",
-  why: "Frames without Auto Layout require manual positioning for every element",
-  impact: "Layout breaks on content changes, harder to maintain and scale",
-  fix: "Apply Auto Layout to the frame with appropriate direction and spacing",
+  why: "Without Auto Layout, AI must guess positioning from absolute coordinates instead of reading explicit layout rules",
+  impact: "Generated code uses hardcoded positions that break on any content or screen size change",
+  fix: "Apply Auto Layout so AI can generate flexbox/grid instead of absolute positioning",
 };
 
 const noAutoLayoutCheck: RuleCheckFn = (node, context) => {
@@ -59,8 +59,8 @@ const absolutePositionInAutoLayoutDef: RuleDefinition = {
   id: "absolute-position-in-auto-layout",
   name: "Absolute Position in Auto Layout",
   category: "layout",
-  why: "Absolute positioning inside Auto Layout breaks the automatic flow",
-  impact: "Element will not respond to sibling changes, may overlap unexpectedly",
+  why: "Absolute positioning inside Auto Layout contradicts the parent's layout rules — AI sees conflicting instructions",
+  impact: "AI must decide whether to follow the parent's flexbox or the child's absolute position — often gets it wrong",
   fix: "Remove absolute positioning or use proper Auto Layout alignment",
 };
 
@@ -119,9 +119,9 @@ const fixedWidthInResponsiveContextDef: RuleDefinition = {
   id: "fixed-width-in-responsive-context",
   name: "Fixed Width in Responsive Context",
   category: "layout",
-  why: "Fixed width inside Auto Layout prevents responsive behavior",
-  impact: "Content will not adapt to container size changes",
-  fix: "Use 'Fill' or 'Hug' instead of fixed width",
+  why: "Fixed width inside Auto Layout sends mixed signals — AI sees flexbox parent but hardcoded child width",
+  impact: "Generated code may fight between flex sizing and explicit width, causing layout mismatches",
+  fix: "Use 'Fill' or 'Hug' so the intent is clear to AI",
 };
 
 const fixedWidthInResponsiveContextCheck: RuleCheckFn = (node, context) => {
@@ -163,9 +163,9 @@ const missingResponsiveBehaviorDef: RuleDefinition = {
   id: "missing-responsive-behavior",
   name: "Missing Responsive Behavior",
   category: "layout",
-  why: "Elements without constraints won't adapt to different screen sizes",
-  impact: "Layout will break or look wrong on different devices",
-  fix: "Set appropriate constraints (left/right, top/bottom, scale, etc.)",
+  why: "Without constraints, AI has no information about how elements should behave when the container resizes",
+  impact: "AI generates static layouts that break on any screen size other than the one in the design",
+  fix: "Set appropriate constraints so AI can generate responsive CSS (min/max-width, flex-grow, etc.)",
 };
 
 const missingResponsiveBehaviorCheck: RuleCheckFn = (node, context) => {
@@ -201,9 +201,9 @@ const groupUsageDef: RuleDefinition = {
   id: "group-usage",
   name: "Group Usage",
   category: "layout",
-  why: "Groups don't support Auto Layout and have limited layout control",
-  impact: "Harder to maintain consistent spacing and alignment",
-  fix: "Convert Group to Frame and apply Auto Layout",
+  why: "Groups have no layout rules — AI sees children with absolute coordinates but no container logic",
+  impact: "AI wraps grouped elements in a plain div with no spacing/alignment, producing fragile layouts",
+  fix: "Convert Group to Frame with Auto Layout so AI can generate proper flex/grid containers",
 };
 
 const groupUsageCheck: RuleCheckFn = (node, context) => {
@@ -230,9 +230,9 @@ const fixedSizeInAutoLayoutDef: RuleDefinition = {
   id: "fixed-size-in-auto-layout",
   name: "Fixed Size in Auto Layout",
   category: "layout",
-  why: "Fixed sizes inside Auto Layout limit flexibility",
-  impact: "Element won't adapt to content or container changes",
-  fix: "Consider using 'Hug' for content-driven sizing",
+  why: "Both axes fixed inside Auto Layout contradicts the flexible layout intent",
+  impact: "AI generates a rigid element inside a flex container — the layout won't respond to content changes",
+  fix: "Use 'Hug' or 'Fill' for at least one axis so AI generates responsive sizing",
 };
 
 const fixedSizeInAutoLayoutCheck: RuleCheckFn = (node, context) => {
@@ -277,9 +277,9 @@ const missingMinWidthDef: RuleDefinition = {
   id: "missing-min-width",
   name: "Missing Min Width",
   category: "layout",
-  why: "Without min-width, containers can collapse to unusable sizes",
-  impact: "Text truncation or layout collapse on narrow screens",
-  fix: "Set a minimum width constraint on the container",
+  why: "Without min-width, AI has no lower bound — generated code may collapse the container to zero on narrow screens",
+  impact: "Content becomes unreadable or invisible when the layout shrinks",
+  fix: "Set a minimum width so AI can generate a proper min-width constraint",
 };
 
 const missingMinWidthCheck: RuleCheckFn = (node, context) => {
@@ -320,9 +320,9 @@ const missingMaxWidthDef: RuleDefinition = {
   id: "missing-max-width",
   name: "Missing Max Width",
   category: "layout",
-  why: "Without max-width, content can stretch too wide on large screens",
-  impact: "Poor readability and layout on wide screens",
-  fix: "Set a maximum width constraint, especially for text containers",
+  why: "Without max-width, AI has no upper bound — text lines stretch infinitely on wide screens",
+  impact: "Unreadable text with 200+ character lines, broken layout proportions",
+  fix: "Set a maximum width so AI can generate a proper max-width constraint",
 };
 
 const missingMaxWidthCheck: RuleCheckFn = (node, context) => {
@@ -363,8 +363,8 @@ const deepNestingDef: RuleDefinition = {
   id: "deep-nesting",
   name: "Deep Nesting",
   category: "handoff-risk",
-  why: "Deep nesting within a single component makes the structure hard to understand for developers during handoff",
-  impact: "Developers must trace through many layers to understand layout intent, increasing implementation time",
+  why: "Deep nesting consumes AI context exponentially — each level adds indentation and structural overhead",
+  impact: "AI may lose track of parent-child relationships in deeply nested trees, producing wrong layout hierarchy",
   fix: "Flatten the structure by extracting deeply nested groups into sub-components",
 };
 
@@ -395,9 +395,9 @@ const inconsistentSiblingLayoutDirectionDef: RuleDefinition = {
   id: "inconsistent-sibling-layout-direction",
   name: "Inconsistent Sibling Layout Direction",
   category: "layout",
-  why: "Sibling containers with mixed layout directions without clear reason create confusion",
-  impact: "Harder to understand and maintain the design structure",
-  fix: "Use consistent layout direction for similar sibling elements",
+  why: "Siblings with mixed layout directions (one horizontal, one vertical) without clear reason confuse AI's layout interpretation",
+  impact: "AI may apply wrong flex-direction or misinterpret the visual grouping",
+  fix: "Use consistent layout direction for similar sibling elements, or extract into distinct components",
 };
 
 const inconsistentSiblingLayoutDirectionCheck: RuleCheckFn = (node, context) => {

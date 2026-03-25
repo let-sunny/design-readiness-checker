@@ -279,8 +279,8 @@ const detachedInstanceDef: RuleDefinition = {
   id: "detached-instance",
   name: "Detached Instance",
   category: "component",
-  why: "Detached instances lose their connection to the source component",
-  impact: "Updates to the component won't propagate to this instance",
+  why: "Detached instances lose component relationship — AI sees a one-off frame instead of a reusable component reference",
+  impact: "AI generates duplicate code instead of reusing the component, inflating output and causing inconsistencies",
   fix: "Reset the instance or create a new variant if customization is needed",
 };
 
@@ -322,9 +322,9 @@ const variantNotUsedDef: RuleDefinition = {
   id: "variant-not-used",
   name: "Variant Not Used",
   category: "component",
-  why: "Using instances but not leveraging variants defeats their purpose",
-  impact: "Manual changes instead of using designed variants",
-  fix: "Use the appropriate variant instead of overriding the default",
+  why: "Available variants exist but aren't used — AI doesn't know which state the design intends to show",
+  impact: "AI may generate the wrong variant or hardcode overrides instead of using the variant system",
+  fix: "Use the appropriate variant so AI can reference the correct state directly",
 };
 
 const variantNotUsedCheck: RuleCheckFn = (_node, _context) => {

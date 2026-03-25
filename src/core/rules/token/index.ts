@@ -27,9 +27,9 @@ const rawColorDef: RuleDefinition = {
   id: "raw-color",
   name: "Raw Color",
   category: "token",
-  why: "Raw hex colors are not connected to the design system",
-  impact: "Color changes require manual updates across the entire design",
-  fix: "Use a color style or variable instead of raw hex values",
+  why: "Raw hex values repeated across nodes increase the chance of AI mismatching colors in large pages",
+  impact: "AI must reproduce each exact hex value independently — one typo means a visible color difference",
+  fix: "Use a color style or variable so AI can reference a single token instead of hardcoded values",
 };
 
 const rawColorCheck: RuleCheckFn = (node, context) => {
@@ -72,9 +72,9 @@ const rawFontDef: RuleDefinition = {
   id: "raw-font",
   name: "Raw Font",
   category: "token",
-  why: "Text without text styles is disconnected from the type system",
-  impact: "Typography changes require manual updates across the design",
-  fix: "Apply a text style to maintain consistency",
+  why: "Without text styles, AI must reproduce exact font/size/weight combinations per node — easy to get one wrong",
+  impact: "Inconsistent typography in generated code when the same style appears with slightly different values",
+  fix: "Apply text styles so AI can reference a single token for consistent typography",
 };
 
 const rawFontCheck: RuleCheckFn = (node, context) => {
@@ -109,9 +109,9 @@ const inconsistentSpacingDef: RuleDefinition = {
   id: "inconsistent-spacing",
   name: "Inconsistent Spacing",
   category: "token",
-  why: "Spacing values outside the grid system break visual consistency",
-  impact: "Inconsistent visual rhythm and harder to maintain",
-  fix: "Use spacing values from the design system grid (e.g., 8pt increments)",
+  why: "Off-grid spacing forces AI to handle many unique values instead of a predictable pattern",
+  impact: "AI may round to nearby values or apply wrong spacing when many similar-but-different values exist",
+  fix: "Align spacing to the design system grid (e.g., 4pt/8pt increments) for predictable implementation",
 };
 
 const inconsistentSpacingCheck: RuleCheckFn = (node, context, options) => {
@@ -164,9 +164,9 @@ const magicNumberSpacingDef: RuleDefinition = {
   id: "magic-number-spacing",
   name: "Magic Number Spacing",
   category: "token",
-  why: "Arbitrary spacing values make the system harder to understand",
-  impact: "Unpredictable spacing, harder to create consistent layouts",
-  fix: "Round spacing to the nearest grid value or use spacing tokens",
+  why: "Arbitrary values like 13px or 17px have no pattern AI can learn — each must be reproduced exactly",
+  impact: "Higher chance of pixel-level differences when AI substitutes nearby round values",
+  fix: "Round to the nearest grid value or use spacing tokens for predictable AI output",
 };
 
 const magicNumberSpacingCheck: RuleCheckFn = (node, context, options) => {
@@ -214,9 +214,9 @@ const rawShadowDef: RuleDefinition = {
   id: "raw-shadow",
   name: "Raw Shadow",
   category: "token",
-  why: "Shadow effects without styles are disconnected from the design system",
-  impact: "Shadow changes require manual updates across the design",
-  fix: "Create and apply an effect style for shadows",
+  why: "Raw shadow values (offset, blur, spread, color) are complex — AI must reproduce each parameter exactly",
+  impact: "Shadow mismatches are visually obvious and hard to debug in generated code",
+  fix: "Use an effect style so AI can reference a single token for consistent shadows",
 };
 
 const rawShadowCheck: RuleCheckFn = (node, context) => {
@@ -258,9 +258,9 @@ const rawOpacityDef: RuleDefinition = {
   id: "raw-opacity",
   name: "Raw Opacity",
   category: "token",
-  why: "Hardcoded opacity values are not connected to design tokens",
-  impact: "Opacity changes require manual updates",
-  fix: "Use opacity variables or consider if opacity is truly needed",
+  why: "Hardcoded opacity values must be reproduced exactly per node — easy to miss subtle transparency differences",
+  impact: "AI may apply wrong opacity or miss it entirely, causing visible differences in overlays and backgrounds",
+  fix: "Use opacity variables so the value is explicit and referenceable",
 };
 
 const rawOpacityCheck: RuleCheckFn = (node, _context) => {
@@ -285,9 +285,9 @@ const multipleFillColorsDef: RuleDefinition = {
   id: "multiple-fill-colors",
   name: "Multiple Fill Colors",
   category: "token",
-  why: "Similar but slightly different colors indicate inconsistent token usage",
-  impact: "Visual inconsistency and harder to maintain brand colors",
-  fix: "Consolidate to a single color token or style",
+  why: "Near-duplicate colors (#3B82F6 vs #3B81F6) force AI to decide which is intentional and which is a mistake",
+  impact: "AI may unify them incorrectly or faithfully reproduce the mismatch — both produce wrong output",
+  fix: "Consolidate to a single color token so the intent is unambiguous",
 };
 
 const multipleFillColorsCheck: RuleCheckFn = (_node, _context, _options) => {

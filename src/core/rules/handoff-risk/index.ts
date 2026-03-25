@@ -37,9 +37,9 @@ const hardcodeRiskDef: RuleDefinition = {
   id: "hardcode-risk",
   name: "Hardcode Risk",
   category: "handoff-risk",
-  why: "Absolute positioning with fixed values creates inflexible layouts",
-  impact: "Layout will break when content changes or on different screens",
-  fix: "Use Auto Layout with relative positioning",
+  why: "Hardcoded position/size values force AI to use magic numbers instead of computed layouts",
+  impact: "Generated code is brittle — any content change (longer text, different image) breaks the layout",
+  fix: "Use Auto Layout with relative positioning so AI generates flexible CSS",
 };
 
 const hardcodeRiskCheck: RuleCheckFn = (node, context) => {
@@ -74,9 +74,9 @@ const textTruncationUnhandledDef: RuleDefinition = {
   id: "text-truncation-unhandled",
   name: "Text Truncation Unhandled",
   category: "handoff-risk",
-  why: "Text nodes without truncation handling may overflow",
-  impact: "Long text will break the layout",
-  fix: "Set text truncation (ellipsis) or ensure container can grow",
+  why: "Long text in a narrow container without truncation rules — AI doesn't know if it should clip, ellipsis, or grow",
+  impact: "AI may generate code where text overflows the container, breaking the visual layout",
+  fix: "Set text truncation (ellipsis) or ensure the container uses 'Hug' so the intent is explicit",
 };
 
 const textTruncationUnhandledCheck: RuleCheckFn = (node, context) => {
@@ -121,9 +121,9 @@ const imageNoPlaceholderDef: RuleDefinition = {
   id: "image-no-placeholder",
   name: "Image No Placeholder",
   category: "handoff-risk",
-  why: "Images without placeholder state may cause layout shifts",
-  impact: "Poor user experience during image loading",
-  fix: "Define a placeholder state or background color",
+  why: "Image node with only an IMAGE fill — AI doesn't know the intended fallback when the image fails to load",
+  impact: "Generated code shows a broken image icon or blank space instead of a graceful placeholder",
+  fix: "Add a background fill color behind the image to serve as a loading/error placeholder",
 };
 
 const imageNoPlaceholderCheck: RuleCheckFn = (node, context) => {
