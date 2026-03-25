@@ -95,12 +95,6 @@ function proposeSeverity(
 }
 
 /**
- * Tuning Agent - Step 4 of calibration pipeline
- *
- * Deterministic aggregation algorithm. No LLM required.
- * Aggregates mismatch cases into score adjustment proposals.
- */
-/**
  * Build a lookup from ruleId → ElasticityProfile
  */
 function buildElasticityLookup(

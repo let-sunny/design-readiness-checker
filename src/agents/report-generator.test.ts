@@ -180,6 +180,65 @@ describe("generateCalibrationReport", () => {
     expect(report).not.toContain("No new rules proposed");
   });
 
+  it("renders elasticity profiles section when data is provided", () => {
+    const data = buildReportData({
+      elasticityProfiles: [
+        {
+          ruleId: "no-auto-layout",
+          measurements: 3,
+          meanDelta: 5.2,
+          minDelta: 2,
+          maxDelta: 8,
+          confidence: "high",
+          fixtures: ["fx1", "fx2"],
+        },
+        {
+          ruleId: "raw-color",
+          measurements: 1,
+          meanDelta: -1.5,
+          minDelta: -1.5,
+          maxDelta: -1.5,
+          confidence: "low",
+          fixtures: ["fx1"],
+        },
+      ],
+    });
+
+    const report = generateCalibrationReport(data);
+
+    expect(report).toContain("## Rule Elasticity (Similarity Delta)");
+    expect(report).toContain("no-auto-layout");
+    expect(report).toContain("+5.2%");
+    expect(report).toContain("raw-color");
+    expect(report).toContain("-1.5%");
+    expect(report).toContain("fx1, fx2");
+  });
+
+  it("omits elasticity section when no profiles exist", () => {
+    const data = buildReportData({ elasticityProfiles: [] });
+    const report = generateCalibrationReport(data);
+    expect(report).not.toContain("Rule Elasticity");
+  });
+
+  it("renders elasticity column in adjustment table", () => {
+    const data = buildReportData({
+      adjustments: [{
+        ruleId: "test-rule",
+        currentScore: -8,
+        proposedScore: -5,
+        currentSeverity: "blocking",
+        reasoning: "test",
+        confidence: "high",
+        supportingCases: 3,
+        elasticity: { meanDelta: 6.3, measurements: 2, confidence: "medium" },
+      }],
+    });
+
+    const report = generateCalibrationReport(data);
+    expect(report).toContain("+6.3% (medium)");
+    expect(report).toContain("| Elasticity |");
+  });
+
   it("handles empty data gracefully", () => {
     const data = buildReportData({
       mismatches: [],

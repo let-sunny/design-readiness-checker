@@ -307,6 +307,69 @@ describe("runTuningAgent", () => {
   });
 
 
+  it("includes elasticity data in adjustments when profiles are provided", () => {
+    const input: TuningAgentInput = {
+      mismatches: [
+        makeMismatch({
+          type: "overscored",
+          ruleId: "no-auto-layout",
+          currentScore: -8,
+          currentSeverity: "blocking",
+          actualDifficulty: "easy",
+          reasoning: "Was easy",
+        }),
+      ],
+      ruleScores: {
+        "no-auto-layout": { score: -8, severity: "blocking" },
+      },
+      elasticityProfiles: [
+        {
+          ruleId: "no-auto-layout",
+          measurements: 3,
+          meanDelta: 4.5,
+          minDelta: 2,
+          maxDelta: 7,
+          confidence: "high",
+          fixtures: ["fx1", "fx2", "fx3"],
+        },
+      ],
+    };
+
+    const result = runTuningAgent(input);
+    const adj = result.adjustments[0]!;
+
+    expect(adj.elasticity).toBeDefined();
+    expect(adj.elasticity!.meanDelta).toBe(4.5);
+    expect(adj.elasticity!.measurements).toBe(3);
+    expect(adj.elasticity!.confidence).toBe("high");
+    expect(adj.reasoning).toContain("Elasticity: +4.5%");
+  });
+
+  it("omits elasticity field when no matching profile exists", () => {
+    const input: TuningAgentInput = {
+      mismatches: [
+        makeMismatch({
+          type: "overscored",
+          ruleId: "raw-color",
+          currentScore: -6,
+          currentSeverity: "risk",
+          actualDifficulty: "easy",
+          reasoning: "Easy color",
+        }),
+      ],
+      ruleScores: {
+        "raw-color": { score: -6, severity: "risk" },
+      },
+      elasticityProfiles: [],
+    };
+
+    const result = runTuningAgent(input);
+    const adj = result.adjustments[0]!;
+
+    expect(adj.elasticity).toBeUndefined();
+    expect(adj.reasoning).not.toContain("Elasticity");
+  });
+
   it("ignores validated mismatches and only processes overscored/underscored/missing-rule", () => {
     const input: TuningAgentInput = {
       mismatches: [
