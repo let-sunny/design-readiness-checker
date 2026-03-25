@@ -356,9 +356,11 @@
 
       document.getElementById('category-gauges').innerHTML = CATEGORIES.map(function(cat) {
         var cs = scores.byCategory[cat];
+        var desc = CATEGORY_DESCRIPTIONS[cat];
         return '<a href="#cat-' + cat + '" class="flex flex-col items-center group relative cursor-pointer no-underline text-foreground hover:opacity-80 transition-opacity">' + renderGaugeSvg(cs.percentage, 100, 7) +
           '<span class="text-xs font-medium mt-2.5 text-center leading-tight">' + CATEGORY_LABELS[cat] + '</span>' +
-          '<span class="text-[11px] text-muted-foreground">' + cs.issueCount + ' issues</span></a>';
+          '<span class="text-[11px] text-muted-foreground">' + cs.issueCount + ' issues</span>' +
+          '<div class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 hidden group-hover:block bg-zinc-900 text-white text-xs px-3 py-2 rounded-md whitespace-nowrap z-10 shadow-lg pointer-events-none">' + esc(desc) + '<div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-zinc-900"></div></div></a>';
       }).join('');
 
       document.getElementById('summary-dots').innerHTML =
@@ -388,7 +390,7 @@
     }
 
     var SEV_TIPS = { Blocking: 'Cannot implement correctly without fixing. Direct impact on screen reproduction.', Risk: 'Implementable now but will break or increase cost later.', 'Missing Info': 'Information is absent, forcing AI to guess.', Suggestion: 'Not immediately problematic, but improves systemization.' };
-    function renderDot(cls, count, label) { var tip = SEV_TIPS[label] || ''; return '<div class="flex items-center gap-2 relative group cursor-help" title="' + esc(tip) + '"><span class="w-2.5 h-2.5 rounded-full ' + cls + '"></span><span class="text-lg font-bold">' + count + '</span><span class="text-sm text-muted-foreground">' + label + '</span><div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-zinc-900 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">' + esc(tip) + '</div></div>'; }
+    function renderDot(cls, count, label) { var tip = SEV_TIPS[label] || ''; return '<div class="flex items-center gap-2 relative group cursor-help"><span class="w-2.5 h-2.5 rounded-full ' + cls + '"></span><span class="text-lg font-bold">' + count + '</span><span class="text-sm text-muted-foreground">' + label + '</span><div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-zinc-900 text-white text-xs px-3 py-2 rounded-md whitespace-nowrap z-10 shadow-lg pointer-events-none">' + esc(tip) + '<div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-zinc-900"></div></div></div>'; }
 
     function renderCat(cat, scores, issues, fk) {
       var cs = scores.byCategory[cat], hp = issues.some(function(i) { return i.config.severity === 'blocking' || i.config.severity === 'risk'; });
