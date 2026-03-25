@@ -150,15 +150,18 @@
         '<div class="grade-score">' + scores.overall.percentage + ' <span>/ 100</span></div>' +
         '<div class="grade-label">Overall Score &middot; ' + result.nodeCount + ' nodes</div>';
 
-      // Category grid
+      // Category list
       var categories = CanICode.CATEGORIES || CATEGORIES;
+      var catTips = { structure: 'Can AI read the layout? (Auto Layout, nesting, positioning)', token: 'Can AI reproduce exact values? (colors, fonts, shadows, spacing)', component: 'Is the design efficient for AI context? (reuse, variants)', naming: 'Can AI infer meaning? (semantic names, conventions)', behavior: 'Can AI know what happens? (overflow, truncation, interactions)' };
       var gridEl = document.getElementById('cat-grid');
       gridEl.innerHTML = categories.map(function(cat) {
         var cs = scores.byCategory[cat];
-        return '<div class="cat-card" data-cat="' + cat + '" onclick="filterCategory(\'' + cat + '\')">' +
+        var barColor = cs.percentage >= 80 ? 'var(--green)' : cs.percentage >= 60 ? 'var(--amber)' : 'var(--red)';
+        return '<div class="cat-card" data-cat="' + cat + '" onclick="filterCategory(\'' + cat + '\')" title="' + (catTips[cat] || '') + '">' +
           '<div class="cat-score ' + scoreClass(cs.percentage) + '">' + cs.percentage + '</div>' +
           '<div class="cat-label">' + (CATEGORY_LABELS[cat] || cat) + '</div>' +
-          '<div class="cat-issues">' + cs.issueCount + ' issues</div>' +
+          '<div class="cat-bar"><div class="cat-bar-fill" style="width:' + cs.percentage + '%;background:' + barColor + '"></div></div>' +
+          '<div class="cat-issues">' + cs.issueCount + '</div>' +
         '</div>';
       }).join('');
 
