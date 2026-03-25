@@ -704,7 +704,8 @@ cli
       pruneDiscoveryEvidence(categories);
       console.log(`Pruned discovery evidence for categories: ${categories.join(", ")}`);
     } catch (err) {
-      console.error("[evidence] Failed to prune discovery evidence:", err);
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error(`[evidence] Failed to prune discovery evidence: ${msg}`);
       process.exitCode = 1;
     }
   });

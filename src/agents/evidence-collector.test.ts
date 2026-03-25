@@ -314,6 +314,20 @@ describe("evidence-collector", () => {
       expect(raw.entries[0]!.impact).toBe("easy");
     });
 
+    it("dedupe is case-insensitive for fixture", () => {
+      appendDiscoveryEvidence([
+        { description: "gap1", category: "layout", impact: "hard", fixture: "FX1", timestamp: "t1", source: "evaluation" },
+      ], disPath);
+
+      appendDiscoveryEvidence([
+        { description: "gap1", category: "layout", impact: "easy", fixture: "fx1", timestamp: "t2", source: "evaluation" },
+      ], disPath);
+
+      const raw = JSON.parse(readFileSync(disPath, "utf-8")) as { entries: DiscoveryEvidenceEntry[] };
+      expect(raw.entries).toHaveLength(1);
+      expect(raw.entries[0]!.impact).toBe("easy");
+    });
+
     it("dedupes within a single append call (last row wins)", () => {
       appendDiscoveryEvidence([
         { description: "gap1", category: "layout", impact: "hard", fixture: "fx1", timestamp: "t1", source: "evaluation" },
