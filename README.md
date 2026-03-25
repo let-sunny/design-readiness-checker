@@ -65,9 +65,9 @@ claude mcp add canicode -- npx -y -p canicode canicode-mcp
 | **[Web App](https://let-sunny.github.io/canicode/)** | Quick check, no install |
 | **[Figma Plugin](https://www.figma.com/community/plugin/1617144221046795292/canicode)** | Analyze inside Figma (under review) |
 | **MCP Server** | Claude Code / Cursor / Claude Desktop integration |
-| **[Claude Code Skill](https://github.com/let-sunny/canicode#claude-code-skill)** | Lightweight, no MCP install |
+| **Claude Code Skill** | Lightweight, no MCP install |
 | **CLI** | Full control, CI/CD, offline analysis |
-| **[`canicode implement`](https://github.com/let-sunny/canicode#design-to-code)** | Generate code-ready package (analysis + assets + prompt) |
+| **`canicode implement`** | Generate code-ready package (analysis + assets + prompt) |
 | **[GitHub Action](https://github.com/marketplace/actions/canicode-action)** | PR gate with score threshold |
 
 </details>
