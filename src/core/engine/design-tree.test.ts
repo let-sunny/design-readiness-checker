@@ -931,4 +931,89 @@ describe("generateDesignTree", () => {
       expect(output).not.toContain("svg:");
     });
   });
+
+  describe("IMAGE fill with imageDir mapping", () => {
+    let tempDir: string;
+
+    beforeEach(() => {
+      tempDir = mkdtempSync(join(tmpdir(), "design-tree-image-"));
+    });
+
+    afterEach(async () => {
+      await rm(tempDir, { recursive: true, force: true });
+    });
+
+    it("IMAGE fill with imageDir and mapping outputs url(images/...)", () => {
+      const imageDir = join(tempDir, "images");
+      mkdirSync(imageDir);
+      writeFileSync(
+        join(imageDir, "mapping.json"),
+        JSON.stringify({ "1:2": "hero-banner@2x.png" })
+      );
+
+      const file = makeFile(
+        makeNode({
+          id: "1:1",
+          name: "Container",
+          type: "FRAME",
+          absoluteBoundingBox: { x: 0, y: 0, width: 400, height: 300 },
+          children: [
+            makeNode({
+              id: "1:2",
+              name: "HeroBanner",
+              type: "FRAME",
+              fills: [{ type: "IMAGE", scaleMode: "FILL", imageRef: "abc123" }],
+              absoluteBoundingBox: { x: 0, y: 0, width: 400, height: 200 },
+            }),
+          ],
+        })
+      );
+
+      const output = generateDesignTree(file, { imageDir });
+
+      expect(output).toContain("background-image: url(images/hero-banner@2x.png)");
+      expect(output).not.toContain("background-image: [IMAGE]");
+    });
+
+    it("IMAGE fill without imageDir outputs [IMAGE]", () => {
+      const file = makeFile(
+        makeNode({
+          id: "1:2",
+          name: "HeroBanner",
+          type: "FRAME",
+          fills: [{ type: "IMAGE", scaleMode: "FILL", imageRef: "abc123" }],
+          absoluteBoundingBox: { x: 0, y: 0, width: 400, height: 200 },
+        })
+      );
+
+      const output = generateDesignTree(file);
+
+      expect(output).toContain("background-image: [IMAGE]");
+      expect(output).not.toContain("url(images/");
+    });
+
+    it("IMAGE fill with imageDir but no mapping entry outputs [IMAGE]", () => {
+      const imageDir = join(tempDir, "images");
+      mkdirSync(imageDir);
+      writeFileSync(
+        join(imageDir, "mapping.json"),
+        JSON.stringify({ "99:99": "other-image@2x.png" })
+      );
+
+      const file = makeFile(
+        makeNode({
+          id: "1:2",
+          name: "HeroBanner",
+          type: "FRAME",
+          fills: [{ type: "IMAGE", scaleMode: "FILL", imageRef: "abc123" }],
+          absoluteBoundingBox: { x: 0, y: 0, width: 400, height: 200 },
+        })
+      );
+
+      const output = generateDesignTree(file, { imageDir });
+
+      expect(output).toContain("background-image: [IMAGE]");
+      expect(output).not.toContain("url(images/");
+    });
+  });
 });

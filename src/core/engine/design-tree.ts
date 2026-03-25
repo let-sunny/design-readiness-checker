@@ -100,6 +100,7 @@ function renderNode(
   indent: number,
   vectorDir?: string,
   components?: AnalysisFile["components"],
+  imageMapping?: Record<string, string>,
 ): string {
   if (node.visible === false) return "";
 
@@ -147,7 +148,14 @@ function renderNode(
   // Fill (not for TEXT — text fill is color)
   const fillInfo = getFillInfo(node);
   if (fillInfo.color && node.type !== "TEXT") styles.push(`background: ${fillInfo.color}`);
-  if (fillInfo.hasImage) styles.push("background-image: [IMAGE]");
+  if (fillInfo.hasImage) {
+    const mappedFile = imageMapping?.[node.id];
+    if (mappedFile) {
+      styles.push(`background-image: url(images/${mappedFile})`);
+    } else {
+      styles.push("background-image: [IMAGE]");
+    }
+  }
 
   // Border — respect per-side stroke weights
   const stroke = getStroke(node);
@@ -218,7 +226,7 @@ function renderNode(
   // Children
   if (node.children) {
     for (const child of node.children) {
-      const childOutput = renderNode(child, indent + 1, vectorDir, components);
+      const childOutput = renderNode(child, indent + 1, vectorDir, components, imageMapping);
       if (childOutput) lines.push(childOutput);
     }
   }
@@ -230,6 +238,8 @@ function renderNode(
 export interface DesignTreeOptions {
   /** Directory containing <nodeId>.svg files for VECTOR nodes */
   vectorDir?: string;
+  /** Directory containing downloaded PNGs and mapping.json for IMAGE fill nodes */
+  imageDir?: string;
 }
 
 /**
@@ -260,7 +270,18 @@ export function generateDesignTreeWithStats(file: AnalysisFile, options?: Design
   const w = root.absoluteBoundingBox ? Math.round(root.absoluteBoundingBox.width) : 0;
   const h = root.absoluteBoundingBox ? Math.round(root.absoluteBoundingBox.height) : 0;
 
-  const tree = renderNode(root, 0, options?.vectorDir, file.components);
+  // Load image mapping once if imageDir is provided
+  let imageMapping: Record<string, string> | undefined;
+  if (options?.imageDir) {
+    const mappingPath = join(options.imageDir, "mapping.json");
+    if (existsSync(mappingPath)) {
+      try {
+        imageMapping = JSON.parse(readFileSync(mappingPath, "utf-8")) as Record<string, string>;
+      } catch { /* ignore malformed mapping */ }
+    }
+  }
+
+  const tree = renderNode(root, 0, options?.vectorDir, file.components, imageMapping);
 
   const result = [
     "# Design Tree",

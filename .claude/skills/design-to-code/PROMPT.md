@@ -3,7 +3,7 @@
 This prompt is used by all code generation pipelines:
 - Calibration Converter
 - Rule Discovery A/B Validation
-- design-to-code GitHub Action (via `canicode prompt`)
+- User-facing `canicode implement` command (default prompt)
 
 ## Stack
 - HTML + CSS (single file)
@@ -27,6 +27,10 @@ Your job is to translate the Figma data to HTML+CSS — nothing more.
 - Do NOT use min-height or min-width — use exact height and width from the data
 - Do NOT add overflow: auto or scroll unless specified
 - Fonts: load via Google Fonts CDN (`<link>` tag). Do NOT use system font fallbacks as primary — the exact font from the data must render.
+
+### Image Assets
+- If the design tree shows `background-image: url(images/...)`, use that path directly
+- If it shows `background-image: [IMAGE]`, the image asset is unavailable — use a placeholder color
 
 ### If data is missing
 When the Figma data does not specify a value, you MUST list it as an interpretation.
