@@ -44,7 +44,7 @@ const noAutoLayoutDef: RuleDefinition = {
   category: "structure",
   why: "Without Auto Layout, AI must guess positioning from absolute coordinates instead of reading explicit layout rules",
   impact: "Generated code uses hardcoded positions that break on any content or screen size change",
-  fix: "Apply Auto Layout so AI can generate flexbox/grid instead of absolute positioning",
+  fix: "Apply Auto Layout to create clear, explicit structure — enables AI to generate flexbox/grid instead of absolute positioning",
 };
 
 const noAutoLayoutCheck: RuleCheckFn = (node, context) => {
@@ -173,7 +173,7 @@ const fixedSizeInAutoLayoutDef: RuleDefinition = {
   category: "structure",
   why: "Fixed sizing inside Auto Layout contradicts the flexible layout intent",
   impact: "AI generates a rigid element inside a flex container — the layout won't respond to content changes",
-  fix: "Use 'Hug' or 'Fill' for at least one axis so AI generates responsive sizing",
+  fix: "Use 'Hug' or 'Fill' for at least one axis. Both-axes FIXED → layout completely rigid; horizontal-only FIXED → width won't adapt to parent resize",
 };
 
 const fixedSizeInAutoLayoutCheck: RuleCheckFn = (node, context) => {
