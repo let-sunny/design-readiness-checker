@@ -21,7 +21,7 @@ You will receive:
    - Read `src/core/rules/rule-config.ts` for score/severity conventions
 3. Design the rule:
    - **Rule ID**: kebab-case, descriptive (e.g., `missing-component-description`)
-   - **Category**: existing (`layout | token | component | naming | ai-readability | handoff-risk`) or propose a new category if none fits. New categories require justification.
+   - **Category**: existing (`structure | token | component | naming | behavior`) or propose a new category if none fits. New categories require justification.
    - **Severity**: `blocking | risk | missing-info | suggestion`
    - **Initial score**: based on estimated impact on implementation difficulty
    - **Check logic**: what condition triggers the violation

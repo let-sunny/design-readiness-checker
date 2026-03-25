@@ -1,7 +1,7 @@
 # Scoring Model
 
-canicode scores designs on a 0-100% scale across 6 categories:
-**layout**, **token**, **component**, **naming**, **ai-readability**, **handoff-risk**.
+canicode scores designs on a 0-100% scale across 5 categories:
+**structure**, **token**, **component**, **naming**, **behavior**.
 
 ## How Scores Are Calculated
 
@@ -31,7 +31,7 @@ Issues concentrated in one rule type are easier to fix than scattered issues acr
 
 ```
 category_score = density * 0.7 + diversity * 0.3
-overall_score  = average of all 6 category scores (equal weight)
+overall_score  = average of all 5 category scores (equal weight)
 ```
 
 The 70:30 ratio prioritizes volume over variety. A design with a single systemic problem (e.g., all frames missing auto-layout) is still very hard to implement even though diversity is low.

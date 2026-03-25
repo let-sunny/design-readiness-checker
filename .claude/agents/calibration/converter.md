@@ -113,7 +113,7 @@ Write results to `$RUN_DIR/conversion.json`.
   "uncoveredStruggles": [
     {
       "description": "A difficulty not covered by any flagged rule",
-      "suggestedCategory": "layout | token | component | naming | ai-readability | handoff-risk",
+      "suggestedCategory": "structure | token | component | naming | behavior",
       "estimatedImpact": "easy | moderate | hard | failed"
     }
   ]

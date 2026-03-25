@@ -171,11 +171,11 @@ Real excerpts from calibration debates across 5 fixtures and 7+ rounds.
 > Converter (with filtered nodes): "GROUP inside a real UI component causes moderate difficulty, not hard. The hard ratings were from icon nodes."
 > Critic: "High confidence, 3 cases. 37.5% change within limit. Severity back to risk."
 
-### ambiguous-structure: validated at -10
+### no-auto-layout: validated with absorbed rules
 
-**Consistently confirmed across all fixtures:**
+**After absorbing `ambiguous-structure` and `missing-layout-hint`:**
 > Converter: "Children named 'Path', 'Path', 'Path' with no semantic distinction — programmatic conversion is impossible without visual rendering."
-> Critic: "4 cases, all hard. Score -10 at blocking confirmed. No change needed."
+> Critic: "4 cases, all hard. The merged `no-auto-layout` rule now covers these structure clarity signals. Score -7 at blocking confirmed."
 
 ### New rule proposals: VECTOR no path data
 

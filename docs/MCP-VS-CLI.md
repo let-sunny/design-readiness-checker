@@ -23,12 +23,11 @@ This report documents a side-by-side comparison of analyzing the same Figma desi
 | Category | MCP | CLI | Match |
 |----------|-----|-----|-------|
 | **Overall** | C (67%) | C (67%) | Yes |
-| Layout | 100% | 100% | Yes |
+| Structure | 100% | 100% | Yes |
 | Token | 21% | 21% | Yes |
 | Component | 100% | 100% | Yes |
 | Naming | 24% | 24% | Yes |
-| AI Readability | 59% | 59% | Yes |
-| Handoff Risk | 100% | 100% | Yes |
+| Behavior | 100% | 100% | Yes |
 
 ### Issue Counts
 
@@ -37,7 +36,7 @@ This report documents a side-by-side comparison of analyzing the same Figma desi
 | **Total Issues** | **5** | **6** | **No** |
 | Token issues | 2 | 3 | No |
 | Naming issues | 2 | 2 | Yes |
-| AI Readability issues | 1 | 1 | Yes |
+| Structure issues | 1 | 1 | Yes |
 
 ### Issues by Rule
 
@@ -46,7 +45,7 @@ This report documents a side-by-side comparison of analyzing the same Figma desi
 | `raw-color` | **1** | **2** | **No** |
 | `inconsistent-spacing` | 1 | 1 | Yes |
 | `default-name` | 2 | 2 | Yes |
-| `empty-frame` | 1 | 1 | Yes |
+| `unnecessary-node` | 1 | 1 | Yes |
 
 ---
 

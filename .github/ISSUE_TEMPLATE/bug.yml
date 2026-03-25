@@ -7,7 +7,7 @@ body:
     attributes:
       label: Symptom
       description: What's happening? Include error messages, wrong output, or unexpected behavior.
-      placeholder: "invisible-layer scores -10 (blocking) but hidden layers don't block implementation"
+      placeholder: "unnecessary-node scores -10 (blocking) but hidden layers don't block implementation"
     validations:
       required: true
   - type: textarea
@@ -31,7 +31,7 @@ body:
     attributes:
       label: Affected Files
       description: Which source files need changes?
-      placeholder: "src/core/rules/rule-config.ts, src/core/rules/ai-readability/index.ts"
+      placeholder: "src/core/rules/rule-config.ts, src/core/rules/structure/index.ts"
     validations:
       required: false
   - type: textarea

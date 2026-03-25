@@ -92,18 +92,19 @@ Override score, severity, or enable/disable individual rules:
 
 ### All Rule IDs
 
-**Layout (9 rules)**
+**Structure (9 rules)**
 
 | Rule ID | Default Score | Default Severity |
 |---------|--------------|-----------------|
 | `no-auto-layout` | -7 | blocking |
 | `absolute-position-in-auto-layout` | -10 | blocking |
-| `fixed-width-in-responsive-context` | -4 | risk |
 | `missing-responsive-behavior` | -4 | risk |
 | `group-usage` | -5 | risk |
 | `fixed-size-in-auto-layout` | -5 | risk |
-| `missing-min-width` | -5 | risk |
-| `missing-max-width` | -4 | risk |
+| `missing-size-constraint` | -5 | risk |
+| `unnecessary-node` | -2 | suggestion |
+| `z-index-dependent-layout` | -5 | risk |
+| `deep-nesting` | -4 | risk |
 
 **Token (7 rules)**
 
@@ -117,13 +118,14 @@ Override score, severity, or enable/disable individual rules:
 | `raw-opacity` | -5 | risk |
 | `multiple-fill-colors` | -3 | missing-info |
 
-**Component (3 rules)**
+**Component (4 rules)**
 
 | Rule ID | Default Score | Default Severity |
 |---------|--------------|-----------------|
 | `missing-component` | -7 | risk |
 | `detached-instance` | -5 | risk |
 | `missing-component-description` | -2 | missing-info |
+| `variant-structure-mismatch` | -4 | risk |
 
 **Naming (5 rules)**
 
@@ -135,23 +137,14 @@ Override score, severity, or enable/disable individual rules:
 | `numeric-suffix-name` | -2 | missing-info |
 | `too-long-name` | -1 | suggestion |
 
-**AI Readability (5 rules)**
+**Behavior (4 rules)**
 
 | Rule ID | Default Score | Default Severity |
 |---------|--------------|-----------------|
-| `ambiguous-structure` | -10 | blocking |
-| `z-index-dependent-layout` | -5 | risk |
-| `missing-layout-hint` | -3 | missing-info |
-| `invisible-layer` | -1 | suggestion |
-| `empty-frame` | -2 | missing-info |
-
-**Handoff Risk (3 rules)**
-
-| Rule ID | Default Score | Default Severity |
-|---------|--------------|-----------------|
-| `hardcode-risk` | -5 | risk |
 | `text-truncation-unhandled` | -5 | risk |
-| `prototype-link-in-design` | -2 | suggestion |
+| `prototype-link-in-design` | -2 | missing-info |
+| `overflow-behavior-unknown` | -3 | missing-info |
+| `wrap-behavior-unknown` | -3 | missing-info |
 
 ### Example Configs
 
@@ -178,12 +171,13 @@ Override score, severity, or enable/disable individual rules:
 }
 ```
 
-**Mobile-first (focus on layout):**
+**Mobile-first (focus on structure):**
+
 ```json
 {
   "rules": {
     "missing-responsive-behavior": { "score": -10, "severity": "blocking" },
-    "fixed-width-in-responsive-context": { "score": -8, "severity": "blocking" },
+    "fixed-size-in-auto-layout": { "score": -8, "severity": "blocking" },
     "no-auto-layout": { "score": -12 }
   }
 }
@@ -207,7 +201,7 @@ Each custom rule is a JSON object with the following fields:
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `id` | `string` | Yes | Unique rule identifier (kebab-case recommended) |
-| `category` | `string` | Yes | One of: `layout`, `token`, `component`, `naming`, `ai-readability`, `handoff-risk` |
+| `category` | `string` | Yes | One of: `structure`, `token`, `component`, `naming`, `behavior` |
 | `severity` | `string` | Yes | One of: `blocking`, `risk`, `missing-info`, `suggestion` |
 | `score` | `number` | Yes | Penalty score (integer, must be <= 0) |
 | `match` | `object` | Yes | Conditions to evaluate (see below) |
@@ -317,7 +311,7 @@ Frames with many children that should have Auto Layout applied:
 ```json
 {
   "id": "large-frame-no-auto-layout",
-  "category": "layout",
+  "category": "structure",
   "severity": "risk",
   "score": -5,
   "match": {
@@ -341,7 +335,7 @@ Hidden nodes buried deep in the tree that add noise:
 ```json
 {
   "id": "deep-hidden-layer",
-  "category": "ai-readability",
+  "category": "structure",
   "severity": "suggestion",
   "score": -2,
   "match": {
@@ -418,7 +412,7 @@ I want a custom rule for CanICode that checks: [DESCRIBE WHAT TO CHECK]
 
 Generate a JSON rule object with these fields:
 - id: kebab-case identifier
-- category: one of layout, token, component, naming, ai-readability, handoff-risk
+- category: one of structure, token, component, naming, behavior
 - severity: one of blocking, risk, missing-info, suggestion
 - score: negative integer (more negative = more severe)
 - match: object with conditions (ALL must match). Available conditions:

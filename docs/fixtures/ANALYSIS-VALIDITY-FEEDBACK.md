@@ -21,12 +21,12 @@ It is **not** a statistical proof. It assumes: REST fixture JSON + current `rule
 
 ### A. Invisible layers + raw color clusters (many Simple DS fixtures)
 
-- **Overrated:** Overall **grade can look decent (A / high B)** while the tree still carries many **invisible-layer** and **raw-color** hits. Severity may keep the headline grade up, but the AI still sees **noise** (extra nodes, ambiguous fills) and may **mis-order or mis-style** visible content. **Pixel outcome** can be worse than the letter grade suggests.
+- **Overrated:** Overall **grade can look decent (A / high B)** while the tree still carries many **unnecessary-node** and **raw-color** hits. Severity may keep the headline grade up, but the AI still sees **noise** (extra nodes, ambiguous fills) and may **mis-order or mis-style** visible content. **Pixel outcome** can be worse than the letter grade suggests.
 - **Underrated:** Rare for the **same** pattern; occasionally invisible only affects editor hygiene, not export — but REST + rules still complain.
 - **Remedies:**
   - **Figma:** Delete or detach truly unused layers; replace raw values with variables where the team cares; reduce hidden decoration.
   - **Workflow:** Feed **`design-tree`** or a **pruned node list** to the AI so it ignores known-noise IDs.
-  - **Tooling:** Consider reporting **“visible-only issues”** aggregate for AI-facing summaries; tune `invisible-layer` / `raw-color` weights after calibration for “impact on visual-compare.”
+  - **Tooling:** Consider reporting **“visible-only issues”** aggregate for AI-facing summaries; tune `unnecessary-node` / `raw-color` weights after calibration for “impact on visual-compare.”
 
 ### B. Unscoped large trees (Material 3 & large Simple DS)
 
@@ -48,7 +48,7 @@ It is **not** a statistical proof. It assumes: REST fixture JSON + current `rule
 
 ### D. Numeric / generic naming (Material 3 community)
 
-- **Overrated:** Score can look **OK on layout** while **ai-readability / naming** tanks — sometimes **underweighted** in how much it confuses **less capable** models (variable names, component names in code).
+- **Overrated:** Score can look **OK on layout** while **structure / naming** tanks — sometimes **underweighted** in how much it confuses **less capable** models (variable names, component names in code).
 - **Underrated:** For **vision-heavy** codegen (screenshot + structure), **bad names** matter less — score may **undersell** “actually buildable if you ignore names.”
 - **Remedies:**
   - **Figma:** Rename critical interactive nodes; keep DS naming convention.
@@ -83,7 +83,7 @@ Names refer to directories under `fixtures/` or `fixtures/done/`. Grades refer t
 
 ### `simple-ds-175-9106` / `175-8591` / `175-7790` / `562-9518` — B ~ B+
 
-- **Overrated:** **raw-color + invisible-layer** volume — **B/B+** may **overrate** first-shot pixel match.
+- **Overrated:** **raw-color + unnecessary-node** volume — **B/B+** may **overrate** first-shot pixel match.
 - **Underrated:** **Detach/instance** and **default-name** sometimes fixable with a strong “use Figma structure as source of truth” prompt.
 - **Remedies:** Scope; variable cleanup; explicit **instance** handling in prompt.
 
