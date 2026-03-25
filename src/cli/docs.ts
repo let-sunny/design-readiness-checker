@@ -297,7 +297,7 @@ OUTPUT
     PROMPT.md          Stack-specific code generation prompt
 
 WORKFLOW
-  1. Run: canicode implement ./my-fixture --stack react-tailwind
+  1. Run: canicode implement ./my-fixture --prompt ./my-react-prompt.md
   2. Feed design-tree.txt + PROMPT.md to your AI assistant
   3. AI generates code matching the design pixel-perfectly
   4. Verify with: canicode visual-compare ./output.html --figma-url <url>

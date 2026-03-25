@@ -1032,25 +1032,15 @@ cli
       await writeFile(resolve(outputDir, "analysis.json"), JSON.stringify(resultJson, null, 2), "utf-8");
       console.log(`  analysis.json: ${result.issues.length} issues, grade ${scores.overall.grade}`);
 
-      // 3. Design tree
-      const { generateDesignTreeWithStats } = await import("../core/engine/design-tree.js");
-
+      // 3. Prepare assets (before design tree, so tree can reference image paths)
       const fixtureBase = (isJsonFile(input) || isFixtureDir(input))
         ? (isJsonFile(input) ? dirname(resolve(input)) : resolve(input))
         : undefined;
 
-      const vectorDir = fixtureBase ? resolve(fixtureBase, "vectors") : undefined;
-      const imageDir = fixtureBase ? resolve(fixtureBase, "images") : undefined;
+      let vectorDir = fixtureBase ? resolve(fixtureBase, "vectors") : undefined;
+      let imageDir = fixtureBase ? resolve(fixtureBase, "images") : undefined;
 
-      const treeOptions = {
-        ...(vectorDir && existsSync(vectorDir) ? { vectorDir } : {}),
-        ...(imageDir && existsSync(imageDir) ? { imageDir } : {}),
-      };
-      const stats = generateDesignTreeWithStats(file, treeOptions);
-      await writeFile(resolve(outputDir, "design-tree.txt"), stats.tree, "utf-8");
-      console.log(`  design-tree.txt: ~${stats.estimatedTokens} tokens`);
-
-      // 4. Copy vector assets if available
+      // Copy fixture assets to output
       if (vectorDir && existsSync(vectorDir)) {
         const vecOutputDir = resolve(outputDir, "vectors");
         mkdirSync(vecOutputDir, { recursive: true });
@@ -1062,7 +1052,6 @@ cli
         console.log(`  vectors/: ${vecFiles.length} SVGs copied`);
       }
 
-      // 5. Copy image assets if available
       if (imageDir && existsSync(imageDir)) {
         const imgOutputDir = resolve(outputDir, "images");
         mkdirSync(imgOutputDir, { recursive: true });
@@ -1075,8 +1064,8 @@ cli
         console.log(`  images/: ${pngCount} assets copied`);
       }
 
-      // 6. Download images from Figma API for live URLs
-      if (isFigmaUrl(input) && !imageDir) {
+      // Download assets from Figma API for live URLs
+      if (isFigmaUrl(input) && !fixtureBase) {
         const figmaToken = options.token ?? getFigmaToken();
         if (figmaToken) {
           const imgScale = options.imageScale !== undefined ? Number(options.imageScale) : 2;
@@ -1162,15 +1151,42 @@ cli
                   }
                 } catch { /* skip */ }
               }
+              // Write mapping.json for design-tree
+              const mapping: Record<string, string> = {};
+              const usedNamesForMapping = new Map<string, number>();
+              for (const { id, name } of imgNodes) {
+                let base = sanitizeFilename(name);
+                const cnt = usedNamesForMapping.get(base) ?? 0;
+                usedNamesForMapping.set(base, cnt + 1);
+                if (cnt > 0) base = `${base}-${cnt + 1}`;
+                mapping[id] = `${base}@${imgScale}x.png`;
+              }
+              await writeFile(resolve(imgOutDir, "mapping.json"), JSON.stringify(mapping, null, 2), "utf-8");
+
+              imageDir = imgOutDir;
               console.log(`  images/: ${downloaded}/${imgNodes.length} PNGs (@${imgScale}x)`);
             } catch {
               console.warn("  images/: failed to download (continuing)");
             }
           }
+
+          // Update vectorDir to point to downloaded assets
+          const vecOutCheck = resolve(outputDir, "vectors");
+          if (existsSync(vecOutCheck)) vectorDir = vecOutCheck;
         }
       }
 
-      // 7. Assemble prompt
+      // 4. Design tree (after assets so image paths are available)
+      const { generateDesignTreeWithStats } = await import("../core/engine/design-tree.js");
+      const treeOptions = {
+        ...(vectorDir && existsSync(vectorDir) ? { vectorDir } : {}),
+        ...(imageDir && existsSync(imageDir) ? { imageDir } : {}),
+      };
+      const stats = generateDesignTreeWithStats(file, treeOptions);
+      await writeFile(resolve(outputDir, "design-tree.txt"), stats.tree, "utf-8");
+      console.log(`  design-tree.txt: ~${stats.estimatedTokens} tokens`);
+
+      // 5. Assemble prompt
       if (options.prompt) {
         // Custom prompt: copy user's file
         const { readFile: rf } = await import("node:fs/promises");

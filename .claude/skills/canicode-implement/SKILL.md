@@ -5,14 +5,13 @@ description: Prepare a design-to-code implementation package from a Figma URL or
 
 # CanICode Implement -- Design-to-Code Package
 
-Prepare everything an AI needs to implement a Figma design as code: analysis report, design tree with image assets, and a stack-specific prompt.
+Prepare everything an AI needs to implement a Figma design as code: analysis report, design tree with image assets, and a code generation prompt.
 
 This skill does NOT auto-generate code. It assembles a package that you then feed to an AI coding assistant.
 
 ## Prerequisites
 
 One of:
-- **Figma MCP** (`https://mcp.figma.com/mcp`) for live Figma URLs without a token
 - **FIGMA_TOKEN** environment variable for REST API access
 - **Local fixture** directory (no token needed)
 
@@ -21,53 +20,42 @@ One of:
 ### From a local fixture (simplest)
 
 ```bash
-npx canicode implement ./fixtures/my-design --stack react-tailwind
+npx canicode implement ./fixtures/my-design
 ```
 
 ### From a Figma URL
 
 ```bash
-npx canicode implement "https://www.figma.com/design/ABC/File?node-id=1-234" --stack vue-css
+npx canicode implement "https://www.figma.com/design/ABC/File?node-id=1-234"
 ```
 
-### With Figma MCP (no token needed)
+### With a custom prompt (for your stack)
 
-When the user provides a Figma URL and the official Figma MCP server is connected:
+```bash
+npx canicode implement ./fixtures/my-design --prompt ./my-react-prompt.md
+```
 
-1. **Parse the URL** — extract `fileKey` and `nodeId`
-2. **Save fixture first** using the Figma MCP flow from `/canicode` skill (Steps 1-3)
-3. **Run implement** on the saved fixture:
-   ```bash
-   npx canicode implement fixtures/_mcp-temp --stack html-css
-   ```
-4. Clean up temp fixture if desired
+The default prompt generates HTML+CSS. Write your own prompt for React, Vue, or any other stack.
 
 ## Options
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `--stack <name>` | Target stack | `html-css` |
+| `--prompt <path>` | Custom prompt file for your stack | Built-in HTML+CSS |
 | `--output <dir>` | Output directory | `./canicode-implement/` |
 | `--token <token>` | Figma API token | `FIGMA_TOKEN` env var |
 | `--image-scale <n>` | Image export scale (1-4) | `2` (PC), use `3` for mobile |
 
-### Available stacks
-
-- `html-css` -- Standalone HTML + CSS (default, no build step)
-- `react-tailwind` -- React + Tailwind CSS
-- `react-css-modules` -- React + CSS Modules
-- `vue-css` -- Vue 3 + scoped CSS
-
 ## Output Structure
 
-```
+```text
 canicode-implement/
   analysis.json      # Full analysis with issues and scores
   design-tree.txt    # DOM-like tree with styles, structure, embedded SVGs
-  PROMPT.md          # Base prompt + stack-specific conventions
+  PROMPT.md          # Code generation prompt (default or custom)
   screenshot.png     # Figma screenshot (if available)
   vectors/           # SVG assets for VECTOR nodes
-  images/            # PNG assets for IMAGE fill nodes
+  images/            # PNG assets for IMAGE fill nodes (hero-banner@2x.png)
 ```
 
 ## Next Steps
