@@ -30,6 +30,9 @@ export function registerCalibrateGapReport(cli: CAC): void {
     .option("--json", "Print JSON summary to stdout")
     .action(async (options: CalibrateGapReportOptions) => {
       try {
+        // In --json mode, send progress messages to stderr so stdout contains only valid JSON
+        const log = options.json ? console.error.bind(console) : console.log.bind(console);
+
         const minRepeat = Math.max(1, parseInt(options.minRepeat ?? "2", 10) || 2);
         const result = generateGapRuleReport({
           calibrationDir: resolve(options.calibrationDir ?? "logs/calibration"),
@@ -52,16 +55,16 @@ export function registerCalibrateGapReport(cli: CAC): void {
             const ts = match[1].replace(/[:.]/g, "-").replace("T", "-").replace("Z", "");
             const backupPath = outPath.replace(/\.md$/, `--${ts}.md`);
             await writeFile(backupPath, existing, "utf-8");
-            console.log(`  Previous report backed up: ${backupPath}`);
+            log(`  Previous report backed up: ${backupPath}`);
           }
         }
 
         await writeFile(outPath, result.markdown, "utf-8");
 
-        console.log("Gap rule review report written.");
-        console.log(`  Runs with gaps: ${result.gapRunCount}`);
-        console.log(`  Runs with snapshots: ${result.runCount}`);
-        console.log(`  Output: ${outPath}`);
+        log("Gap rule review report written.");
+        log(`  Runs with gaps: ${result.gapRunCount}`);
+        log(`  Runs with snapshots: ${result.runCount}`);
+        log(`  Output: ${outPath}`);
 
         if (options.json) {
           console.log(

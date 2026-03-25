@@ -3,8 +3,8 @@ import { createRequire } from "node:module";
 import { config } from "dotenv";
 import cac from "cac";
 
-// Load .env file
-config();
+// Load .env file (quiet: suppress dotenv's stdout banner)
+config({ quiet: true });
 
 import {
   getTelemetryEnabled, getPosthogApiKey, getSentryDsn, getDeviceId,

@@ -62,7 +62,8 @@ export function registerVisualCompare(cli: CAC): void {
 
         const hasViewportOverride = width !== undefined || height !== undefined;
 
-        console.log("Comparing...");
+        // Progress to stderr so stdout contains only valid JSON
+        console.error("Comparing...");
         const result = await visualCompare({
           figmaUrl: options.figmaUrl,
           figmaToken: token,

@@ -22,8 +22,8 @@ import { initMonitoring, trackEvent, trackError, shutdownMonitoring, EVENTS } fr
 import { POSTHOG_API_KEY as BUILTIN_PH_KEY, SENTRY_DSN as BUILTIN_SENTRY_DSN } from "../core/monitoring/keys.js";
 import { getTelemetryEnabled, getPosthogApiKey, getSentryDsn, getDeviceId } from "../core/engine/config-store.js";
 
-// Load .env for FIGMA_TOKEN
-config();
+// Load .env for FIGMA_TOKEN (quiet: suppress dotenv's stdout banner — MCP uses stdout for JSON-RPC)
+config({ quiet: true });
 
 // Import rules to register them
 import "../core/rules/index.js";

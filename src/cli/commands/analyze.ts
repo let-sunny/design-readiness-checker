@@ -50,6 +50,8 @@ export function registerAnalyze(cli: CAC): void {
     .action(async (input: string, options: AnalyzeOptions) => {
       const analysisStart = Date.now();
       trackEvent(EVENTS.ANALYSIS_STARTED, { source: isJsonFile(input) || isFixtureDir(input) ? "fixture" : "figma" });
+      // In --json mode, send progress messages to stderr so stdout contains only valid JSON
+      const log = options.json ? console.error.bind(console) : console.log.bind(console);
       try {
         // Check init
         if (!options.token && !getFigmaToken() && !isJsonFile(input) && !isFixtureDir(input)) {
@@ -66,7 +68,7 @@ export function registerAnalyze(cli: CAC): void {
               "ANTHROPIC_API_KEY required for --screenshot mode. Set it in .env or environment."
             );
           }
-          console.log("Screenshot comparison mode enabled (coming soon).\n");
+          log("Screenshot comparison mode enabled (coming soon).\n");
         }
 
         // Load file
@@ -82,7 +84,7 @@ export function registerAnalyze(cli: CAC): void {
             const picked = pickRandomScope(file.document);
             if (picked) {
               effectiveNodeId = picked.id;
-              console.log(`\nAuto-scoped to "${picked.name}" (${picked.id}, ${countNodes(picked)} nodes) — file too large (${totalNodes} nodes) for unscoped analysis.`);
+              log(`\nAuto-scoped to "${picked.name}" (${picked.id}, ${countNodes(picked)} nodes) — file too large (${totalNodes} nodes) for unscoped analysis.`);
             } else {
               console.warn(`\nWarning: Could not find a suitable scope in fixture. Analyzing all ${totalNodes} nodes.`);
             }
@@ -101,8 +103,8 @@ export function registerAnalyze(cli: CAC): void {
           console.warn("Tip: Add ?node-id=XXX to analyze a specific section.\n");
         }
 
-        console.log(`\nAnalyzing: ${file.name}`);
-        console.log(`Nodes: ${totalNodes}`);
+        log(`\nAnalyzing: ${file.name}`);
+        log(`Nodes: ${totalNodes}`);
 
         // Build rule configs: start from preset or defaults
         let configs: Record<string, RuleConfig> = options.preset
@@ -118,7 +120,7 @@ export function registerAnalyze(cli: CAC): void {
           configs = mergeConfigs(configs, configFile);
           excludeNodeNames = configFile.excludeNodeNames;
           excludeNodeTypes = configFile.excludeNodeTypes;
-          console.log(`Config loaded: ${options.config}`);
+          log(`Config loaded: ${options.config}`);
         }
 
         // Load and register custom rules
@@ -128,7 +130,7 @@ export function registerAnalyze(cli: CAC): void {
             ruleRegistry.register(rule);
           }
           configs = { ...configs, ...customConfigs };
-          console.log(`Custom rules loaded: ${rules.length} rules from ${options.customRules}`);
+          log(`Custom rules loaded: ${rules.length} rules from ${options.customRules}`);
         }
 
         // Build analysis options
@@ -141,14 +143,17 @@ export function registerAnalyze(cli: CAC): void {
 
         // Run analysis
         const result = analyzeFile(file, analyzeOptions);
-        console.log(`Nodes: ${result.nodeCount} (max depth: ${result.maxDepth})`);
+        log(`Nodes: ${result.nodeCount} (max depth: ${result.maxDepth})`);
 
         // Calculate scores
         const scores = calculateScores(result);
 
-        // JSON output mode
+        // JSON output mode — only JSON goes to stdout; exit code still applies
         if (options.json) {
           console.log(JSON.stringify(buildResultJson(file.name, result, scores), null, 2));
+          if (scores.overall.grade === "F") {
+            process.exit(1);
+          }
           return;
         }
 

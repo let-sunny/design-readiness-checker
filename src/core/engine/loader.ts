@@ -59,7 +59,7 @@ export async function loadFile(
     if (!existsSync(filePath)) {
       throw new Error(`File not found: ${filePath}`);
     }
-    console.log(`Loading from JSON: ${filePath}`);
+    console.error(`Loading from JSON: ${filePath}`);
     return { file: await loadFigmaFileFromJson(filePath) };
   }
 
@@ -78,9 +78,9 @@ async function loadFromApi(
   nodeId: string | undefined,
   token?: string
 ): Promise<LoadResult> {
-  console.log(`Fetching from Figma REST API: ${fileKey}`);
+  console.error(`Fetching from Figma REST API: ${fileKey}`);
   if (nodeId) {
-    console.log(`Target node: ${nodeId}`);
+    console.error(`Target node: ${nodeId}`);
   }
 
   const figmaToken = token ?? getFigmaToken();
