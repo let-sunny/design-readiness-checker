@@ -7,8 +7,5 @@ describe("overflow-hidden-abuse", () => {
     expect(overflowHiddenAbuse.definition.category).toBe("layout");
   });
 
-  it("returns null (stub implementation)", () => {
-    const node = makeNode({ type: "FRAME", clipsContent: true });
-    expect(overflowHiddenAbuse.check(node, makeContext())).toBeNull();
-  });
+  it.todo("flags frames with clipsContent hiding overflow instead of fixing layout (detection logic not yet implemented)");
 });

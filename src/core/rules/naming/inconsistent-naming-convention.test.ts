@@ -39,6 +39,17 @@ describe("inconsistent-naming-convention", () => {
     expect(inconsistentNamingConvention.check(node, makeContext({ siblings: [node] }))).toBeNull();
   });
 
+  it("is deterministic when sibling conventions are tied", () => {
+    const kebab = makeNode({ id: "2:1", name: "my-card" });
+    const camel = makeNode({ id: "2:2", name: "myHeader" });
+    const node = makeNode({ id: "1:1", name: "myFooter" });
+    const siblings = [node, kebab, camel];
+
+    const first = inconsistentNamingConvention.check(node, makeContext({ siblings }));
+    const second = inconsistentNamingConvention.check(node, makeContext({ siblings }));
+    expect(second).toEqual(first);
+  });
+
   it("returns null when convention cannot be detected", () => {
     const sibA = makeNode({ id: "2:1", name: "123" });
     const node = makeNode({ id: "1:1", name: "456" });

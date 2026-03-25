@@ -46,6 +46,11 @@ describe("inconsistent-sibling-layout-direction", () => {
     expect(inconsistentSiblingLayoutDirection.check(node, makeContext({ siblings }))).toBeNull();
   });
 
+  it("returns null when only one sibling (< 2 siblings)", () => {
+    const node = makeNode({ id: "1:1", type: "FRAME", name: "Solo", layoutMode: "VERTICAL" });
+    expect(inconsistentSiblingLayoutDirection.check(node, makeContext({ siblings: [node] }))).toBeNull();
+  });
+
   it("allows card-in-row pattern (parent HORIZONTAL, child VERTICAL)", () => {
     const parent = makeNode({ layoutMode: "HORIZONTAL" });
     const siblingA = makeNode({ id: "2:1", type: "FRAME", name: "SibA", layoutMode: "HORIZONTAL" });

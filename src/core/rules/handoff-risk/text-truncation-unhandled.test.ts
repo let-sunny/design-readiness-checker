@@ -46,12 +46,12 @@ describe("text-truncation-unhandled", () => {
     expect(textTruncationUnhandled.check(node, makeContext({ parent }))).toBeNull();
   });
 
-  it("returns null for wide text container (>= 300px)", () => {
+  it("returns null for wide text container (exactly at 300px boundary)", () => {
     const parent = makeNode({ layoutMode: "HORIZONTAL" });
     const node = makeNode({
       type: "TEXT",
       characters: "A".repeat(60),
-      absoluteBoundingBox: { x: 0, y: 0, width: 400, height: 20 },
+      absoluteBoundingBox: { x: 0, y: 0, width: 300, height: 20 },
     });
     expect(textTruncationUnhandled.check(node, makeContext({ parent }))).toBeNull();
   });

@@ -7,8 +7,5 @@ describe("prototype-link-in-design", () => {
     expect(prototypeLinkInDesign.definition.category).toBe("handoff-risk");
   });
 
-  it("returns null (stub — requires prototype/interaction data)", () => {
-    const node = makeNode({ type: "FRAME", name: "Button" });
-    expect(prototypeLinkInDesign.check(node, makeContext())).toBeNull();
-  });
+  it.todo("flags nodes with prototype/interaction links (AnalysisNode does not yet model interaction data)");
 });

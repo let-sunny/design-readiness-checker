@@ -31,7 +31,7 @@ describe("non-semantic-name", () => {
   );
 
   it("allows non-semantic names on leaf shape primitives", () => {
-    const node = makeNode({ type: "RECTANGLE", name: "rectangle" });
+    const node = makeNode({ type: "RECTANGLE", name: "vector" });
     expect(nonSemanticName.check(node, makeContext())).toBeNull();
   });
 

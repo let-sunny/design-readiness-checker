@@ -22,11 +22,5 @@ describe("component-property-unused", () => {
     expect(componentPropertyUnused.check(node, makeContext())).toBeNull();
   });
 
-  it("returns null (stub — binding check not yet implemented)", () => {
-    const node = makeNode({
-      type: "COMPONENT",
-      componentPropertyDefinitions: { "label": { type: "TEXT" } },
-    });
-    expect(componentPropertyUnused.check(node, makeContext())).toBeNull();
-  });
+  it.todo("flags component with unused property bindings (binding check not yet implemented)");
 });

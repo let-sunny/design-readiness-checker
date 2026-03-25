@@ -7,8 +7,6 @@ describe("variant-not-used", () => {
     expect(variantNotUsed.definition.category).toBe("component");
   });
 
-  it("returns null (stub — requires component variant context)", () => {
-    const node = makeNode({ type: "INSTANCE", componentId: "comp-1" });
-    expect(variantNotUsed.check(node, makeContext())).toBeNull();
-  });
+  it.todo("flags instances not using available variants (requires component variant context)");
+  it.todo("returns null when all available variants are used");
 });

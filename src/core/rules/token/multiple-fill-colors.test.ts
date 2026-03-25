@@ -7,13 +7,5 @@ describe("multiple-fill-colors", () => {
     expect(multipleFillColors.definition.category).toBe("token");
   });
 
-  it("returns null (stub — requires cross-node analysis)", () => {
-    const node = makeNode({
-      fills: [
-        { type: "SOLID", color: { r: 1, g: 0, b: 0 } },
-        { type: "SOLID", color: { r: 0.98, g: 0.01, b: 0.01 } },
-      ],
-    });
-    expect(multipleFillColors.check(node, makeContext())).toBeNull();
-  });
+  it.todo("flags near-duplicate fill colors across sibling nodes (requires cross-node analysis in integration tests)");
 });

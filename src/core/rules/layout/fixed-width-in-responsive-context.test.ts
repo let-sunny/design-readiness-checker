@@ -55,4 +55,17 @@ describe("fixed-width-in-responsive-context", () => {
     const node = makeNode({ type: "FRAME", layoutAlign: "STRETCH" });
     expect(fixedWidthInResponsiveContext.check(node, makeContext({ parent }))).toBeNull();
   });
+
+  it("fallback: flags when layoutAlign is INHERIT (no layoutSizingHorizontal)", () => {
+    const parent = makeNode({ layoutMode: "HORIZONTAL" });
+    const node = makeNode({
+      type: "FRAME",
+      name: "FixedPanel",
+      layoutAlign: "INHERIT",
+      absoluteBoundingBox: { x: 0, y: 0, width: 200, height: 100 },
+    });
+    const result = fixedWidthInResponsiveContext.check(node, makeContext({ parent }));
+    expect(result).not.toBeNull();
+    expect(result!.ruleId).toBe("fixed-width-in-responsive-context");
+  });
 });

@@ -39,4 +39,9 @@ describe("numeric-suffix-name", () => {
     const node = makeNode({ name: "Step3" });
     expect(numericSuffixName.check(node, makeContext())).toBeNull();
   });
+
+  it("returns null for empty name", () => {
+    const node = makeNode({ name: "" });
+    expect(numericSuffixName.check(node, makeContext())).toBeNull();
+  });
 });
