@@ -69,6 +69,89 @@ function transformNode(node: Node): AnalysisNode {
     base.paddingBottom = node.paddingBottom as number;
   }
 
+  // Size constraints (responsive)
+  if ("minWidth" in node && typeof node.minWidth === "number") {
+    base.minWidth = node.minWidth;
+  }
+  if ("maxWidth" in node && typeof node.maxWidth === "number") {
+    base.maxWidth = node.maxWidth;
+  }
+  if ("minHeight" in node && typeof node.minHeight === "number") {
+    base.minHeight = node.minHeight;
+  }
+  if ("maxHeight" in node && typeof node.maxHeight === "number") {
+    base.maxHeight = node.maxHeight;
+  }
+  if ("layoutGrow" in node && node.layoutGrow !== undefined) {
+    base.layoutGrow = node.layoutGrow as 0 | 1;
+  }
+  if ("constraints" in node && node.constraints) {
+    base.constraints = node.constraints as AnalysisNode["constraints"];
+  }
+
+  // Wrap (flex-wrap)
+  if ("layoutWrap" in node && node.layoutWrap) {
+    base.layoutWrap = node.layoutWrap as AnalysisNode["layoutWrap"];
+  }
+  if ("counterAxisSpacing" in node && typeof node.counterAxisSpacing === "number") {
+    base.counterAxisSpacing = node.counterAxisSpacing;
+  }
+  if ("counterAxisAlignContent" in node && node.counterAxisAlignContent) {
+    base.counterAxisAlignContent =
+      node.counterAxisAlignContent as AnalysisNode["counterAxisAlignContent"];
+  }
+
+  // Grid layout (container)
+  if ("gridRowCount" in node && typeof node.gridRowCount === "number") {
+    base.gridRowCount = node.gridRowCount;
+  }
+  if ("gridColumnCount" in node && typeof node.gridColumnCount === "number") {
+    base.gridColumnCount = node.gridColumnCount;
+  }
+  if ("gridRowGap" in node && typeof node.gridRowGap === "number") {
+    base.gridRowGap = node.gridRowGap;
+  }
+  if ("gridColumnGap" in node && typeof node.gridColumnGap === "number") {
+    base.gridColumnGap = node.gridColumnGap;
+  }
+  if ("gridColumnsSizing" in node && typeof node.gridColumnsSizing === "string") {
+    base.gridColumnsSizing = node.gridColumnsSizing;
+  }
+  if ("gridRowsSizing" in node && typeof node.gridRowsSizing === "string") {
+    base.gridRowsSizing = node.gridRowsSizing;
+  }
+
+  // Grid layout (child)
+  if ("gridChildHorizontalAlign" in node && node.gridChildHorizontalAlign) {
+    base.gridChildHorizontalAlign =
+      node.gridChildHorizontalAlign as AnalysisNode["gridChildHorizontalAlign"];
+  }
+  if ("gridChildVerticalAlign" in node && node.gridChildVerticalAlign) {
+    base.gridChildVerticalAlign =
+      node.gridChildVerticalAlign as AnalysisNode["gridChildVerticalAlign"];
+  }
+  if ("gridRowSpan" in node && typeof node.gridRowSpan === "number") {
+    base.gridRowSpan = node.gridRowSpan;
+  }
+  if ("gridColumnSpan" in node && typeof node.gridColumnSpan === "number") {
+    base.gridColumnSpan = node.gridColumnSpan;
+  }
+  if ("gridRowAnchorIndex" in node && typeof node.gridRowAnchorIndex === "number") {
+    base.gridRowAnchorIndex = node.gridRowAnchorIndex;
+  }
+  if ("gridColumnAnchorIndex" in node && typeof node.gridColumnAnchorIndex === "number") {
+    base.gridColumnAnchorIndex = node.gridColumnAnchorIndex;
+  }
+
+  // Overflow / clip
+  if ("clipsContent" in node && typeof node.clipsContent === "boolean") {
+    base.clipsContent = node.clipsContent;
+  }
+  if ("overflowDirection" in node && node.overflowDirection) {
+    base.overflowDirection =
+      node.overflowDirection as AnalysisNode["overflowDirection"];
+  }
+
   // Size/position
   if ("absoluteBoundingBox" in node && node.absoluteBoundingBox) {
     base.absoluteBoundingBox = node.absoluteBoundingBox;

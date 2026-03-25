@@ -16,6 +16,16 @@ export interface ExtractedStyles {
   paddingBottom?: number;
   fills?: unknown[];
   effects?: unknown[];
+
+  // Responsive fields
+  minWidth?: number;
+  maxWidth?: number;
+  minHeight?: number;
+  maxHeight?: number;
+  layoutWrap?: "WRAP" | "NO_WRAP";
+  counterAxisSpacing?: number;
+  clipsContent?: boolean;
+  overflowDirection?: "HORIZONTAL_SCROLLING" | "VERTICAL_SCROLLING" | "HORIZONTAL_AND_VERTICAL_SCROLLING";
 }
 
 /**
@@ -49,6 +59,13 @@ function resolveSpacing(value: string): number | undefined {
 export function extractStylesFromClasses(classes: string): ExtractedStyles {
   const styles: ExtractedStyles = {};
   const tokens = classes.split(/\s+/);
+  let gapX: number | undefined;
+  let gapY: number | undefined;
+  let gap: number | undefined;
+  let overflowX = false;
+  let overflowY = false;
+  let overflowXHidden = false;
+  let overflowYHidden = false;
 
   for (const token of tokens) {
     // Layout direction
@@ -80,11 +97,15 @@ export function extractStylesFromClasses(classes: string): ExtractedStyles {
       styles.layoutSizingVertical = "FIXED";
     }
 
-    // Gap → itemSpacing
-    else if (token.startsWith("gap-")) {
+    // Gap → deferred until layoutMode is known (gap-x-*/gap-y-* must be checked before gap-*)
+    else if (token.startsWith("gap-y-")) {
+      gapY = resolveSpacing(token.slice(6));
+    } else if (token.startsWith("gap-x-")) {
+      gapX = resolveSpacing(token.slice(6));
+    } else if (token.startsWith("gap-")) {
       const val = token.slice(4);
       const px = resolveSpacing(val);
-      if (px !== undefined) styles.itemSpacing = px;
+      if (px !== undefined) gap = px;
     }
 
     // Padding
@@ -123,6 +144,47 @@ export function extractStylesFromClasses(classes: string): ExtractedStyles {
       if (px !== undefined) styles.paddingBottom = px;
     }
 
+    // Min/max width
+    else if (token.startsWith("min-w-")) {
+      const px = resolveSpacing(token.slice(6));
+      if (px !== undefined) styles.minWidth = px;
+    } else if (token.startsWith("max-w-")) {
+      const px = resolveSpacing(token.slice(6));
+      if (px !== undefined) styles.maxWidth = px;
+    }
+
+    // Min/max height
+    else if (token.startsWith("min-h-")) {
+      const px = resolveSpacing(token.slice(6));
+      if (px !== undefined) styles.minHeight = px;
+    } else if (token.startsWith("max-h-")) {
+      const px = resolveSpacing(token.slice(6));
+      if (px !== undefined) styles.maxHeight = px;
+    }
+
+    // Flex wrap
+    else if (token === "flex-wrap") {
+      styles.layoutWrap = "WRAP";
+    } else if (token === "flex-nowrap") {
+      styles.layoutWrap = "NO_WRAP";
+    }
+
+    // Overflow
+    else if (token === "overflow-hidden") {
+      styles.clipsContent = true;
+    } else if (token === "overflow-x-hidden") {
+      overflowXHidden = true;
+    } else if (token === "overflow-y-hidden") {
+      overflowYHidden = true;
+    } else if (token === "overflow-x-auto" || token === "overflow-x-scroll") {
+      overflowX = true;
+    } else if (token === "overflow-y-auto" || token === "overflow-y-scroll") {
+      overflowY = true;
+    } else if (token === "overflow-auto" || token === "overflow-scroll") {
+      overflowX = true;
+      overflowY = true;
+    }
+
     // Background color → fills
     else if (token.startsWith("bg-[")) {
       const colorMatch = token.match(/^bg-\[(.+)\]$/);
@@ -144,6 +206,46 @@ export function extractStylesFromClasses(classes: string): ExtractedStyles {
       if (!styles.effects) styles.effects = [];
       styles.effects.push({ type: "DROP_SHADOW" });
     }
+  }
+
+  // Resolve gap based on final layout direction
+  // Generic gap-* applies to both axes, directional gap-x-*/gap-y-* override specific axes
+  // In flex-row (HORIZONTAL): gap-x → itemSpacing (main), gap-y → counterAxisSpacing (cross)
+  // In flex-col (VERTICAL): gap-y → itemSpacing (main), gap-x → counterAxisSpacing (cross)
+  const isColumn = styles.layoutMode === "VERTICAL";
+  if (gap !== undefined) {
+    if (gapX === undefined) {
+      if (isColumn) styles.counterAxisSpacing = gap;
+      else styles.itemSpacing = gap;
+    }
+    if (gapY === undefined) {
+      if (isColumn) styles.itemSpacing = gap;
+      else styles.counterAxisSpacing = gap;
+    }
+  }
+  if (gapX !== undefined) {
+    if (isColumn) styles.counterAxisSpacing = gapX;
+    else styles.itemSpacing = gapX;
+  }
+  if (gapY !== undefined) {
+    if (isColumn) styles.itemSpacing = gapY;
+    else styles.counterAxisSpacing = gapY;
+  }
+
+  // Resolve overflow direction from collected flags
+  // Hidden flags suppress scrolling on that axis
+  const effectiveX = overflowX && !overflowXHidden;
+  const effectiveY = overflowY && !overflowYHidden;
+  if (effectiveX && effectiveY) {
+    styles.overflowDirection = "HORIZONTAL_AND_VERTICAL_SCROLLING";
+  } else if (effectiveX) {
+    styles.overflowDirection = "HORIZONTAL_SCROLLING";
+  } else if (effectiveY) {
+    styles.overflowDirection = "VERTICAL_SCROLLING";
+  }
+  // Axis-specific hidden implies clipping on that axis
+  if (overflowXHidden || overflowYHidden) {
+    styles.clipsContent = true;
   }
 
   return styles;
@@ -283,4 +385,14 @@ export function enrichNodeWithStyles(node: AnalysisNode, styles: ExtractedStyles
   if (styles.paddingBottom !== undefined && node.paddingBottom === undefined) node.paddingBottom = styles.paddingBottom;
   if (styles.fills && !node.fills) node.fills = styles.fills;
   if (styles.effects && !node.effects) node.effects = styles.effects;
+
+  // Responsive fields
+  if (styles.minWidth !== undefined && node.minWidth === undefined) node.minWidth = styles.minWidth;
+  if (styles.maxWidth !== undefined && node.maxWidth === undefined) node.maxWidth = styles.maxWidth;
+  if (styles.minHeight !== undefined && node.minHeight === undefined) node.minHeight = styles.minHeight;
+  if (styles.maxHeight !== undefined && node.maxHeight === undefined) node.maxHeight = styles.maxHeight;
+  if (styles.layoutWrap && !node.layoutWrap) node.layoutWrap = styles.layoutWrap;
+  if (styles.counterAxisSpacing !== undefined && node.counterAxisSpacing === undefined) node.counterAxisSpacing = styles.counterAxisSpacing;
+  if (styles.clipsContent !== undefined && node.clipsContent === undefined) node.clipsContent = styles.clipsContent;
+  if (styles.overflowDirection && !node.overflowDirection) node.overflowDirection = styles.overflowDirection;
 }

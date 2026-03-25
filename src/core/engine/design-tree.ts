@@ -125,11 +125,37 @@ function renderNode(
 
   // Layout
   if (node.layoutMode && node.layoutMode !== "NONE") {
-    const dir = node.layoutMode === "VERTICAL" ? "column" : "row";
-    styles.push(`display: flex; flex-direction: ${dir}`);
-    if (node.itemSpacing != null) styles.push(`gap: ${node.itemSpacing}px`);
-    if (node.primaryAxisAlignItems) styles.push(`justify-content: ${mapAlign(node.primaryAxisAlignItems)}`);
-    if (node.counterAxisAlignItems) styles.push(`align-items: ${mapAlign(node.counterAxisAlignItems)}`);
+    if (node.layoutMode === "GRID") {
+      styles.push(`display: grid`);
+      if (node.gridColumnsSizing) styles.push(`grid-template-columns: ${node.gridColumnsSizing}`);
+      if (node.gridRowsSizing) styles.push(`grid-template-rows: ${node.gridRowsSizing}`);
+      if (node.gridColumnGap != null && node.gridRowGap != null) {
+        styles.push(`gap: ${node.gridRowGap}px ${node.gridColumnGap}px`);
+      } else if (node.gridRowGap != null) {
+        styles.push(`row-gap: ${node.gridRowGap}px`);
+      } else if (node.gridColumnGap != null) {
+        styles.push(`column-gap: ${node.gridColumnGap}px`);
+      } else if (node.itemSpacing != null) {
+        styles.push(`gap: ${node.itemSpacing}px`);
+      }
+    } else {
+      const dir = node.layoutMode === "VERTICAL" ? "column" : "row";
+      styles.push(`display: flex; flex-direction: ${dir}`);
+      if (node.layoutWrap === "WRAP") styles.push(`flex-wrap: wrap`);
+      if (node.itemSpacing != null) {
+        const mainGap = node.layoutMode === "VERTICAL" ? "row-gap" : "column-gap";
+        styles.push(`${mainGap}: ${node.itemSpacing}px`);
+      }
+      if (node.counterAxisSpacing != null) {
+        const crossGap = node.layoutMode === "VERTICAL" ? "column-gap" : "row-gap";
+        styles.push(`${crossGap}: ${node.counterAxisSpacing}px`);
+      }
+      if (node.primaryAxisAlignItems) styles.push(`justify-content: ${mapAlign(node.primaryAxisAlignItems)}`);
+      if (node.counterAxisAlignItems) styles.push(`align-items: ${mapAlign(node.counterAxisAlignItems)}`);
+      if (node.counterAxisAlignContent && node.counterAxisAlignContent !== "AUTO") {
+        styles.push(`align-content: ${mapAlign(node.counterAxisAlignContent)}`);
+      }
+    }
   }
 
   // Padding
