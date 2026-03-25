@@ -102,7 +102,7 @@ Override score, severity, or enable/disable individual rules:
 | `group-usage` | -5 | risk |
 | `fixed-size-in-auto-layout` | -5 | risk |
 | `missing-size-constraint` | -5 | risk |
-| `unnecessary-node` | -1 | suggestion |
+| `unnecessary-node` | -2 | suggestion |
 | `z-index-dependent-layout` | -5 | risk |
 | `deep-nesting` | -4 | risk |
 
@@ -125,7 +125,7 @@ Override score, severity, or enable/disable individual rules:
 | `missing-component` | -7 | risk |
 | `detached-instance` | -5 | risk |
 | `missing-component-description` | -2 | missing-info |
-| `variant-structure-mismatch` | -5 | risk |
+| `variant-structure-mismatch` | -4 | risk |
 
 **Naming (5 rules)**
 
@@ -142,9 +142,9 @@ Override score, severity, or enable/disable individual rules:
 | Rule ID | Default Score | Default Severity |
 |---------|--------------|-----------------|
 | `text-truncation-unhandled` | -5 | risk |
-| `prototype-link-in-design` | -2 | suggestion |
-| `overflow-behavior-unknown` | -5 | risk |
-| `wrap-behavior-unknown` | -5 | risk |
+| `prototype-link-in-design` | -2 | missing-info |
+| `overflow-behavior-unknown` | -3 | missing-info |
+| `wrap-behavior-unknown` | -3 | missing-info |
 
 ### Example Configs
 

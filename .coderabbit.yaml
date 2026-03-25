@@ -94,8 +94,8 @@ reviews:
         Ensure workflows use pnpm/action-setup@v4 and --frozen-lockfile.
 
   pre_merge_checks:
-    docstring_coverage:
-      enabled: false
+    docstrings:
+      mode: "off"
 
 chat:
   auto_reply: true
