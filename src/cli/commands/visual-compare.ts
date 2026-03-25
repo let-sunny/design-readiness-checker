@@ -9,8 +9,8 @@ const VisualCompareOptionsSchema = z.object({
   figmaUrl: z.string().optional(),
   token: z.string().optional(),
   output: z.string().optional(),
-  width: z.unknown().optional(),
-  height: z.unknown().optional(),
+  width: z.union([z.string(), z.number()]).optional(),
+  height: z.union([z.string(), z.number()]).optional(),
   figmaScale: z.string().optional(),
 });
 

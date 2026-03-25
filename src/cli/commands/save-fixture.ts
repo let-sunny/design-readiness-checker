@@ -142,10 +142,6 @@ export function registerSaveFixture(cli: CAC): void {
           const imageNodes = collectImageNodes(file.document);
           if (imageNodes.length > 0) {
             const imgScale = options.imageScale !== undefined ? Number(options.imageScale) : 2;
-            if (!Number.isFinite(imgScale) || imgScale < 1 || imgScale > 4) {
-              console.error("Error: --image-scale must be 1-4 (2 for PC, 3 for mobile)");
-              process.exitCode = 1; return;
-            }
 
             const imageDir = resolve(fixtureDir, "images");
             mkdirSync(imageDir, { recursive: true });

@@ -111,10 +111,6 @@ export function registerImplement(cli: CAC): void {
           const figmaToken = options.token ?? getFigmaToken();
           if (figmaToken) {
             const imgScale = options.imageScale !== undefined ? Number(options.imageScale) : 2;
-            if (!Number.isFinite(imgScale) || imgScale < 1 || imgScale > 4) {
-              console.error("Error: --image-scale must be 1-4 (2 for PC, 3 for mobile)");
-              process.exitCode = 1; return;
-            }
 
             const { FigmaClient } = await import("../../core/adapters/figma-client.js");
             const client = new FigmaClient({ token: figmaToken });

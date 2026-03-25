@@ -1,25 +1,32 @@
 import type { CAC } from "cac";
+import { z } from "zod";
 
 import {
   initAiready, getConfigPath, getReportsDir,
 } from "../../core/engine/config-store.js";
 
-interface InitOptions {
-  token?: string;
-  mcp?: boolean;
-}
+const InitOptionsSchema = z.object({
+  token: z.string().optional(),
+  mcp: z.boolean().optional(),
+}).refine(
+  (opts) => !(opts.token && opts.mcp),
+  { message: "--token and --mcp are mutually exclusive. Choose one." }
+);
 
 export function registerInit(cli: CAC): void {
   cli
     .command("init", "Set up canicode (Figma token or MCP)")
     .option("--token <token>", "Save Figma API token to ~/.canicode/")
     .option("--mcp", "Show Figma MCP setup instructions")
-    .action((options: InitOptions) => {
+    .action((rawOptions: Record<string, unknown>) => {
       try {
-        if (options.token && options.mcp) {
-          console.error("Error: --token and --mcp are mutually exclusive. Choose one.");
+        const parseResult = InitOptionsSchema.safeParse(rawOptions);
+        if (!parseResult.success) {
+          const msg = parseResult.error.issues.map(i => i.message).join("\n");
+          console.error(`\nInvalid options:\n${msg}`);
           process.exit(1);
         }
+        const options = parseResult.data;
 
         if (options.token) {
           initAiready(options.token);
