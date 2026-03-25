@@ -1,12 +1,12 @@
 # Privacy Policy
 
-**Last updated:** 2026-03-21
+**Last updated:** 2026-03-25
 
 CanICode is an open-source CLI tool that analyzes Figma design structures. This document explains what data is collected, how it is used, and how to opt out.
 
 ## Data We Collect
 
-CanICode includes optional, anonymous telemetry to help us understand usage patterns and improve the tool. The following events are tracked via PostHog analytics:
+CanICode includes optional, pseudonymous telemetry to help us understand usage patterns and improve the tool. The following events are tracked via PostHog analytics:
 
 | Event | When it fires |
 |-------|---------------|
@@ -26,13 +26,25 @@ Each event may include metadata such as node count, issue count, grade, and erro
 
 - **No design data.** We never send Figma file contents, node trees, screenshots, or any design information.
 - **No tokens or credentials.** Figma API tokens and other secrets are never transmitted to our servers.
-- **No user identity.** All telemetry uses `distinctId: "anonymous"` -- we cannot identify individual users.
+- **No personally identifiable information (PII).** We never collect names, emails, or account information. See [Pseudonymous Tracking](#pseudonymous-tracking) below for details on how each channel identifies sessions.
 - **No file contents.** HTML reports, config files, and analysis results stay on your machine.
 - **No IP-based tracking.** We do not attempt to correlate analytics data with IP addresses or locations.
 
-## Anonymous Tracking
+## Pseudonymous Tracking
 
-All telemetry events are sent with a fixed anonymous identifier (`distinctId: "anonymous"`). This means we see aggregate usage metrics but cannot distinguish one user from another or track individual sessions over time.
+Telemetry uses **pseudonymous identifiers** that vary by channel. These allow us to understand usage patterns (e.g., how many sessions a device generates) but cannot identify you personally.
+
+| Channel | Identifier | How it works | Persistence |
+|---------|-----------|--------------|-------------|
+| **CLI** | Random UUID | Generated once via `randomUUID()`, stored in `~/.canicode/config.json` | Persists across sessions on the same machine |
+| **MCP Server** | Random UUID | Same device ID as CLI (shared config file) | Same as CLI |
+| **Figma Plugin** | Hashed Figma user ID | FNV-1a hash of `figma.currentUser.id` → `"fp-XXXXXXXX"` | Consistent per Figma account |
+| **Web App** | `"anonymous"` | Fixed string, no device or user identification | None — truly anonymous |
+
+**What this means:**
+- For CLI/MCP: we can see that "the same device" ran multiple analyses, but we cannot link this to a person, email, or account. Deleting `~/.canicode/config.json` resets the identifier.
+- For Figma Plugin: we can see that "the same hashed ID" used the plugin across sessions. The hash is not reversible to the original Figma user ID.
+- For Web App: all users share the same identifier — we see only aggregate counts.
 
 ## How to Opt Out
 
@@ -79,14 +91,14 @@ Your Figma token is stored locally in `~/.canicode/config.json` and is never sen
 
 | Service | Purpose | Data sent |
 |---------|---------|-----------|
-| [PostHog](https://posthog.com/) | Product analytics | Anonymous event names and metadata (node count, issue count, grade) |
-| [Sentry](https://sentry.io/) | Error tracking | Anonymous crash reports and stack traces |
+| [PostHog](https://posthog.com/) | Product analytics | Pseudonymous event names and metadata (node count, issue count, grade) |
+| [Sentry](https://sentry.io/) | Error tracking | Pseudonymous crash reports and stack traces |
 
-Both services receive only anonymous, non-identifying data. No design content, tokens, or user identity is ever included.
+Both services receive only pseudonymous, non-PII data. No design content, tokens, or personal identity is ever included. See [Pseudonymous Tracking](#pseudonymous-tracking) for how identifiers work per channel.
 
 ## Data Retention
 
-- **PostHog:** Event data is retained according to PostHog's standard data retention policies. Since all data is anonymous, it cannot be linked to individual users.
+- **PostHog:** Event data is retained according to PostHog's standard data retention policies. Since identifiers are pseudonymous and contain no PII, data cannot be linked to individual users.
 - **Sentry:** Error reports are retained according to Sentry's standard retention policies (typically 90 days).
 - **Local data:** Data stored on your machine persists until you delete it. Uninstalling CanICode does not remove `~/.canicode/` -- delete it manually if desired.
 
