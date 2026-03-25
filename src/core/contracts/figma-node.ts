@@ -163,6 +163,9 @@ const BaseAnalysisNodeSchema = z.object({
     })
     .optional(),
 
+  // Prototype interactions
+  interactions: z.array(z.unknown()).optional(),
+
   // Naming analysis metadata
   isAsset: z.boolean().optional(),
 });

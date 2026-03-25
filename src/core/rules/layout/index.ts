@@ -400,9 +400,30 @@ const overflowHiddenAbuseDef: RuleDefinition = {
   fix: "Fix the underlying layout issue instead of hiding overflow",
 };
 
-const overflowHiddenAbuseCheck: RuleCheckFn = (_node, _context) => {
-  // This would check for clipsContent property
-  // Simplified for now - needs more Figma API data
+const overflowHiddenAbuseCheck: RuleCheckFn = (node, context) => {
+  if (!isContainerNode(node)) return null;
+  if (!node.clipsContent) return null;
+
+  // Clip content on auto-layout frames is normal (scrollable containers, cards)
+  if (hasAutoLayout(node)) return null;
+
+  // Clip content on small elements (icons, avatars) is expected
+  if (node.absoluteBoundingBox) {
+    const { width, height } = node.absoluteBoundingBox;
+    if (width <= 48 && height <= 48) return null;
+  }
+
+  // Non-auto-layout container with clipsContent = suspicious
+  // It may be hiding children that overflow due to missing auto-layout
+  if (node.children && node.children.length > 0) {
+    return {
+      ruleId: overflowHiddenAbuseDef.id,
+      nodeId: node.id,
+      nodePath: context.path.join(" > "),
+      message: `"${node.name}" uses clip content without Auto Layout — may be hiding overflow instead of fixing layout`,
+    };
+  }
+
   return null;
 };
 

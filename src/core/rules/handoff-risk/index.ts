@@ -157,17 +157,66 @@ export const imageNoPlaceholder = defineRule({
 
 const prototypeLinkInDesignDef: RuleDefinition = {
   id: "prototype-link-in-design",
-  name: "Prototype Link in Design",
+  name: "Missing Prototype Interaction",
   category: "handoff-risk",
-  why: "Prototype connections may affect how the design is interpreted",
-  impact: "Developers may misunderstand which elements should be interactive",
-  fix: "Document interactions separately or use clear naming",
+  why: "Interactive-looking elements without prototype interactions force developers to guess behavior",
+  impact: "Developers cannot know the intended interaction (hover state, navigation, etc.)",
+  fix: "Add prototype interactions to interactive elements, or use naming to clarify non-interactive intent",
 };
 
-const prototypeLinkInDesignCheck: RuleCheckFn = (_node, _context) => {
-  // This would require checking prototype/interaction data
-  // Not available in basic node structure - needs more Figma API data
-  return null;
+/** Name patterns that suggest an interactive element */
+const INTERACTIVE_NAME_PATTERNS = [
+  /\bbtn\b/i, /\bbutton\b/i, /\blink\b/i, /\btab\b/i,
+  /\bcta\b/i, /\btoggle\b/i, /\bswitch\b/i, /\bcheckbox\b/i,
+  /\bradio\b/i, /\bdropdown\b/i, /\bselect\b/i, /\bmenu\b/i,
+  /\bnav\b/i, /\bclickable\b/i, /\btappable\b/i,
+];
+
+/** Variant names that imply interactive states */
+const STATE_VARIANT_PATTERNS = [
+  /\bhover\b/i, /\bpressed\b/i, /\bactive\b/i, /\bfocused\b/i,
+  /\bdisabled\b/i, /\bselected\b/i,
+];
+
+function looksInteractive(node: AnalysisNode): boolean {
+  // Check name patterns
+  if (node.name && INTERACTIVE_NAME_PATTERNS.some((p) => p.test(node.name))) {
+    return true;
+  }
+
+  // Check if component has state variants (hover, pressed, etc.)
+  if (node.componentPropertyDefinitions) {
+    const propValues = Object.values(node.componentPropertyDefinitions);
+    for (const prop of propValues) {
+      const p = prop as Record<string, unknown>;
+      // VARIANT type properties with state-like values
+      if (p["type"] === "VARIANT" && p["variantOptions"]) {
+        const options = p["variantOptions"] as string[];
+        if (options.some((opt) => STATE_VARIANT_PATTERNS.some((pat) => pat.test(opt)))) {
+          return true;
+        }
+      }
+    }
+  }
+
+  return false;
+}
+
+const prototypeLinkInDesignCheck: RuleCheckFn = (node, context) => {
+  // Only check components and instances (interactive elements are typically components)
+  if (node.type !== "COMPONENT" && node.type !== "INSTANCE" && node.type !== "FRAME") return null;
+
+  if (!looksInteractive(node)) return null;
+
+  // If interactions exist, the element has prototype behavior defined
+  if (node.interactions && node.interactions.length > 0) return null;
+
+  return {
+    ruleId: prototypeLinkInDesignDef.id,
+    nodeId: node.id,
+    nodePath: context.path.join(" > "),
+    message: `"${node.name}" looks interactive but has no prototype interactions defined`,
+  };
 };
 
 export const prototypeLinkInDesign = defineRule({

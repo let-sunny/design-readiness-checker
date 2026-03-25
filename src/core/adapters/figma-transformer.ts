@@ -213,6 +213,11 @@ function transformNode(node: Node): AnalysisNode {
     base.devStatus = node.devStatus as AnalysisNode["devStatus"];
   }
 
+  // Prototype interactions
+  if ("interactions" in node && Array.isArray(node.interactions) && node.interactions.length > 0) {
+    base.interactions = node.interactions;
+  }
+
   // Recursively transform children
   if ("children" in node && Array.isArray(node.children)) {
     base.children = node.children.map(transformNode);

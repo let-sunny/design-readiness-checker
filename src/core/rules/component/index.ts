@@ -355,17 +355,33 @@ const componentPropertyUnusedDef: RuleDefinition = {
   fix: "Connect the value to a component property",
 };
 
-const componentPropertyUnusedCheck: RuleCheckFn = (node, _context) => {
-  if (!isComponent(node)) return null;
+const componentPropertyUnusedCheck: RuleCheckFn = (node, context) => {
+  // Check instances: does this instance override any component properties?
+  if (node.type !== "INSTANCE") return null;
+  if (!node.componentId) return null;
 
-  // Check if component has property definitions but children don't use them
-  if (!node.componentPropertyDefinitions) return null;
+  // Look up the component's property definitions from componentDefinitions
+  const compDefs = context.file.componentDefinitions;
+  if (!compDefs) return null;
 
-  const definedProps = Object.keys(node.componentPropertyDefinitions);
+  const masterDef = compDefs[node.componentId];
+  if (!masterDef) return null;
+  if (!masterDef.componentPropertyDefinitions) return null;
+
+  const definedProps = Object.keys(masterDef.componentPropertyDefinitions);
   if (definedProps.length === 0) return null;
 
-  // This would require checking if properties are actually bound
-  // Simplified for now
+  // Check if the instance has any property overrides
+  const instanceProps = node.componentProperties;
+  if (!instanceProps || Object.keys(instanceProps).length === 0) {
+    return {
+      ruleId: componentPropertyUnusedDef.id,
+      nodeId: node.id,
+      nodePath: context.path.join(" > "),
+      message: `Instance "${node.name}" does not customize any of ${definedProps.length} available component properties`,
+    };
+  }
+
   return null;
 };
 
