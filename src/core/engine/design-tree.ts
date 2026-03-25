@@ -126,7 +126,17 @@ function renderNode(
   if (node.layoutMode && node.layoutMode !== "NONE") {
     if (node.layoutMode === "GRID") {
       styles.push(`display: grid`);
-      if (node.itemSpacing != null) styles.push(`gap: ${node.itemSpacing}px`);
+      if (node.gridColumnsSizing) styles.push(`grid-template-columns: ${node.gridColumnsSizing}`);
+      if (node.gridRowsSizing) styles.push(`grid-template-rows: ${node.gridRowsSizing}`);
+      if (node.gridColumnGap != null && node.gridRowGap != null) {
+        styles.push(`gap: ${node.gridRowGap}px ${node.gridColumnGap}px`);
+      } else if (node.gridRowGap != null) {
+        styles.push(`row-gap: ${node.gridRowGap}px`);
+      } else if (node.gridColumnGap != null) {
+        styles.push(`column-gap: ${node.gridColumnGap}px`);
+      } else if (node.itemSpacing != null) {
+        styles.push(`gap: ${node.itemSpacing}px`);
+      }
     } else {
       const dir = node.layoutMode === "VERTICAL" ? "column" : "row";
       styles.push(`display: flex; flex-direction: ${dir}`);

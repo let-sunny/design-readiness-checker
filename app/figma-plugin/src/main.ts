@@ -227,14 +227,14 @@ function transformPluginNode(node: SceneNode): AnalysisNode {
       if ("gridColumnsSizing" in node) result.gridColumnsSizing = node.gridColumnsSizing as string;
       if ("gridRowsSizing" in node) result.gridRowsSizing = node.gridRowsSizing as string;
     }
+  }
 
-    // Overflow / clip
-    if ("clipsContent" in node) {
-      result.clipsContent = node.clipsContent;
-    }
-    if ("overflowDirection" in node && node.overflowDirection) {
-      result.overflowDirection = node.overflowDirection;
-    }
+  // Overflow / clip (applies to all container types, not just auto-layout)
+  if ("clipsContent" in node && typeof (node as FrameNode).clipsContent === "boolean") {
+    result.clipsContent = (node as FrameNode).clipsContent;
+  }
+  if ("overflowDirection" in node && (node as FrameNode).overflowDirection) {
+    result.overflowDirection = (node as FrameNode).overflowDirection;
   }
 
   // Constraints (Plugin API MIN/MAX/STRETCH → REST API LEFT/RIGHT/LEFT_RIGHT)

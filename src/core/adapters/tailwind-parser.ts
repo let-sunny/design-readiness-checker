@@ -25,7 +25,7 @@ export interface ExtractedStyles {
   layoutWrap?: "WRAP" | "NO_WRAP";
   counterAxisSpacing?: number;
   clipsContent?: boolean;
-  overflowDirection?: "HORIZONTAL_SCROLLING" | "VERTICAL_SCROLLING" | "HORIZONTAL_AND_VERTICAL_SCROLLING" | "NONE";
+  overflowDirection?: "HORIZONTAL_SCROLLING" | "VERTICAL_SCROLLING" | "HORIZONTAL_AND_VERTICAL_SCROLLING";
 }
 
 /**

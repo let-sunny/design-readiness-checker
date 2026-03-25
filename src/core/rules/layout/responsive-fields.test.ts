@@ -49,7 +49,7 @@ describe("fixed-size-in-auto-layout", () => {
       (i) => i.rule.definition.id === "fixed-size-in-auto-layout",
     );
     expect(issues.length).toBeGreaterThanOrEqual(1);
-    expect(issues[0]!.violation.message).toContain("Card");
+    expect(issues.at(0)?.violation.message).toContain("Card");
   });
 
   it("does not flag when one axis is FILL", () => {
