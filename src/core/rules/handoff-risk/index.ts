@@ -18,17 +18,6 @@ function isTextNode(node: AnalysisNode): boolean {
   return node.type === "TEXT";
 }
 
-function isImageNode(node: AnalysisNode): boolean {
-  // Images are often rectangles with image fills
-  if (node.type === "RECTANGLE" && node.fills) {
-    for (const fill of node.fills) {
-      const fillObj = fill as Record<string, unknown>;
-      if (fillObj["type"] === "IMAGE") return true;
-    }
-  }
-  return false;
-}
-
 // ============================================
 // hardcode-risk
 // ============================================
@@ -111,44 +100,6 @@ const textTruncationUnhandledCheck: RuleCheckFn = (node, context) => {
 export const textTruncationUnhandled = defineRule({
   definition: textTruncationUnhandledDef,
   check: textTruncationUnhandledCheck,
-});
-
-// ============================================
-// image-no-placeholder
-// ============================================
-
-const imageNoPlaceholderDef: RuleDefinition = {
-  id: "image-no-placeholder",
-  name: "Image No Placeholder",
-  category: "handoff-risk",
-  why: "Image node with only an IMAGE fill — AI doesn't know the intended fallback when the image fails to load",
-  impact: "Generated code shows a broken image icon or blank space instead of a graceful placeholder",
-  fix: "Add a background fill color behind the image to serve as a loading/error placeholder",
-};
-
-const imageNoPlaceholderCheck: RuleCheckFn = (node, context) => {
-  if (!isImageNode(node)) return null;
-
-  // Check if there's a background color or placeholder indicator
-  // This is a heuristic - images should have fallback fills
-  if (node.fills && Array.isArray(node.fills) && node.fills.length === 1) {
-    const fill = node.fills[0] as Record<string, unknown>;
-    if (fill["type"] === "IMAGE") {
-      return {
-        ruleId: imageNoPlaceholderDef.id,
-        nodeId: node.id,
-        nodePath: context.path.join(" > "),
-        message: `"${node.name}" image has no placeholder fill`,
-      };
-    }
-  }
-
-  return null;
-};
-
-export const imageNoPlaceholder = defineRule({
-  definition: imageNoPlaceholderDef,
-  check: imageNoPlaceholderCheck,
 });
 
 // ============================================

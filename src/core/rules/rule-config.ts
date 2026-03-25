@@ -61,11 +61,6 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
       maxDepth: 5,
     },
   },
-  "inconsistent-sibling-layout-direction": {
-    severity: "missing-info",
-    score: -2,
-    enabled: true,
-  },
 
   // ============================================
   // Token (7 rules)
@@ -222,11 +217,6 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
   "text-truncation-unhandled": {
     severity: "risk",
     score: -5,
-    enabled: true,
-  },
-  "image-no-placeholder": {
-    severity: "missing-info",
-    score: -3,
     enabled: true,
   },
   "prototype-link-in-design": {

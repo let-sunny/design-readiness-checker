@@ -73,12 +73,12 @@ const SEVERITY_DENSITY_WEIGHT: Record<Severity, number> = {
  * Must be updated when rules are added/removed from a category.
  */
 const TOTAL_RULES_PER_CATEGORY: Record<Category, number> = {
-  layout: 10,
+  layout: 9,
   token: 7,
   component: 4,
   naming: 5,
   "ai-readability": 5,
-  "handoff-risk": 4,
+  "handoff-risk": 3,
 };
 
 /**

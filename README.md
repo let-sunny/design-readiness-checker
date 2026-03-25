@@ -30,16 +30,16 @@
 
 ## How It Works
 
-35 rules. 6 categories. Every node in the Figma tree.
+33 rules. 6 categories. Every node in the Figma tree.
 
 | Category | Rules | What it checks |
 |----------|-------|----------------|
-| Layout | 10 | Auto-layout usage, responsive behavior |
+| Layout | 9 | Auto-layout usage, responsive behavior |
 | Design Token | 7 | Color/font/shadow tokenization, spacing consistency |
 | Component | 4 | Component reuse, detached instances, variant coverage |
 | Naming | 5 | Semantic names, default names, naming conventions |
 | AI Readability | 5 | Structure clarity, z-index reliance, empty frames |
-| Handoff Risk | 4 | Hardcoded values, truncation handling, placeholder images |
+| Handoff Risk | 3 | Hardcoded values, truncation handling, interaction coverage |
 
 Each issue is classified: **Blocking** > **Risk** > **Missing Info** > **Suggestion**.
 
@@ -229,7 +229,7 @@ For architecture details, see [`CLAUDE.md`](CLAUDE.md). For calibration pipeline
 
 ## Roadmap
 
-- [x] **Phase 1** — 35 rules, density-based scoring, HTML reports, presets, scoped analysis
+- [x] **Phase 1** — 33 rules, density-based scoring, HTML reports, presets, scoped analysis
 - [x] **Phase 2** — 4-agent calibration pipeline, `/calibrate-loop` debate loop
 - [x] **Phase 3** — Config overrides, MCP server, Claude Skills
 - [x] **Phase 4** — Figma comment from report (per-issue "Comment" button in HTML report, posts to Figma node via API)

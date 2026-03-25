@@ -100,7 +100,6 @@ export type RuleId =
   | "missing-min-width"
   | "missing-max-width"
   | "deep-nesting"
-  | "inconsistent-sibling-layout-direction"
   // Token (7)
   | "raw-color"
   | "raw-font"
@@ -129,7 +128,6 @@ export type RuleId =
   // Handoff Risk (5)
   | "hardcode-risk"
   | "text-truncation-unhandled"
-  | "image-no-placeholder"
   | "prototype-link-in-design";
 
 /**

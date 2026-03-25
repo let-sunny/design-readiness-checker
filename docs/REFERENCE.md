@@ -92,7 +92,7 @@ Override score, severity, or enable/disable individual rules:
 
 ### All Rule IDs
 
-**Layout (10 rules)**
+**Layout (9 rules)**
 
 | Rule ID | Default Score | Default Severity |
 |---------|--------------|-----------------|
@@ -104,7 +104,6 @@ Override score, severity, or enable/disable individual rules:
 | `fixed-size-in-auto-layout` | -5 | risk |
 | `missing-min-width` | -5 | risk |
 | `missing-max-width` | -4 | risk |
-| `inconsistent-sibling-layout-direction` | -2 | missing-info |
 
 **Token (7 rules)**
 
@@ -147,13 +146,12 @@ Override score, severity, or enable/disable individual rules:
 | `invisible-layer` | -1 | suggestion |
 | `empty-frame` | -2 | missing-info |
 
-**Handoff Risk (4 rules)**
+**Handoff Risk (3 rules)**
 
 | Rule ID | Default Score | Default Severity |
 |---------|--------------|-----------------|
 | `hardcode-risk` | -5 | risk |
 | `text-truncation-unhandled` | -5 | risk |
-| `image-no-placeholder` | -4 | risk |
 | `prototype-link-in-design` | -2 | suggestion |
 
 ### Example Configs
