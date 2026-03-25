@@ -164,11 +164,12 @@
 
       // Summary bar
       var s = scores.summary;
+      var sevTips = { blocking: 'Cannot implement correctly without fixing.', risk: 'Implementable now but will break later.', missing: 'Information absent, AI must guess.', suggestion: 'Not problematic, but improves systemization.' };
       document.getElementById('summary-bar').innerHTML =
-        '<div class="summary-item"><span class="dot dot-blocking"></span><span class="summary-count">' + s.blocking + '</span> Blocking</div>' +
-        '<div class="summary-item"><span class="dot dot-risk"></span><span class="summary-count">' + s.risk + '</span> Risk</div>' +
-        '<div class="summary-item"><span class="dot dot-missing"></span><span class="summary-count">' + s.missingInfo + '</span> Missing</div>' +
-        '<div class="summary-item"><span class="dot dot-suggestion"></span><span class="summary-count">' + s.suggestion + '</span> Suggestion</div>' +
+        '<div class="summary-item" title="' + sevTips.blocking + '"><span class="dot dot-blocking"></span><span class="summary-count">' + s.blocking + '</span> Blocking</div>' +
+        '<div class="summary-item" title="' + sevTips.risk + '"><span class="dot dot-risk"></span><span class="summary-count">' + s.risk + '</span> Risk</div>' +
+        '<div class="summary-item" title="' + sevTips.missing + '"><span class="dot dot-missing"></span><span class="summary-count">' + s.missingInfo + '</span> Missing</div>' +
+        '<div class="summary-item" title="' + sevTips.suggestion + '"><span class="dot dot-suggestion"></span><span class="summary-count">' + s.suggestion + '</span> Suggestion</div>' +
         '<div class="summary-total">' + s.totalIssues + ' total</div>';
 
       // Filter tabs

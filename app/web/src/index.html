@@ -387,7 +387,8 @@
       document.getElementById('footer-meta').textContent = new Date().toLocaleString() + ' \u00B7 ' + result.nodeCount + ' nodes \u00B7 Max depth ' + result.maxDepth;
     }
 
-    function renderDot(cls, count, label) { return '<div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full ' + cls + '"></span><span class="text-lg font-bold">' + count + '</span><span class="text-sm text-muted-foreground">' + label + '</span></div>'; }
+    var SEV_TIPS = { Blocking: 'Cannot implement correctly without fixing. Direct impact on screen reproduction.', Risk: 'Implementable now but will break or increase cost later.', 'Missing Info': 'Information is absent, forcing AI to guess.', Suggestion: 'Not immediately problematic, but improves systemization.' };
+    function renderDot(cls, count, label) { var tip = SEV_TIPS[label] || ''; return '<div class="flex items-center gap-2 relative group cursor-help" title="' + esc(tip) + '"><span class="w-2.5 h-2.5 rounded-full ' + cls + '"></span><span class="text-lg font-bold">' + count + '</span><span class="text-sm text-muted-foreground">' + label + '</span><div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-zinc-900 text-white text-xs rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">' + esc(tip) + '</div></div>'; }
 
     function renderCat(cat, scores, issues, fk) {
       var cs = scores.byCategory[cat], hp = issues.some(function(i) { return i.config.severity === 'blocking' || i.config.severity === 'risk'; });
