@@ -6,7 +6,6 @@ import {
 
 interface ConfigOptions {
   telemetry?: boolean;
-  noTelemetry?: boolean;
 }
 
 export function registerConfig(cli: CAC): void {
@@ -16,7 +15,8 @@ export function registerConfig(cli: CAC): void {
     .option("--no-telemetry", "Disable anonymous telemetry")
     .action((options: ConfigOptions) => {
       try {
-        if (options.noTelemetry === true) {
+        // CAC maps --no-telemetry to options.telemetry === false
+        if (options.telemetry === false) {
           setTelemetryEnabled(false);
           console.log("Telemetry disabled. No analytics data will be sent.");
           return;

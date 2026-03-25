@@ -65,6 +65,7 @@ export function registerImplement(cli: CAC): void {
           for (const f of vecFiles) {
             copyFileSync(resolve(vectorDir, f), resolve(vecOutputDir, f));
           }
+          vectorDir = vecOutputDir;
           console.log(`  vectors/: ${vecFiles.length} SVGs copied`);
         }
 
@@ -76,6 +77,7 @@ export function registerImplement(cli: CAC): void {
           for (const f of imgFiles) {
             copyFileSync(resolve(imageDir, f), resolve(imgOutputDir, f));
           }
+          imageDir = imgOutputDir;
           const pngCount = imgFiles.filter(f => f.endsWith(".png")).length;
           console.log(`  images/: ${pngCount} assets copied`);
         }
