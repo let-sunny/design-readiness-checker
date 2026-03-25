@@ -264,29 +264,6 @@ describe("calculateScores", () => {
 // ─── Grade boundaries ─────────────────────────────────────────────────────────
 
 describe("calculateGrade (via calculateScores)", () => {
-  // Test grade boundaries using carefully constructed inputs
-  // We create issues across all categories to directly control overall percentage
-
-  function scoreWithPercentage(targetPct: number): string {
-    // To get an exact overall percentage, we leverage that:
-    // - overall = average of 6 category percentages
-    // - categories without issues = 100%
-    // So if we make 1 category have a specific score and 5 have 100%,
-    // overall = (targetCatPct + 5*100) / 6
-    // targetCatPct = targetPct * 6 - 500
-    // But targetCatPct must be >= 5 (floor) and <= 100
-    // For overall >= 85: targetCatPct = targetPct * 6 - 500
-    // For overall 95: catPct = 70, overall = (70+500)/6 = 95
-    // For overall 90: catPct = 40, overall = (40+500)/6 = 90
-    // These won't always be reachable, so we test what we can
-
-    // Simple approach: create result with zero issues for a clean 100% = S grade
-    // Then test boundaries via the grade output
-    const result = makeResult([], 100);
-    const scores = calculateScores(result);
-    return scores.overall.grade;
-  }
-
   it("100% -> S", () => {
     const scores = calculateScores(makeResult([], 100));
     expect(scores.overall.grade).toBe("S");
@@ -306,7 +283,9 @@ describe("calculateGrade (via calculateScores)", () => {
     };
 
     for (const cat of categories) {
-      for (const ruleId of rulesPerCat[cat]!) {
+      const rules = rulesPerCat[cat];
+      if (!rules) continue;
+      for (const ruleId of rules) {
         for (let i = 0; i < 20; i++) {
           issues.push(makeIssue({ ruleId, category: cat, severity: "blocking" }));
         }

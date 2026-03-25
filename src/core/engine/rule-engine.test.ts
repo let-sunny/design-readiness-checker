@@ -2,6 +2,7 @@ import { RuleEngine, analyzeFile } from "./rule-engine.js";
 import type { AnalysisFile, AnalysisNode } from "../contracts/figma-node.js";
 import type { RuleConfig, RuleId } from "../contracts/rule.js";
 import { RULE_CONFIGS } from "../rules/rule-config.js";
+import { ruleRegistry } from "../rules/rule-registry.js";
 
 // Import rules to register
 import "../rules/index.js";
@@ -257,10 +258,10 @@ describe("RuleEngine.analyze — rule filtering", () => {
 
 describe("RuleEngine.analyze — depth weight calculation", () => {
   it("applies higher weight at root level (depthWeight interpolation)", () => {
-    // Build a tree: root FRAME (depth 0) → child FRAME (depth 1) → grandchild (depth 2)
-    // Rules with depthWeight should score differently at root vs leaf
-    const grandchild = makeNode({ id: "gc:1", name: "Frame 2", type: "FRAME" });
-    const child = makeNode({ id: "c:1", name: "Frame 3", type: "FRAME", children: [grandchild] });
+    // no-auto-layout requires FRAME with children to trigger, so every level needs a child
+    const leaf = makeNode({ id: "leaf:1", name: "Leaf", type: "RECTANGLE" });
+    const grandchild = makeNode({ id: "gc:1", name: "GC Frame", type: "FRAME", children: [leaf] });
+    const child = makeNode({ id: "c:1", name: "Child Frame", type: "FRAME", children: [grandchild] });
     const root = makeNode({
       id: "0:1",
       name: "Document",
@@ -272,16 +273,17 @@ describe("RuleEngine.analyze — depth weight calculation", () => {
     // Use only no-auto-layout which has depthWeight: 1.5 and is in "layout" (supports depth weight)
     const result = analyzeFile(file, { enabledRules: ["no-auto-layout"] });
 
-    // Find issues at different depths
+    // Find issues at different depths — assert they exist to avoid vacuous pass
     const issueAtChild = result.issues.find((i) => i.violation.nodeId === "c:1");
     const issueAtGC = result.issues.find((i) => i.violation.nodeId === "gc:1");
 
-    if (issueAtChild && issueAtGC) {
-      // Issue closer to root should have higher absolute score (more negative)
-      expect(Math.abs(issueAtChild.calculatedScore)).toBeGreaterThanOrEqual(
-        Math.abs(issueAtGC.calculatedScore)
-      );
-    }
+    expect(issueAtChild).toBeDefined();
+    expect(issueAtGC).toBeDefined();
+
+    // Issue closer to root should have higher absolute score (more negative)
+    expect(Math.abs(issueAtChild!.calculatedScore)).toBeGreaterThanOrEqual(
+      Math.abs(issueAtGC!.calculatedScore)
+    );
   });
 });
 
@@ -363,21 +365,36 @@ describe("RuleEngine.analyze — error resilience", () => {
       name: "Document",
       type: "DOCUMENT",
       children: [
-        // Frame 1 is a generic name → should trigger default-name
         makeNode({ id: "f:1", name: "Frame 1", type: "FRAME" }),
       ],
     });
     const file = makeFile({ document: doc });
 
-    // Spy on console.error to verify error is logged
+    // Make an existing rule's check throw to verify error resilience
+    const defaultNameRule = ruleRegistry.get("default-name");
+    expect(defaultNameRule).toBeDefined();
+
+    const originalCheck = defaultNameRule!.check;
+    defaultNameRule!.check = () => { throw new Error("boom"); };
+
     const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
-    // Even if some rules throw, analysis should complete
-    const result = analyzeFile(file);
-    expect(result.issues).toBeDefined();
-    expect(result.nodeCount).toBe(2);
+    try {
+      // Analysis should still complete despite the throwing rule
+      const result = analyzeFile(file);
+      expect(result.issues).toBeDefined();
+      expect(result.nodeCount).toBe(2);
 
-    consoleSpy.mockRestore();
+      // Verify the error was logged
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining("default-name"),
+        expect.any(Error)
+      );
+    } finally {
+      // Restore the original check function and console spy
+      defaultNameRule!.check = originalCheck;
+      consoleSpy.mockRestore();
+    }
   });
 });
 
