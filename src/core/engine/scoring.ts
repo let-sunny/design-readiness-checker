@@ -47,7 +47,19 @@ export interface ScoreReport {
 export type Grade = "S" | "A+" | "A" | "B+" | "B" | "C+" | "C" | "D" | "F";
 
 /**
- * Severity weights for density calculation
+ * Severity weights for density calculation.
+ *
+ * Rationale (initial intuition, pending calibration validation):
+ * - blocking (3.0): issues that prevent correct implementation — weighted highest
+ * - risk (2.0): implementable now but will break later — significant but less than blocking
+ * - missing-info (1.0): forces guessing — baseline weight
+ * - suggestion (0.5): nice-to-have improvements — minimal impact on implementation accuracy
+ *
+ * The 3:2:1:0.5 ratio reflects relative implementation difficulty. A single blocking
+ * issue (e.g., missing auto-layout) costs more effort than 3 suggestions combined.
+ * These weights are multiplied with issue counts to produce a weighted density score.
+ *
+ * Status: initial values. To be validated via /calibrate-loop against visual-compare results.
  */
 const SEVERITY_DENSITY_WEIGHT: Record<Severity, number> = {
   blocking: 3.0,
@@ -57,7 +69,8 @@ const SEVERITY_DENSITY_WEIGHT: Record<Severity, number> = {
 };
 
 /**
- * Total rules per category
+ * Total rules per category — used as denominator for diversity scoring.
+ * Must be updated when rules are added/removed from a category.
  */
 const TOTAL_RULES_PER_CATEGORY: Record<Category, number> = {
   layout: 11,
@@ -69,7 +82,11 @@ const TOTAL_RULES_PER_CATEGORY: Record<Category, number> = {
 };
 
 /**
- * Category weights for overall score (all equal by default)
+ * Category weights for overall score.
+ * All equal (1.0) by design — no category is inherently more important than another.
+ * This avoids subjective bias; individual rule scores within each category already
+ * encode relative importance. If calibration reveals certain categories correlate
+ * more strongly with visual-compare similarity, these weights can be adjusted.
  */
 const CATEGORY_WEIGHT: Record<Category, number> = {
   layout: 1.0,
@@ -81,18 +98,38 @@ const CATEGORY_WEIGHT: Record<Category, number> = {
 };
 
 /**
- * Score composition weights
+ * Score composition weights (initial intuition, pending calibration validation).
+ *
+ * Density (0.7): "how many issues per node" — measures issue volume relative to design size.
+ *   Designs with many issues per node are harder to implement accurately.
+ *
+ * Diversity (0.3): "how many different rule types triggered" — measures issue breadth.
+ *   A design that triggers 1 rule 50 times is easier to fix than one triggering 10 different rules.
+ *
+ * The 70:30 ratio prioritizes volume over variety. Rationale: a design with a single
+ * systemic problem (e.g., all frames missing auto-layout) is still very hard to implement,
+ * even though diversity is low. Density captures this; diversity adds a penalty for
+ * designs with scattered, unrelated issues.
+ *
+ * Status: initial values. To be validated via /calibrate-loop against visual-compare results.
  */
 const DENSITY_WEIGHT = 0.7;
 const DIVERSITY_WEIGHT = 0.3;
 
 /**
- * Minimum score floor
+ * Minimum score floor.
+ * Even the worst design gets 5% instead of 0%. Rationale: a score of 0 implies
+ * "completely unimplementable", but any Figma file with visible nodes provides
+ * some structural information. The floor also avoids demoralizing UX — seeing 0%
+ * feels like the tool failed, not that the design needs improvement.
  */
 const SCORE_FLOOR = 5;
 
 /**
- * Calculate grade from percentage
+ * Calculate grade from percentage.
+ * Thresholds follow a 5-point interval pattern (95/90/85/80/75/70/65) with a wider
+ * gap for D (50-64) and F (<50). This mirrors academic grading conventions where
+ * the top tiers are tightly spaced and the failing range is broad.
  */
 function calculateGrade(percentage: number): Grade {
   if (percentage >= 95) return "S";

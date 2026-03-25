@@ -16,6 +16,7 @@ CANICODE DOCUMENTATION (v${pkg.version})
   canicode docs rules      Custom rules guide + example
   canicode docs config     Config override guide + example
   canicode docs implement  Design-to-code package guide
+  canicode docs scoring    Scoring model explanation
 
 Full documentation: github.com/let-sunny/canicode#readme
 `.trimStart());
@@ -316,12 +317,30 @@ IMAGE SCALE
 `.trimStart());
 }
 
+/** Print the scoring model summary with pointer to full docs. */
+export function printDocsScoring(): void {
+  console.log(`
+SCORING MODEL
+
+  Score = density (70%) + diversity (30%), averaged across 6 categories.
+
+  Severity weights:
+    blocking 3.0x | risk 2.0x | missing-info 1.0x | suggestion 0.5x
+
+  Grades: S(95) A+(90) A(85) B+(80) B(75) C+(70) C(65) D(50) F(<50)
+  Floor: 5% minimum.
+
+  Full documentation: https://github.com/let-sunny/canicode/blob/main/docs/SCORING.md
+`.trimStart());
+}
+
 const DOCS_TOPICS: Record<string, () => void> = {
   setup: printDocsSetup,
   install: printDocsSetup, // alias
   rules: printDocsRules,
   config: printDocsConfig,
   implement: printDocsImplement,
+  scoring: printDocsScoring,
   "visual-compare": printDocsVisualCompare,
   "design-tree": printDocsDesignTree,
 };
