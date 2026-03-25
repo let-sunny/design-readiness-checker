@@ -173,8 +173,16 @@ describe("RuleEngine.analyze — node exclusion", () => {
     });
 
     const file = makeFile({ document: doc });
-    const result = analyzeFile(file, { excludeNodeNames: ["IgnoreMe"] });
 
+    // Baseline: verify ignored node produces issues without exclusion
+    const baseline = analyzeFile(file);
+    const ignoredIssuesBaseline = baseline.issues.filter(
+      (i) => i.violation.nodeId === "i:1"
+    );
+    expect(ignoredIssuesBaseline.length).toBeGreaterThan(0);
+
+    // With exclusion: issues from that node should be absent
+    const result = analyzeFile(file, { excludeNodeNames: ["IgnoreMe"] });
     const ignoredIssues = result.issues.filter(
       (i) => i.violation.nodeId === "i:1"
     );
@@ -198,6 +206,9 @@ describe("RuleEngine.analyze — rule filtering", () => {
 
     // Enable only default-name rule
     const result = analyzeFile(file, { enabledRules: ["default-name"] });
+
+    // Must have at least one issue to avoid vacuous pass
+    expect(result.issues.length).toBeGreaterThan(0);
 
     // All issues should be from default-name only
     for (const issue of result.issues) {
@@ -242,7 +253,16 @@ describe("RuleEngine.analyze — rule filtering", () => {
     });
     const file = makeFile({ document: doc });
 
-    // no-dev-status is disabled by default in RULE_CONFIGS
+    // Positive control: explicitly enable no-dev-status to prove it can fire
+    const enabledConfigs = { ...RULE_CONFIGS };
+    enabledConfigs["no-dev-status"] = { ...enabledConfigs["no-dev-status"], enabled: true };
+    const resultEnabled = analyzeFile(file, { configs: enabledConfigs });
+    const devStatusEnabled = resultEnabled.issues.filter(
+      (i) => i.violation.ruleId === "no-dev-status"
+    );
+    expect(devStatusEnabled.length).toBeGreaterThan(0);
+
+    // Default config: no-dev-status is disabled → no issues
     const result = analyzeFile(file);
     const devStatusIssues = result.issues.filter(
       (i) => i.violation.ruleId === "no-dev-status"
