@@ -6,7 +6,6 @@ import { getFigmaToken } from "../../../core/engine/config-store.js";
 import { runCalibrationAnalyze } from "../../../agents/orchestrator.js";
 
 interface CalibrateRunOptions {
-  output?: string;
   token?: string;
   maxNodes?: number;
   sampling?: string;
@@ -18,7 +17,6 @@ export function registerCalibrateRun(cli: CAC): void {
       "calibrate-run <input>",
       "Run full calibration pipeline (analysis-only, conversion via /calibrate-loop)"
     )
-    .option("--output <path>", "Markdown report output path")
     .option("--token <token>", "Figma API token (or use FIGMA_TOKEN env var)")
     .option("--max-nodes <count>", "Max nodes to convert", { default: 5 })
     .option("--sampling <strategy>", "Sampling strategy (all | top-issues | random)", { default: "top-issues" })
@@ -39,7 +37,7 @@ export function registerCalibrateRun(cli: CAC): void {
           input,
           maxConversionNodes: options.maxNodes ?? 5,
           samplingStrategy: (options.sampling as "all" | "top-issues" | "random") ?? "top-issues",
-          outputPath: options.output ?? "unused",
+          outputPath: "unused",
           ...(figmaToken && { token: figmaToken }),
         });
 

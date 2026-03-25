@@ -13,7 +13,7 @@ interface CalibrateEvaluateOptions {
 export function registerCalibrateEvaluate(cli: CAC): void {
   cli
     .command(
-      "calibrate-evaluate <analysisJson> <conversionJson>",
+      "calibrate-evaluate [analysisJson] [conversionJson]",
       "Evaluate conversion results and generate calibration report"
     )
     .option("--output <path>", "Report output path")

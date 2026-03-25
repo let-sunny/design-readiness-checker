@@ -33,7 +33,8 @@ export function registerCalibrateGapReport(cli: CAC): void {
         // In --json mode, send progress messages to stderr so stdout contains only valid JSON
         const log = options.json ? console.error.bind(console) : console.log.bind(console);
 
-        const minRepeat = Math.max(1, parseInt(options.minRepeat ?? "2", 10) || 2);
+        const parsed = Number.parseInt(options.minRepeat ?? "2", 10);
+        const minRepeat = Number.isNaN(parsed) ? 2 : Math.max(1, parsed);
         const result = generateGapRuleReport({
           calibrationDir: resolve(options.calibrationDir ?? "logs/calibration"),
           minPatternRepeat: minRepeat,
