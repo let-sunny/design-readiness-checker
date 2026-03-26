@@ -1,6 +1,6 @@
 # Calibration Pipeline
 
-CanICode's rule scores and severity levels are not arbitrary — they are continuously validated against actual code conversion difficulty through an automated 6-agent pipeline.
+CanICode's rule scores and severity levels are not arbitrary — they are continuously validated against actual code conversion difficulty through an automated 6-step calibration pipeline.
 
 ## Why Calibrate?
 
