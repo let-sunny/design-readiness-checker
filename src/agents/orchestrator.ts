@@ -19,6 +19,24 @@ import {
 import type { CalibrationEvidenceEntry, DiscoveryEvidenceEntry } from "./evidence-collector.js";
 
 /**
+ * Normalize Converter's actualImpact (none/low/medium/high) to Difficulty enum (easy/moderate/hard/failed).
+ * Falls back to "moderate" for unknown values.
+ */
+function normalizeActualImpact(impact: string): string {
+  const mapping: Record<string, string> = {
+    none: "easy",
+    low: "easy",
+    easy: "easy",
+    medium: "moderate",
+    moderate: "moderate",
+    high: "hard",
+    hard: "hard",
+    failed: "failed",
+  };
+  return mapping[impact] ?? "moderate";
+}
+
+/**
  * Patterns that indicate environment/tooling noise rather than design issues.
  * Used to filter out non-actionable entries from discovery evidence.
  */
@@ -239,7 +257,7 @@ export function runCalibrationEvaluate(
       ruleRelatedStruggles: assessment.map(a => ({
         ruleId: a.ruleId,
         description: a.description,
-        actualImpact: a.actualImpact === "none" ? "easy" : a.actualImpact === "low" ? "easy" : a.actualImpact === "medium" ? "moderate" : a.actualImpact === "high" ? "hard" : a.actualImpact,
+        actualImpact: normalizeActualImpact(a.actualImpact),
       })),
       uncoveredStruggles: struggles,
     }];
