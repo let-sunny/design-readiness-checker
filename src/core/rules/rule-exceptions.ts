@@ -16,11 +16,13 @@ export function isVisualLeafType(type: string): boolean {
 
 /** Node has an IMAGE type fill */
 export function hasImageFill(node: AnalysisNode): boolean {
-  if (!node.fills || !Array.isArray(node.fills)) return false;
-  return node.fills.some((f) => {
-    const fill = f as Record<string, unknown>;
-    return fill["type"] === "IMAGE";
-  });
+  if (!Array.isArray(node.fills)) return false;
+  return node.fills.some(
+    (fill) =>
+      typeof fill === "object" &&
+      fill !== null &&
+      (fill as { type?: unknown }).type === "IMAGE",
+  );
 }
 
 /**
@@ -41,9 +43,13 @@ export function isVisualOnlyNode(node: AnalysisNode): boolean {
 // Auto-layout exceptions
 // ============================================
 
-/** Frames that don't need auto-layout */
+/** Frames that don't need auto-layout (only visual-leaf children like icon paths) */
 export function isAutoLayoutExempt(node: AnalysisNode): boolean {
-  if (isVisualOnlyNode(node)) return true;
+  if (
+    node.children &&
+    node.children.length > 0 &&
+    node.children.every((c) => VISUAL_LEAF_TYPES.has(c.type))
+  ) return true;
 
   return false;
 }
@@ -53,22 +59,11 @@ export function isAutoLayoutExempt(node: AnalysisNode): boolean {
 // ============================================
 
 /** Nodes that are allowed to use absolute positioning inside auto-layout */
-export function isAbsolutePositionExempt(node: AnalysisNode, parent?: AnalysisNode | undefined): boolean {
+export function isAbsolutePositionExempt(node: AnalysisNode): boolean {
   if (isVisualOnlyNode(node)) return true;
 
   // Intentional name patterns (badge, close, overlay, etc.)
   if (isExcludedName(node.name)) return true;
-
-  // Small elements relative to parent (badges, decorations) — absolute positioning is expected
-  if (parent?.absoluteBoundingBox && node.absoluteBoundingBox) {
-    const parentBB = parent.absoluteBoundingBox;
-    const nodeBB = node.absoluteBoundingBox;
-    if (parentBB.width > 0 && parentBB.height > 0) {
-      const widthRatio = nodeBB.width / parentBB.width;
-      const heightRatio = nodeBB.height / parentBB.height;
-      if (widthRatio < 0.25 && heightRatio < 0.25) return true;
-    }
-  }
 
   return false;
 }

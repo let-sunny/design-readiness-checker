@@ -72,9 +72,9 @@ describe("isAutoLayoutExempt", () => {
     expect(isAutoLayoutExempt(node)).toBe(true);
   });
 
-  it("exempts frames with image fills", () => {
-    const node = makeNode({ fills: [{ type: "IMAGE" }], children: [makeNode()] });
-    expect(isAutoLayoutExempt(node)).toBe(true);
+  it("does not exempt image-filled frames with content children", () => {
+    const node = makeNode({ fills: [{ type: "IMAGE" }], children: [makeNode({ type: "TEXT" as any })] });
+    expect(isAutoLayoutExempt(node)).toBe(false);
   });
 
   it("does not exempt INSTANCE nodes", () => {
@@ -106,29 +106,7 @@ describe("isAbsolutePositionExempt", () => {
     expect(isAbsolutePositionExempt(node)).toBe(true);
   });
 
-  it("exempts small elements relative to parent (badges, decorations)", () => {
-    const parent = makeNode({
-      absoluteBoundingBox: { x: 0, y: 0, width: 300, height: 200 },
-    });
-    const node = makeNode({
-      name: "Count",
-      absoluteBoundingBox: { x: 270, y: 0, width: 24, height: 24 },
-    });
-    expect(isAbsolutePositionExempt(node, parent)).toBe(true);
-  });
-
-  it("does not exempt large elements relative to parent", () => {
-    const parent = makeNode({
-      absoluteBoundingBox: { x: 0, y: 0, width: 300, height: 200 },
-    });
-    const node = makeNode({
-      absoluteBoundingBox: { x: 0, y: 0, width: 200, height: 150 },
-      fills: [{ type: "SOLID" }],
-    });
-    expect(isAbsolutePositionExempt(node, parent)).toBe(false);
-  });
-
-  it("does not exempt plain frame without parent", () => {
+  it("does not exempt plain frame", () => {
     const node = makeNode({ fills: [{ type: "SOLID" }] });
     expect(isAbsolutePositionExempt(node)).toBe(false);
   });
@@ -200,7 +178,7 @@ describe("isSizeConstraintExempt", () => {
     const node = makeNode({ type: "TEXT" as any, layoutSizingHorizontal: "FILL" as any });
     const ctx = makeContext({
       parent,
-      siblings: [node, makeNode({ layoutSizingHorizontal: "FILL" as any })],
+      siblings: [node, makeNode({ layoutSizingHorizontal: "FIXED" as any })],
     });
     expect(isSizeConstraintExempt(node, ctx)).toBe(true);
   });

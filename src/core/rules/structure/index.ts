@@ -141,7 +141,7 @@ const absolutePositionInAutoLayoutCheck: RuleCheckFn = (node, context) => {
   if (!hasAutoLayout(context.parent)) return null;
   if (node.layoutPositioning !== "ABSOLUTE") return null;
 
-  if (isAbsolutePositionExempt(node, context.parent)) return null;
+  if (isAbsolutePositionExempt(node)) return null;
 
   return {
     ruleId: absolutePositionInAutoLayoutDef.id,
