@@ -239,7 +239,7 @@ export function runCalibrationEvaluate(
       ruleRelatedStruggles: assessment.map(a => ({
         ruleId: a.ruleId,
         description: a.description,
-        actualImpact: a.actualImpact === "low" ? "easy" : a.actualImpact === "high" ? "hard" : a.actualImpact,
+        actualImpact: a.actualImpact === "none" ? "easy" : a.actualImpact === "low" ? "easy" : a.actualImpact === "medium" ? "moderate" : a.actualImpact === "high" ? "hard" : a.actualImpact,
       })),
       uncoveredStruggles: struggles,
     }];
