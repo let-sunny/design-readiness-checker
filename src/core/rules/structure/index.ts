@@ -20,6 +20,15 @@ function hasTextContent(node: AnalysisNode): boolean {
   return node.type === "TEXT" || (node.children?.some((c) => c.type === "TEXT") ?? false);
 }
 
+const VECTOR_LIKE_TYPES = new Set([
+  "VECTOR", "BOOLEAN_OPERATION", "ELLIPSE", "LINE", "STAR", "REGULAR_POLYGON", "RECTANGLE",
+]);
+
+function isIconLikeFrame(node: AnalysisNode): boolean {
+  if (!node.children || node.children.length === 0) return false;
+  return node.children.every((c) => VECTOR_LIKE_TYPES.has(c.type));
+}
+
 function hasOverlappingBounds(a: AnalysisNode, b: AnalysisNode): boolean {
   const boxA = a.absoluteBoundingBox;
   const boxB = b.absoluteBoundingBox;
@@ -51,6 +60,9 @@ const noAutoLayoutCheck: RuleCheckFn = (node, context) => {
   if (node.type !== "FRAME" && !isContainerNode(node)) return null;
   if (hasAutoLayout(node)) return null;
   if (!node.children || node.children.length === 0) return null;
+
+  // Icon-like frames (all children are vector/shape) don't need auto-layout
+  if (isIconLikeFrame(node)) return null;
 
   // Priority 1: Check for overlapping visible children (ambiguous-structure)
   if (node.children.length >= 2) {
