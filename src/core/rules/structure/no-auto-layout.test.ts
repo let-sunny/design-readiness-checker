@@ -37,28 +37,35 @@ describe("no-auto-layout", () => {
     expect(noAutoLayout.check(node, ctx)).toBeNull();
   });
 
-  it("returns null for icon-like frame with only vector/shape children", () => {
-    const vector1 = makeNode({ id: "v:1", type: "VECTOR" as any, name: "Path" });
-    const vector2 = makeNode({ id: "v:2", type: "BOOLEAN_OPERATION" as any, name: "Union" });
-    const node = makeNode({ name: "IconArrow", children: [vector1, vector2] });
-    const ctx = makeContext();
-    expect(noAutoLayout.check(node, ctx)).toBeNull();
-  });
-
-  it("returns null for icon-like frame with rectangle and ellipse children", () => {
-    const rect = makeNode({ id: "r:1", type: "RECTANGLE" as any, name: "Bg" });
-    const ellipse = makeNode({ id: "e:1", type: "ELLIPSE" as any, name: "Circle" });
-    const node = makeNode({ name: "IconDot", children: [rect, ellipse] });
-    const ctx = makeContext();
-    expect(noAutoLayout.check(node, ctx)).toBeNull();
-  });
-
-  it("flags frame with mixed vector and non-vector children", () => {
+  it("returns null for frame with single vector child", () => {
     const vector = makeNode({ id: "v:1", type: "VECTOR" as any, name: "Path" });
+    const node = makeNode({ name: "IconArrow", children: [vector] });
+    expect(noAutoLayout.check(node, makeContext())).toBeNull();
+  });
+
+  it("returns null for frame with single boolean operation child", () => {
+    const union = makeNode({ id: "b:1", type: "BOOLEAN_OPERATION" as any, name: "Union" });
+    const node = makeNode({ name: "IconStar", children: [union] });
+    expect(noAutoLayout.check(node, makeContext())).toBeNull();
+  });
+
+  it("returns null for frame with single rectangle child", () => {
+    const rect = makeNode({ id: "r:1", type: "RECTANGLE" as any, name: "Bg" });
+    const node = makeNode({ name: "Thumb", children: [rect] });
+    expect(noAutoLayout.check(node, makeContext())).toBeNull();
+  });
+
+  it("flags frame with multiple vector children (no auto-layout)", () => {
+    const v1 = makeNode({ id: "v:1", type: "VECTOR" as any, name: "Path1" });
+    const v2 = makeNode({ id: "v:2", type: "VECTOR" as any, name: "Path2" });
+    const node = makeNode({ name: "IconComplex", children: [v1, v2] });
+    expect(noAutoLayout.check(node, makeContext())).not.toBeNull();
+  });
+
+  it("flags frame with single non-visual child (e.g. text)", () => {
     const text = makeNode({ id: "t:1", type: "TEXT" as any, name: "Label" });
-    const node = makeNode({ name: "BadgeWithIcon", children: [vector, text] });
-    const ctx = makeContext();
-    expect(noAutoLayout.check(node, ctx)).not.toBeNull();
+    const node = makeNode({ name: "TextWrap", children: [text] });
+    expect(noAutoLayout.check(node, makeContext())).not.toBeNull();
   });
 
   it("flags frame without auto layout that has children", () => {

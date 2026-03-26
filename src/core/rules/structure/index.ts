@@ -20,13 +20,15 @@ function hasTextContent(node: AnalysisNode): boolean {
   return node.type === "TEXT" || (node.children?.some((c) => c.type === "TEXT") ?? false);
 }
 
-const VECTOR_LIKE_TYPES = new Set([
+const VISUAL_LEAF_TYPES = new Set([
   "VECTOR", "BOOLEAN_OPERATION", "ELLIPSE", "LINE", "STAR", "REGULAR_POLYGON", "RECTANGLE",
 ]);
 
-function isIconLikeFrame(node: AnalysisNode): boolean {
-  if (!node.children || node.children.length === 0) return false;
-  return node.children.every((c) => VECTOR_LIKE_TYPES.has(c.type));
+function isSingleVisualChildFrame(node: AnalysisNode): boolean {
+  if (!node.children || node.children.length !== 1) return false;
+  const child = node.children[0];
+  if (!child) return false;
+  return VISUAL_LEAF_TYPES.has(child.type);
 }
 
 function hasOverlappingBounds(a: AnalysisNode, b: AnalysisNode): boolean {
@@ -61,8 +63,8 @@ const noAutoLayoutCheck: RuleCheckFn = (node, context) => {
   if (hasAutoLayout(node)) return null;
   if (!node.children || node.children.length === 0) return null;
 
-  // Icon-like frames (all children are vector/shape) don't need auto-layout
-  if (isIconLikeFrame(node)) return null;
+  // Single visual child frames (e.g. icon wrapping one vector) don't need auto-layout
+  if (isSingleVisualChildFrame(node)) return null;
 
   // Priority 1: Check for overlapping visible children (ambiguous-structure)
   if (node.children.length >= 2) {
