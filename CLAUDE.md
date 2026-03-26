@@ -230,6 +230,15 @@ pnpm lint           # Type check
 
 - Commit messages: conventional commits (feat, fix, docs, refactor, test, chore)
 
+### PR Workflow
+
+1. PR은 **draft**로 먼저 생성 → 유저 확인 후 ready로 전환
+2. 수정 필요 시 다시 **draft로 전환** 후 작업 → 완료되면 다시 ready
+3. PR 생성 후 `subscribe_pr_activity`로 **구독** 걸어서 리뷰/CI 실시간 감시
+4. CodeRabbit 리뷰 대기 — 첫 코멘트 달리고 rate limit 걸리면 본문의 대기 시간만큼 기다린 후 empty commit으로 재트리거
+5. 리뷰 코멘트 오면 즉시 대응/수정
+6. 머지는 반드시 **유저 확인** 후 진행 — squash merge, 머지 후 브랜치 삭제
+
 ## Severity Levels
 
 Rules are classified into 4 severity levels:
