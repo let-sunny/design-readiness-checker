@@ -59,9 +59,10 @@ Not all fixtures go through the full pipeline. The tier is based on the current 
 
 | Grade | Pipeline | Rationale |
 |-------|----------|-----------|
-| A+ and above | Full 6-step pipeline | High-quality designs benefit from gap analysis |
-| B to B+ | Visual-only (skip gap analysis) | Moderate quality — focus on score calibration |
-| Below B | Skip visual entirely | Too many issues; visual comparison is noisy |
+| A+ and above | Full pipeline (Converter + Gap Analysis) | High-quality designs benefit from gap analysis |
+| Below A | Converter + visual-compare only (skip gap analysis) | Low-scoring designs need score validation the most |
+
+**Always run the Converter** regardless of grade. Skipping visual-compare on low-scoring designs means scores can never be validated.
 
 ## Agents
 
@@ -246,7 +247,7 @@ Gap data is also saved per run in `logs/calibration/*/gaps.json`.
 
 New rules are added through a 6-agent pipeline (`/add-rule`). See [CALIBRATION-PLAYBOOK.md](./CALIBRATION-PLAYBOOK.md) for operational details.
 
-```
+```bash
 /add-rule "concept" fixtures/path
 
 Step 1 — Researcher: explore fixture data + data/discovery-evidence.json

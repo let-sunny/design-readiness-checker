@@ -58,7 +58,7 @@ None — fully automatic. Review the commit if you want.
 
 ### In Claude Code
 
-```
+```bash
 /calibrate-night fixtures/
 ```
 
