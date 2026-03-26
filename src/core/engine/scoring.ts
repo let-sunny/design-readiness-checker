@@ -47,26 +47,17 @@ export interface ScoreReport {
 export type Grade = "S" | "A+" | "A" | "B+" | "B" | "C+" | "C" | "D" | "F";
 
 /**
- * Severity weights for density calculation.
+ * Density weighting now uses per-rule `calculatedScore` from the rule engine,
+ * which incorporates both the calibrated rule score and depthWeight.
  *
- * Rationale (initial intuition, pending calibration validation):
- * - blocking (3.0): issues that prevent correct implementation — weighted highest
- * - risk (2.0): implementable now but will break later — significant but less than blocking
- * - missing-info (1.0): forces guessing — baseline weight
- * - suggestion (0.5): nice-to-have improvements — minimal impact on implementation accuracy
+ * Previously, flat severity weights (blocking=3.0, risk=2.0, etc.) were used,
+ * making all rules within the same severity contribute equally and rendering
+ * the per-rule scores in rule-config.ts effectively unused.
  *
- * The 3:2:1:0.5 ratio reflects relative implementation difficulty. A single blocking
- * issue (e.g., missing auto-layout) costs more effort than 3 suggestions combined.
- * These weights are multiplied with issue counts to produce a weighted density score.
- *
- * Status: initial values. To be validated via /calibrate-loop against visual-compare results.
+ * Now: `no-auto-layout` (score: -10, depthWeight: 1.5) at root contributes 15
+ * to density, while `unnecessary-node` (score: -2, no depthWeight) contributes 2.
+ * This makes calibration loop score adjustments flow through to user-facing scores.
  */
-const SEVERITY_DENSITY_WEIGHT: Record<Severity, number> = {
-  blocking: 3.0,
-  risk: 2.0,
-  "missing-info": 1.0,
-  suggestion: 0.5,
-};
 
 /**
  * Total rules per category — used as denominator for diversity scoring.
@@ -181,7 +172,7 @@ export function calculateScores(result: AnalysisResult): ScoreReport {
 
     categoryScores[category].issueCount++;
     categoryScores[category].bySeverity[severity]++;
-    categoryScores[category].weightedIssueCount += SEVERITY_DENSITY_WEIGHT[severity];
+    categoryScores[category].weightedIssueCount += Math.abs(issue.calculatedScore);
     uniqueRulesPerCategory.get(category)!.add(ruleId);
   }
 

@@ -86,18 +86,34 @@ describe("calculateScores", () => {
     expect(scores.summary.totalIssues).toBe(4);
   });
 
-  it("applies severity density weights (blocking=3.0 > risk=2.0 > missing-info=1.0 > suggestion=0.5)", () => {
-    const blocking = calculateScores(makeResult([
-      makeIssue({ ruleId: "no-auto-layout", category: "structure", severity: "blocking" }),
+  it("uses calculatedScore for density: higher score = more density impact", () => {
+    const heavy = calculateScores(makeResult([
+      makeIssue({ ruleId: "no-auto-layout", category: "structure", severity: "blocking", score: -10 }),
     ], 100));
 
-    const suggestion = calculateScores(makeResult([
-      makeIssue({ ruleId: "numeric-suffix-name", category: "naming", severity: "suggestion" }),
+    const light = calculateScores(makeResult([
+      makeIssue({ ruleId: "unnecessary-node", category: "structure", severity: "suggestion", score: -2 }),
     ], 100));
 
-    expect(blocking.byCategory.structure.densityScore).toBeLessThan(
-      suggestion.byCategory.naming.densityScore
+    expect(heavy.byCategory.structure.densityScore).toBeLessThan(
+      light.byCategory.structure.densityScore
     );
+  });
+
+  it("differentiates rules within the same severity by score", () => {
+    const highScore = calculateScores(makeResult([
+      makeIssue({ ruleId: "no-auto-layout", category: "structure", severity: "blocking", score: -10 }),
+    ], 100));
+
+    const lowScore = calculateScores(makeResult([
+      makeIssue({ ruleId: "absolute-position-in-auto-layout", category: "structure", severity: "blocking", score: -3 }),
+    ], 100));
+
+    expect(highScore.byCategory.structure.densityScore).toBeLessThan(
+      lowScore.byCategory.structure.densityScore
+    );
+    expect(highScore.byCategory.structure.weightedIssueCount).toBe(10);
+    expect(lowScore.byCategory.structure.weightedIssueCount).toBe(3);
   });
 
   it("density score decreases as weighted issue count increases relative to node count", () => {
