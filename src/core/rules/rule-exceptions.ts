@@ -32,16 +32,6 @@ function isSmallRelativeToParent(node: AnalysisNode, parent: AnalysisNode): bool
   return widthRatio < 0.25 && heightRatio < 0.25;
 }
 
-function isFullSizeRelativeToParent(node: AnalysisNode, parent: AnalysisNode): boolean {
-  const nodeBB = node.absoluteBoundingBox;
-  const parentBB = parent.absoluteBoundingBox;
-  if (!nodeBB || !parentBB) return false;
-  if (parentBB.width === 0 || parentBB.height === 0) return false;
-
-  const widthRatio = nodeBB.width / parentBB.width;
-  const heightRatio = nodeBB.height / parentBB.height;
-  return widthRatio >= 0.9 && heightRatio >= 0.9;
-}
 
 // ============================================
 // Auto-layout exceptions
@@ -77,9 +67,6 @@ export function isAbsolutePositionExempt(node: AnalysisNode, context: RuleContex
 
   // Inside a component definition — designer's intentional layout
   if (context.parent?.type === "COMPONENT") return true;
-
-  // Full-size background element (>= 90% of parent) — background layer
-  if (context.parent && isFullSizeRelativeToParent(node, context.parent)) return true;
 
   return false;
 }

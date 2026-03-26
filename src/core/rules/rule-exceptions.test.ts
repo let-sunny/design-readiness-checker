@@ -57,28 +57,6 @@ describe("isAutoLayoutExempt", () => {
 });
 
 describe("isAbsolutePositionExempt", () => {
-  it("exempts full-size background elements", () => {
-    const parent = makeNode({
-      absoluteBoundingBox: { x: 0, y: 0, width: 400, height: 300 },
-    });
-    const node = makeNode({
-      absoluteBoundingBox: { x: 0, y: 0, width: 400, height: 300 },
-    });
-    const ctx = makeContext({ parent });
-    expect(isAbsolutePositionExempt(node, ctx)).toBe(true);
-  });
-
-  it("exempts 90%+ sized elements as background", () => {
-    const parent = makeNode({
-      absoluteBoundingBox: { x: 0, y: 0, width: 400, height: 300 },
-    });
-    const node = makeNode({
-      absoluteBoundingBox: { x: 0, y: 0, width: 380, height: 280 },
-    });
-    const ctx = makeContext({ parent });
-    expect(isAbsolutePositionExempt(node, ctx)).toBe(true);
-  });
-
   it("exempts nodes with image fills", () => {
     const parent = makeNode({
       absoluteBoundingBox: { x: 0, y: 0, width: 400, height: 300 },
