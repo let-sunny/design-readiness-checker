@@ -33,16 +33,7 @@ export function isVisualOnlyNode(node: AnalysisNode): boolean {
   return false;
 }
 
-function isSmallRelativeToParent(node: AnalysisNode, parent: AnalysisNode): boolean {
-  const nodeBB = node.absoluteBoundingBox;
-  const parentBB = parent.absoluteBoundingBox;
-  if (!nodeBB || !parentBB) return false;
-  if (parentBB.width === 0 || parentBB.height === 0) return false;
 
-  const widthRatio = nodeBB.width / parentBB.width;
-  const heightRatio = nodeBB.height / parentBB.height;
-  return widthRatio < 0.25 && heightRatio < 0.25;
-}
 
 
 // ============================================
@@ -64,14 +55,8 @@ export function isAutoLayoutExempt(node: AnalysisNode): boolean {
 // ============================================
 
 /** Nodes that are allowed to use absolute positioning inside auto-layout */
-export function isAbsolutePositionExempt(node: AnalysisNode, context: RuleContext): boolean {
+export function isAbsolutePositionExempt(node: AnalysisNode): boolean {
   if (isVisualOnlyNode(node)) return true;
-
-  // Small decoration relative to parent (< 25% size)
-  if (context.parent && isSmallRelativeToParent(node, context.parent)) return true;
-
-  // Inside a component definition — designer's intentional layout
-  if (context.parent?.type === "COMPONENT") return true;
 
   return false;
 }

@@ -142,7 +142,7 @@ const absolutePositionInAutoLayoutCheck: RuleCheckFn = (node, context) => {
   if (!hasAutoLayout(context.parent)) return null;
   if (node.layoutPositioning !== "ABSOLUTE") return null;
 
-  if (isAbsolutePositionExempt(node, context)) return null;
+  if (isAbsolutePositionExempt(node)) return null;
 
   // Exception: intentional name patterns (badge, close, overlay, etc.)
   if (isExcludedName(node.name)) return null;

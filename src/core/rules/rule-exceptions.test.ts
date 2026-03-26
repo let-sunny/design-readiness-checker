@@ -95,26 +95,20 @@ describe("isAutoLayoutExempt", () => {
 
 describe("isAbsolutePositionExempt", () => {
   it("exempts nodes with image fills", () => {
-    const parent = makeNode({
-      absoluteBoundingBox: { x: 0, y: 0, width: 400, height: 300 },
-    });
     const node = makeNode({
-      absoluteBoundingBox: { x: 10, y: 10, width: 150, height: 150 },
       fills: [{ type: "IMAGE", scaleMode: "FILL" }],
     });
-    const ctx = makeContext({ parent });
-    expect(isAbsolutePositionExempt(node, ctx)).toBe(true);
+    expect(isAbsolutePositionExempt(node)).toBe(true);
   });
 
-  it("does not exempt medium-sized elements", () => {
-    const parent = makeNode({
-      absoluteBoundingBox: { x: 0, y: 0, width: 400, height: 300 },
-    });
-    const node = makeNode({
-      absoluteBoundingBox: { x: 0, y: 0, width: 200, height: 150 },
-    });
-    const ctx = makeContext({ parent });
-    expect(isAbsolutePositionExempt(node, ctx)).toBe(false);
+  it("exempts vector nodes", () => {
+    const node = makeNode({ type: "VECTOR" as any });
+    expect(isAbsolutePositionExempt(node)).toBe(true);
+  });
+
+  it("does not exempt plain frame", () => {
+    const node = makeNode({ fills: [{ type: "SOLID" }] });
+    expect(isAbsolutePositionExempt(node)).toBe(false);
   });
 });
 
