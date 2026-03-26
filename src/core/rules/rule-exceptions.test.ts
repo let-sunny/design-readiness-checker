@@ -79,6 +79,18 @@ describe("isAbsolutePositionExempt", () => {
     expect(isAbsolutePositionExempt(node, ctx)).toBe(true);
   });
 
+  it("exempts nodes with image fills", () => {
+    const parent = makeNode({
+      absoluteBoundingBox: { x: 0, y: 0, width: 400, height: 300 },
+    });
+    const node = makeNode({
+      absoluteBoundingBox: { x: 10, y: 10, width: 150, height: 150 },
+      fills: [{ type: "IMAGE", scaleMode: "FILL" }],
+    });
+    const ctx = makeContext({ parent });
+    expect(isAbsolutePositionExempt(node, ctx)).toBe(true);
+  });
+
   it("does not exempt medium-sized elements", () => {
     const parent = makeNode({
       absoluteBoundingBox: { x: 0, y: 0, width: 400, height: 300 },

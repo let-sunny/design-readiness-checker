@@ -69,6 +69,9 @@ export function isAbsolutePositionExempt(node: AnalysisNode, context: RuleContex
   // Vector/graphic nodes — absolute positioning is expected
   if (VISUAL_LEAF_TYPES.has(node.type)) return true;
 
+  // Image nodes — positioned freely for visual composition
+  if (hasImageFill(node)) return true;
+
   // Small decoration relative to parent (< 25% size)
   if (context.parent && isSmallRelativeToParent(node, context.parent)) return true;
 

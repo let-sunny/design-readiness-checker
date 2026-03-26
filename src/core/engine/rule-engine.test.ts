@@ -279,7 +279,7 @@ describe("RuleEngine.analyze — rule filtering", () => {
 describe("RuleEngine.analyze — depth weight calculation", () => {
   it("applies higher weight at root level (depthWeight interpolation)", () => {
     // no-auto-layout requires FRAME with children to trigger, so every level needs a child
-    const leaf = makeNode({ id: "leaf:1", name: "Leaf", type: "RECTANGLE" });
+    const leaf = makeNode({ id: "leaf:1", name: "Leaf", type: "TEXT" });
     const grandchild = makeNode({ id: "gc:1", name: "GC Frame", type: "FRAME", children: [leaf] });
     const child = makeNode({ id: "c:1", name: "Child Frame", type: "FRAME", children: [grandchild] });
     const root = makeNode({
