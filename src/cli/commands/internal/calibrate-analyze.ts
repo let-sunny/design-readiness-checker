@@ -6,6 +6,7 @@ import type { CAC } from "cac";
 import {
   runCalibrationAnalyze,
   filterConversionCandidates,
+  determineCalibrationTier,
 } from "../../../agents/orchestrator.js";
 
 interface CalibrateAnalyzeOptions {
@@ -47,12 +48,16 @@ export function registerCalibrateAnalyze(cli: CAC): void {
           analysisOutput.analysisResult.file.document
         );
 
+        const percentage = analysisOutput.scoreReport.overall.percentage;
+        const calibrationTier = determineCalibrationTier(percentage);
+
         const outputData = {
           fileKey,
           fileName: analysisOutput.analysisResult.file.name,
           analyzedAt: analysisOutput.analysisResult.analyzedAt,
           nodeCount: analysisOutput.analysisResult.nodeCount,
           issueCount: analysisOutput.analysisResult.issues.length,
+          calibrationTier,
           scoreReport: analysisOutput.scoreReport,
           nodeIssueSummaries: filteredSummaries,
           ruleScores,
@@ -71,7 +76,8 @@ export function registerCalibrateAnalyze(cli: CAC): void {
         console.log(`  Nodes: ${outputData.nodeCount}`);
         console.log(`  Issues: ${outputData.issueCount}`);
         console.log(`  Nodes with issues: ${outputData.nodeIssueSummaries.length}`);
-        console.log(`  Grade: ${outputData.scoreReport.overall.grade} (${outputData.scoreReport.overall.percentage}%)`);
+        console.log(`  Grade: ${outputData.scoreReport.overall.grade} (${percentage}%)`);
+        console.log(`  Calibration tier: ${calibrationTier}`);
         console.log(`\nOutput saved: ${outputPath}`);
       } catch (error) {
         console.error(

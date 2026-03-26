@@ -55,14 +55,14 @@ Step 6.5 — Prune Evidence
 
 ### Tiered Approach
 
-Not all fixtures go through the full pipeline. The tier is based on the current grade:
+Not all fixtures go through the full pipeline. The tier is determined by `calibrate-analyze` CLI and output as `calibrationTier` in `analysis.json` (thresholds defined in `src/agents/orchestrator.ts` → `CALIBRATION_TIER_THRESHOLDS`):
 
-| Grade | Pipeline | Rationale |
-|-------|----------|-----------|
-| A+ and above | Full pipeline (Converter + Gap Analysis) | High-quality designs benefit from gap analysis |
-| Below A | Converter + visual-compare only (skip gap analysis) | Low-scoring designs need score validation the most |
+| Tier | Grade | Pipeline | Rationale |
+|------|-------|----------|-----------|
+| `full` | A+ and above (≥90%) | Converter + Gap Analysis | High-quality designs benefit from gap analysis |
+| `visual-only` | Below A (<90%) | Converter + visual-compare only | Low-scoring designs need score validation the most |
 
-**Always run the Converter** regardless of grade. Skipping visual-compare on low-scoring designs means scores can never be validated.
+**Always run the Converter** regardless of tier. Skipping visual-compare on low-scoring designs means scores can never be validated.
 
 ## Agents
 

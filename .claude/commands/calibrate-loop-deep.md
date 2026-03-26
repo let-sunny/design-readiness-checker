@@ -33,26 +33,21 @@ npx canicode calibrate-analyze "$ARGUMENTS" --run-dir $RUN_DIR
 
 Read `$RUN_DIR/analysis.json`. If `issueCount` is 0, stop here.
 
-Check the grade from `scoreReport.overall.grade` and `scoreReport.overall.percentage` and branch into 3 tiers:
+Read the `calibrationTier` field from `analysis.json`. The CLI determines the tier based on grade percentage. Branch accordingly:
 
-- **A or higher (percentage >= 90)**: Full pipeline — proceed to Step 2 (Converter + visual-compare + Gap Analysis)
-- **B to B+ (percentage 68-89)**: Converter + visual-compare, but **skip Step 3 (Gap Analysis)**.
-- **Below B (percentage < 68)**: Skip Steps 2-3 entirely. Jump to Step 4 (Evaluation).
+- **`"full"`**: Full pipeline — proceed to Step 2 (Converter + visual-compare + Gap Analysis)
+- **`"visual-only"`**: Converter + visual-compare, but **skip Step 3 (Gap Analysis)**. Gap analysis on diff images is only meaningful at high similarity.
+
+**Always run the Converter** regardless of tier. Low-scoring designs need score validation the most.
 
 Append to `$RUN_DIR/activity.jsonl`:
 ```json
-{"step":"Analysis","timestamp":"<ISO8601>","result":"nodes=<N> issues=<N> grade=<X> (<N>%) tier=<full|visual-only|skip>","durationMs":<ms>}
+{"step":"Analysis","timestamp":"<ISO8601>","result":"nodes=<N> issues=<N> grade=<X> (<N>%) tier=<calibrationTier>","durationMs":<ms>}
 ```
 
-If skipping visual-compare entirely (< 68%), also append:
+If tier is `"visual-only"`, append after Converter completes:
 ```json
-{"step":"Converter","timestamp":"<ISO8601>","result":"SKIPPED — grade below B (<percentage>%)","durationMs":0}
-{"step":"Gap Analyzer","timestamp":"<ISO8601>","result":"SKIPPED — no visual-compare data","durationMs":0}
-```
-
-If skipping only Gap Analysis (68-89%), append after Converter completes:
-```json
-{"step":"Gap Analyzer","timestamp":"<ISO8601>","result":"SKIPPED — grade below A (<percentage>%), visual-compare only","durationMs":0}
+{"step":"Gap Analyzer","timestamp":"<ISO8601>","result":"SKIPPED — tier=visual-only, gap analysis skipped","durationMs":0}
 ```
 
 ### Step 2 — Converter

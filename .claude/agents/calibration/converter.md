@@ -62,13 +62,13 @@ Read and follow `.claude/skills/design-to-code/PROMPT.md` for all code generatio
    ```
    This saves `figma.png`, `code.png`, and `diff.png` into the run directory.
    Replace `:` with `-` in the nodeId for the URL.
-5. Use similarity to determine overall difficulty:
+5. Use similarity to determine overall difficulty (thresholds defined in `src/agents/orchestrator.ts` → `SIMILARITY_DIFFICULTY_THRESHOLDS`):
 
    | Similarity | Difficulty |
    |-----------|-----------|
    | 90%+ | easy |
-   | 70-90% | moderate |
-   | 50-70% | hard |
+   | 70-89% | moderate |
+   | 50-69% | hard |
    | <50% | failed |
 
 6. **MANDATORY — Rule Impact Assessment**: For EVERY rule ID in `nodeIssueSummaries[].flaggedRuleIds`, assess its actual impact on conversion. Read the analysis JSON, collect all unique `flaggedRuleIds`, and for each one write an entry in `ruleImpactAssessment`. This array MUST NOT be empty if there are flagged rules.

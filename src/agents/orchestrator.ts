@@ -37,6 +37,45 @@ function normalizeActualImpact(impact: string): string {
 }
 
 /**
+ * Calibration tier thresholds (percentage-based).
+ * - "full": Converter + visual-compare + Gap Analysis
+ * - "visual-only": Converter + visual-compare (Gap Analysis skipped)
+ */
+export const CALIBRATION_TIER_THRESHOLDS = {
+  full: 90,       // A or higher
+  visualOnly: 0,  // everything else — always run Converter
+} as const;
+
+export type CalibrationTier = "full" | "visual-only";
+
+/**
+ * Determine calibration tier from analysis percentage.
+ */
+export function determineCalibrationTier(percentage: number): CalibrationTier {
+  if (percentage >= CALIBRATION_TIER_THRESHOLDS.full) return "full";
+  return "visual-only";
+}
+
+/**
+ * Map visual-compare similarity percentage to conversion difficulty.
+ * Used by Converter and Evaluation agents.
+ */
+export const SIMILARITY_DIFFICULTY_THRESHOLDS = {
+  easy: 90,
+  moderate: 70,
+  hard: 50,
+} as const;
+
+export type ConversionDifficulty = "easy" | "moderate" | "hard" | "failed";
+
+export function similarityToDifficulty(similarity: number): ConversionDifficulty {
+  if (similarity >= SIMILARITY_DIFFICULTY_THRESHOLDS.easy) return "easy";
+  if (similarity >= SIMILARITY_DIFFICULTY_THRESHOLDS.moderate) return "moderate";
+  if (similarity >= SIMILARITY_DIFFICULTY_THRESHOLDS.hard) return "hard";
+  return "failed";
+}
+
+/**
  * Patterns that indicate environment/tooling noise rather than design issues.
  * Used to filter out non-actionable entries from discovery evidence.
  */
