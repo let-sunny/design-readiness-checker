@@ -165,9 +165,7 @@ ${figmaToken ? `  <script>
     async function postComment(btn) {
       const fileKey = btn.dataset.fileKey;
       const nodeId = btn.dataset.nodeId.replace(/-/g, ':');
-      const rule = btn.dataset.rule;
       const message = btn.dataset.message;
-      const path = btn.dataset.path;
 
       const commentBody = '[CanICode] ' + message;
 
@@ -345,7 +343,7 @@ function renderIssueRow(
                   </div>${screenshotHtml}
                   <div class="flex items-center gap-2 mt-1 no-print">
                     <a href="${link}" target="_blank" rel="noopener" class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium border border-border rounded-md hover:bg-muted transition-colors">Open in Figma <span>→</span></a>${figmaToken ? `
-                    <button onclick="postComment(this)" data-file-key="${esc(fileKey)}" data-node-id="${esc(issue.violation.nodeId)}" data-rule="${esc(def.name)}" data-message="${esc(issue.violation.message)}" data-path="${esc(issue.violation.nodePath)}" class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium border border-border rounded-md hover:bg-muted transition-colors cursor-pointer">Comment on Figma</button>` : ""}
+                    <button onclick="postComment(this)" data-file-key="${esc(fileKey)}" data-node-id="${esc(issue.violation.nodeId)}" data-message="${esc(issue.violation.message)}" class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium border border-border rounded-md hover:bg-muted transition-colors cursor-pointer">Comment on Figma</button>` : ""}
                   </div>
                 </div>
               </details>`;
