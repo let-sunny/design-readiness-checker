@@ -46,7 +46,7 @@ describe("no-auto-layout", () => {
     expect(result).not.toBeNull();
     expect(result!.ruleId).toBe("no-auto-layout");
     expect(result!.message).toContain("Container");
-    expect(result!.message).toContain("no Auto Layout");
+    expect(result!.message).toContain("no auto-layout");
   });
 
   it("flags frame with layoutMode NONE that has children", () => {

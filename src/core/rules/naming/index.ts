@@ -79,7 +79,7 @@ const defaultNameCheck: RuleCheckFn = (node, context) => {
     ruleId: defaultNameDef.id,
     nodeId: node.id,
     nodePath: context.path.join(" > "),
-    message: `"${node.name}" is a default name - provide a meaningful name`,
+    message: `${node.type} "${node.name}" has a default name — rename to describe its purpose (e.g., "Header", "ProductCard")`,
   };
 };
 
@@ -116,7 +116,7 @@ const nonSemanticNameCheck: RuleCheckFn = (node, context) => {
     ruleId: nonSemanticNameDef.id,
     nodeId: node.id,
     nodePath: context.path.join(" > "),
-    message: `"${node.name}" is a non-semantic name - describe its purpose`,
+    message: `${node.type} "${node.name}" is a non-semantic name — rename to describe its role (e.g., "Divider", "Background")`,
   };
 };
 
@@ -172,7 +172,7 @@ const inconsistentNamingConventionCheck: RuleCheckFn = (node, context) => {
       ruleId: inconsistentNamingConventionDef.id,
       nodeId: node.id,
       nodePath: context.path.join(" > "),
-      message: `"${node.name}" uses ${nodeConvention} while siblings use ${dominantConvention}`,
+      message: `"${node.name}" uses ${nodeConvention} while siblings use ${dominantConvention} — rename to match ${dominantConvention} convention`,
     };
   }
 
@@ -207,7 +207,7 @@ const numericSuffixNameCheck: RuleCheckFn = (node, context) => {
     ruleId: numericSuffixNameDef.id,
     nodeId: node.id,
     nodePath: context.path.join(" > "),
-    message: `"${node.name}" has a numeric suffix - consider renaming`,
+    message: `"${node.name}" has a numeric suffix — remove suffix and extract as component, or rename to describe the difference`,
   };
 };
 
@@ -241,7 +241,7 @@ const tooLongNameCheck: RuleCheckFn = (node, context, options) => {
     ruleId: tooLongNameDef.id,
     nodeId: node.id,
     nodePath: context.path.join(" > "),
-    message: `"${node.name.substring(0, 30)}..." is ${node.name.length} chars (max: ${maxLength})`,
+    message: `"${node.name.substring(0, 30)}..." is ${node.name.length} chars — shorten to under ${maxLength} characters`,
   };
 };
 

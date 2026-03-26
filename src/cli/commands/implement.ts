@@ -68,7 +68,7 @@ export function registerImplement(cli: CAC): void {
         // 2. Analysis
         const result = analyzeFile(file);
         const scores = calculateScores(result);
-        const resultJson = buildResultJson(file.name, result, scores);
+        const resultJson = buildResultJson(file.name, result, scores, { fileKey: file.fileKey });
         await writeFile(resolve(outputDir, "analysis.json"), JSON.stringify(resultJson, null, 2), "utf-8");
         console.log(`  analysis.json: ${result.issues.length} issues, grade ${scores.overall.grade}`);
 

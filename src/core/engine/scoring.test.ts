@@ -355,6 +355,7 @@ describe("buildResultJson", () => {
     expect(json.nodeCount).toBe(100);
     expect(json.issueCount).toBe(3);
     expect(json.version).toBeDefined();
+    expect(json.analyzedAt).toBeDefined();
     expect(json.scores).toBeDefined();
     expect(json.summary).toBeDefined();
     expect(typeof json.summary).toBe("string");
@@ -372,5 +373,39 @@ describe("buildResultJson", () => {
 
     expect(issuesByRule["no-auto-layout"]).toBe(2);
     expect(issuesByRule["raw-color"]).toBe(1);
+  });
+
+  it("includes detailed issues list with severity and node info", () => {
+    const result = makeResult([
+      makeIssue({ ruleId: "no-auto-layout", category: "structure", severity: "blocking" }),
+      makeIssue({ ruleId: "raw-color", category: "token", severity: "missing-info" }),
+    ]);
+    const scores = calculateScores(result);
+    const json = buildResultJson("TestFile", result, scores);
+    const issues = json.issues as Array<{ ruleId: string; severity: string; nodeId: string; nodePath: string; message: string }>;
+
+    expect(issues).toHaveLength(2);
+    expect(issues[0]).toMatchObject({
+      ruleId: "no-auto-layout",
+      severity: "blocking",
+      nodeId: expect.any(String),
+      nodePath: expect.any(String),
+      message: expect.any(String),
+    });
+    expect(issues[1]).toMatchObject({
+      ruleId: "raw-color",
+      severity: "missing-info",
+    });
+  });
+
+  it("includes fileKey when provided", () => {
+    const result = makeResult([]);
+    const scores = calculateScores(result);
+
+    const withKey = buildResultJson("TestFile", result, scores, { fileKey: "abc123" });
+    expect(withKey.fileKey).toBe("abc123");
+
+    const withoutKey = buildResultJson("TestFile", result, scores);
+    expect(withoutKey.fileKey).toBeUndefined();
   });
 });

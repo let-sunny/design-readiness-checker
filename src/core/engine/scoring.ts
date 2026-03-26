@@ -363,6 +363,7 @@ export function buildResultJson(
   fileName: string,
   result: AnalysisResult,
   scores: ScoreReport,
+  options?: { fileKey?: string },
 ): Record<string, unknown> {
   const issuesByRule: Record<string, number> = {};
   for (const issue of result.issues) {
@@ -370,8 +371,18 @@ export function buildResultJson(
     issuesByRule[id] = (issuesByRule[id] ?? 0) + 1;
   }
 
+  const issues = result.issues.map((issue) => ({
+    ruleId: issue.violation.ruleId,
+    severity: issue.config.severity,
+    nodeId: issue.violation.nodeId,
+    nodePath: issue.violation.nodePath,
+    message: issue.violation.message,
+  }));
+
   const json: Record<string, unknown> = {
     version: VERSION,
+    analyzedAt: result.analyzedAt,
+    ...(options?.fileKey && { fileKey: options.fileKey }),
     fileName,
     nodeCount: result.nodeCount,
     maxDepth: result.maxDepth,
@@ -381,6 +392,7 @@ export function buildResultJson(
       categories: scores.byCategory,
     },
     issuesByRule,
+    issues,
     summary: formatScoreSummary(scores),
   };
 

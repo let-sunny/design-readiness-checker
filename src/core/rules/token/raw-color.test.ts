@@ -51,7 +51,7 @@ describe("raw-color", () => {
     expect(result).not.toBeNull();
     expect(result!.ruleId).toBe("raw-color");
     expect(result!.message).toContain("RawBox");
-    expect(result!.message).toContain("raw color");
+    expect(result!.message).toContain("raw fill color");
   });
 
   it("returns null for gradient fills (non-SOLID)", () => {

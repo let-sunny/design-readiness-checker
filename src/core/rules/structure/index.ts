@@ -66,7 +66,7 @@ const noAutoLayoutCheck: RuleCheckFn = (node, context) => {
               ruleId: noAutoLayoutDef.id,
               nodeId: node.id,
               nodePath: context.path.join(" > "),
-              message: `"${node.name}" has overlapping children without Auto Layout — AI cannot determine intended layout`,
+              message: `"${node.name}" has overlapping children without Auto Layout — apply auto-layout to separate overlapping children`,
             };
           }
         }
@@ -84,7 +84,7 @@ const noAutoLayoutCheck: RuleCheckFn = (node, context) => {
           ruleId: noAutoLayoutDef.id,
           nodeId: node.id,
           nodePath: context.path.join(" > "),
-          message: `"${node.name}" has nested containers without layout hints — structure is unpredictable for AI`,
+          message: `"${node.name}" has nested containers without layout hints — apply auto-layout to organize nested containers`,
         };
       }
     }
@@ -93,11 +93,26 @@ const noAutoLayoutCheck: RuleCheckFn = (node, context) => {
   // Priority 3: Basic no-auto-layout check (FRAME only)
   if (node.type !== "FRAME") return null;
 
+  const childCount = node.children?.length ?? 0;
+  let directionHint = "";
+  if (node.children && node.children.length >= 2) {
+    const boxes = node.children.filter(c => c.absoluteBoundingBox).map(c => c.absoluteBoundingBox!);
+    if (boxes.length >= 2) {
+      const yRange = Math.max(...boxes.map(b => b.y)) - Math.min(...boxes.map(b => b.y));
+      const xRange = Math.max(...boxes.map(b => b.x)) - Math.min(...boxes.map(b => b.x));
+      directionHint = yRange > xRange ? "VERTICAL" : "HORIZONTAL";
+    }
+  }
+
+  const arrangement = directionHint
+    ? ` (${childCount} children arranged ${directionHint.toLowerCase()}ly)`
+    : childCount > 0 ? ` (${childCount} children)` : "";
+
   return {
     ruleId: noAutoLayoutDef.id,
     nodeId: node.id,
     nodePath: context.path.join(" > "),
-    message: `Frame "${node.name}" has no Auto Layout`,
+    message: `Frame "${node.name}" has no auto-layout${arrangement}${directionHint ? ` — apply ${directionHint} auto-layout` : " — apply auto-layout"}`,
   };
 };
 
@@ -155,7 +170,7 @@ const absolutePositionInAutoLayoutCheck: RuleCheckFn = (node, context) => {
     ruleId: absolutePositionInAutoLayoutDef.id,
     nodeId: node.id,
     nodePath: context.path.join(" > "),
-    message: `"${node.name}" uses absolute positioning inside Auto Layout parent "${context.parent.name}". If intentional (badge, overlay, close button), rename to badge-*, overlay-*, close-* to suppress this warning.`,
+    message: `"${node.name}" uses absolute positioning inside Auto Layout parent "${context.parent.name}" — remove absolute positioning or restructure outside the auto-layout parent`,
   };
 };
 
@@ -201,7 +216,7 @@ const fixedSizeInAutoLayoutCheck: RuleCheckFn = (node, context) => {
       ruleId: fixedSizeInAutoLayoutDef.id,
       nodeId: node.id,
       nodePath: context.path.join(" > "),
-      message: `Container "${node.name}" (${width}×${height}) uses fixed size on both axes inside Auto Layout. Consider HUG or FILL for at least one axis.`,
+      message: `Container "${node.name}" (${width}×${height}) uses fixed size on both axes inside auto-layout — set at least one axis to HUG or FILL`,
     };
   }
 
@@ -223,7 +238,7 @@ const fixedSizeInAutoLayoutCheck: RuleCheckFn = (node, context) => {
       ruleId: fixedSizeInAutoLayoutDef.id,
       nodeId: node.id,
       nodePath: context.path.join(" > "),
-      message: `"${node.name}" has fixed width inside Auto Layout`,
+      message: `"${node.name}" has fixed width (${width}px) inside auto-layout — set horizontal sizing to FILL`,
     };
   }
 
@@ -276,12 +291,14 @@ const missingSizeConstraintCheck: RuleCheckFn = (node, context) => {
   const effectiveMissingMin = missingMin && !skipMinCheck;
   const effectiveMissingMax = missingMax && !skipMaxCheck;
 
+  const currentWidth = node.absoluteBoundingBox ? `${node.absoluteBoundingBox.width}px` : "unknown";
+
   if (effectiveMissingMin && effectiveMissingMax) {
     return {
       ruleId: missingSizeConstraintDef.id,
       nodeId: node.id,
       nodePath: context.path.join(" > "),
-      message: `"${node.name}" uses FILL width without min or max width constraints`,
+      message: `"${node.name}" uses FILL width (currently ${currentWidth}) without min or max constraints — add minWidth and/or maxWidth`,
     };
   }
 
@@ -290,7 +307,7 @@ const missingSizeConstraintCheck: RuleCheckFn = (node, context) => {
       ruleId: missingSizeConstraintDef.id,
       nodeId: node.id,
       nodePath: context.path.join(" > "),
-      message: `"${node.name}" uses FILL width without a min-width constraint. It may collapse on narrow screens.`,
+      message: `"${node.name}" uses FILL width (currently ${currentWidth}) without min-width — add minWidth to prevent collapse on narrow screens`,
     };
   }
 
@@ -299,7 +316,7 @@ const missingSizeConstraintCheck: RuleCheckFn = (node, context) => {
       ruleId: missingSizeConstraintDef.id,
       nodeId: node.id,
       nodePath: context.path.join(" > "),
-      message: `"${node.name}" uses FILL width without a max-width constraint. Content may stretch too wide on large screens.`,
+      message: `"${node.name}" uses FILL width (currently ${currentWidth}) without max-width — add maxWidth to prevent stretching on large screens`,
     };
   }
 
@@ -337,7 +354,7 @@ const missingResponsiveBehaviorCheck: RuleCheckFn = (node, context) => {
       ruleId: missingResponsiveBehaviorDef.id,
       nodeId: node.id,
       nodePath: context.path.join(" > "),
-      message: `"${node.name}" has no responsive behavior configured`,
+      message: `"${node.name}" has no responsive behavior configured — apply auto-layout or set constraints`,
     };
   }
 
@@ -369,7 +386,7 @@ const groupUsageCheck: RuleCheckFn = (node, context) => {
     ruleId: groupUsageDef.id,
     nodeId: node.id,
     nodePath: context.path.join(" > "),
-    message: `"${node.name}" is a Group - consider converting to Frame with Auto Layout`,
+    message: `"${node.name}" is a Group — convert to Frame and apply auto-layout`,
   };
 };
 
@@ -401,7 +418,7 @@ const deepNestingCheck: RuleCheckFn = (node, context, options) => {
     ruleId: deepNestingDef.id,
     nodeId: node.id,
     nodePath: context.path.join(" > "),
-    message: `"${node.name}" is nested ${context.componentDepth} levels deep within its component (max: ${maxDepth})`,
+    message: `"${node.name}" is nested ${context.componentDepth} levels deep within its component (max: ${maxDepth}) — extract into a sub-component to reduce depth`,
   };
 };
 
@@ -468,7 +485,7 @@ const zIndexDependentLayoutCheck: RuleCheckFn = (node, context) => {
       ruleId: zIndexDependentLayoutDef.id,
       nodeId: node.id,
       nodePath: context.path.join(" > "),
-      message: `"${node.name}" uses layer stacking for layout (${significantOverlapCount} overlaps)`,
+      message: `"${node.name}" uses layer stacking for layout (${significantOverlapCount} overlaps) — restructure using auto-layout to express relationships explicitly`,
     };
   }
 
@@ -537,7 +554,7 @@ const unnecessaryNodeCheck: RuleCheckFn = (node, context) => {
       ruleId: unnecessaryNodeDef.id,
       nodeId: node.id,
       nodePath: context.path.join(" > "),
-      message: `"${node.name}" is an empty frame`,
+      message: `"${node.name}" is an empty frame${node.absoluteBoundingBox ? ` (${node.absoluteBoundingBox.width}×${node.absoluteBoundingBox.height})` : ""} — remove or replace with auto-layout spacing`,
     };
   }
 

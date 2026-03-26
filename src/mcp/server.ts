@@ -157,7 +157,7 @@ IMPORTANT — Before calling this tool, check which data source is available:
         content: [
           {
             type: "text" as const,
-            text: JSON.stringify(buildResultJson(file.name, result, scores), null, 2),
+            text: JSON.stringify(buildResultJson(file.name, result, scores, { fileKey: file.fileKey }), null, 2),
           },
         ],
       };

@@ -143,7 +143,7 @@ const missingComponentCheck: RuleCheckFn = (node, context, options) => {
             ruleId: missingComponentDef.id,
             nodeId: node.id,
             nodePath: context.path.join(" > "),
-            message: `Component "${matchingComponent.name}" exists — use instances instead of repeated frames (${sameNameFrames.length} found)`,
+            message: `Component "${matchingComponent.name}" exists — use instances instead of repeated frames (${sameNameFrames.length} found) — replace frames with component instances`,
           };
         }
       }
@@ -160,7 +160,7 @@ const missingComponentCheck: RuleCheckFn = (node, context, options) => {
           ruleId: missingComponentDef.id,
           nodeId: node.id,
           nodePath: context.path.join(" > "),
-          message: `"${node.name}" appears ${sameNameFrames.length} times — consider making it a component`,
+          message: `"${node.name}" appears ${sameNameFrames.length} times — extract as a reusable component`,
         };
       }
     }
@@ -221,7 +221,7 @@ const missingComponentCheck: RuleCheckFn = (node, context, options) => {
           ruleId: missingComponentDef.id,
           nodeId: node.id,
           nodePath: context.path.join(" > "),
-          message: `"${node.name}" and ${count - 1} sibling frame(s) share the same internal structure — consider extracting a component`,
+          message: `"${node.name}" and ${count - 1} sibling frame(s) share the same internal structure — extract a shared component from the repeated structure`,
         };
       }
     }
@@ -257,7 +257,7 @@ const missingComponentCheck: RuleCheckFn = (node, context, options) => {
         ruleId: missingComponentDef.id,
         nodeId: node.id,
         nodePath: context.path.join(" > "),
-        message: `"${componentName}" instance has style overrides (${overrides.join(", ")}) — use a variant instead of direct style changes`,
+        message: `"${componentName}" instance has style overrides (${overrides.join(", ")}) — create a new variant for this style combination`,
       };
     }
     return null;
@@ -301,7 +301,7 @@ const detachedInstanceCheck: RuleCheckFn = (node, context) => {
         ruleId: detachedInstanceDef.id,
         nodeId: node.id,
         nodePath: context.path.join(" > "),
-        message: `"${node.name}" may be a detached instance of component "${component.name}"`,
+        message: `"${node.name}" may be a detached instance of component "${component.name}" — restore as an instance of "${component.name}" or create a new variant`,
       };
     }
   }
@@ -354,7 +354,7 @@ const missingComponentDescriptionCheck: RuleCheckFn = (node, context) => {
     ruleId: missingComponentDescriptionDef.id,
     nodeId: node.id,
     nodePath: context.path.join(" > "),
-    message: `Component "${componentMeta.name}" has no description. Descriptions help developers understand purpose and usage.`,
+    message: `Component "${componentMeta.name}" has no description — add usage guidelines in the component's description field`,
   };
 };
 
@@ -401,7 +401,7 @@ const variantStructureMismatchCheck: RuleCheckFn = (node, context) => {
     ruleId: variantStructureMismatchDef.id,
     nodeId: node.id,
     nodePath: context.path.join(" > "),
-    message: `"${node.name}" has ${mismatchCount}/${totalVariants} variants with different child structures — AI cannot create a unified component template`,
+    message: `"${node.name}" has ${mismatchCount}/${totalVariants} variants with different child structures — unify variant structures using visibility toggles for optional elements`,
   };
 };
 

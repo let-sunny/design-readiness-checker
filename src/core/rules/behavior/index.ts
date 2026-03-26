@@ -41,7 +41,7 @@ const textTruncationUnhandledCheck: RuleCheckFn = (node, context) => {
         ruleId: textTruncationUnhandledDef.id,
         nodeId: node.id,
         nodePath: context.path.join(" > "),
-        message: `"${node.name}" may need text truncation handling`,
+        message: `"${node.name}" has long text (${node.characters!.length} chars) in narrow container (${width}px) — set text truncation (ellipsis) or use HUG sizing`,
       };
     }
   }
@@ -132,7 +132,7 @@ const prototypeLinkInDesignCheck: RuleCheckFn = (node, context) => {
     ruleId: prototypeLinkInDesignDef.id,
     nodeId: node.id,
     nodePath: context.path.join(" > "),
-    message: `"${node.name}" looks interactive but has no prototype interactions defined`,
+    message: `"${node.name}" looks interactive but has no prototype interactions — add prototype interactions or rename to clarify non-interactive intent`,
   };
 };
 
@@ -182,7 +182,7 @@ const overflowBehaviorUnknownCheck: RuleCheckFn = (node, context) => {
     ruleId: overflowBehaviorUnknownDef.id,
     nodeId: node.id,
     nodePath: context.path.join(" > "),
-    message: `"${node.name}" has children overflowing bounds without explicit clip/scroll behavior — AI must guess overflow handling`,
+    message: `"${node.name}" has children overflowing bounds without explicit clip/scroll behavior — enable "Clip content" or set explicit scroll behavior`,
   };
 };
 
@@ -226,7 +226,7 @@ const wrapBehaviorUnknownCheck: RuleCheckFn = (node, context) => {
     ruleId: wrapBehaviorUnknownDef.id,
     nodeId: node.id,
     nodePath: context.path.join(" > "),
-    message: `"${node.name}" has ${visibleChildren.length} horizontal children exceeding container width without wrap behavior — AI cannot determine if content should wrap or scroll`,
+    message: `"${node.name}" has ${visibleChildren.length} horizontal children exceeding container width without wrap behavior — set layoutWrap to WRAP or add horizontal scroll behavior`,
   };
 };
 

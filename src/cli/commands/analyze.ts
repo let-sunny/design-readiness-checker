@@ -159,7 +159,7 @@ export function registerAnalyze(cli: CAC): void {
 
         // JSON output mode — only JSON goes to stdout; exit code still applies
         if (options.json) {
-          console.log(JSON.stringify(buildResultJson(file.name, result, scores), null, 2));
+          console.log(JSON.stringify(buildResultJson(file.name, result, scores, { fileKey: file.fileKey }), null, 2));
           if (scores.overall.grade === "F") {
             process.exitCode = 1;
           }
