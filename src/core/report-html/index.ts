@@ -180,7 +180,7 @@ ${figmaToken ? `  <script>
         });
         if (!res.ok) {
           const errBody = await res.text().catch(() => '');
-          const errMsg = res.status === 403 ? 'Token lacks file access' : res.status === 404 ? 'File not found' : res.status === 429 ? 'Rate limited' : 'HTTP ' + res.status;
+          const errMsg = res.status === 400 ? 'Bad request — check node ID format' : res.status === 403 ? 'Token lacks file access' : res.status === 404 ? 'File not found' : res.status === 429 ? 'Rate limited' : 'HTTP ' + res.status;
           throw new Error(errMsg + (errBody ? ': ' + errBody.slice(0, 100) : ''));
         }
         btn.textContent = 'Sent \\u2713';

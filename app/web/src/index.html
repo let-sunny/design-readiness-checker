@@ -431,7 +431,7 @@
         btn.textContent = 'Sent \u2713';
         btn.classList.remove('hover:bg-muted');
         btn.classList.add('text-green-600', 'border-green-500/30');
-        window._trackEvent && window._trackEvent('cic_comment_posted', { rule: btn.dataset.rule });
+        window._trackEvent && window._trackEvent('cic_comment_posted', {});
       } catch (e) {
         btn.textContent = 'Failed';
         btn.title = e.message || String(e);
