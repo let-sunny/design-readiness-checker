@@ -5,9 +5,7 @@ import type { RuleConfig, RuleId } from "../contracts/rule.js";
  * Edit scores/severity here without touching rule logic
  */
 export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
-  // ============================================
-  // Structure (9 rules)
-  // ============================================
+  // ── Structure ──
   "no-auto-layout": {
     severity: "blocking",
     score: -10,
@@ -65,9 +63,7 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
     },
   },
 
-  // ============================================
-  // Token (7 rules)
-  // ============================================
+  // ── Token ──
   "raw-color": {
     severity: "missing-info",
     score: -2,
@@ -113,9 +109,7 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
     },
   },
 
-  // ============================================
-  // Component (4 rules)
-  // ============================================
+  // ── Component ──
   "missing-component": {
     severity: "risk",
     score: -7,
@@ -142,9 +136,7 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
     enabled: true,
   },
 
-  // ============================================
-  // Naming (5 rules)
-  // ============================================
+  // ── Naming ──
   "default-name": {
     severity: "missing-info",
     score: -2,
@@ -174,9 +166,7 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
     },
   },
 
-  // ============================================
-  // Behavior (4 rules)
-  // ============================================
+  // ── Behavior ──
   "text-truncation-unhandled": {
     severity: "risk",
     score: -5,

@@ -272,7 +272,7 @@ describe("calculateGrade (via calculateScores)", () => {
     const categories: Category[] = ["structure", "token", "component", "naming", "behavior"];
     const rulesPerCat: Record<Category, string[]> = {
       structure: ["no-auto-layout", "group-usage", "deep-nesting", "fixed-size-in-auto-layout", "missing-responsive-behavior", "absolute-position-in-auto-layout", "missing-size-constraint", "z-index-dependent-layout", "unnecessary-node"],
-      token: ["raw-color", "raw-font", "inconsistent-spacing", "magic-number-spacing", "raw-shadow"],
+      token: ["raw-color", "raw-font", "inconsistent-spacing", "magic-number-spacing", "raw-shadow", "raw-opacity", "multiple-fill-colors"],
       component: ["missing-component", "detached-instance", "missing-component-description", "variant-structure-mismatch"],
       naming: ["default-name", "non-semantic-name", "inconsistent-naming-convention", "numeric-suffix-name", "too-long-name"],
       behavior: ["text-truncation-unhandled", "prototype-link-in-design", "overflow-behavior-unknown", "wrap-behavior-unknown"],

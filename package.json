@@ -24,6 +24,7 @@
     "test:run": "vitest run",
     "lint": "tsc --noEmit",
     "build:plugin": "bash scripts/build-plugin.sh",
+    "sync-docs": "tsx scripts/sync-rule-docs.ts",
     "clean": "rm -rf dist"
   },
   "files": [
@@ -69,6 +70,7 @@
     "@types/pngjs": "^6.0.5",
     "playwright": "^1.58.2",
     "tsup": "^8.5.1",
+    "tsx": "^4.19.0",
     "typescript": "^5.9.3",
     "vitest": "^4.1.0"
   }

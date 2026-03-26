@@ -90,7 +90,7 @@ export interface Rule {
  * Rule ID type for type safety
  */
 export type RuleId =
-  // Structure (9)
+  // Structure
   | "no-auto-layout"
   | "absolute-position-in-auto-layout"
   | "fixed-size-in-auto-layout"
@@ -100,7 +100,7 @@ export type RuleId =
   | "deep-nesting"
   | "z-index-dependent-layout"
   | "unnecessary-node"
-  // Token (7)
+  // Token
   | "raw-color"
   | "raw-font"
   | "inconsistent-spacing"
@@ -108,18 +108,18 @@ export type RuleId =
   | "raw-shadow"
   | "raw-opacity"
   | "multiple-fill-colors"
-  // Component (4)
+  // Component
   | "missing-component"
   | "detached-instance"
   | "missing-component-description"
   | "variant-structure-mismatch"
-  // Naming (5)
+  // Naming
   | "default-name"
   | "non-semantic-name"
   | "inconsistent-naming-convention"
   | "numeric-suffix-name"
   | "too-long-name"
-  // Behavior (4)
+  // Behavior
   | "text-truncation-unhandled"
   | "prototype-link-in-design"
   | "overflow-behavior-unknown"

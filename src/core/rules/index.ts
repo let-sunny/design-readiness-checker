@@ -4,17 +4,9 @@
 export * from "./rule-registry.js";
 export * from "./rule-config.js";
 
-// Structure rules (9)
+// Rule definitions (auto-register via defineRule on import)
 export * from "./structure/index.js";
-
-// Token rules (7)
 export * from "./token/index.js";
-
-// Component rules (4)
 export * from "./component/index.js";
-
-// Naming rules (5)
 export * from "./naming/index.js";
-
-// Behavior rules (4)
 export * from "./behavior/index.js";
