@@ -3,7 +3,7 @@ import type { AnalysisNode } from "../../contracts/figma-node.js";
 import { defineRule } from "../rule-registry.js";
 import { getRuleOption } from "../rule-config.js";
 import { isExcludedName } from "../excluded-names.js";
-import { isAutoLayoutExempt, isAbsolutePositionExempt, isSizeConstraintExempt } from "../rule-exceptions.js";
+import { isAutoLayoutExempt, isAbsolutePositionExempt, isSizeConstraintExempt, isFixedSizeExempt } from "../rule-exceptions.js";
 
 // ============================================
 // Helper functions
@@ -179,9 +179,9 @@ const fixedSizeInAutoLayoutCheck: RuleCheckFn = (node, context) => {
   if (!isContainerNode(node)) return null;
   if (!node.absoluteBoundingBox) return null;
 
-  // Skip if it's intentionally a small fixed element (icon, avatar, etc.)
+  if (isFixedSizeExempt(node)) return null;
+
   const { width, height } = node.absoluteBoundingBox;
-  if (width <= 48 && height <= 48) return null;
 
   // Check both axes FIXED (stronger case)
   const hFixed =

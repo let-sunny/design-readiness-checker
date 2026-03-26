@@ -13,14 +13,51 @@ export function isVisualLeafType(type: string): boolean {
   return VISUAL_LEAF_TYPES.has(type);
 }
 
+function hasImageFill(node: AnalysisNode): boolean {
+  if (!node.fills || !Array.isArray(node.fills)) return false;
+  return node.fills.some((f) => {
+    const fill = f as Record<string, unknown>;
+    return fill["type"] === "IMAGE";
+  });
+}
+
+function isSmallRelativeToParent(node: AnalysisNode, parent: AnalysisNode): boolean {
+  const nodeBB = node.absoluteBoundingBox;
+  const parentBB = parent.absoluteBoundingBox;
+  if (!nodeBB || !parentBB) return false;
+  if (parentBB.width === 0 || parentBB.height === 0) return false;
+
+  const widthRatio = nodeBB.width / parentBB.width;
+  const heightRatio = nodeBB.height / parentBB.height;
+  return widthRatio < 0.25 && heightRatio < 0.25;
+}
+
+function isFullSizeRelativeToParent(node: AnalysisNode, parent: AnalysisNode): boolean {
+  const nodeBB = node.absoluteBoundingBox;
+  const parentBB = parent.absoluteBoundingBox;
+  if (!nodeBB || !parentBB) return false;
+  if (parentBB.width === 0 || parentBB.height === 0) return false;
+
+  const widthRatio = nodeBB.width / parentBB.width;
+  const heightRatio = nodeBB.height / parentBB.height;
+  return widthRatio >= 0.9 && heightRatio >= 0.9;
+}
+
 // ============================================
 // Auto-layout exceptions
 // ============================================
 
-/** Frames with only visual leaf children (icons, shapes) don't need auto-layout */
+/** Frames that don't need auto-layout */
 export function isAutoLayoutExempt(node: AnalysisNode): boolean {
-  if (!node.children || node.children.length === 0) return false;
-  return node.children.every((c) => VISUAL_LEAF_TYPES.has(c.type));
+  // All children are visual leaf types (icons, shapes)
+  if (node.children && node.children.length > 0 && node.children.every((c) => VISUAL_LEAF_TYPES.has(c.type))) {
+    return true;
+  }
+
+  // Instance nodes — internal layout is managed by the component master
+  if (node.type === "INSTANCE") return true;
+
+  return false;
 }
 
 // ============================================
@@ -38,18 +75,10 @@ export function isAbsolutePositionExempt(node: AnalysisNode, context: RuleContex
   // Inside a component definition — designer's intentional layout
   if (context.parent?.type === "COMPONENT") return true;
 
+  // Full-size background element (>= 90% of parent) — background layer
+  if (context.parent && isFullSizeRelativeToParent(node, context.parent)) return true;
+
   return false;
-}
-
-function isSmallRelativeToParent(node: AnalysisNode, parent: AnalysisNode): boolean {
-  const nodeBB = node.absoluteBoundingBox;
-  const parentBB = parent.absoluteBoundingBox;
-  if (!nodeBB || !parentBB) return false;
-  if (parentBB.width === 0 || parentBB.height === 0) return false;
-
-  const widthRatio = nodeBB.width / parentBB.width;
-  const heightRatio = nodeBB.height / parentBB.height;
-  return widthRatio < 0.25 && heightRatio < 0.25;
 }
 
 // ============================================
@@ -81,6 +110,27 @@ export function isSizeConstraintExempt(node: AnalysisNode, context: RuleContext)
 
   // Inside flex wrap — wrap layout controls sizing per row
   if (context.parent?.layoutWrap === "WRAP") return true;
+
+  // Text nodes — content length provides natural sizing
+  if (node.type === "TEXT") return true;
+
+  return false;
+}
+
+// ============================================
+// Fixed-size exceptions
+// ============================================
+
+/** Nodes that are allowed to use fixed sizing inside auto-layout */
+export function isFixedSizeExempt(node: AnalysisNode): boolean {
+  // Small fixed elements (icons, avatars) — intentionally fixed
+  if (node.absoluteBoundingBox) {
+    const { width, height } = node.absoluteBoundingBox;
+    if (width <= 48 && height <= 48) return true;
+  }
+
+  // Image fills — fixed size is intentional for thumbnails/avatars
+  if (hasImageFill(node)) return true;
 
   return false;
 }
