@@ -94,7 +94,7 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
   "unnecessary-node": {
     severity: "suggestion",
     score: -2,
-    enabled: true,
+    enabled: false,
     options: {
       slotRecommendationThreshold: 3,
     },
@@ -212,7 +212,7 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
   "prototype-link-in-design": {
     severity: "missing-info",
     score: -2,
-    enabled: true,
+    enabled: false,
   },
   "overflow-behavior-unknown": {
     severity: "missing-info",
