@@ -81,6 +81,7 @@ interface Phase1Summary {
   temperature: number;
   runsPerCondition: number;
   fixtures: string[];
+  skippedFixtures: Array<{ fixture: string; reason: string }>;
   results: RunResult[];
   rankings: RankingEntry[];
 }
@@ -336,7 +337,8 @@ async function runSingle(
   // Save result
   writeFileSync(join(runDir, "result.json"), JSON.stringify(result, null, 2));
 
-  console.log(`    ✓ similarity=${(comparison.similarity * 100).toFixed(1)}% interp=${interpretations.length} tokens=${result.totalTokens}`);
+  const interpDisplay = interpretationsParseFailed ? "PARSE_FAIL" : String(interpretations.length);
+  console.log(`    ✓ similarity=${(comparison.similarity * 100).toFixed(1)}% interp=${interpDisplay} tokens=${result.totalTokens}`);
 
   return result;
 }
@@ -464,6 +466,7 @@ async function main(): Promise<void> {
   const startedAt = new Date().toISOString();
   const allResults: RunResult[] = [];
   const newResults: RunResult[] = [];  // Only this session (for cost tracking)
+  const skippedFixtures: Array<{ fixture: string; reason: string }> = [];
 
   for (const fixture of fixtures) {
     console.log(`\n=== ${fixture} ===\n`);
@@ -472,12 +475,14 @@ async function main(): Promise<void> {
     const fixturePath = resolve(`fixtures/${fixture}/data.json`);
     if (!existsSync(fixturePath)) {
       console.error(`  ERROR: Fixture not found: ${fixturePath}`);
+      skippedFixtures.push({ fixture, reason: `data.json not found: ${fixturePath}` });
       continue;
     }
 
     const screenshotPath = getFixtureScreenshotPath(fixture);
     if (!existsSync(screenshotPath)) {
       console.error(`  ERROR: Screenshot not found: ${screenshotPath}`);
+      skippedFixtures.push({ fixture, reason: `screenshot not found: ${screenshotPath}` });
       continue;
     }
 
@@ -534,6 +539,7 @@ async function main(): Promise<void> {
     temperature: TEMPERATURE,
     runsPerCondition,
     fixtures: [...fixtures],
+    skippedFixtures,
     results: allResults,
     rankings,
   };
