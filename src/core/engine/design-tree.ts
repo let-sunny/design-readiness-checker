@@ -333,7 +333,8 @@ function renderNode(
         styles.push(`${crossGap}: ${node.counterAxisSpacing}px${getVarRef(node, "counterAxisSpacing")}`);
       }
       if (node.primaryAxisAlignItems) styles.push(`justify-content: ${mapAlign(node.primaryAxisAlignItems)}`);
-      if (node.counterAxisAlignItems) styles.push(`align-items: ${mapAlign(node.counterAxisAlignItems)}`);
+      // Figma default is MIN (flex-start), CSS default is stretch — emit explicitly
+      styles.push(`align-items: ${mapAlign(node.counterAxisAlignItems ?? "MIN")}`);
       if (node.counterAxisAlignContent && node.counterAxisAlignContent !== "AUTO") {
         styles.push(`align-content: ${mapAlign(node.counterAxisAlignContent)}`);
       }
@@ -480,8 +481,9 @@ function renderNode(
     if (s["textAlignHorizontal"]) {
       styles.push(`text-align: ${mapTextAlignHorizontal(String(s["textAlignHorizontal"]))}`);
     }
-    if (s["textAlignVertical"]) {
+    if (s["textAlignVertical"] && s["textAlignVertical"] !== "TOP") {
       // CSS has no direct text vertical-align in a text box; emit flex hint.
+      // TOP is the default — only emit for CENTER/BOTTOM.
       styles.push("display: flex");
       styles.push(`align-items: ${mapTextAlignVertical(String(s["textAlignVertical"]))}`);
     }
