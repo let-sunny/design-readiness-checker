@@ -69,7 +69,7 @@ export function registerSaveFixture(cli: CAC): void {
         const figmaTokenForComponents = options.token ?? getFigmaToken();
         if (figmaTokenForComponents) {
           const { FigmaClient: FC } = await import("../../core/adapters/figma-client.js");
-          const { resolveComponentDefinitions } = await import("../../core/adapters/component-resolver.js");
+          const { resolveComponentDefinitions, resolveInteractionDestinations } = await import("../../core/adapters/component-resolver.js");
           const componentClient = new FC({ token: figmaTokenForComponents });
           try {
             const definitions = await resolveComponentDefinitions(componentClient, file.fileKey, file.document);
@@ -77,6 +77,13 @@ export function registerSaveFixture(cli: CAC): void {
             if (count > 0) {
               file.componentDefinitions = definitions;
               console.log(`Resolved ${count} component master node tree(s)`);
+            }
+            // Resolve interaction destinations (hover variants, etc.)
+            const interactionDests = await resolveInteractionDestinations(componentClient, file.fileKey, file.document, file.componentDefinitions);
+            const destCount = Object.keys(interactionDests).length;
+            if (destCount > 0) {
+              file.interactionDestinations = interactionDests;
+              console.log(`Resolved ${destCount} interaction destination(s)`);
             }
           } catch {
             console.warn("Warning: failed to resolve component definitions (continuing)");

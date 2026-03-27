@@ -29,6 +29,7 @@ export async function loadFigmaFileFromJson(
   const content = await readFile(filePath, "utf-8");
   const data = JSON.parse(content) as GetFileResponse & {
     componentDefinitions?: Record<string, unknown>;
+    interactionDestinations?: Record<string, unknown>;
   };
 
   const fileKey = extractFileKey(filePath);
@@ -48,6 +49,22 @@ export async function loadFigmaFileFromJson(
     }
     if (Object.keys(parsed).length > 0) {
       file.componentDefinitions = parsed;
+    }
+  }
+
+  // Preserve interactionDestinations from previously-saved fixtures
+  if (data.interactionDestinations) {
+    const parsed: Record<string, AnalysisNode> = {};
+    for (const [id, raw] of Object.entries(data.interactionDestinations)) {
+      const result = AnalysisNodeSchema.safeParse(raw);
+      if (result.success) {
+        parsed[id] = result.data;
+      } else {
+        console.debug(`[figma-file-loader] interactionDestinations[${id}] failed validation:`, result.error.issues);
+      }
+    }
+    if (Object.keys(parsed).length > 0) {
+      file.interactionDestinations = parsed;
     }
   }
 

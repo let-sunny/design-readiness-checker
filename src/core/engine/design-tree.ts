@@ -165,6 +165,107 @@ function formatComponentProperties(node: AnalysisNode): string | null {
   return entries.join(", ");
 }
 
+/** Extract key visual styles from a node for hover diff comparison. */
+function extractVisualStyles(node: AnalysisNode): Record<string, string> {
+  const styles: Record<string, string> = {};
+  const fillInfo = getFillInfo(node);
+  if (fillInfo.color && node.type !== "TEXT") styles["background"] = fillInfo.color;
+  const stroke = getStroke(node);
+  if (stroke) styles["border-color"] = stroke;
+  if (node.cornerRadius) styles["border-radius"] = `${node.cornerRadius}px`;
+  if (node.opacity !== undefined && node.opacity < 1) styles["opacity"] = `${Math.round(node.opacity * 100) / 100}`;
+  const shadow = getShadow(node);
+  if (shadow) styles["box-shadow"] = shadow;
+  // Text color
+  if (node.type === "TEXT") {
+    const textColor = getFill(node);
+    if (textColor) styles["color"] = textColor;
+  }
+  return styles;
+}
+
+const HOVER_STYLE_DEFAULTS: Record<string, string> = {
+  background: "transparent",
+  "border-color": "transparent",
+  "border-radius": "0px",
+  opacity: "1",
+  "box-shadow": "none",
+  color: "inherit",
+};
+
+function getHoverResetValue(styleKey: string): string {
+  return HOVER_STYLE_DEFAULTS[styleKey] ?? "initial";
+}
+
+function appendStyleDiffs(
+  currentStyles: Record<string, string>,
+  hoverStyles: Record<string, string>,
+  diffs: string[],
+  namePrefix?: string,
+): void {
+  const styleKeys = new Set([...Object.keys(currentStyles), ...Object.keys(hoverStyles)]);
+  for (const key of styleKeys) {
+    const currentValue = currentStyles[key];
+    const hoverValue = hoverStyles[key] ?? getHoverResetValue(key);
+    if (currentValue !== hoverValue) {
+      const prefix = namePrefix ? `${namePrefix}: ` : "";
+      diffs.push(`${prefix}${key}: ${hoverValue}`);
+    }
+  }
+}
+
+function getChildStableKey(node: AnalysisNode): string | null {
+  // Prefer name over id: variant children share the same name but have different ids
+  if (node.name) return `name:${node.name}`;
+  return node.id ?? null;
+}
+
+/** Compute style diff between current node and its hover variant. */
+function computeHoverDiff(
+  currentNode: AnalysisNode,
+  hoverNode: AnalysisNode,
+): string | null {
+  const current = extractVisualStyles(currentNode);
+  const hover = extractVisualStyles(hoverNode);
+  const diffs: string[] = [];
+  appendStyleDiffs(current, hover, diffs);
+  // Check children for text/color changes (first level only)
+  if (currentNode.children && hoverNode.children) {
+    const hoverByStableKey = new Map<string, AnalysisNode>();
+    const hoverUnmatchedByIndex: AnalysisNode[] = [];
+
+    for (const child of hoverNode.children) {
+      const key = getChildStableKey(child);
+      if (key) {
+        // Keep the first occurrence to reduce noisy collisions.
+        if (!hoverByStableKey.has(key)) hoverByStableKey.set(key, child);
+      } else {
+        hoverUnmatchedByIndex.push(child);
+      }
+    }
+
+    let unkeyedIdx = 0;
+    for (let i = 0; i < currentNode.children.length; i++) {
+      const cc = currentNode.children[i];
+      if (!cc) continue;
+
+      const stableKey = getChildStableKey(cc);
+      let hc: AnalysisNode | undefined;
+      if (stableKey) {
+        hc = hoverByStableKey.get(stableKey);
+      } else {
+        hc = hoverUnmatchedByIndex[unkeyedIdx];
+        unkeyedIdx++;
+      }
+      if (!hc) continue;
+      const ccStyles = extractVisualStyles(cc);
+      const hcStyles = extractVisualStyles(hc);
+      appendStyleDiffs(ccStyles, hcStyles, diffs, cc.name);
+    }
+  }
+  return diffs.length > 0 ? diffs.join("; ") : null;
+}
+
 /** Render a single node and its children as indented design-tree text. */
 function renderNode(
   node: AnalysisNode,
@@ -174,6 +275,7 @@ function renderNode(
   imageMapping?: Record<string, string>,
   vectorMapping?: Record<string, string>,
   fileStyles?: AnalysisFile["styles"],
+  interactionDests?: Record<string, AnalysisNode>,
 ): string {
   if (node.visible === false) return "";
 
@@ -381,10 +483,33 @@ function renderNode(
     lines.push(`${prefix}  style: ${styles.join("; ")}`);
   }
 
+  // Interaction states (hover)
+  if (node.interactions && interactionDests) {
+    for (const interaction of node.interactions) {
+      const i = interaction as {
+        trigger?: { type?: string };
+        actions?: Array<{ destinationId?: string; navigation?: string }>;
+      };
+      if (i.trigger?.type === "ON_HOVER" && i.actions) {
+        for (const action of i.actions) {
+          if (action.destinationId && action.navigation === "CHANGE_TO") {
+            const hoverNode = interactionDests[action.destinationId];
+            if (hoverNode) {
+              const diff = computeHoverDiff(node, hoverNode);
+              if (diff) {
+                lines.push(`${prefix}  [hover]: ${diff}`);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
   // Children
   if (node.children) {
     for (const child of node.children) {
-      const childOutput = renderNode(child, indent + 1, vectorDir, components, imageMapping, vectorMapping, fileStyles);
+      const childOutput = renderNode(child, indent + 1, vectorDir, components, imageMapping, vectorMapping, fileStyles, interactionDests);
       if (childOutput) lines.push(childOutput);
     }
   }
@@ -450,7 +575,7 @@ export function generateDesignTreeWithStats(file: AnalysisFile, options?: Design
     }
   }
 
-  const tree = renderNode(root, 0, options?.vectorDir, file.components, imageMapping, vectorMapping, file.styles);
+  const tree = renderNode(root, 0, options?.vectorDir, file.components, imageMapping, vectorMapping, file.styles, file.interactionDestinations);
 
   const result = [
     "# Design Tree",

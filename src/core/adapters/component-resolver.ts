@@ -26,6 +26,40 @@ export function collectComponentIds(node: AnalysisNode): Set<string> {
 }
 
 /**
+ * Recursively collect all unique interaction destination IDs from nodes.
+ * These are the node IDs that interactions (e.g., ON_HOVER → CHANGE_TO) point to.
+ */
+export function collectInteractionDestinationIds(node: AnalysisNode): Set<string> {
+  const ids = new Set<string>();
+
+  function walk(n: AnalysisNode): void {
+    if (n.interactions && Array.isArray(n.interactions)) {
+      for (const interaction of n.interactions) {
+        const i = interaction as {
+          trigger?: { type?: string };
+          actions?: Array<{ destinationId?: string; navigation?: string }>;
+        };
+        if (i.trigger?.type === "ON_HOVER" && i.actions) {
+          for (const action of i.actions) {
+            if (action.navigation === "CHANGE_TO" && action.destinationId) {
+              ids.add(action.destinationId);
+            }
+          }
+        }
+      }
+    }
+    if (n.children) {
+      for (const child of n.children) {
+        walk(child);
+      }
+    }
+  }
+
+  walk(node);
+  return ids;
+}
+
+/**
  * Resolve component master node trees via multi-pass fetching.
  *
  * Pass 1: collect component IDs from the document tree, fetch their masters.
@@ -87,4 +121,49 @@ export async function resolveComponentDefinitions(
   }
 
   return allDefinitions;
+}
+
+/**
+ * Resolve interaction destination nodes (e.g., hover variants).
+ *
+ * Collects all destinationId values from interactions in the document,
+ * excludes those already in componentDefinitions, and fetches them.
+ */
+export async function resolveInteractionDestinations(
+  client: FigmaClient,
+  fileKey: string,
+  document: AnalysisNode,
+  existingDefinitions?: Record<string, AnalysisNode>,
+): Promise<Record<string, AnalysisNode>> {
+  const destIds = collectInteractionDestinationIds(document);
+  if (destIds.size === 0) return {};
+
+  const allDestinations: Record<string, AnalysisNode> = {};
+  const idsToFetch: string[] = [];
+
+  for (const id of destIds) {
+    const existing = existingDefinitions?.[id];
+    if (existing) {
+      allDestinations[id] = existing;
+    } else {
+      idsToFetch.push(id);
+    }
+  }
+
+  if (idsToFetch.length === 0) return allDestinations;
+
+  for (let i = 0; i < idsToFetch.length; i += BATCH_SIZE) {
+    const batch = idsToFetch.slice(i, i + BATCH_SIZE);
+    try {
+      const response = await client.getFileNodes(fileKey, batch);
+      const transformed = transformComponentMasterNodes(response, batch);
+      for (const [id, node] of Object.entries(transformed)) {
+        allDestinations[id] = node;
+      }
+    } catch (err) {
+      console.debug(`[component-resolver] interaction destination fetch failed (${batch.length} ids):`, err);
+    }
+  }
+
+  return allDestinations;
 }
