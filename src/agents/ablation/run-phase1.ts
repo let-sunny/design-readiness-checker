@@ -48,7 +48,7 @@ function computeConfigVersion(): string {
 }
 
 const CONFIG_VERSION = computeConfigVersion();
-const BASE_OUTPUT_DIR = resolve("logs/ablation/phase1");
+const BASE_OUTPUT_DIR = resolve("data/ablation/phase1");
 
 // --- Types ---
 

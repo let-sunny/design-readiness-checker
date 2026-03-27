@@ -137,7 +137,7 @@ ABLATION_FIXTURES=desktop-product-detail ABLATION_TYPES=component-references npx
 ```
 - Strips info from design-tree → implements via Claude API → renders → compares vs Figma screenshot
 - 5 strip types: layout-direction-spacing, component-references, node-names-hierarchy, variable-references, style-references
-- Output: `logs/ablation/phase1/{config-version}/{fixture}/{type}/run-{n}/`
+- Output: `data/ablation/phase1/{config-version}/{fixture}/{type}/run-{n}/`
 - Metrics recorded: pixel similarity, input/output tokens, HTML bytes/lines, CSS class count, CSS variable count
 - Cache: versioned by config hash. Never delete — previous versions preserved automatically.
 
@@ -148,7 +148,7 @@ ANTHROPIC_API_KEY=sk-... npx tsx src/agents/ablation/run-condition.ts --type hov
 ```
 - **size-constraints**: strip size info → implement via API → `removeRootFixedWidth` (1200px→100%, min-width→0) → render at 1920px (desktop) or 768px (mobile) → compare vs screenshot-1920/768.png. Both baseline and stripped get same treatment.
 - **hover-interaction**: implement with vs without `[hover]:` data → compare :hover CSS rules and values
-- Output: `logs/ablation/conditions/{type}/{fixture}/`
+- Output: `data/ablation/conditions/{type}/{fixture}/`
 
 **`helpers.ts` — Shared utilities**
 - API call with retry (429/529), HTML parsing/sanitization, local font injection

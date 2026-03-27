@@ -23,7 +23,7 @@ import {
   renderAndCompare, parseFixtures, requireApiKey,
 } from "./helpers.js";
 
-const OUTPUT_DIR = resolve("logs/ablation/conditions");
+const OUTPUT_DIR = resolve("data/ablation/conditions");
 
 type ConditionType = "size-constraints" | "hover-interaction";
 
