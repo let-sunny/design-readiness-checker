@@ -77,10 +77,10 @@ When a node's style includes `svg: <svg>...</svg>`, render it as an inline `<svg
 
 When a node includes a `[hover]:` line, generate a `:hover` CSS rule with the provided style changes:
 
-```
+```text
 Button (INSTANCE, 120x40) [component: Button]
   style: background: #2C2C2C
-  [hover]: background: #1E1E1E
+  [hover]: background: #1E1E1E; Icon: fill: #FFFFFF
 ```
 
 → generates:
@@ -88,10 +88,11 @@ Button (INSTANCE, 120x40) [component: Button]
 ```css
 .button { background: #2C2C2C; }
 .button:hover { background: #1E1E1E; }
+.button:hover .icon { fill: #FFFFFF; }
 ```
 
 - Only use hover data that is explicitly provided in `[hover]:` — do not invent hover effects
-- If child styles are included (e.g., `[hover]: Icon: fill: #FFFFFF`), apply them to the child element's `:hover` rule via parent selector
+- Child styles (e.g., `Icon: fill: #FFFFFF`) use `.parent:hover .child` selector pattern
 
 ### Image Assets
 - Always render images as `<img>` tags — do NOT use CSS `background-image`
