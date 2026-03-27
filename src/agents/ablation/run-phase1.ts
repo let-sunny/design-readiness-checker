@@ -303,13 +303,15 @@ async function runSingle(
   let response: Anthropic.Message | undefined;
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
-      response = await client.messages.create({
+      // Use streaming to handle long responses (>10 min timeout without streaming)
+      const stream = client.messages.stream({
         model: MODEL,
         max_tokens: MAX_TOKENS,
         temperature: TEMPERATURE,
         system: prompt,
         messages: [{ role: "user", content: designTree }],
       });
+      response = await stream.finalMessage();
       break;
     } catch (err) {
       const status = (err as { status?: number }).status;
