@@ -8,9 +8,6 @@ importers:
 
   .:
     dependencies:
-      '@anthropic-ai/sdk':
-        specifier: ^0.80.0
-        version: 0.80.0(zod@4.3.6)
       '@figma/rest-api-spec':
         specifier: ^0.36.0
         version: 0.36.0
@@ -33,6 +30,9 @@ importers:
         specifier: ^4.3.6
         version: 4.3.6
     devDependencies:
+      '@anthropic-ai/sdk':
+        specifier: ^0.80.0
+        version: 0.80.0(zod@4.3.6)
       '@figma/plugin-typings':
         specifier: ^1.123.0
         version: 1.123.0

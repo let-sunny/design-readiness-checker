@@ -289,11 +289,10 @@ export function getConfigsWithPreset(
       break;
 
     case "strict":
-      // Enable all rules, increase scores
+      // Increase scores but respect disabled rules
       for (const [id, config] of Object.entries(configs)) {
         configs[id as RuleId] = {
           ...config,
-          enabled: true,
           score: Math.round(config.score * 1.5),
         };
       }
