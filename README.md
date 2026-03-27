@@ -10,7 +10,7 @@
   <a href="https://github.com/let-sunny/canicode/actions/workflows/release.yml"><img src="https://github.com/let-sunny/canicode/actions/workflows/release.yml/badge.svg" alt="Release"></a>
 </p>
 
-<p align="center"><strong>Predicts where your Figma design will break when AI implements it — scored against real code conversion difficulty.</strong></p>
+<p align="center"><strong>Analyzes Figma designs to help AI implement them pixel-perfectly — with minimal token cost and responsive-ready output.</strong></p>
 
 <p align="center">
   <strong><a href="https://let-sunny.github.io/canicode/">Try it in your browser</a></strong> — no install needed.
@@ -24,13 +24,17 @@
 
 ## Why CanICode
 
-AI code generators (Claude, Cursor, GPT) can turn a Figma design into working code — but they fail predictably on certain patterns: missing Auto Layout, raw color values, unnamed layers, ambiguous nesting.
+AI can turn Figma designs into code — but the quality depends heavily on **how the design is structured**. Missing Auto Layout drops pixel accuracy from 95% to 63% at different viewports. Raw JSON input wastes 5× more tokens for 15%p worse results.
 
-CanICode finds these patterns **before** you generate code, so you can fix the design instead of debugging the output.
+CanICode solves this:
+
+1. **Analyzes** your Figma design for patterns that hurt AI implementation quality
+2. **Generates a design-tree** — a curated, CSS-ready representation that AI implements more accurately and efficiently than raw Figma data
+3. **Scores** responsive readiness, so you fix the design before generating code
 
 - **29 rules** across 5 dimensions: Structure, Token, Component, Naming, Behavior
 - **Deterministic** — no AI tokens consumed per analysis, runs in milliseconds
-- **Calibrated** — scores validated by converting real designs to code and measuring pixel-level accuracy
+- **Validated** — [ablation experiments](https://github.com/let-sunny/canicode/wiki) confirmed design-tree achieves 94% pixel accuracy with 5× fewer tokens than raw JSON
 
 ### Scores You Can Trust
 
