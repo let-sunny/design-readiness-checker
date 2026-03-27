@@ -165,6 +165,57 @@ function formatComponentProperties(node: AnalysisNode): string | null {
   return entries.join(", ");
 }
 
+/** Extract key visual styles from a node for hover diff comparison. */
+function extractVisualStyles(node: AnalysisNode): Record<string, string> {
+  const styles: Record<string, string> = {};
+  const fillInfo = getFillInfo(node);
+  if (fillInfo.color) styles["background"] = fillInfo.color;
+  const stroke = getStroke(node);
+  if (stroke) styles["border-color"] = stroke;
+  if (node.cornerRadius) styles["border-radius"] = `${node.cornerRadius}px`;
+  if (node.opacity !== undefined && node.opacity < 1) styles["opacity"] = `${Math.round(node.opacity * 100) / 100}`;
+  const shadow = getShadow(node);
+  if (shadow) styles["box-shadow"] = shadow;
+  // Text color
+  if (node.type === "TEXT") {
+    const textColor = getFill(node);
+    if (textColor) styles["color"] = textColor;
+  }
+  return styles;
+}
+
+/** Compute style diff between current node and its hover variant. */
+function computeHoverDiff(
+  currentNode: AnalysisNode,
+  hoverNode: AnalysisNode,
+): string | null {
+  const current = extractVisualStyles(currentNode);
+  const hover = extractVisualStyles(hoverNode);
+  const diffs: string[] = [];
+  for (const [key, val] of Object.entries(hover)) {
+    if (current[key] !== val) {
+      diffs.push(`${key}: ${val}`);
+    }
+  }
+  // Check children for text/color changes (first level only)
+  if (currentNode.children && hoverNode.children) {
+    const len = Math.min(currentNode.children.length, hoverNode.children.length);
+    for (let i = 0; i < len; i++) {
+      const cc = currentNode.children[i];
+      const hc = hoverNode.children[i];
+      if (!cc || !hc) continue;
+      const ccStyles = extractVisualStyles(cc);
+      const hcStyles = extractVisualStyles(hc);
+      for (const [key, val] of Object.entries(hcStyles)) {
+        if (ccStyles[key] !== val) {
+          diffs.push(`${cc.name}: ${key}: ${val}`);
+        }
+      }
+    }
+  }
+  return diffs.length > 0 ? diffs.join("; ") : null;
+}
+
 /** Render a single node and its children as indented design-tree text. */
 function renderNode(
   node: AnalysisNode,
@@ -174,6 +225,7 @@ function renderNode(
   imageMapping?: Record<string, string>,
   vectorMapping?: Record<string, string>,
   fileStyles?: AnalysisFile["styles"],
+  interactionDests?: Record<string, AnalysisNode>,
 ): string {
   if (node.visible === false) return "";
 
@@ -381,10 +433,33 @@ function renderNode(
     lines.push(`${prefix}  style: ${styles.join("; ")}`);
   }
 
+  // Interaction states (hover)
+  if (node.interactions && interactionDests) {
+    for (const interaction of node.interactions) {
+      const i = interaction as {
+        trigger?: { type?: string };
+        actions?: Array<{ destinationId?: string; navigation?: string }>;
+      };
+      if (i.trigger?.type === "ON_HOVER" && i.actions) {
+        for (const action of i.actions) {
+          if (action.destinationId && action.navigation === "CHANGE_TO") {
+            const hoverNode = interactionDests[action.destinationId];
+            if (hoverNode) {
+              const diff = computeHoverDiff(node, hoverNode);
+              if (diff) {
+                lines.push(`${prefix}  [hover]: ${diff}`);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
   // Children
   if (node.children) {
     for (const child of node.children) {
-      const childOutput = renderNode(child, indent + 1, vectorDir, components, imageMapping, vectorMapping, fileStyles);
+      const childOutput = renderNode(child, indent + 1, vectorDir, components, imageMapping, vectorMapping, fileStyles, interactionDests);
       if (childOutput) lines.push(childOutput);
     }
   }
@@ -450,7 +525,7 @@ export function generateDesignTreeWithStats(file: AnalysisFile, options?: Design
     }
   }
 
-  const tree = renderNode(root, 0, options?.vectorDir, file.components, imageMapping, vectorMapping, file.styles);
+  const tree = renderNode(root, 0, options?.vectorDir, file.components, imageMapping, vectorMapping, file.styles, file.interactionDestinations);
 
   const result = [
     "# Design Tree",

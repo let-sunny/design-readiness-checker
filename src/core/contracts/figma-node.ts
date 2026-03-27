@@ -199,6 +199,7 @@ export const AnalysisFileSchema = z.object({
     })
   ),
   componentDefinitions: z.record(z.string(), AnalysisNodeSchema).optional(),
+  interactionDestinations: z.record(z.string(), AnalysisNodeSchema).optional(),
   styles: z.record(
     z.string(),
     z.object({
