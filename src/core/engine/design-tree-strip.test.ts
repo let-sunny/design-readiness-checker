@@ -19,7 +19,7 @@ const FIXTURE = [
   "    component-properties: Size=Large, HasImage=true",
   '    style: display: flex; flex-direction: column; gap: 12px; padding: 16px 16px 16px 16px; background: #F5F5F5; border-radius: 12px; box-shadow: 0px 4px 8px #000000; min-width: 300px',
   "    Image (FRAME, 303x120)",
-  "      style: width: 100%; height: 100%; background-image: url(images/product@2x.png); background-size: cover; border-radius: 8px; opacity: 0.95",
+  "      style: width: 100%; height: 100%; content-image: url(images/product@2x.png); object-fit: cover; border-radius: 8px; opacity: 0.95",
   "    Price (TEXT, 100x20)",
   '      style: font-family: "Inter"; font-weight: 600; font-size: 18px; line-height: 20px; color: rgba(30, 30, 30, 0.8); text: "$29.99"',
   "  Button (INSTANCE, 335x48) [component: Button]",
@@ -112,8 +112,8 @@ describe("stripDesignTree", () => {
       expect(result).toContain('text: "My Store"');
     });
 
-    it("preserves background-image", () => {
-      expect(result).toContain("background-image: url(images/product@2x.png)");
+    it("preserves content-image", () => {
+      expect(result).toContain("content-image: url(images/product@2x.png)");
     });
 
     it("preserves layout and typography", () => {

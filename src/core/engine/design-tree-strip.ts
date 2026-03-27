@@ -215,8 +215,9 @@ function stripColorValues(lines: string[]): string[] {
 
     parsed.properties = parsed.properties.map((p) => {
       const prop = getPropertyName(p);
-      // Don't touch background-image or text content
+      // Don't touch image paths or text content
       if (prop === "background-image") return p;
+      if (prop === "content-image") return p;
       if (prop === "text") return p;
       // Replace colors in background, color, border, box-shadow
       if (["background", "color", "border", "border-top", "border-right",

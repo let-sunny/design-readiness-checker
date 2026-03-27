@@ -85,7 +85,7 @@ export function registerImplement(cli: CAC): void {
           const vecOutputDir = resolve(outputDir, "vectors");
           mkdirSync(vecOutputDir, { recursive: true });
           const { readdirSync, copyFileSync } = await import("node:fs");
-          const vecFiles = readdirSync(vectorDir).filter(f => f.endsWith(".svg"));
+          const vecFiles = readdirSync(vectorDir).filter(f => f.endsWith(".svg") || f === "mapping.json");
           for (const f of vecFiles) {
             copyFileSync(resolve(vectorDir, f), resolve(vecOutputDir, f));
           }

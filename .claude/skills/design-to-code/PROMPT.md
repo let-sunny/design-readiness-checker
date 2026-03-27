@@ -26,7 +26,8 @@ Your job is to translate the Figma data to HTML+CSS — nothing more.
 Never sacrifice #1 for #2 or #3. Reuse and tokens are structural improvements only — they must not change the visual output.
 
 ### Rules
-- Do NOT add any value that isn't in the Figma data (no extra padding, margin, gap, transition, hover effect)
+- Do NOT add any value that isn't in the Figma data (no extra padding, margin, gap, transition)
+- Do NOT add hover effects unless `[hover]:` data is provided in the design tree
 - Do NOT change any value from the Figma data (if it says 160px padding, use 160px)
 - Do NOT "improve" the design — if something looks wrong, reproduce it anyway
 - Do NOT add responsive behavior unless the Figma data explicitly shows it
@@ -72,12 +73,40 @@ When a node's style includes `svg: <svg>...</svg>`, render it as an inline `<svg
 - Preserve the node's dimensions (`width` and `height` from the node header)
 - The `<svg>` replaces the node's HTML element (do not wrap it in an extra `<div>` unless the node has other styles like background or border)
 
+### Hover States
+
+When a node includes a `[hover]:` line, generate a `:hover` CSS rule with the provided style changes:
+
+```text
+Button (INSTANCE, 120x40) [component: Button]
+  style: background: #2C2C2C
+  [hover]: background: #1E1E1E; Icon: fill: #FFFFFF
+```
+
+→ generates:
+
+```css
+.button { background: #2C2C2C; }
+.button:hover { background: #1E1E1E; }
+.button:hover .icon { fill: #FFFFFF; }
+```
+
+- Only use hover data that is explicitly provided in `[hover]:` — do not invent hover effects
+- Child styles (e.g., `Icon: fill: #FFFFFF`) use `.parent:hover .child` selector pattern
+
 ### Image Assets
-- Always render images as `<img>` tags — do NOT use CSS `background-image`
-- If the design tree shows `background-image: url(images/...)`, convert to `<img src="images/..." />`
-- Map `background-size` to `object-fit`: `cover` → `object-fit: cover`, `contain` → `object-fit: contain`
-- If the node has children, position the `<img>` behind them (e.g., `position: absolute; z-index: 0` inside a `position: relative` container)
-- If it shows `background-image: [IMAGE]`, the image asset is unavailable — use a placeholder color matching the surrounding design
+
+The design tree uses two distinct image types:
+
+**`content-image:`** — leaf node, no children → render as `<img>` tag
+- `content-image: url(images/...)` → `<img src="images/..." />`
+- `object-fit: cover` or `object-fit: contain` is provided alongside — use it directly
+
+**`background-image:`** — node has children on top → keep as CSS `background-image`
+- `background-image: url(images/...)` → `background-image: url(images/...)` in CSS
+- `background-size`, `background-position`, `background-repeat` are provided alongside — use as-is
+
+**`[IMAGE]` placeholder** — image asset unavailable → use a placeholder color matching the surrounding design
 
 ### If data is missing
 When the Figma data does not specify a value, you MUST list it as an interpretation.
