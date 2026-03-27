@@ -213,6 +213,22 @@ describe("generateDesignTree", () => {
       expect(output).toContain('text: "She said \\"hello\\""');
     });
 
+    it("TEXT nodes escape backslashes in characters", () => {
+      const file = makeFile(
+        makeNode({
+          id: "1:1",
+          name: "Path",
+          type: "TEXT",
+          characters: "C:\\Users\\file.txt",
+          absoluteBoundingBox: { x: 0, y: 0, width: 200, height: 30 },
+        })
+      );
+
+      const output = generateDesignTree(file);
+
+      expect(output).toContain('text: "C:\\\\Users\\\\file.txt"');
+    });
+
     it("TEXT nodes with no characters do not include text: property", () => {
       const file = makeFile(
         makeNode({
