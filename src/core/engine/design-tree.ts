@@ -242,12 +242,19 @@ function computeHoverDiff(
       }
     }
 
+    let unkeyedIdx = 0;
     for (let i = 0; i < currentNode.children.length; i++) {
       const cc = currentNode.children[i];
       if (!cc) continue;
 
       const stableKey = getChildStableKey(cc);
-      const hc = stableKey ? hoverByStableKey.get(stableKey) : hoverUnmatchedByIndex[i];
+      let hc: AnalysisNode | undefined;
+      if (stableKey) {
+        hc = hoverByStableKey.get(stableKey);
+      } else {
+        hc = hoverUnmatchedByIndex[unkeyedIdx];
+        unkeyedIdx++;
+      }
       if (!hc) continue;
       const ccStyles = extractVisualStyles(cc);
       const hcStyles = extractVisualStyles(hc);
