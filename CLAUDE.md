@@ -193,7 +193,7 @@ Hero Section (FRAME, 375x960)              ← name (TYPE, WxH)
 
 - `(TYPE, WxH)` — Figma node type + dimensions
 - `style:` — CSS properties converted from Figma (layoutMode→flex, fills→color, etc.)
-- `[component: ComponentName]` or `[component: Key=Value, ...]` — component instance, with variant properties if present
+- `[component: ComponentName]` — component instance annotation (outputs `comp.name`; variant components naturally have `Key=Value` names like `Platform=Mobile, State=Default`)
 - `[IMAGE]` — image placeholder (actual images in `images/` directory)
 - `svg:` — inline SVG for vector nodes
 - `SLOT` type — replaceable area in component
