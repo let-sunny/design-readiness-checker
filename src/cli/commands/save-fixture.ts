@@ -7,7 +7,7 @@ import { z } from "zod";
 import { parseFigmaUrl } from "../../core/adapters/figma-url-parser.js";
 import { loadFile, isFigmaUrl } from "../../core/engine/loader.js";
 import { getFigmaToken } from "../../core/engine/config-store.js";
-import { collectVectorNodeIds, collectImageNodes, sanitizeFilename, countNodes } from "../helpers.js";
+import { collectVectorNodes, collectImageNodes, sanitizeFilename, countNodes } from "../helpers.js";
 
 const SaveFixtureOptionsSchema = z.object({
   output: z.string().optional(),
@@ -114,28 +114,50 @@ export function registerSaveFixture(cli: CAC): void {
           }
 
           // 3. Download SVGs for VECTOR nodes
-          const vectorNodeIds = collectVectorNodeIds(file.document);
-          if (vectorNodeIds.length > 0) {
+          const vectorNodes = collectVectorNodes(file.document);
+          if (vectorNodes.length > 0) {
             const vectorDir = resolve(fixtureDir, "vectors");
             mkdirSync(vectorDir, { recursive: true });
 
-            const svgUrls = await client.getNodeImages(file.fileKey, vectorNodeIds, { format: "svg" });
+            const svgUrls = await client.getNodeImages(
+              file.fileKey,
+              vectorNodes.map(n => n.id),
+              { format: "svg" },
+            );
+            const usedNames = new Map<string, number>();
             let downloaded = 0;
-            for (const [id, svgUrl] of Object.entries(svgUrls)) {
+            for (const { id, name } of vectorNodes) {
+              const svgUrl = svgUrls[id];
               if (!svgUrl) continue;
+              let base = sanitizeFilename(name);
+              const count = usedNames.get(base) ?? 0;
+              usedNames.set(base, count + 1);
+              if (count > 0) base = `${base}-${count + 1}`;
+              const filename = `${base}.svg`;
               try {
                 const resp = await fetch(svgUrl);
                 if (resp.ok) {
                   const svg = await resp.text();
-                  const safeId = id.replace(/:/g, "-");
-                  await writeFile(resolve(vectorDir, `${safeId}.svg`), svg, "utf-8");
+                  await writeFile(resolve(vectorDir, filename), svg, "utf-8");
                   downloaded++;
                 }
               } catch {
                 // Skip failed downloads
               }
             }
-            console.log(`  vectors/: ${downloaded}/${vectorNodeIds.length} SVGs`);
+            // Write mapping.json for design-tree
+            const mapping: Record<string, string> = {};
+            const usedNamesForMapping = new Map<string, number>();
+            for (const { id, name } of vectorNodes) {
+              let base = sanitizeFilename(name);
+              const cnt = usedNamesForMapping.get(base) ?? 0;
+              usedNamesForMapping.set(base, cnt + 1);
+              if (cnt > 0) base = `${base}-${cnt + 1}`;
+              mapping[id] = `${base}.svg`;
+            }
+            await writeFile(resolve(vectorDir, "mapping.json"), JSON.stringify(mapping, null, 2), "utf-8");
+
+            console.log(`  vectors/: ${downloaded}/${vectorNodes.length} SVGs`);
           }
 
           // 4. Download PNGs for IMAGE fill nodes

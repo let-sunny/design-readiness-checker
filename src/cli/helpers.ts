@@ -41,6 +41,17 @@ export function collectVectorNodeIds(node: { id: string; type: string; children?
   return ids;
 }
 
+export function collectVectorNodes(node: { id: string; name: string; type: string; children?: readonly unknown[] | undefined }): Array<{ id: string; name: string }> {
+  const nodes: Array<{ id: string; name: string }> = [];
+  if (node.type === "VECTOR") nodes.push({ id: node.id, name: node.name });
+  if (node.children) {
+    for (const child of node.children) {
+      nodes.push(...collectVectorNodes(child as typeof node));
+    }
+  }
+  return nodes;
+}
+
 export function collectImageNodes(node: AnalysisNode): Array<{ id: string; name: string }> {
   const nodes: Array<{ id: string; name: string }> = [];
   function walk(n: AnalysisNode): void {
