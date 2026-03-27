@@ -125,10 +125,9 @@ async function runHoverInteraction(fixture: string, client: Anthropic, prompt: s
   const stripHtml = processHtml(getResponseText(stripResponse)).html;
   writeFileSync(join(runDir, "output-without-hover.html"), stripHtml);
 
-  // Extract :hover rules (strip CSS/HTML comments to avoid false positives)
-  const stripComments = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/<!--[\s\S]*?-->/g, "");
-  const baseHoverRules = stripComments(baseHtml).match(/[^}]*:hover\s*\{[^}]*\}/g) ?? [];
-  const stripHoverRules = stripComments(stripHtml).match(/[^}]*:hover\s*\{[^}]*\}/g) ?? [];
+  // Extract :hover rules
+  const baseHoverRules = baseHtml.match(/[^}]*:hover\s*\{[^}]*\}/g) ?? [];
+  const stripHoverRules = stripHtml.match(/[^}]*:hover\s*\{[^}]*\}/g) ?? [];
 
   const result = {
     fixture, type: "hover-interaction", hoverBlocksInDesignTree: hoverCount,

@@ -140,10 +140,8 @@ export async function callApi(client: Anthropic, prompt: string, designTree: str
     } catch (err) {
       const status = (err as { status?: number }).status;
       if ((status === 429 || status === 529) && attempt < MAX_RETRIES) {
-        const baseDelay = Math.pow(2, attempt + 1) * 1000;
-        const jitter = Math.random() * 1000;
-        const delay = baseDelay + jitter;
-        console.warn(`    ⚠ ${status} error, retrying in ${(delay / 1000).toFixed(1)}s (${attempt + 1}/${MAX_RETRIES})...`);
+        const delay = Math.pow(2, attempt + 1) * 1000;
+        console.warn(`    ⚠ ${status} error, retrying in ${delay / 1000}s (${attempt + 1}/${MAX_RETRIES})...`);
         await new Promise((r) => setTimeout(r, delay));
         continue;
       }
