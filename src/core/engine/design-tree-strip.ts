@@ -5,8 +5,8 @@
  * Flow: generateDesignTree() → stripDesignTree() → send to LLM
  */
 
-/** The 12 information types that can be stripped for ablation experiments. */
-export type DesignTreeInfoType =
+/** All strip types available (including utility strips not used in experiments). */
+export type DesignTreeStripType =
   | "layout-direction-spacing"
   | "size-constraints"
   | "position-stacking"
@@ -18,22 +18,30 @@ export type DesignTreeInfoType =
   | "node-names-hierarchy"
   | "overflow-text-behavior"
   | "hover-interaction-states"
-  | "design-token-references";
+  | "variable-references"
+  | "style-references";
 
-/** All available information types for iteration in experiments. */
+/**
+ * Experiment-relevant strip types only.
+ * Excludes trivially obvious types (color, typography, shadows, overflow, hover)
+ * and no-op types (position-stacking, component-descriptions).
+ */
+export type DesignTreeInfoType =
+  | "layout-direction-spacing"
+  | "size-constraints"
+  | "component-references"
+  | "node-names-hierarchy"
+  | "variable-references"
+  | "style-references";
+
+/** Experiment-relevant information types for ablation. */
 export const DESIGN_TREE_INFO_TYPES: readonly DesignTreeInfoType[] = [
   "layout-direction-spacing",
   "size-constraints",
-  "position-stacking",
-  "color-values",
-  "typography",
-  "shadows-effects",
   "component-references",
-  "component-descriptions",
   "node-names-hierarchy",
-  "overflow-text-behavior",
-  "hover-interaction-states",
-  "design-token-references",
+  "variable-references",
+  "style-references",
 ] as const;
 
 // --- Style property matchers ---
@@ -107,17 +115,19 @@ function replaceColorsInSvg(svgContent: string): string {
   return svgContent.replace(SVG_COLOR_ATTR_RE, '$1="[COLOR]"');
 }
 
-// --- Token reference removal ---
+// --- Reference removal ---
 
 const VAR_COMMENT_RE = /\s*\/\*\s*var:[^*]*\*\//g;
 const TEXT_STYLE_COMMENT_RE = /\s*\/\*\s*text-style:[^*]*\*\//g;
 
-function removeTokenRefs(segment: string): string {
-  let result = segment;
-  result = result.replace(VAR_COMMENT_RE, "");
-  result = result.replace(TEXT_STYLE_COMMENT_RE, "");
-  return result.trim();
+function removeVarRefs(segment: string): string {
+  return segment.replace(VAR_COMMENT_RE, "").trim();
 }
+
+function removeStyleRefs(segment: string): string {
+  return segment.replace(TEXT_STYLE_COMMENT_RE, "").trim();
+}
+
 
 // --- Line classification ---
 
@@ -243,7 +253,6 @@ function stripTypography(lines: string[]): string[] {
     parsed.properties = parsed.properties.filter((p) => {
       const prop = getPropertyName(p);
       if (TYPOGRAPHY_PROPS.has(prop)) return false;
-      // Remove text-style comments that are standalone properties
       if (p.trim().startsWith("/* text-style:")) return false;
       return true;
     });
@@ -279,7 +288,6 @@ function stripComponentReferences(lines: string[]): string[] {
   return lines
     .filter((line) => !line.match(/^\s*component-properties:/))
     .map((line) => {
-      // Only remove [component: ...] from header lines
       if (isHeaderLine(line)) {
         return line.replace(/\s*\[component:[^\]]*\]$/, "");
       }
@@ -315,12 +323,25 @@ function stripHoverStates(lines: string[]): string[] {
   return lines.filter((line) => !line.match(/^\s*\[hover\]:/));
 }
 
-function stripTokenReferences(lines: string[]): string[] {
+/** Strip variable reference comments only (keep text-style references). */
+function stripVariableReferences(lines: string[]): string[] {
   return lines.map((line) => {
     const parsed = parseStyleLine(line);
     if (!parsed) return line;
     parsed.properties = parsed.properties
-      .map((p) => removeTokenRefs(p))
+      .map((p) => removeVarRefs(p))
+      .filter(Boolean);
+    return reassembleStyleLine(parsed);
+  }).filter((line): line is string => line !== null);
+}
+
+/** Strip text-style comments only (keep variable references). */
+function stripStyleReferences(lines: string[]): string[] {
+  return lines.map((line) => {
+    const parsed = parseStyleLine(line);
+    if (!parsed) return line;
+    parsed.properties = parsed.properties
+      .map((p) => removeStyleRefs(p))
       .filter(Boolean);
     return reassembleStyleLine(parsed);
   }).filter((line): line is string => line !== null);
@@ -328,26 +349,27 @@ function stripTokenReferences(lines: string[]): string[] {
 
 // --- Main API ---
 
-const STRIP_FUNCTIONS: Record<DesignTreeInfoType, (lines: string[]) => string[]> = {
+const STRIP_FUNCTIONS: Record<DesignTreeStripType, (lines: string[]) => string[]> = {
   "layout-direction-spacing": stripLayoutSpacing,
   "size-constraints": stripSizeConstraints,
-  "position-stacking": (lines) => lines, // no-op: design-tree doesn't emit position/z-index
+  "position-stacking": (lines) => lines,
   "color-values": stripColorValues,
   "typography": stripTypography,
   "shadows-effects": stripShadowsEffects,
   "component-references": stripComponentReferences,
-  "component-descriptions": (lines) => lines, // no-op: not in design-tree yet
+  "component-descriptions": (lines) => lines,
   "node-names-hierarchy": stripNodeNames,
   "overflow-text-behavior": stripOverflow,
   "hover-interaction-states": stripHoverStates,
-  "design-token-references": stripTokenReferences,
+  "variable-references": stripVariableReferences,
+  "style-references": stripStyleReferences,
 };
 
 /**
  * Strip a specific information type from a design-tree text.
  * Returns a new string with the target information removed.
  */
-export function stripDesignTree(tree: string, type: DesignTreeInfoType): string {
+export function stripDesignTree(tree: string, type: DesignTreeStripType): string {
   const lines = tree.split("\n");
   const stripped = STRIP_FUNCTIONS[type](lines);
   return stripped.join("\n");

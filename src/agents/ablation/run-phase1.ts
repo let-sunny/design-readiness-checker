@@ -203,20 +203,8 @@ function getResultPath(fixture: string, type: string, runIndex: number): string 
   return join(getRunDir(fixture, type, runIndex), "result.json");
 }
 
-/**
- * Types to always skip — either no-op (design-tree doesn't emit them)
- * or trivially obvious (removing all colors/fonts guarantees pixel diff).
- */
-const ALWAYS_SKIP: ReadonlySet<DesignTreeInfoType> = new Set([
-  "color-values",      // Removing all colors → trivially different pixels
-  "typography",        // Removing all fonts → trivially different pixels
-  "hover-interaction-states", // Hover data absent → can't produce hover CSS (obvious)
-  "overflow-text-behavior",  // overflow: hidden on few nodes, absent → can't infer (obvious)
-]);
-
 /** Detect no-op strip types by comparing output. */
 function isStripNoOp(baselineTree: string, type: DesignTreeInfoType): boolean {
-  if (ALWAYS_SKIP.has(type)) return true;
   const stripped = stripDesignTree(baselineTree, type);
   return stripped === baselineTree;
 }

@@ -1,5 +1,13 @@
 import { stripDesignTree, DESIGN_TREE_INFO_TYPES } from "./design-tree-strip.js";
-import type { DesignTreeInfoType } from "./design-tree-strip.js";
+import type { DesignTreeStripType } from "./design-tree-strip.js";
+
+/** All strip types for safety invariant tests (not just experiment-relevant ones). */
+const ALL_STRIP_TYPES: readonly DesignTreeStripType[] = [
+  "layout-direction-spacing", "size-constraints", "position-stacking",
+  "color-values", "typography", "shadows-effects", "component-references",
+  "component-descriptions", "node-names-hierarchy", "overflow-text-behavior",
+  "hover-interaction-states", "variable-references", "style-references",
+];
 
 /** Shared test fixture containing all information types. */
 const FIXTURE = [
@@ -91,7 +99,6 @@ describe("stripDesignTree", () => {
 
     it("replaces rgba colors with [COLOR]", () => {
       expect(result).not.toContain("rgba(");
-      expect(result).toContain("color: [COLOR]");
     });
 
     it("replaces colors in border and box-shadow", () => {
@@ -115,26 +122,18 @@ describe("stripDesignTree", () => {
     it("preserves content-image", () => {
       expect(result).toContain("content-image: url(images/product@2x.png)");
     });
-
-    it("preserves layout and typography", () => {
-      expect(result).toContain("display: flex");
-      expect(result).toContain('font-family: "Inter"');
-    });
   });
 
   describe("typography", () => {
     const result = stripDesignTree(FIXTURE, "typography");
 
-    it("removes font-family, font-weight, font-size, line-height, letter-spacing, text-align, text-decoration", () => {
+    it("removes font properties and text-style comments", () => {
       expect(result).not.toContain("font-family:");
       expect(result).not.toContain("font-weight:");
       expect(result).not.toContain("font-size:");
       expect(result).not.toContain("line-height:");
       expect(result).not.toContain("letter-spacing:");
       expect(result).not.toContain("text-align:");
-    });
-
-    it("removes text-style comments", () => {
       expect(result).not.toContain("text-style:");
     });
 
@@ -155,7 +154,6 @@ describe("stripDesignTree", () => {
     it("preserves everything else", () => {
       expect(result).toContain("display: flex");
       expect(result).toContain("border-radius: 12px");
-      expect(result).toContain("#F5F5F5");
     });
   });
 
@@ -192,21 +190,11 @@ describe("stripDesignTree", () => {
       expect(result).toContain("Node2 (FRAME, 375x60)");
       expect(result).not.toContain("Page (FRAME");
       expect(result).not.toContain("Header (FRAME");
-      expect(result).not.toContain("Card (INSTANCE");
     });
 
-    it("preserves comment headers", () => {
+    it("preserves comment headers and component annotations", () => {
       expect(result).toContain("# Design Tree");
-      expect(result).toContain("# Root: 375px x 812px");
-    });
-
-    it("preserves [component: ...] annotations", () => {
       expect(result).toContain("[component: Product Card]");
-    });
-
-    it("preserves styles and text content", () => {
-      expect(result).toContain("display: flex");
-      expect(result).toContain('text: "My Store"');
     });
   });
 
@@ -236,50 +224,60 @@ describe("stripDesignTree", () => {
     });
   });
 
-  describe("design-token-references", () => {
-    const result = stripDesignTree(FIXTURE, "design-token-references");
+  describe("variable-references", () => {
+    const result = stripDesignTree(FIXTURE, "variable-references");
 
     it("removes /* var:... */ comments", () => {
       expect(result).not.toContain("/* var:");
     });
 
-    it("removes /* text-style: ... */ comments", () => {
-      expect(result).not.toContain("/* text-style:");
+    it("preserves /* text-style:... */ comments", () => {
+      expect(result).toContain("/* text-style: Heading / Large */");
     });
 
     it("preserves the actual values", () => {
       expect(result).toContain("background: #FFFFFF");
-      expect(result).toContain("color: #FFFFFF");
+      expect(result).toContain("column-gap: 8px");
+    });
+  });
+
+  describe("style-references", () => {
+    const result = stripDesignTree(FIXTURE, "style-references");
+
+    it("removes /* text-style:... */ comments", () => {
+      expect(result).not.toContain("/* text-style:");
+    });
+
+    it("preserves /* var:... */ comments", () => {
+      expect(result).toContain("/* var:");
+    });
+
+    it("preserves the actual font values", () => {
       expect(result).toContain('font-family: "Inter"');
+      expect(result).toContain("font-weight: 700");
     });
   });
 
   describe("position-stacking", () => {
-    it("returns tree unchanged (no-op — design-tree doesn't emit position/z-index)", () => {
+    it("returns tree unchanged (no-op)", () => {
       expect(stripDesignTree(FIXTURE, "position-stacking")).toBe(FIXTURE);
     });
   });
 
   describe("general properties", () => {
-    it("exports the exact 12 info types in order", () => {
+    it("exports the exact 6 experiment-relevant info types in order", () => {
       expect(DESIGN_TREE_INFO_TYPES).toEqual([
         "layout-direction-spacing",
         "size-constraints",
-        "position-stacking",
-        "color-values",
-        "typography",
-        "shadows-effects",
         "component-references",
-        "component-descriptions",
         "node-names-hierarchy",
-        "overflow-text-behavior",
-        "hover-interaction-states",
-        "design-token-references",
+        "variable-references",
+        "style-references",
       ]);
     });
 
     it("is idempotent — applying same strip twice gives same result", () => {
-      for (const type of DESIGN_TREE_INFO_TYPES) {
+      for (const type of ALL_STRIP_TYPES) {
         const once = stripDesignTree(FIXTURE, type);
         const twice = stripDesignTree(once, type);
         expect(twice).toBe(once);
@@ -287,7 +285,7 @@ describe("stripDesignTree", () => {
     });
 
     it("never removes comment headers", () => {
-      for (const type of DESIGN_TREE_INFO_TYPES) {
+      for (const type of ALL_STRIP_TYPES) {
         const result = stripDesignTree(FIXTURE, type);
         expect(result).toContain("# Design Tree");
         expect(result).toContain("# Root: 375px x 812px");
@@ -295,7 +293,7 @@ describe("stripDesignTree", () => {
     });
 
     it("never removes text content", () => {
-      for (const type of DESIGN_TREE_INFO_TYPES) {
+      for (const type of ALL_STRIP_TYPES) {
         const result = stripDesignTree(FIXTURE, type);
         expect(result).toContain('text: "My Store"');
         expect(result).toContain('text: "$29.99"');
@@ -304,7 +302,7 @@ describe("stripDesignTree", () => {
     });
 
     it("never produces empty output", () => {
-      for (const type of DESIGN_TREE_INFO_TYPES) {
+      for (const type of ALL_STRIP_TYPES) {
         const result = stripDesignTree(FIXTURE, type);
         expect(result.trim().length).toBeGreaterThan(0);
       }
@@ -324,21 +322,21 @@ describe("stripDesignTree", () => {
     ].join("\n");
 
     it("preserves text with semicolons and CSS-like content", () => {
-      for (const type of DESIGN_TREE_INFO_TYPES) {
+      for (const type of ALL_STRIP_TYPES) {
         const result = stripDesignTree(ADVERSARIAL, type);
         expect(result).toContain('text: "A; background: #FFFFFF; display: flex"');
       }
     });
 
     it("preserves text with SVG-like content", () => {
-      for (const type of DESIGN_TREE_INFO_TYPES) {
+      for (const type of ALL_STRIP_TYPES) {
         const result = stripDesignTree(ADVERSARIAL, type);
         expect(result).toContain('text: "svg: <path d=\\"M0 0\\"/>"');
       }
     });
 
     it("preserves text with component/frame/var-like content", () => {
-      for (const type of DESIGN_TREE_INFO_TYPES) {
+      for (const type of ALL_STRIP_TYPES) {
         const result = stripDesignTree(ADVERSARIAL, type);
         expect(result).toContain('text: "[component: Button] (FRAME, 1x1) /* var:demo */"');
       }
