@@ -20,11 +20,12 @@ function rgbaToHex(color: { r?: number; g?: number; b?: number; a?: number }): s
 interface FillInfo {
   color: string | null;
   hasImage: boolean;
+  imageScaleMode: string | null;
 }
 
 /** Extract fill color and IMAGE presence from a node, skipping invisible fills. */
 function getFillInfo(node: AnalysisNode): FillInfo {
-  const result: FillInfo = { color: null, hasImage: false };
+  const result: FillInfo = { color: null, hasImage: false, imageScaleMode: null };
   if (!node.fills || !Array.isArray(node.fills)) return result;
   for (const fill of node.fills) {
     const f = fill as {
@@ -33,6 +34,7 @@ function getFillInfo(node: AnalysisNode): FillInfo {
       color?: { r?: number; g?: number; b?: number; a?: number };
       opacity?: number;
       boundVariables?: { color?: { id?: string } };
+      scaleMode?: string;
     };
     // Skip invisible fills
     if (f.visible === false) continue;
@@ -55,6 +57,7 @@ function getFillInfo(node: AnalysisNode): FillInfo {
       }
     } else if (f.type === "IMAGE") {
       result.hasImage = true;
+      result.imageScaleMode = f.scaleMode ?? null;
     }
   }
   return result;
@@ -107,6 +110,27 @@ function mapAlign(figmaAlign: string): string {
   return map[figmaAlign] ?? figmaAlign;
 }
 
+/** Map Figma text horizontal alignment to CSS text-align. */
+function mapTextAlignHorizontal(figmaAlign: string): string {
+  const map: Record<string, string> = {
+    LEFT: "left",
+    CENTER: "center",
+    RIGHT: "right",
+    JUSTIFIED: "justify",
+  };
+  return map[figmaAlign] ?? figmaAlign.toLowerCase();
+}
+
+/** Map Figma text vertical alignment to CSS flex align-items. */
+function mapTextAlignVertical(figmaAlign: string): string {
+  const map: Record<string, string> = {
+    TOP: "flex-start",
+    CENTER: "center",
+    BOTTOM: "flex-end",
+  };
+  return map[figmaAlign] ?? figmaAlign.toLowerCase();
+}
+
 /** Get variable reference comment from boundVariables if available. */
 function getVarRef(node: AnalysisNode, prop: string): string {
   const bv = node.boundVariables as Record<string, unknown> | undefined;
@@ -117,6 +141,28 @@ function getVarRef(node: AnalysisNode, prop: string): string {
     return ` /* var:${(ref as { id: string }).id} */`;
   }
   return "";
+}
+
+/** Get first variable ref among multiple properties. */
+function getFirstVarRef(node: AnalysisNode, props: string[]): string {
+  for (const prop of props) {
+    const ref = getVarRef(node, prop);
+    if (ref) return ref;
+  }
+  return "";
+}
+
+/** Format instance component property values for AI hints. */
+function formatComponentProperties(node: AnalysisNode): string | null {
+  if (!node.componentProperties || typeof node.componentProperties !== "object") return null;
+  const entries = Object.entries(node.componentProperties)
+    .map(([name, value]) => {
+      const v = value as { value?: unknown };
+      const raw = typeof v?.value === "string" ? v.value : JSON.stringify(v?.value ?? "");
+      return `${name}=${raw}`;
+    });
+  if (entries.length === 0) return null;
+  return entries.join(", ");
 }
 
 /** Render a single node and its children as indented design-tree text. */
@@ -146,6 +192,12 @@ function renderNode(
     }
   }
   lines.push(header);
+  if (node.type === "INSTANCE") {
+    const componentProps = formatComponentProperties(node);
+    if (componentProps) {
+      lines.push(`${prefix}  component-properties: ${componentProps}`);
+    }
+  }
 
   // Styles
   const styles: string[] = [];
@@ -184,6 +236,13 @@ function renderNode(
       }
     }
   }
+  // Child self-alignment in auto-layout
+  if (node.layoutAlign && node.layoutAlign !== "INHERIT") {
+    styles.push(`align-self: ${mapAlign(node.layoutAlign)}`);
+  }
+  if (node.layoutGrow === 1) {
+    styles.push("flex-grow: 1");
+  }
 
   // Padding
   const pt = node.paddingTop ?? 0;
@@ -191,7 +250,7 @@ function renderNode(
   const pb = node.paddingBottom ?? 0;
   const pl = node.paddingLeft ?? 0;
   if (pt || pr || pb || pl) {
-    const padRef = getVarRef(node, "paddingTop") || getVarRef(node, "paddingLeft");
+    const padRef = getFirstVarRef(node, ["paddingTop", "paddingRight", "paddingBottom", "paddingLeft"]);
     styles.push(`padding: ${pt}px ${pr}px ${pb}px ${pl}px${padRef}`);
   }
 
@@ -206,6 +265,13 @@ function renderNode(
     const mappedFile = imageMapping?.[node.id];
     if (mappedFile) {
       styles.push(`background-image: url(images/${mappedFile})`);
+      styles.push("background-position: center");
+      styles.push("background-repeat: no-repeat");
+      if (fillInfo.imageScaleMode === "FIT") {
+        styles.push("background-size: contain");
+      } else if (fillInfo.imageScaleMode === "FILL") {
+        styles.push("background-size: cover");
+      }
     } else {
       styles.push("background-image: [IMAGE]");
     }
@@ -219,12 +285,13 @@ function renderNode(
       | undefined;
     const sw = (node.strokeWeight as number | undefined) ?? 1;
     if (isw) {
-      if (isw.top) styles.push(`border-top: ${isw.top}px solid ${stroke}`);
-      if (isw.right) styles.push(`border-right: ${isw.right}px solid ${stroke}`);
-      if (isw.bottom) styles.push(`border-bottom: ${isw.bottom}px solid ${stroke}`);
-      if (isw.left) styles.push(`border-left: ${isw.left}px solid ${stroke}`);
+      const strokeRef = getFirstVarRef(node, ["individualStrokeWeights", "strokes"]);
+      if (isw.top) styles.push(`border-top: ${isw.top}px solid ${stroke}${strokeRef}`);
+      if (isw.right) styles.push(`border-right: ${isw.right}px solid ${stroke}${strokeRef}`);
+      if (isw.bottom) styles.push(`border-bottom: ${isw.bottom}px solid ${stroke}${strokeRef}`);
+      if (isw.left) styles.push(`border-left: ${isw.left}px solid ${stroke}${strokeRef}`);
     } else {
-      styles.push(`border: ${sw}px solid ${stroke}`);
+      styles.push(`border: ${sw}px solid ${stroke}${getVarRef(node, "strokes")}`);
     }
   }
 
@@ -266,8 +333,8 @@ function renderNode(
 
     const s = node.style as Record<string, unknown>;
     if (s["fontFamily"]) styles.push(`font-family: "${s["fontFamily"]}"${getVarRef(node, "fontFamily")}`);
-    if (s["fontWeight"]) styles.push(`font-weight: ${s["fontWeight"]}`);
-    if (s["fontSize"]) styles.push(`font-size: ${s["fontSize"]}px`);
+    if (s["fontWeight"]) styles.push(`font-weight: ${s["fontWeight"]}${getVarRef(node, "fontWeight")}`);
+    if (s["fontSize"]) styles.push(`font-size: ${s["fontSize"]}px${getVarRef(node, "fontSize")}`);
     if (s["lineHeightPx"]) {
       const lh = s["lineHeightPx"] as number;
       styles.push(`line-height: ${Math.round(lh * 100) / 100}px`);
@@ -279,6 +346,14 @@ function renderNode(
     if (s["textDecoration"]) {
       const td = (s["textDecoration"] as string).toLowerCase();
       if (td !== "none") styles.push(`text-decoration: ${td}`);
+    }
+    if (s["textAlignHorizontal"]) {
+      styles.push(`text-align: ${mapTextAlignHorizontal(String(s["textAlignHorizontal"]))}`);
+    }
+    if (s["textAlignVertical"]) {
+      // CSS has no direct text vertical-align in a text box; emit flex hint.
+      styles.push("display: flex");
+      styles.push(`align-items: ${mapTextAlignVertical(String(s["textAlignVertical"]))}`);
     }
 
     const textColor = getFill(node);
