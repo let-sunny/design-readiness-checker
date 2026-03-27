@@ -237,7 +237,8 @@ async function main(): Promise<void> {
 
   console.log(`Config: ${CONFIG_VERSION} | Model: sonnet | Runs: ${runsPerCondition}`);
   console.log(`Fixtures: ${fixtures.join(", ")}`);
-  console.log(`Types: ${requestedTypes ? requestedTypes.join(", ") : "all"}\n`);
+  const baselineOnly = process.env["ABLATION_BASELINE_ONLY"] === "true";
+  console.log(`Types: ${baselineOnly ? "baseline only" : requestedTypes ? requestedTypes.join(", ") : "all"}\n`);
 
   const allResults: RunResult[] = [];
   const newResults: RunResult[] = [];
@@ -256,7 +257,9 @@ async function main(): Promise<void> {
     const skipTypes = new Set(typesToRun.filter((t) => stripDesignTree(baselineTree, t) === baselineTree));
     if (skipTypes.size > 0) console.log(`  Skipping no-op: ${[...skipTypes].join(", ")}`);
 
-    const conditions: Array<"baseline" | DesignTreeInfoType> = ["baseline", ...typesToRun.filter((t) => !skipTypes.has(t))];
+    const conditions: Array<"baseline" | DesignTreeInfoType> = baselineOnly
+      ? ["baseline"]
+      : ["baseline", ...typesToRun.filter((t) => !skipTypes.has(t))];
 
     for (const type of conditions) {
       for (let run = 0; run < runsPerCondition; run++) {
