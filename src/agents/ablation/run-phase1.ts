@@ -99,6 +99,8 @@ interface RankingEntry {
 function computeConfigVersion(): string {
   const coreFiles = [
     resolve("src/core/engine/design-tree-strip.ts"),
+    resolve("src/core/engine/design-tree.ts"),
+    resolve("src/core/engine/visual-compare.ts"),
     resolve("src/core/engine/visual-compare-helpers.ts"),
   ];
   const hash = createHash("sha256");
