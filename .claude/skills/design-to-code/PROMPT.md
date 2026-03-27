@@ -100,8 +100,8 @@ Keep this list to **only genuine ambiguities** — do not list standard defaults
 
 ```
 // interpretations:
-- Assumed hover state for buttons (not specified in design data)
 - Used placeholder gray (#CCCCCC) for unavailable image asset
+- Chose "Inter" font weight 500 for ambiguous "Medium" style reference
 ```
 
 If you did not interpret anything, write:
