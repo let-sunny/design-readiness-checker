@@ -640,20 +640,25 @@ async function main(): Promise<void> {
 
     for (const type of conditions) {
       for (let run = 0; run < runsPerCondition; run++) {
-        // Check cache with key + artifact validation
-        if (isCacheValid(fixture, type, run, cacheKey, fixtureHash)) {
-          const cached = JSON.parse(readFileSync(getResultPath(fixture, type, run), "utf-8")) as RunResult;
-          allResults.push(cached);
-          cacheHits++;
-          console.log(`  [cached] ${type} run ${run + 1} → similarity=${cached.similarity.toFixed(1)}%`);
-          continue;
-        }
+        try {
+          // Check cache with key + artifact validation
+          if (isCacheValid(fixture, type, run, cacheKey, fixtureHash)) {
+            const cached = JSON.parse(readFileSync(getResultPath(fixture, type, run), "utf-8")) as RunResult;
+            allResults.push(cached);
+            cacheHits++;
+            console.log(`  [cached] ${type} run ${run + 1} → similarity=${cached.similarity.toFixed(1)}%`);
+            continue;
+          }
 
-        console.log(`  [${type}] run ${run + 1}/${runsPerCondition}`);
-        const tree = type === "baseline" ? baselineTree : stripDesignTree(baselineTree, type);
-        const result = await runSingle(client, prompt, fixture, type, tree, run, cacheKey);
-        allResults.push(result);
-        newResults.push(result);
+          console.log(`  [${type}] run ${run + 1}/${runsPerCondition}`);
+          const tree = type === "baseline" ? baselineTree : stripDesignTree(baselineTree, type);
+          const result = await runSingle(client, prompt, fixture, type, tree, run, cacheKey);
+          allResults.push(result);
+          newResults.push(result);
+        } catch (err) {
+          console.error(`  ERROR [${fixture}/${type}/run-${run}]: ${err instanceof Error ? err.message : String(err)}`);
+          skippedFixtures.push({ fixture, reason: `${type}/run-${run} failed: ${err instanceof Error ? err.message : String(err)}` });
+        }
       }
     }
   }

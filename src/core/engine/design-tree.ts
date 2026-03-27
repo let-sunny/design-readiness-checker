@@ -358,8 +358,8 @@ function renderNode(
       styles.push(`left: ${left}px`);
     }
   }
-  // If any child is absolute, parent needs position: relative
-  if (node.children?.some((c) => c.layoutPositioning === "ABSOLUTE")) {
+  // If any child is absolute, parent needs position: relative (but not if already absolute)
+  if (node.layoutPositioning !== "ABSOLUTE" && node.children?.some((c) => c.layoutPositioning === "ABSOLUTE")) {
     styles.push("position: relative");
   }
 
