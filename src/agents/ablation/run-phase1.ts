@@ -575,8 +575,7 @@ async function main(): Promise<void> {
   const sessionInputTokens = newResults.reduce((s, r) => s + r.inputTokens, 0);
   const sessionOutputTokens = newResults.reduce((s, r) => s + r.outputTokens, 0);
   const sessionCost = (sessionInputTokens * 3 / 1_000_000) + (sessionOutputTokens * 15 / 1_000_000);
-  const cachedCount = allResults.length - newResults.length;
-  console.log(`\nThis session: ${newResults.length} new calls, ${cachedCount} cached`);
+  console.log(`\nThis session: ${newResults.length} new calls, ${cacheHits} cached`);
   console.log(`Session tokens: ${sessionInputTokens} input + ${sessionOutputTokens} output`);
   console.log(`Session cost: ~$${sessionCost.toFixed(2)}`);
 }
