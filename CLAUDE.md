@@ -236,8 +236,8 @@ pnpm lint           # Type check
 npm publishing is handled by GitHub CI — **do not run `npm publish` manually**.
 
 1. Update version in `package.json`
-2. Commit and push to main
-3. Create and push a git tag: `git tag v0.x.x && git push origin v0.x.x`
+2. Merge the approved PR to main (do not bypass the PR workflow)
+3. Tag the merged commit on main: `git tag v0.x.x && git push origin v0.x.x`
 4. GitHub Actions CI automatically publishes to npm on tag push
 
 ## Conventions

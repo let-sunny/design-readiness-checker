@@ -35,14 +35,14 @@ Issues are weighted by their calibrated per-rule score (`calculatedScore` from r
 
 ### 2. Diversity (30% weight)
 
-Measures how many different rule types triggered, weighted by severity.
+Measures how many different rule types triggered, weighted by per-rule score magnitude.
 
-```
+```text
 diversity_ratio = sum(|score| of triggered rules) / sum(|score| of all category rules)
 diversity_score = (1 - diversity_ratio) * 100
 ```
 
-A blocking rule (score -10) penalizes diversity more than a suggestion (score -1). This prevents a single concentrated blocking problem from getting a high diversity score.
+Each triggered rule contributes its absolute `score` value (from `rule-config.ts`), not a flat count. A rule with score -10 penalizes diversity more than one with score -1. This prevents a single concentrated high-impact problem from getting a misleadingly high diversity score.
 
 ### Combined Score
 

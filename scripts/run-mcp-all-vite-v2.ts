@@ -40,9 +40,10 @@ async function run(name: string, code: string): Promise<number> {
     // Code already exports default, use it directly
     appCode = `import './index.css'\n\n${code}\n`;
   } else {
-    // Find last function name and wrap
-    const matches = [...code.matchAll(/function\s+(\w+)/g)];
-    const rootName = matches[matches.length-1]?.[1] ?? "App";
+    // Find last function or arrow component name
+    const functionMatches = [...code.matchAll(/function\s+(\w+)/g)];
+    const arrowMatches = [...code.matchAll(/const\s+(\w+)(?:\s*:\s*[^=]+)?\s*=\s*(?:\([^)]*\)|\w+)\s*=>/g)];
+    const rootName = functionMatches[functionMatches.length-1]?.[1] ?? arrowMatches[arrowMatches.length-1]?.[1] ?? "Component";
     appCode = `import './index.css'\n\n${code}\n\nexport default function App() {\n  return <${rootName} />\n}\n`;
   }
   
