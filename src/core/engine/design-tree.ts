@@ -364,18 +364,30 @@ function renderNode(
   const fillInfo = getFillInfo(node);
   if (fillInfo.color && node.type !== "TEXT") styles.push(`background: ${fillInfo.color}`);
   if (fillInfo.hasImage) {
+    const hasChildren = node.children && node.children.length > 0;
     const mappedFile = imageMapping?.[node.id];
     if (mappedFile) {
-      styles.push(`background-image: url(images/${mappedFile})`);
-      styles.push("background-position: center");
-      styles.push("background-repeat: no-repeat");
-      if (fillInfo.imageScaleMode === "FIT") {
-        styles.push("background-size: contain");
-      } else if (fillInfo.imageScaleMode === "FILL") {
-        styles.push("background-size: cover");
+      if (hasChildren) {
+        // Background image: node has children on top → CSS background-image
+        styles.push(`background-image: url(images/${mappedFile})`);
+        styles.push("background-position: center");
+        styles.push("background-repeat: no-repeat");
+        if (fillInfo.imageScaleMode === "FIT") {
+          styles.push("background-size: contain");
+        } else if (fillInfo.imageScaleMode === "FILL") {
+          styles.push("background-size: cover");
+        }
+      } else {
+        // Content image: leaf node → <img> tag
+        styles.push(`content-image: url(images/${mappedFile})`);
+        if (fillInfo.imageScaleMode === "FIT") {
+          styles.push("object-fit: contain");
+        } else if (fillInfo.imageScaleMode === "FILL") {
+          styles.push("object-fit: cover");
+        }
       }
     } else {
-      styles.push("background-image: [IMAGE]");
+      styles.push(hasChildren ? "background-image: [IMAGE]" : "content-image: [IMAGE]");
     }
   }
 

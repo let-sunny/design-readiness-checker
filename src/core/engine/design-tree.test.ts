@@ -582,7 +582,7 @@ describe("generateDesignTree", () => {
       expect(output).not.toContain("background:");
     });
 
-    it("IMAGE fill type outputs background-image: [IMAGE]", () => {
+    it("IMAGE fill on leaf node outputs content-image: [IMAGE]", () => {
       const file = makeFile(
         makeNode({
           id: "1:1",
@@ -595,10 +595,30 @@ describe("generateDesignTree", () => {
 
       const output = generateDesignTree(file);
 
-      expect(output).toContain("background-image: [IMAGE]");
+      expect(output).toContain("content-image: [IMAGE]");
     });
 
-    it("shows both background and background-image when both fill types exist", () => {
+    it("IMAGE fill on node with children outputs background-image: [IMAGE]", () => {
+      const file = makeFile(
+        makeNode({
+          id: "1:1",
+          name: "HeroSection",
+          type: "FRAME",
+          fills: [{ type: "IMAGE", scaleMode: "FILL", imageRef: "abc123" }],
+          absoluteBoundingBox: { x: 0, y: 0, width: 1200, height: 500 },
+          children: [
+            makeNode({ id: "1:2", name: "Title", type: "TEXT", absoluteBoundingBox: { x: 0, y: 0, width: 400, height: 40 } }),
+          ],
+        })
+      );
+
+      const output = generateDesignTree(file);
+
+      expect(output).toContain("background-image: [IMAGE]");
+      expect(output).not.toContain("content-image:");
+    });
+
+    it("shows both background and content-image when both fill types exist on leaf", () => {
       const file = makeFile(
         makeNode({
           id: "1:1",
@@ -615,7 +635,7 @@ describe("generateDesignTree", () => {
       const output = generateDesignTree(file);
 
       expect(output).toContain("background: #");
-      expect(output).toContain("background-image: [IMAGE]");
+      expect(output).toContain("content-image: [IMAGE]");
     });
   });
 
@@ -1024,11 +1044,11 @@ describe("generateDesignTree", () => {
 
       const output = generateDesignTree(file, { imageDir });
 
-      expect(output).toContain("background-image: url(images/hero-banner@2x.png)");
-      expect(output).not.toContain("background-image: [IMAGE]");
+      expect(output).toContain("content-image: url(images/hero-banner@2x.png)");
+      expect(output).not.toContain("content-image: [IMAGE]");
     });
 
-    it("IMAGE fill without imageDir outputs [IMAGE]", () => {
+    it("IMAGE fill without imageDir on leaf outputs content-image: [IMAGE]", () => {
       const file = makeFile(
         makeNode({
           id: "1:2",
@@ -1041,11 +1061,11 @@ describe("generateDesignTree", () => {
 
       const output = generateDesignTree(file);
 
-      expect(output).toContain("background-image: [IMAGE]");
+      expect(output).toContain("content-image: [IMAGE]");
       expect(output).not.toContain("url(images/");
     });
 
-    it("IMAGE fill with imageDir but no mapping entry outputs [IMAGE]", () => {
+    it("IMAGE fill with imageDir but no mapping entry on leaf outputs content-image: [IMAGE]", () => {
       const imageDir = join(tempDir, "images");
       mkdirSync(imageDir);
       writeFileSync(
@@ -1065,7 +1085,7 @@ describe("generateDesignTree", () => {
 
       const output = generateDesignTree(file, { imageDir });
 
-      expect(output).toContain("background-image: [IMAGE]");
+      expect(output).toContain("content-image: [IMAGE]");
       expect(output).not.toContain("url(images/");
     });
   });

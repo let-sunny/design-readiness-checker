@@ -95,11 +95,18 @@ Button (INSTANCE, 120x40) [component: Button]
 - Child styles (e.g., `Icon: fill: #FFFFFF`) use `.parent:hover .child` selector pattern
 
 ### Image Assets
-- Always render images as `<img>` tags — do NOT use CSS `background-image`
-- If the design tree shows `background-image: url(images/...)`, convert to `<img src="images/..." />`
-- Map `background-size` to `object-fit`: `cover` → `object-fit: cover`, `contain` → `object-fit: contain`
-- If the node has children, position the `<img>` behind them (e.g., `position: absolute; z-index: 0` inside a `position: relative` container)
-- If it shows `background-image: [IMAGE]`, the image asset is unavailable — use a placeholder color matching the surrounding design
+
+The design tree uses two distinct image types:
+
+**`content-image:`** — leaf node, no children → render as `<img>` tag
+- `content-image: url(images/...)` → `<img src="images/..." />`
+- `object-fit: cover` or `object-fit: contain` is provided alongside — use it directly
+
+**`background-image:`** — node has children on top → keep as CSS `background-image`
+- `background-image: url(images/...)` → `background-image: url(images/...)` in CSS
+- `background-size`, `background-position`, `background-repeat` are provided alongside — use as-is
+
+**`[IMAGE]` placeholder** — image asset unavailable → use a placeholder color matching the surrounding design
 
 ### If data is missing
 When the Figma data does not specify a value, you MUST list it as an interpretation.
