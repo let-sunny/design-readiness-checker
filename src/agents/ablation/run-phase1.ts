@@ -51,6 +51,8 @@ const PROMPT_PATH = resolve(".claude/skills/design-to-code/PROMPT.md");
 
 interface CacheKey {
   model: string;
+  temperature: number;
+  maxTokens: number;
   promptHash: string;
   configVersion: string;
 }
@@ -101,6 +103,8 @@ function computePromptHash(prompt: string): string {
 function buildCacheKey(prompt: string): CacheKey {
   return {
     model: MODEL,
+    temperature: TEMPERATURE,
+    maxTokens: MAX_TOKENS,
     promptHash: computePromptHash(prompt),
     configVersion: CONFIG_VERSION,
   };
@@ -113,6 +117,8 @@ function isCacheValid(resultPath: string, currentKey: CacheKey): boolean {
     if (!result.cacheKey) return false;
     return (
       result.cacheKey.model === currentKey.model &&
+      result.cacheKey.temperature === currentKey.temperature &&
+      result.cacheKey.maxTokens === currentKey.maxTokens &&
       result.cacheKey.promptHash === currentKey.promptHash &&
       result.cacheKey.configVersion === currentKey.configVersion
     );
@@ -141,16 +147,22 @@ function isStripNoOp(baselineTree: string, type: DesignTreeInfoType): boolean {
 function parseResponse(text: string): { html: string; interpretations: string[]; parseWarnings: string[] } {
   const warnings: string[] = [];
 
-  // Extract HTML from ```html ... ``` block
-  const htmlMatch = text.match(/```html\s*\n([\s\S]*?)```/);
-  if (!htmlMatch) {
-    // Fallback: try ```...``` without language
-    const fallback = text.match(/```\s*\n(<!DOCTYPE[\s\S]*?)```/i);
-    if (!fallback) warnings.push("No HTML code block found in response");
-    var html = fallback?.[1]?.trim() ?? "";
-  } else {
-    var html = htmlMatch[1]?.trim() ?? "";
+  // Extract HTML from fenced code block — try multiple patterns
+  let html = "";
+  const htmlPatterns = [
+    /```html\s*\n([\s\S]*?)```/,                    // ```html ... ```
+    /```\s*\n(<!DOCTYPE[\s\S]*?)```/i,               // ``` <!DOCTYPE ... ```
+    /```\s*\n(<html[\s\S]*?)```/i,                   // ``` <html ... ```
+    /```[a-z]*\s*\n\/\/\s*filename:[\s\S]*?\n([\s\S]*?)```/i, // ``` // filename: ... ```
+  ];
+  for (const pattern of htmlPatterns) {
+    const match = text.match(pattern);
+    if (match?.[1]) {
+      html = match[1].trim();
+      break;
+    }
   }
+  if (!html) warnings.push("No HTML code block found in response");
 
   // Extract interpretations — multiple patterns for robustness
   const patterns = [
@@ -409,9 +421,12 @@ async function main(): Promise<void> {
   const fixtures = process.env["ABLATION_FIXTURES"]
     ? process.env["ABLATION_FIXTURES"].split(",").map((s) => s.trim())
     : DEFAULT_FIXTURES;
-  const runsPerCondition = process.env["ABLATION_RUNS"]
-    ? parseInt(process.env["ABLATION_RUNS"], 10)
-    : 1;
+  const rawRuns = process.env["ABLATION_RUNS"];
+  const runsPerCondition = rawRuns ? parseInt(rawRuns, 10) : 1;
+  if (!Number.isFinite(runsPerCondition) || runsPerCondition < 1) {
+    console.error(`Error: ABLATION_RUNS must be a positive integer (got: ${rawRuns})`);
+    process.exit(1);
+  }
 
   const prompt = readFileSync(PROMPT_PATH, "utf-8");
   const cacheKey = buildCacheKey(prompt);
@@ -428,6 +443,7 @@ async function main(): Promise<void> {
 
   const startedAt = new Date().toISOString();
   const allResults: RunResult[] = [];
+  const newResults: RunResult[] = [];  // Only this session (for cost tracking)
 
   for (const fixture of fixtures) {
     console.log(`\n=== ${fixture} ===\n`);
@@ -483,6 +499,7 @@ async function main(): Promise<void> {
         const tree = type === "baseline" ? baselineTree : stripDesignTree(baselineTree, type);
         const result = await runSingle(client, prompt, fixture, type, tree, run, cacheKey);
         allResults.push(result);
+        newResults.push(result);
       }
     }
   }
@@ -507,11 +524,13 @@ async function main(): Promise<void> {
   console.log(`Summary saved to ${join(OUTPUT_DIR, "summary.json")}`);
 
   // Print cost estimate (Sonnet pricing: $3/MTok input, $15/MTok output)
-  const totalInputTokens = allResults.reduce((s, r) => s + r.inputTokens, 0);
-  const totalOutputTokens = allResults.reduce((s, r) => s + r.outputTokens, 0);
-  const estimatedCost = (totalInputTokens * 3 / 1_000_000) + (totalOutputTokens * 15 / 1_000_000);
-  console.log(`\nTotal tokens: ${totalInputTokens} input + ${totalOutputTokens} output`);
-  console.log(`Estimated cost: ~$${estimatedCost.toFixed(2)}`);
+  const sessionInputTokens = newResults.reduce((s, r) => s + r.inputTokens, 0);
+  const sessionOutputTokens = newResults.reduce((s, r) => s + r.outputTokens, 0);
+  const sessionCost = (sessionInputTokens * 3 / 1_000_000) + (sessionOutputTokens * 15 / 1_000_000);
+  const cachedCount = allResults.length - newResults.length;
+  console.log(`\nThis session: ${newResults.length} new calls, ${cachedCount} cached`);
+  console.log(`Session tokens: ${sessionInputTokens} input + ${sessionOutputTokens} output`);
+  console.log(`Session cost: ~$${sessionCost.toFixed(2)}`);
 }
 
 main().catch((err) => {
