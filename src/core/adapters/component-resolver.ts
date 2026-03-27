@@ -39,9 +39,9 @@ export function collectInteractionDestinationIds(node: AnalysisNode): Set<string
           trigger?: { type?: string };
           actions?: Array<{ destinationId?: string; navigation?: string }>;
         };
-        if (i.actions) {
+        if (i.trigger?.type === "ON_HOVER" && i.actions) {
           for (const action of i.actions) {
-            if (action.destinationId) {
+            if (action.navigation === "CHANGE_TO" && action.destinationId) {
               ids.add(action.destinationId);
             }
           }
@@ -138,13 +138,19 @@ export async function resolveInteractionDestinations(
   const destIds = collectInteractionDestinationIds(document);
   if (destIds.size === 0) return {};
 
-  // Skip IDs already resolved as component definitions
-  const idsToFetch = [...destIds].filter(
-    (id) => !existingDefinitions?.[id]
-  );
-  if (idsToFetch.length === 0) return {};
-
   const allDestinations: Record<string, AnalysisNode> = {};
+  const idsToFetch: string[] = [];
+
+  for (const id of destIds) {
+    const existing = existingDefinitions?.[id];
+    if (existing) {
+      allDestinations[id] = existing;
+    } else {
+      idsToFetch.push(id);
+    }
+  }
+
+  if (idsToFetch.length === 0) return allDestinations;
 
   for (let i = 0; i < idsToFetch.length; i += BATCH_SIZE) {
     const batch = idsToFetch.slice(i, i + BATCH_SIZE);

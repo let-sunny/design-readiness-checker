@@ -169,7 +169,7 @@ function formatComponentProperties(node: AnalysisNode): string | null {
 function extractVisualStyles(node: AnalysisNode): Record<string, string> {
   const styles: Record<string, string> = {};
   const fillInfo = getFillInfo(node);
-  if (fillInfo.color) styles["background"] = fillInfo.color;
+  if (fillInfo.color && node.type !== "TEXT") styles["background"] = fillInfo.color;
   const stroke = getStroke(node);
   if (stroke) styles["border-color"] = stroke;
   if (node.cornerRadius) styles["border-radius"] = `${node.cornerRadius}px`;
@@ -184,6 +184,36 @@ function extractVisualStyles(node: AnalysisNode): Record<string, string> {
   return styles;
 }
 
+const HOVER_STYLE_DEFAULTS: Record<string, string> = {
+  background: "transparent",
+  "border-color": "transparent",
+  "border-radius": "0px",
+  opacity: "1",
+  "box-shadow": "none",
+  color: "inherit",
+};
+
+function getHoverResetValue(styleKey: string): string {
+  return HOVER_STYLE_DEFAULTS[styleKey] ?? "initial";
+}
+
+function appendStyleDiffs(
+  currentStyles: Record<string, string>,
+  hoverStyles: Record<string, string>,
+  diffs: string[],
+  namePrefix?: string,
+): void {
+  const styleKeys = new Set([...Object.keys(currentStyles), ...Object.keys(hoverStyles)]);
+  for (const key of styleKeys) {
+    const currentValue = currentStyles[key];
+    const hoverValue = hoverStyles[key] ?? getHoverResetValue(key);
+    if (currentValue !== hoverValue) {
+      const prefix = namePrefix ? `${namePrefix}: ` : "";
+      diffs.push(`${prefix}${key}: ${hoverValue}`);
+    }
+  }
+}
+
 /** Compute style diff between current node and its hover variant. */
 function computeHoverDiff(
   currentNode: AnalysisNode,
@@ -192,11 +222,7 @@ function computeHoverDiff(
   const current = extractVisualStyles(currentNode);
   const hover = extractVisualStyles(hoverNode);
   const diffs: string[] = [];
-  for (const [key, val] of Object.entries(hover)) {
-    if (current[key] !== val) {
-      diffs.push(`${key}: ${val}`);
-    }
-  }
+  appendStyleDiffs(current, hover, diffs);
   // Check children for text/color changes (first level only)
   if (currentNode.children && hoverNode.children) {
     const len = Math.min(currentNode.children.length, hoverNode.children.length);
@@ -206,11 +232,7 @@ function computeHoverDiff(
       if (!cc || !hc) continue;
       const ccStyles = extractVisualStyles(cc);
       const hcStyles = extractVisualStyles(hc);
-      for (const [key, val] of Object.entries(hcStyles)) {
-        if (ccStyles[key] !== val) {
-          diffs.push(`${cc.name}: ${key}: ${val}`);
-        }
-      }
+      appendStyleDiffs(ccStyles, hcStyles, diffs, cc.name);
     }
   }
   return diffs.length > 0 ? diffs.join("; ") : null;
