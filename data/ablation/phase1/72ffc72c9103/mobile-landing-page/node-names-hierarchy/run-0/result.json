@@ -1,0 +1,15 @@
+{
+  "fixture": "mobile-landing-page",
+  "type": "node-names-hierarchy",
+  "runIndex": 0,
+  "similarity": 97,
+  "inputTokens": 20149,
+  "outputTokens": 14214,
+  "totalTokens": 34363,
+  "htmlBytes": 38502,
+  "htmlLines": 501,
+  "cssClassCount": 20,
+  "cssVariableCount": 14,
+  "timestamp": "2026-03-28T11:27:55.699Z",
+  "configVersion": "72ffc72c9103"
+}

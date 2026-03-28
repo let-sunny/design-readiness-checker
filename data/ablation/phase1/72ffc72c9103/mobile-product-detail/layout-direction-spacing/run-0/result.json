@@ -1,0 +1,15 @@
+{
+  "fixture": "mobile-product-detail",
+  "type": "layout-direction-spacing",
+  "runIndex": 0,
+  "similarity": 89,
+  "inputTokens": 21585,
+  "outputTokens": 14815,
+  "totalTokens": 36400,
+  "htmlBytes": 37059,
+  "htmlLines": 396,
+  "cssClassCount": 14,
+  "cssVariableCount": 14,
+  "timestamp": "2026-03-28T11:07:52.765Z",
+  "configVersion": "72ffc72c9103"
+}

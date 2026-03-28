@@ -1,0 +1,15 @@
+{
+  "fixture": "desktop-shop",
+  "type": "node-names-hierarchy",
+  "runIndex": 0,
+  "similarity": 84,
+  "inputTokens": 29475,
+  "outputTokens": 18868,
+  "totalTokens": 48343,
+  "htmlBytes": 56699,
+  "htmlLines": 701,
+  "cssClassCount": 15,
+  "cssVariableCount": 15,
+  "timestamp": "2026-03-28T12:21:20.676Z",
+  "configVersion": "72ffc72c9103"
+}

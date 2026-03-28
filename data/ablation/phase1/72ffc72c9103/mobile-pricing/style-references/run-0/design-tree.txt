@@ -1,0 +1,477 @@
+# Design Tree
+# Root: 375px x 3017px
+# Each node shows: name (TYPE, WxH) followed by CSS-like styles
+# Reproduce this tree as HTML. Each node = one HTML element.
+# Every style value is from Figma data — use exactly as shown.
+
+Platform=Mobile (COMPONENT, 375x3017)
+  style: display: flex; flex-direction: column; align-items: flex-start; background: #FFFFFF /* var:VariableID:3919:36423 */; overflow: hidden
+  Header (INSTANCE, 375x84) [component: Platform=Mobile, State=Default]
+    component-properties: Platform=Mobile, State=Default
+    style: display: flex; flex-direction: row; flex-wrap: wrap; column-gap: 24px; row-gap: 0px; justify-content: space-between; align-items: center; align-self: STRETCH; padding: 24px 24px 24px 24px /* var:VariableID:9:11262 */; width: 100%; background: #FFFFFF /* var:VariableID:3919:36423 */; border-bottom: 1px solid #D9D9D9; overflow: hidden; max-width: 1200px
+    Block (FRAME, 40x35)
+      style: display: flex; flex-direction: row; column-gap: 24px; align-items: center
+      Figma (FRAME, 40x35)
+        style: display: flex; flex-direction: row; justify-content: center; align-items: center
+        Icon (VECTOR, 23x35)
+          style: border: 3.5px solid #1E1E1E; svg: <svg width="54" height="77" viewBox="0 0 54 77" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M26.8333 3.5H15.1667C12.0725 3.5 9.10501 4.72916 6.91709 6.91709C4.72916 9.10501 3.5 12.0725 3.5 15.1667C3.5 18.2609 4.72916 21.2283 6.91709 23.4162C9.10501 25.6042 12.0725 26.8333 15.1667 26.8333M26.8333 3.5V26.8333M26.8333 3.5H38.5C40.0321 3.5 41.5492 3.80177 42.9646 4.38807C44.3801 4.97438 45.6662 5.83374 46.7496 6.91709C47.8329 8.00044 48.6923 9.28656 49.2786 10.702C49.8649 12.1175 50.1667 13.6346 50.1667 15.1667C50.1667 16.6988 49.8649 18.2158 49.2786 19.6313C48.6923 21.0468 47.8329 22.3329 46.7496 23.4162C45.6662 24.4996 44.3801 25.359 42.9646 25.9453C41.5492 26.5316 40.0321 26.8333 38.5 26.8333M26.8333 26.8333H15.1667M26.8333 26.8333H38.5M26.8333 26.8333V50.1667M15.1667 26.8333C12.0725 26.8333 9.10501 28.0625 6.91709 30.2504C4.72916 32.4383 3.5 35.4058 3.5 38.5C3.5 41.5942 4.72916 44.5617 6.91709 46.7496C9.10501 48.9375 12.0725 50.1667 15.1667 50.1667M38.5 26.8333C36.9679 26.8333 35.4508 27.1351 34.0354 27.7214C32.6199 28.3077 31.3338 29.1671 30.2504 30.2504C29.1671 31.3338 28.3077 32.6199 27.7214 34.0354C27.1351 35.4508 26.8333 36.9679 26.8333 38.5C26.8333 40.0321 27.1351 41.5492 27.7214 42.9646C28.3077 44.3801 29.1671 45.6662 30.2504 46.7496C31.3338 47.8329 32.6199 48.6923 34.0354 49.2786C35.4508 49.8649 36.9679 50.1667 38.5 50.1667C40.0321 50.1667 41.5492 49.8649 42.9646 49.2786C44.3801 48.6923 45.6662 47.8329 46.7496 46.7496C47.8329 45.6662 48.6923 44.3801 49.2786 42.9646C49.8649 41.5492 50.1667 40.0321 50.1667 38.5C50.1667 36.9679 49.8649 35.4508 49.2786 34.0354C48.6923 32.6199 47.8329 31.3338 46.7496 30.2504C45.6662 29.1671 44.3801 28.3077 42.9646 27.7214C41.5492 27.1351 40.0321 26.8333 38.5 26.8333ZM15.1667 50.1667C12.0725 50.1667 9.10501 51.3958 6.91709 53.5837C4.72916 55.7717 3.5 58.7391 3.5 61.8333C3.5 64.9275 4.72916 67.895 6.91709 70.0829C9.10501 72.2708 12.0725 73.5 15.1667 73.5C18.2609 73.5 21.2283 72.2708 23.4162 70.0829C25.6042 67.895 26.8333 64.9275 26.8333 61.8333V50.1667M15.1667 50.1667H26.8333" stroke="#1E1E1E" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/> </svg>
+    Icon Button (INSTANCE, 36x36) [component: Variant=Subtle, State=Default, Size=Small]
+      component-properties: Icon#4:192=68:15863, Variant=Subtle, State=Default, Size=Small
+      style: display: flex; flex-direction: row; justify-content: center; align-items: center; padding: 8px 8px 8px 8px /* var:VariableID:9:11259 */; border-radius: 32px; overflow: hidden
+      [hover]: background: #F5F5F5 /* var:VariableID:3919:36426 */
+      Menu (INSTANCE, 20x20) [component: Menu]
+        style: overflow: hidden
+        Icon (VECTOR, 15x10)
+          style: border: 1.600000023841858px solid #1E1E1E; svg: <svg width="34" height="24" viewBox="0 0 34 24" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M1.63864 11.8794H32.3614M1.63864 1.63854H32.3614M1.63864 22.1204H32.3614" stroke="#1E1E1E" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/> </svg>
+  Hero Basic (INSTANCE, 375x424) [component: Platform=Mobile]
+    component-properties: Platform=Mobile
+    style: display: flex; flex-direction: column; align-items: center; align-self: STRETCH; padding: 160px 24px 160px 24px /* var:VariableID:346:10896 */; width: 100%; background: #F5F5F5 /* var:VariableID:3919:36424 */; max-width: 1200px
+    Text Content Title (INSTANCE, 117x104) [component: Align=Center]
+      component-properties: Has Subtitle#2153:13=true, Subtitle#2153:12=Subtitle, Title#2153:14=Title, Align=Center
+      style: display: flex; flex-direction: column; row-gap: 8px /* var:VariableID:9:11259 */; align-items: center; background: #E6E6E6 /* var:VariableID:3919:36430 */
+      Title (TEXT, 117x58)
+        style: align-self: STRETCH; width: 100%; font-family: "Inter"; font-weight: 700; font-size: 48px; line-height: 57.6px; letter-spacing: -0.96px; text-align: center; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Title"
+      Subtitle (TEXT, 117x38)
+        style: align-self: STRETCH; width: 100%; font-family: "Inter"; font-weight: 400; font-size: 32px; line-height: 38.4px; text-align: center; display: flex; align-items: center; color: #757575 /* var:VariableID:3919:36451 */; text: "Subtitle"
+  Card Grid Pricing (INSTANCE, 375x1049) [component: Platform=Mobile]
+    component-properties: Card Grid#6062:27={"guid":{"sessionID":-1,"localID":-1}}, Platform=Mobile
+    style: display: flex; flex-direction: column; row-gap: 24px /* var:VariableID:9:11262 */; align-items: center; align-self: STRETCH; padding: 24px 24px 24px 24px /* var:VariableID:9:11262 */; width: 100%; background: #D9D9D9 /* var:VariableID:3919:36425 */; max-width: 1200px
+    Navigation Pill List (INSTANCE, 149x32) [component: Direction=Row]
+      component-properties: Link 1#2194:8=true, Slot 2#6061:3={"guid":{"sessionID":-1,"localID":-1}}, Slot#6061:0={"guid":{"sessionID":6062,"localID":12611}}, Link 6#2194:3=false, Link 3#2194:7=false, Link 4#2194:6=false, Link 2#2194:4=true, Link 7#3529:0=true, Link 5#2194:5=false, Direction=Row
+      style: display: flex; flex-direction: row; flex-wrap: wrap; column-gap: 8px /* var:VariableID:9:11259 */; row-gap: 8px; align-items: flex-start
+      Slot (SLOT, 149x32)
+        style: display: flex; flex-direction: row; column-gap: 8px; align-items: center
+        Navigation Pill (INSTANCE, 78x32) [component: State=Active]
+          component-properties: Label#156:33=Monthly, State=Active
+          style: display: flex; flex-direction: row; column-gap: 8px /* var:VariableID:9:11259 */; justify-content: center; align-items: center; padding: 8px 8px 8px 8px /* var:VariableID:9:11259 */; background: #F5F5F5 /* var:VariableID:9670:11772 */; border-radius: 8px
+          Title (TEXT, 62x16)
+            style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 16px; text-align: left; display: flex; align-items: center; color: #1E1E1E /* var:VariableID:3919:36461 */; text: "Monthly"
+        Navigation Pill (INSTANCE, 63x32) [component: State=Default]
+          component-properties: Label#156:33=Yearly, State=Default
+          style: display: flex; flex-direction: row; column-gap: 8px /* var:VariableID:9:11259 */; justify-content: center; align-items: center; padding: 8px 8px 8px 8px /* var:VariableID:9:11259 */; border-radius: 8px
+          Title (TEXT, 47x16)
+            style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 16px; text-align: left; display: flex; align-items: center; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Yearly"
+    Card Grid (SLOT, 327x945)
+      style: display: flex; flex-direction: row; flex-wrap: wrap; column-gap: 24px /* var:VariableID:9:11262 */; row-gap: 24px /* var:VariableID:9:11262 */; justify-content: center; align-items: flex-start; align-self: STRETCH; width: 100%
+      Pricing Card (INSTANCE, 327x299) [component: Device=Mobile, Variant=Stroke]
+        component-properties: Device=Mobile, Variant=Stroke
+        style: display: flex; flex-direction: column; row-gap: 24px /* var:VariableID:9:11262 */; align-items: flex-start; flex-grow: 1; padding: 24px 24px 24px 24px /* var:VariableID:9:11262 */; background: #FFFFFF /* var:VariableID:3919:36423 */; border: 1px solid #D9D9D9; border-radius: 8px; overflow: hidden; min-width: 300px
+        Top (FRAME, 279x187)
+          style: display: flex; flex-direction: column; row-gap: 16px /* var:VariableID:9:11261 */; justify-content: flex-end; align-items: flex-start; align-self: STRETCH; width: 100%
+          Title (FRAME, 279x29)
+            style: display: flex; flex-direction: row; column-gap: 8px; justify-content: space-between; align-items: flex-start; align-self: STRETCH; width: 100%
+            Text Heading (INSTANCE, 207x29) [component: Text Heading]
+              component-properties: Text#2104:5=Title
+              style: display: flex; flex-direction: row; align-items: flex-start; flex-grow: 1
+              Text Heading (TEXT, 207x29)
+                style: flex-grow: 1; font-family: "Inter"; font-weight: 600; font-size: 24px; line-height: 28.8px; letter-spacing: -0.48px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Title"
+            Text Price (INSTANCE, 72x24) [component: Size=Small]
+              component-properties: Price#1443:0=50, Label#1443:1=/ mo, Currency#1443:2=$, Has Label#1443:3=true, Size=Small
+              style: display: flex; flex-direction: row; justify-content: center; align-items: flex-end
+              Price (FRAME, 42x24)
+                style: display: flex; flex-direction: row; align-items: flex-start
+                $ (TEXT, 11x16)
+                  style: font-family: "Inter"; font-weight: 600; font-size: 16px; line-height: 16px; letter-spacing: -0.32px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "$"
+                50 (TEXT, 31x24)
+                  style: font-family: "Inter"; font-weight: 600; font-size: 24px; line-height: 24px; letter-spacing: -0.48px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "50"
+              / mo (TEXT, 30x17)
+                style: font-family: "Inter"; font-weight: 400; font-size: 14px; line-height: 16.8px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "/ mo"
+          Text List (INSTANCE, 279x142) [component: Density=Tight]
+            component-properties: Slot#6062:9={"guid":{"sessionID":-1,"localID":-1}}, Has Title#480:0=false, Density=Tight
+            style: display: flex; flex-direction: column; row-gap: 8px /* var:VariableID:9:11259 */; align-items: flex-start; align-self: STRETCH; width: 100%
+            Slot (SLOT, 89x142)
+              style: display: flex; flex-direction: column; row-gap: 8px; align-items: flex-start
+              Text List Item (INSTANCE, 89x22) [component: Text List Item]
+                component-properties: Text#2077:1=List item
+                style: display: flex; flex-direction: row; justify-content: center; align-items: center
+                List item (TEXT, 89x22)
+                  style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #757575 /* var:VariableID:3919:36451 */; text: "List item"
+              Text List Item (INSTANCE, 89x22) [component: Text List Item]
+                component-properties: Text#2077:1=List item
+                style: display: flex; flex-direction: row; justify-content: center; align-items: center
+                List item (TEXT, 89x22)
+                  style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #757575 /* var:VariableID:3919:36451 */; text: "List item"
+              Text List Item (INSTANCE, 89x22) [component: Text List Item]
+                component-properties: Text#2077:1=List item
+                style: display: flex; flex-direction: row; justify-content: center; align-items: center
+                List item (TEXT, 89x22)
+                  style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #757575 /* var:VariableID:3919:36451 */; text: "List item"
+              Text List Item (INSTANCE, 89x22) [component: Text List Item]
+                component-properties: Text#2077:1=List item
+                style: display: flex; flex-direction: row; justify-content: center; align-items: center
+                List item (TEXT, 89x22)
+                  style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #757575 /* var:VariableID:3919:36451 */; text: "List item"
+              Text List Item (INSTANCE, 89x22) [component: Text List Item]
+                component-properties: Text#2077:1=List item
+                style: display: flex; flex-direction: row; justify-content: center; align-items: center
+                List item (TEXT, 89x22)
+                  style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #757575 /* var:VariableID:3919:36451 */; text: "List item"
+        Button (INSTANCE, 279x40) [component: Variant=Neutral, State=Default, Size=Medium]
+          component-properties: Icon End#4:0=68:16113, Icon Start#4:192=68:16009, Has Icon End#4:64=false, Has Icon Start#4:128=false, Label#2:0=Button, Variant=Neutral, State=Default, Size=Medium
+          style: display: flex; flex-direction: row; column-gap: 8px /* var:VariableID:9:11259 */; justify-content: center; align-items: center; align-self: STRETCH; padding: 12px 12px 12px 12px /* var:VariableID:9:11260 */; width: 100%; background: #E3E3E3 /* var:VariableID:106:12468 */; border: 1px solid #767676; border-radius: 8px; overflow: hidden
+          [hover]: background: #CDCDCD /* var:VariableID:106:12469 */
+          Button (TEXT, 51x16)
+            style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 16px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Button"
+      Pricing Card (INSTANCE, 327x299) [component: Device=Mobile, Variant=Brand]
+        component-properties: Device=Mobile, Variant=Brand
+        style: display: flex; flex-direction: column; row-gap: 24px /* var:VariableID:9:11262 */; align-items: flex-start; flex-grow: 1; padding: 24px 24px 24px 24px /* var:VariableID:9:11262 */; background: #2C2C2C /* var:VariableID:3919:36428 */; border: 1px solid #2C2C2C; border-radius: 8px; overflow: hidden; min-width: 300px
+        Top (FRAME, 279x187)
+          style: display: flex; flex-direction: column; row-gap: 16px /* var:VariableID:9:11261 */; justify-content: flex-end; align-items: flex-start; align-self: STRETCH; width: 100%
+          Title (FRAME, 279x29)
+            style: display: flex; flex-direction: row; column-gap: 8px; justify-content: space-between; align-items: flex-start; align-self: STRETCH; width: 100%
+            Text Heading (INSTANCE, 207x29) [component: Text Heading]
+              component-properties: Text#2104:5=Title
+              style: display: flex; flex-direction: row; align-items: flex-start; flex-grow: 1
+              Text Heading (TEXT, 207x29)
+                style: flex-grow: 1; font-family: "Inter"; font-weight: 600; font-size: 24px; line-height: 28.8px; letter-spacing: -0.48px; text-align: left; color: #F5F5F5 /* var:VariableID:3919:36459 */; text: "Title"
+            Text Price (INSTANCE, 72x24) [component: Size=Small]
+              component-properties: Price#1443:0=50, Label#1443:1=/ mo, Currency#1443:2=$, Has Label#1443:3=true, Size=Small
+              style: display: flex; flex-direction: row; justify-content: center; align-items: flex-end
+              Price (FRAME, 42x24)
+                style: display: flex; flex-direction: row; align-items: flex-start
+                $ (TEXT, 11x16)
+                  style: font-family: "Inter"; font-weight: 600; font-size: 16px; line-height: 16px; letter-spacing: -0.32px; text-align: left; color: #F5F5F5 /* var:VariableID:3919:36459 */; text: "$"
+                50 (TEXT, 31x24)
+                  style: font-family: "Inter"; font-weight: 600; font-size: 24px; line-height: 24px; letter-spacing: -0.48px; text-align: left; color: #F5F5F5 /* var:VariableID:3919:36459 */; text: "50"
+              / mo (TEXT, 30x17)
+                style: font-family: "Inter"; font-weight: 400; font-size: 14px; line-height: 16.8px; text-align: left; color: #F5F5F5 /* var:VariableID:3919:36459 */; text: "/ mo"
+          Text List (INSTANCE, 279x142) [component: Density=Tight]
+            component-properties: Slot#6062:9={"guid":{"sessionID":-1,"localID":-1}}, Has Title#480:0=false, Density=Tight
+            style: display: flex; flex-direction: column; row-gap: 8px /* var:VariableID:9:11259 */; align-items: flex-start; align-self: STRETCH; width: 100%
+            Slot (SLOT, 89x142)
+              style: display: flex; flex-direction: column; row-gap: 8px; align-items: flex-start
+              Text List Item (INSTANCE, 89x22) [component: Text List Item]
+                component-properties: Text#2077:1=List item
+                style: display: flex; flex-direction: row; justify-content: center; align-items: center
+                List item (TEXT, 89x22)
+                  style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #F5F5F5 /* var:VariableID:3919:36459 */; text: "List item"
+              Text List Item (INSTANCE, 89x22) [component: Text List Item]
+                component-properties: Text#2077:1=List item
+                style: display: flex; flex-direction: row; justify-content: center; align-items: center
+                List item (TEXT, 89x22)
+                  style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #F5F5F5 /* var:VariableID:3919:36459 */; text: "List item"
+              Text List Item (INSTANCE, 89x22) [component: Text List Item]
+                component-properties: Text#2077:1=List item
+                style: display: flex; flex-direction: row; justify-content: center; align-items: center
+                List item (TEXT, 89x22)
+                  style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #F5F5F5 /* var:VariableID:3919:36459 */; text: "List item"
+              Text List Item (INSTANCE, 89x22) [component: Text List Item]
+                component-properties: Text#2077:1=List item
+                style: display: flex; flex-direction: row; justify-content: center; align-items: center
+                List item (TEXT, 89x22)
+                  style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #F5F5F5 /* var:VariableID:3919:36459 */; text: "List item"
+              Text List Item (INSTANCE, 89x22) [component: Text List Item]
+                component-properties: Text#2077:1=List item
+                style: display: flex; flex-direction: row; justify-content: center; align-items: center
+                List item (TEXT, 89x22)
+                  style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #F5F5F5 /* var:VariableID:3919:36459 */; text: "List item"
+        Button (INSTANCE, 279x40) [component: Variant=Neutral, State=Default, Size=Medium]
+          component-properties: Icon End#4:0=68:16113, Icon Start#4:192=68:16009, Has Icon End#4:64=false, Has Icon Start#4:128=false, Label#2:0=Button, Variant=Neutral, State=Default, Size=Medium
+          style: display: flex; flex-direction: row; column-gap: 8px /* var:VariableID:9:11259 */; justify-content: center; align-items: center; align-self: STRETCH; padding: 12px 12px 12px 12px /* var:VariableID:9:11260 */; width: 100%; background: #E3E3E3 /* var:VariableID:106:12468 */; border: 1px solid #767676; border-radius: 8px; overflow: hidden
+          [hover]: background: #CDCDCD /* var:VariableID:106:12469 */
+          Button (TEXT, 51x16)
+            style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 16px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Button"
+      Pricing Card (INSTANCE, 327x299) [component: Device=Mobile, Variant=Stroke]
+        component-properties: Device=Mobile, Variant=Stroke
+        style: display: flex; flex-direction: column; row-gap: 24px /* var:VariableID:9:11262 */; align-items: flex-start; flex-grow: 1; padding: 24px 24px 24px 24px /* var:VariableID:9:11262 */; background: #FFFFFF /* var:VariableID:3919:36423 */; border: 1px solid #D9D9D9; border-radius: 8px; overflow: hidden; min-width: 300px
+        Top (FRAME, 279x187)
+          style: display: flex; flex-direction: column; row-gap: 16px /* var:VariableID:9:11261 */; justify-content: flex-end; align-items: flex-start; align-self: STRETCH; width: 100%
+          Title (FRAME, 279x29)
+            style: display: flex; flex-direction: row; column-gap: 8px; justify-content: space-between; align-items: flex-start; align-self: STRETCH; width: 100%
+            Text Heading (INSTANCE, 207x29) [component: Text Heading]
+              component-properties: Text#2104:5=Title
+              style: display: flex; flex-direction: row; align-items: flex-start; flex-grow: 1
+              Text Heading (TEXT, 207x29)
+                style: flex-grow: 1; font-family: "Inter"; font-weight: 600; font-size: 24px; line-height: 28.8px; letter-spacing: -0.48px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Title"
+            Text Price (INSTANCE, 72x24) [component: Size=Small]
+              component-properties: Price#1443:0=50, Label#1443:1=/ mo, Currency#1443:2=$, Has Label#1443:3=true, Size=Small
+              style: display: flex; flex-direction: row; justify-content: center; align-items: flex-end
+              Price (FRAME, 42x24)
+                style: display: flex; flex-direction: row; align-items: flex-start
+                $ (TEXT, 11x16)
+                  style: font-family: "Inter"; font-weight: 600; font-size: 16px; line-height: 16px; letter-spacing: -0.32px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "$"
+                50 (TEXT, 31x24)
+                  style: font-family: "Inter"; font-weight: 600; font-size: 24px; line-height: 24px; letter-spacing: -0.48px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "50"
+              / mo (TEXT, 30x17)
+                style: font-family: "Inter"; font-weight: 400; font-size: 14px; line-height: 16.8px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "/ mo"
+          Text List (INSTANCE, 279x142) [component: Density=Tight]
+            component-properties: Slot#6062:9={"guid":{"sessionID":-1,"localID":-1}}, Has Title#480:0=false, Density=Tight
+            style: display: flex; flex-direction: column; row-gap: 8px /* var:VariableID:9:11259 */; align-items: flex-start; align-self: STRETCH; width: 100%
+            Slot (SLOT, 89x142)
+              style: display: flex; flex-direction: column; row-gap: 8px; align-items: flex-start
+              Text List Item (INSTANCE, 89x22) [component: Text List Item]
+                component-properties: Text#2077:1=List item
+                style: display: flex; flex-direction: row; justify-content: center; align-items: center
+                List item (TEXT, 89x22)
+                  style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #757575 /* var:VariableID:3919:36451 */; text: "List item"
+              Text List Item (INSTANCE, 89x22) [component: Text List Item]
+                component-properties: Text#2077:1=List item
+                style: display: flex; flex-direction: row; justify-content: center; align-items: center
+                List item (TEXT, 89x22)
+                  style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #757575 /* var:VariableID:3919:36451 */; text: "List item"
+              Text List Item (INSTANCE, 89x22) [component: Text List Item]
+                component-properties: Text#2077:1=List item
+                style: display: flex; flex-direction: row; justify-content: center; align-items: center
+                List item (TEXT, 89x22)
+                  style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #757575 /* var:VariableID:3919:36451 */; text: "List item"
+              Text List Item (INSTANCE, 89x22) [component: Text List Item]
+                component-properties: Text#2077:1=List item
+                style: display: flex; flex-direction: row; justify-content: center; align-items: center
+                List item (TEXT, 89x22)
+                  style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #757575 /* var:VariableID:3919:36451 */; text: "List item"
+              Text List Item (INSTANCE, 89x22) [component: Text List Item]
+                component-properties: Text#2077:1=List item
+                style: display: flex; flex-direction: row; justify-content: center; align-items: center
+                List item (TEXT, 89x22)
+                  style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #757575 /* var:VariableID:3919:36451 */; text: "List item"
+        Button (INSTANCE, 279x40) [component: Variant=Neutral, State=Default, Size=Medium]
+          component-properties: Icon End#4:0=68:16113, Icon Start#4:192=68:16009, Has Icon End#4:64=false, Has Icon Start#4:128=false, Label#2:0=Button, Variant=Neutral, State=Default, Size=Medium
+          style: display: flex; flex-direction: row; column-gap: 8px /* var:VariableID:9:11259 */; justify-content: center; align-items: center; align-self: STRETCH; padding: 12px 12px 12px 12px /* var:VariableID:9:11260 */; width: 100%; background: #E3E3E3 /* var:VariableID:106:12468 */; border: 1px solid #767676; border-radius: 8px; overflow: hidden
+          [hover]: background: #CDCDCD /* var:VariableID:106:12469 */
+          Button (TEXT, 51x16)
+            style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 16px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Button"
+  Page Accordion (INSTANCE, 375x541) [component: Platform=Mobile]
+    component-properties: Platform=Mobile
+    style: display: flex; flex-direction: column; row-gap: 24px /* var:VariableID:9:11262 */; align-items: center; align-self: STRETCH; padding: 24px 24px 24px 24px /* var:VariableID:9:11262 */; width: 100%; background: #CFF7D3 /* var:VariableID:3919:36435 */; max-width: 1200px
+    Text Content Heading (INSTANCE, 113x61) [component: Align=Center]
+      component-properties: Has Subheading#2153:9=true, Subheading#2153:11=Subheading, Heading#2153:10=Heading, Align=Center
+      style: display: flex; flex-direction: column; row-gap: 8px /* var:VariableID:9:11259 */; align-items: center
+      Heading (TEXT, 113x29)
+        style: align-self: STRETCH; width: 100%; font-family: "Inter"; font-weight: 600; font-size: 24px; line-height: 28.8px; letter-spacing: -0.48px; text-align: center; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Heading"
+      Subheading (TEXT, 113x24)
+        style: align-self: STRETCH; width: 100%; font-family: "Inter"; font-weight: 400; font-size: 20px; line-height: 24px; text-align: center; display: flex; align-items: center; color: #757575 /* var:VariableID:3919:36451 */; text: "Subheading"
+    Accordion (INSTANCE, 327x408) [component: Accordion]
+      component-properties: Items#6031:6={"guid":{"sessionID":-1,"localID":-1}}
+      style: display: flex; flex-direction: column; row-gap: 16px /* var:VariableID:9:11261 */; align-items: flex-start; align-self: STRETCH; width: 100%; max-width: 640px
+      Accordion Item (INSTANCE, 327x128) [component: State=Open]
+        component-properties: Content#149:27=Answer the frequently asked question in a simple sentence, a longish paragraph, or even in a list., Title#149:24=Title, State=Open
+        style: display: flex; flex-direction: column; row-gap: 8px /* var:VariableID:9:11259 */; align-items: flex-start; align-self: STRETCH; padding: 16px 16px 16px 16px /* var:VariableID:9:11271 */; width: 100%; background: #FFFFFF /* var:VariableID:3919:36423 */; border: 1px solid #D9D9D9; border-radius: 8px
+        Accordion Title (FRAME, 295x22)
+          style: display: flex; flex-direction: row; column-gap: 8px /* var:VariableID:9:11259 */; align-items: center; align-self: STRETCH; width: 100%
+          Title (TEXT, 267x22)
+            style: flex-grow: 1; font-family: "Inter"; font-weight: 600; font-size: 16px; line-height: 22.4px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Title"
+          Chevron up (INSTANCE, 20x20) [component: Chevron up]
+            style: overflow: hidden
+            Icon (VECTOR, 10x5)
+              style: border: 2px solid #1E1E1E; svg: <svg width="24" height="14" viewBox="0 0 24 14" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M22 12L12 2L2 12" stroke="#1E1E1E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/> </svg>
+        Accordion Content (FRAME, 295x66)
+          style: display: flex; flex-direction: row; justify-content: center; align-items: center; align-self: STRETCH; width: 100%
+          Body (TEXT, 295x66)
+            style: flex-grow: 1; font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Answer the frequently asked question in a simple sentence, a longish paragraph, or even in a list."
+      Items (SLOT, 327x264)
+        style: display: flex; flex-direction: column; row-gap: 16px; align-items: flex-start; align-self: STRETCH; width: 100%
+        Accordion Item (INSTANCE, 327x54) [component: State=Closed]
+          component-properties: Content#149:27=Answer the frequently asked question in a simple sentence, a longish paragraph, or even in a list., Title#149:24=Title, State=Closed
+          style: display: flex; flex-direction: row; align-items: center; align-self: STRETCH; padding: 16px 16px 16px 16px /* var:VariableID:9:11271 */; width: 100%; background: #F5F5F5 /* var:VariableID:3919:36424 */; border: 1px solid #D9D9D9; border-radius: 8px
+          Accordion Title (FRAME, 295x22)
+            style: display: flex; flex-direction: row; column-gap: 8px /* var:VariableID:9:11259 */; align-items: center; flex-grow: 1
+            Title (TEXT, 267x22)
+              style: flex-grow: 1; font-family: "Inter"; font-weight: 600; font-size: 16px; line-height: 22.4px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Title"
+            Chevron down (INSTANCE, 20x20) [component: Chevron down]
+              style: overflow: hidden
+              Icon (VECTOR, 10x5)
+                style: border: 2px solid #1E1E1E; svg: <svg width="24" height="14" viewBox="0 0 24 14" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M2 2L12 12L22 2" stroke="#1E1E1E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/> </svg>
+        Accordion Item (INSTANCE, 327x54) [component: State=Closed]
+          component-properties: Content#149:27=Answer the frequently asked question in a simple sentence, a longish paragraph, or even in a list., Title#149:24=Title, State=Closed
+          style: display: flex; flex-direction: row; align-items: center; align-self: STRETCH; padding: 16px 16px 16px 16px /* var:VariableID:9:11271 */; width: 100%; background: #F5F5F5 /* var:VariableID:3919:36424 */; border: 1px solid #D9D9D9; border-radius: 8px
+          Accordion Title (FRAME, 295x22)
+            style: display: flex; flex-direction: row; column-gap: 8px /* var:VariableID:9:11259 */; align-items: center; flex-grow: 1
+            Title (TEXT, 267x22)
+              style: flex-grow: 1; font-family: "Inter"; font-weight: 600; font-size: 16px; line-height: 22.4px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Title"
+            Chevron down (INSTANCE, 20x20) [component: Chevron down]
+              style: overflow: hidden
+              Icon (VECTOR, 10x5)
+                style: border: 2px solid #1E1E1E; svg: <svg width="24" height="14" viewBox="0 0 24 14" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M2 2L12 12L22 2" stroke="#1E1E1E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/> </svg>
+        Accordion Item (INSTANCE, 327x54) [component: State=Closed]
+          component-properties: Content#149:27=Answer the frequently asked question in a simple sentence, a longish paragraph, or even in a list., Title#149:24=Title, State=Closed
+          style: display: flex; flex-direction: row; align-items: center; align-self: STRETCH; padding: 16px 16px 16px 16px /* var:VariableID:9:11271 */; width: 100%; background: #F5F5F5 /* var:VariableID:3919:36424 */; border: 1px solid #D9D9D9; border-radius: 8px
+          Accordion Title (FRAME, 295x22)
+            style: display: flex; flex-direction: row; column-gap: 8px /* var:VariableID:9:11259 */; align-items: center; flex-grow: 1
+            Title (TEXT, 267x22)
+              style: flex-grow: 1; font-family: "Inter"; font-weight: 600; font-size: 16px; line-height: 22.4px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Title"
+            Chevron down (INSTANCE, 20x20) [component: Chevron down]
+              style: overflow: hidden
+              Icon (VECTOR, 10x5)
+                style: border: 2px solid #1E1E1E; svg: <svg width="24" height="14" viewBox="0 0 24 14" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M2 2L12 12L22 2" stroke="#1E1E1E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/> </svg>
+        Accordion Item (INSTANCE, 327x54) [component: State=Closed]
+          component-properties: Content#149:27=Answer the frequently asked question in a simple sentence, a longish paragraph, or even in a list., Title#149:24=Title, State=Closed
+          style: display: flex; flex-direction: row; align-items: center; align-self: STRETCH; padding: 16px 16px 16px 16px /* var:VariableID:9:11271 */; width: 100%; background: #F5F5F5 /* var:VariableID:3919:36424 */; border: 1px solid #D9D9D9; border-radius: 8px
+          Accordion Title (FRAME, 295x22)
+            style: display: flex; flex-direction: row; column-gap: 8px /* var:VariableID:9:11259 */; align-items: center; flex-grow: 1
+            Title (TEXT, 267x22)
+              style: flex-grow: 1; font-family: "Inter"; font-weight: 600; font-size: 16px; line-height: 22.4px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Title"
+            Chevron down (INSTANCE, 20x20) [component: Chevron down]
+              style: overflow: hidden
+              Icon (VECTOR, 10x5)
+                style: border: 2px solid #1E1E1E; svg: <svg width="24" height="14" viewBox="0 0 24 14" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M2 2L12 12L22 2" stroke="#1E1E1E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/> </svg>
+  Footer (INSTANCE, 375x919) [component: Platform=Mobile]
+    component-properties: Title#6062:15={"guid":{"sessionID":-1,"localID":-1}}, Slot#6062:12={"guid":{"sessionID":-1,"localID":-1}}, Platform=Mobile
+    style: display: flex; flex-direction: column; row-gap: 64px /* var:VariableID:107:11150 */; align-items: flex-start; align-self: STRETCH; padding: 32px 32px 32px 32px /* var:VariableID:346:10902 */; width: 100%; background: #5A5A5A /* var:VariableID:106:12464 */; border-top: 1px solid #D9D9D9; overflow: hidden; max-width: 1200px
+    Title (SLOT, 311x35)
+      style: display: flex; flex-direction: row; column-gap: 16px; justify-content: space-between; align-items: center; align-self: STRETCH; width: 100%; background: #CFF7D3 /* var:VariableID:3919:36435 */; min-width: 240px
+      Figma (FRAME, 23x35)
+        style: display: flex; flex-direction: row; justify-content: center; align-items: center
+        Icon (VECTOR, 23x35)
+          style: border: 3.5px solid #1E1E1E; svg: <svg width="54" height="77" viewBox="0 0 54 77" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M26.8333 3.5H15.1667C12.0725 3.5 9.10501 4.72916 6.91709 6.91709C4.72916 9.10501 3.5 12.0725 3.5 15.1667C3.5 18.2609 4.72916 21.2283 6.91709 23.4162C9.10501 25.6042 12.0725 26.8333 15.1667 26.8333M26.8333 3.5V26.8333M26.8333 3.5H38.5C40.0321 3.5 41.5492 3.80177 42.9646 4.38807C44.3801 4.97438 45.6662 5.83374 46.7496 6.91709C47.8329 8.00044 48.6923 9.28656 49.2786 10.702C49.8649 12.1175 50.1667 13.6346 50.1667 15.1667C50.1667 16.6988 49.8649 18.2158 49.2786 19.6313C48.6923 21.0468 47.8329 22.3329 46.7496 23.4162C45.6662 24.4996 44.3801 25.359 42.9646 25.9453C41.5492 26.5316 40.0321 26.8333 38.5 26.8333M26.8333 26.8333H15.1667M26.8333 26.8333H38.5M26.8333 26.8333V50.1667M15.1667 26.8333C12.0725 26.8333 9.10501 28.0625 6.91709 30.2504C4.72916 32.4383 3.5 35.4058 3.5 38.5C3.5 41.5942 4.72916 44.5617 6.91709 46.7496C9.10501 48.9375 12.0725 50.1667 15.1667 50.1667M38.5 26.8333C36.9679 26.8333 35.4508 27.1351 34.0354 27.7214C32.6199 28.3077 31.3338 29.1671 30.2504 30.2504C29.1671 31.3338 28.3077 32.6199 27.7214 34.0354C27.1351 35.4508 26.8333 36.9679 26.8333 38.5C26.8333 40.0321 27.1351 41.5492 27.7214 42.9646C28.3077 44.3801 29.1671 45.6662 30.2504 46.7496C31.3338 47.8329 32.6199 48.6923 34.0354 49.2786C35.4508 49.8649 36.9679 50.1667 38.5 50.1667C40.0321 50.1667 41.5492 49.8649 42.9646 49.2786C44.3801 48.6923 45.6662 47.8329 46.7496 46.7496C47.8329 45.6662 48.6923 44.3801 49.2786 42.9646C49.8649 41.5492 50.1667 40.0321 50.1667 38.5C50.1667 36.9679 49.8649 35.4508 49.2786 34.0354C48.6923 32.6199 47.8329 31.3338 46.7496 30.2504C45.6662 29.1671 44.3801 28.3077 42.9646 27.7214C41.5492 27.1351 40.0321 26.8333 38.5 26.8333ZM15.1667 50.1667C12.0725 50.1667 9.10501 51.3958 6.91709 53.5837C4.72916 55.7717 3.5 58.7391 3.5 61.8333C3.5 64.9275 4.72916 67.895 6.91709 70.0829C9.10501 72.2708 12.0725 73.5 15.1667 73.5C18.2609 73.5 21.2283 72.2708 23.4162 70.0829C25.6042 67.895 26.8333 64.9275 26.8333 61.8333V50.1667M15.1667 50.1667H26.8333" stroke="#1E1E1E" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/> </svg>
+      Button List (FRAME, 144x24)
+        style: display: flex; flex-direction: row; column-gap: 16px /* var:VariableID:9:11261 */; align-items: center
+        X Logo (FRAME, 24x24)
+          Icon (VECTOR, 24x24)
+            style: background: #1E1E1E /* var:VariableID:3919:36482 */; svg: <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M28.5474 20.3271L46.4045 0H42.1745L26.6626 17.6461L14.2825 0H0L18.7252 26.6866L0 48H4.23007L20.6004 29.3611L33.6775 48H47.96M5.7568 3.1238H12.2554L42.1713 45.0297H35.6711" fill="#1E1E1E"/> </svg>
+        Logo Instagram (FRAME, 24x24)
+          style: overflow: hidden
+          Icon (VECTOR, 24x24)
+            style: background: #1E1E1E /* var:VariableID:3919:36482 */; svg: <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M24 4.326C30.408 4.326 31.168 4.35 33.7 4.466C40.204 4.762 43.242 7.848 43.538 14.304C43.654 16.834 43.676 17.594 43.676 24.002C43.676 30.412 43.652 31.17 43.538 33.7C43.24 40.15 40.21 43.242 33.7 43.538C31.168 43.654 30.412 43.678 24 43.678C17.592 43.678 16.832 43.654 14.302 43.538C7.782 43.24 4.76 40.14 4.464 33.698C4.348 31.168 4.324 30.41 4.324 24C4.324 17.592 4.35 16.834 4.464 14.302C4.762 7.848 7.792 4.76 14.302 4.464C16.834 4.35 17.592 4.326 24 4.326ZM24 0C17.482 0 16.666 0.028 14.106 0.144C5.39 0.544 0.546 5.38 0.146 14.104C0.028 16.666 0 17.482 0 24C0 30.518 0.028 31.336 0.144 33.896C0.544 42.612 5.38 47.456 14.104 47.856C16.666 47.972 17.482 48 24 48C30.518 48 31.336 47.972 33.896 47.856C42.604 47.456 47.46 42.62 47.854 33.896C47.972 31.336 48 30.518 48 24C48 17.482 47.972 16.666 47.856 14.106C47.464 5.398 42.622 0.546 33.898 0.146C31.336 0.028 30.518 0 24 0ZM24 11.676C17.194 11.676 11.676 17.194 11.676 24C11.676 30.806 17.194 36.326 24 36.326C30.806 36.326 36.324 30.808 36.324 24C36.324 17.194 30.806 11.676 24 11.676ZM24 32C19.582 32 16 28.42 16 24C16 19.582 19.582 16 24 16C28.418 16 32 19.582 32 24C32 28.42 28.418 32 24 32ZM36.812 8.31C35.22 8.31 33.93 9.6 33.93 11.19C33.93 12.78 35.22 14.07 36.812 14.07C38.402 14.07 39.69 12.78 39.69 11.19C39.69 9.6 38.402 8.31 36.812 8.31Z" fill="#1E1E1E"/> </svg>
+        Logo YouTube (FRAME, 24x24)
+          style: overflow: hidden
+          Icon (VECTOR, 24x18)
+            style: background: #1E1E1E /* var:VariableID:3919:36482 */; svg: <svg width="48" height="36" viewBox="0 0 48 36" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M39.2292 0.368243C32.0213 -0.123747 15.9677 -0.121747 8.76982 0.368243C0.97598 0.900232 0.0579988 5.60814 0 17.9999C0.0579988 30.3696 0.967981 35.0975 8.76982 35.6315C15.9697 36.1215 32.0213 36.1235 39.2292 35.6315C47.023 35.0995 47.941 30.3916 47.999 17.9999C47.941 5.63014 47.031 0.902232 39.2292 0.368243ZM17.9996 25.9997V10L33.9993 17.9859L17.9996 25.9997Z" fill="#1E1E1E"/> </svg>
+        LinkedIn (FRAME, 24x24)
+          style: overflow: hidden
+          Icon (VECTOR, 24x24)
+            style: background: #1E1E1E /* var:VariableID:3919:36482 */; svg: <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M38 0H10C4.478 0 0 4.478 0 10V38C0 43.522 4.478 48 10 48H38C43.524 48 48 43.522 48 38V10C48 4.478 43.524 0 38 0ZM16 38H10V16H16V38ZM13 13.464C11.068 13.464 9.5 11.884 9.5 9.936C9.5 7.988 11.068 6.408 13 6.408C14.932 6.408 16.5 7.988 16.5 9.936C16.5 11.884 14.934 13.464 13 13.464ZM40 38H34V26.792C34 20.056 26 20.566 26 26.792V38H20V16H26V19.53C28.792 14.358 40 13.976 40 24.482V38Z" fill="#1E1E1E"/> </svg>
+    Links (FRAME, 311x756)
+      style: display: flex; flex-direction: column; row-gap: 24px /* var:VariableID:9:11262 */; align-items: flex-start; align-self: STRETCH; width: 100%; background: #EBFFEE /* var:VariableID:2002:7433 */
+      Slot (SLOT, 311x756)
+        style: display: flex; flex-direction: column; row-gap: 24px; align-items: flex-start; align-self: STRETCH; width: 100%
+        Text Link List (INSTANCE, 311x236) [component: Density=Tight]
+          component-properties: Slot#6062:6={"guid":{"sessionID":-1,"localID":-1}}, Has Title#322:21=true, Density=Tight
+          style: display: flex; flex-direction: column; row-gap: 8px /* var:VariableID:9:11259 */; align-items: flex-start; align-self: STRETCH; width: 100%
+          Title (FRAME, 311x26)
+            style: display: flex; flex-direction: column; align-items: flex-start; align-self: STRETCH; padding: 0px 0px 4px 0px /* var:VariableID:9:11258 */; width: 100%
+            Text Strong (INSTANCE, 81x22) [component: Text Strong]
+              component-properties: Text#2104:8=Use cases
+              style: display: flex; flex-direction: row; align-items: flex-start
+              Text Strong (TEXT, 81x22)
+                style: font-family: "Inter"; font-weight: 700; font-size: 16px; line-height: 22.4px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Use cases"
+          Slot (SLOT, 144x202)
+            style: display: flex; flex-direction: column; row-gap: 8px; align-items: flex-start
+            Text Link List Item (INSTANCE, 72x22) [component: Text Link List Item]
+              component-properties: Text#2153:15=UI design
+              style: display: flex; flex-direction: row; justify-content: center; align-items: center; align-self: STRETCH
+              List item (TEXT, 72x22)
+                style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "UI design"
+            Text Link List Item (INSTANCE, 78x22) [component: Text Link List Item]
+              component-properties: Text#2153:15=UX design
+              style: display: flex; flex-direction: row; justify-content: center; align-items: center; align-self: STRETCH
+              List item (TEXT, 78x22)
+                style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "UX design"
+            Text Link List Item (INSTANCE, 92x22) [component: Text Link List Item]
+              component-properties: Text#2153:15=Wireframing
+              style: display: flex; flex-direction: row; justify-content: center; align-items: center; align-self: STRETCH
+              List item (TEXT, 92x22)
+                style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Wireframing"
+            Text Link List Item (INSTANCE, 100x22) [component: Text Link List Item]
+              component-properties: Text#2153:15=Diagramming
+              style: display: flex; flex-direction: row; justify-content: center; align-items: center; align-self: STRETCH
+              List item (TEXT, 100x22)
+                style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Diagramming"
+            Text Link List Item (INSTANCE, 105x22) [component: Text Link List Item]
+              component-properties: Text#2153:15=Brainstorming
+              style: display: flex; flex-direction: row; justify-content: center; align-items: center; align-self: STRETCH
+              List item (TEXT, 105x22)
+                style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Brainstorming"
+            Text Link List Item (INSTANCE, 138x22) [component: Text Link List Item]
+              component-properties: Text#2153:15=Online whiteboard
+              style: display: flex; flex-direction: row; justify-content: center; align-items: center; align-self: STRETCH
+              List item (TEXT, 138x22)
+                style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Online whiteboard"
+            Text Link List Item (INSTANCE, 144x22) [component: Text Link List Item]
+              component-properties: Text#2153:15=Team collaboration
+              style: display: flex; flex-direction: row; justify-content: center; align-items: center; align-self: STRETCH
+              List item (TEXT, 144x22)
+                style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Team collaboration"
+        Text Link List (INSTANCE, 311x236) [component: Density=Tight]
+          component-properties: Slot#6062:6={"guid":{"sessionID":-1,"localID":-1}}, Has Title#322:21=true, Density=Tight
+          style: display: flex; flex-direction: column; row-gap: 8px /* var:VariableID:9:11259 */; align-items: flex-start; align-self: STRETCH; width: 100%
+          Title (FRAME, 311x26)
+            style: display: flex; flex-direction: column; align-items: flex-start; align-self: STRETCH; padding: 0px 0px 4px 0px /* var:VariableID:9:11258 */; width: 100%
+            Text Strong (INSTANCE, 59x22) [component: Text Strong]
+              component-properties: Text#2104:8=Explore
+              style: display: flex; flex-direction: row; align-items: flex-start
+              Text Strong (TEXT, 59x22)
+                style: font-family: "Inter"; font-weight: 700; font-size: 16px; line-height: 22.4px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Explore"
+          Slot (SLOT, 168x202)
+            style: display: flex; flex-direction: column; row-gap: 8px; align-items: flex-start
+            Text Link List Item (INSTANCE, 53x22) [component: Text Link List Item]
+              component-properties: Text#2153:15=Design
+              style: display: flex; flex-direction: row; justify-content: center; align-items: center; align-self: STRETCH
+              List item (TEXT, 53x22)
+                style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Design"
+            Text Link List Item (INSTANCE, 89x22) [component: Text Link List Item]
+              component-properties: Text#2153:15=Prototyping
+              style: display: flex; flex-direction: row; justify-content: center; align-items: center; align-self: STRETCH
+              List item (TEXT, 89x22)
+                style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Prototyping"
+            Text Link List Item (INSTANCE, 167x22) [component: Text Link List Item]
+              component-properties: Text#2153:15=Development features
+              style: display: flex; flex-direction: row; justify-content: center; align-items: center; align-self: STRETCH
+              List item (TEXT, 167x22)
+                style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Development features"
+            Text Link List Item (INSTANCE, 120x22) [component: Text Link List Item]
+              component-properties: Text#2153:15=Design systems
+              style: display: flex; flex-direction: row; justify-content: center; align-items: center; align-self: STRETCH
+              List item (TEXT, 120x22)
+                style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Design systems"
+            Text Link List Item (INSTANCE, 168x22) [component: Text Link List Item]
+              component-properties: Text#2153:15=Collaboration features
+              style: display: flex; flex-direction: row; justify-content: center; align-items: center; align-self: STRETCH
+              List item (TEXT, 168x22)
+                style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Collaboration features"
+            Text Link List Item (INSTANCE, 117x22) [component: Text Link List Item]
+              component-properties: Text#2153:15=Design process
+              style: display: flex; flex-direction: row; justify-content: center; align-items: center; align-self: STRETCH
+              List item (TEXT, 117x22)
+                style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Design process"
+            Text Link List Item (INSTANCE, 55x22) [component: Text Link List Item]
+              component-properties: Text#2153:15=FigJam
+              style: display: flex; flex-direction: row; justify-content: center; align-items: center; align-self: STRETCH
+              List item (TEXT, 55x22)
+                style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "FigJam"
+        Text Link List (INSTANCE, 311x236) [component: Density=Tight]
+          component-properties: Slot#6062:6={"guid":{"sessionID":-1,"localID":-1}}, Has Title#322:21=true, Density=Tight
+          style: display: flex; flex-direction: column; row-gap: 8px /* var:VariableID:9:11259 */; align-items: flex-start; align-self: STRETCH; width: 100%
+          Title (FRAME, 311x26)
+            style: display: flex; flex-direction: column; align-items: flex-start; align-self: STRETCH; padding: 0px 0px 4px 0px /* var:VariableID:9:11258 */; width: 100%
+            Text Strong (INSTANCE, 83x22) [component: Text Strong]
+              component-properties: Text#2104:8=Resources
+              style: display: flex; flex-direction: row; align-items: flex-start
+              Text Strong (TEXT, 83x22)
+                style: font-family: "Inter"; font-weight: 700; font-size: 16px; line-height: 22.4px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Resources"
+          Slot (SLOT, 123x202)
+            style: display: flex; flex-direction: column; row-gap: 8px; align-items: flex-start
+            Text Link List Item (INSTANCE, 34x22) [component: Text Link List Item]
+              component-properties: Text#2153:15=Blog
+              style: display: flex; flex-direction: row; justify-content: center; align-items: center; align-self: STRETCH
+              List item (TEXT, 34x22)
+                style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Blog"
+            Text Link List Item (INSTANCE, 109x22) [component: Text Link List Item]
+              component-properties: Text#2153:15=Best practices
+              style: display: flex; flex-direction: row; justify-content: center; align-items: center; align-self: STRETCH
+              List item (TEXT, 109x22)
+                style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Best practices"
+            Text Link List Item (INSTANCE, 49x22) [component: Text Link List Item]
+              component-properties: Text#2153:15=Colors
+              style: display: flex; flex-direction: row; justify-content: center; align-items: center; align-self: STRETCH
+              List item (TEXT, 49x22)
+                style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Colors"
+            Text Link List Item (INSTANCE, 90x22) [component: Text Link List Item]
+              component-properties: Text#2153:15=Color wheel
+              style: display: flex; flex-direction: row; justify-content: center; align-items: center; align-self: STRETCH
+              List item (TEXT, 90x22)
+                style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Color wheel"
+            Text Link List Item (INSTANCE, 61x22) [component: Text Link List Item]
+              component-properties: Text#2153:15=Support
+              style: display: flex; flex-direction: row; justify-content: center; align-items: center; align-self: STRETCH
+              List item (TEXT, 61x22)
+                style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Support"
+            Text Link List Item (INSTANCE, 86x22) [component: Text Link List Item]
+              component-properties: Text#2153:15=Developers
+              style: display: flex; flex-direction: row; justify-content: center; align-items: center; align-self: STRETCH
+              List item (TEXT, 86x22)
+                style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Developers"
+            Text Link List Item (INSTANCE, 123x22) [component: Text Link List Item]
+              component-properties: Text#2153:15=Resource library
+              style: display: flex; flex-direction: row; justify-content: center; align-items: center; align-self: STRETCH
+              List item (TEXT, 123x22)
+                style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Resource library"

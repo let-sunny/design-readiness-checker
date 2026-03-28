@@ -1,0 +1,15 @@
+{
+  "fixture": "desktop-pricing",
+  "type": "baseline",
+  "runIndex": 0,
+  "similarity": 88,
+  "inputTokens": 25468,
+  "outputTokens": 16731,
+  "totalTokens": 42199,
+  "htmlBytes": 47644,
+  "htmlLines": 596,
+  "cssClassCount": 23,
+  "cssVariableCount": 13,
+  "timestamp": "2026-03-28T11:00:14.686Z",
+  "configVersion": "72ffc72c9103"
+}

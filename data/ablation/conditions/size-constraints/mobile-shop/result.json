@@ -1,0 +1,14 @@
+{
+  "fixture": "mobile-shop",
+  "type": "size-constraints",
+  "baseWidth": 375,
+  "expandedWidth": 768,
+  "baselineSimilarity": 94,
+  "strippedSimilarity": 48,
+  "deltaV": 46,
+  "strippedTokens": {
+    "input": 18895,
+    "output": 13126
+  },
+  "timestamp": "2026-03-28T12:48:06.039Z"
+}

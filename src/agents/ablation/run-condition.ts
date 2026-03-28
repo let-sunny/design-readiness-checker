@@ -9,7 +9,7 @@
  *   ANTHROPIC_API_KEY=sk-... npx tsx src/agents/ablation/run-condition.ts --type hover-interaction
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync } from "node:fs";
 import { resolve, join } from "node:path";
 import Anthropic from "@anthropic-ai/sdk";
 
@@ -59,10 +59,24 @@ async function runSizeConstraints(fixture: string, client: Anthropic, prompt: st
 
   copyFixtureImages(fixture, runDir);
 
-  // Baseline: full info → implement → remove root width → render at expanded
-  console.log(`  [baseline] API call...`);
-  const baseResponse = await callApi(client, prompt, baselineTree);
-  const baseHtml = processHtml(getResponseText(baseResponse)).html;
+  // Baseline: reuse HTML from phase1 cache (no API call)
+  const phase1Dir = resolve("data/ablation/phase1");
+  let baseHtml: string | null = null;
+  if (existsSync(phase1Dir)) {
+    const versions = readdirSync(phase1Dir).filter((d) =>
+      existsSync(join(phase1Dir, d, fixture, "baseline", "run-0", "output.html"))
+    );
+    if (versions.length > 0) {
+      const latest = versions.sort().reverse()[0]!;
+      baseHtml = readFileSync(join(phase1Dir, latest, fixture, "baseline", "run-0", "output.html"), "utf-8");
+      console.log(`  [baseline] Reusing from phase1 cache (${latest})`);
+    }
+  }
+  if (!baseHtml) {
+    console.log(`  [baseline] No cache — calling API...`);
+    const baseResponse = await callApi(client, prompt, baselineTree);
+    baseHtml = processHtml(getResponseText(baseResponse)).html;
+  }
   const baseExpanded = removeRootFixedWidth(baseHtml);
   writeFileSync(join(runDir, "output-baseline.html"), baseHtml);
   writeFileSync(join(runDir, "output-baseline-expanded.html"), baseExpanded);
@@ -87,7 +101,6 @@ async function runSizeConstraints(fixture: string, client: Anthropic, prompt: st
     baselineSimilarity: baseResult.similarity,
     strippedSimilarity: stripResult.similarity,
     deltaV,
-    baselineTokens: { input: baseResponse.usage.input_tokens, output: baseResponse.usage.output_tokens },
     strippedTokens: { input: stripResponse.usage.input_tokens, output: stripResponse.usage.output_tokens },
     timestamp: new Date().toISOString(),
   };

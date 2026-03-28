@@ -1,0 +1,14 @@
+{
+  "fixture": "mobile-landing-page",
+  "type": "size-constraints",
+  "baseWidth": 375,
+  "expandedWidth": 768,
+  "baselineSimilarity": 72,
+  "strippedSimilarity": 72,
+  "deltaV": 0,
+  "strippedTokens": {
+    "input": 19688,
+    "output": 14224
+  },
+  "timestamp": "2026-03-28T12:45:43.855Z"
+}

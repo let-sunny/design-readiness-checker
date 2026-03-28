@@ -1,0 +1,15 @@
+{
+  "fixture": "mobile-product-detail",
+  "type": "node-names-hierarchy",
+  "runIndex": 0,
+  "similarity": 96,
+  "inputTokens": 26266,
+  "outputTokens": 19141,
+  "totalTokens": 45407,
+  "htmlBytes": 52214,
+  "htmlLines": 491,
+  "cssClassCount": 23,
+  "cssVariableCount": 14,
+  "timestamp": "2026-03-28T11:14:29.604Z",
+  "configVersion": "72ffc72c9103"
+}

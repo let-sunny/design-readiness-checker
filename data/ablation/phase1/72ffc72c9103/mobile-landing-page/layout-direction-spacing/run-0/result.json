@@ -1,0 +1,15 @@
+{
+  "fixture": "mobile-landing-page",
+  "type": "layout-direction-spacing",
+  "runIndex": 0,
+  "similarity": 92,
+  "inputTokens": 16761,
+  "outputTokens": 10905,
+  "totalTokens": 27666,
+  "htmlBytes": 27546,
+  "htmlLines": 412,
+  "cssClassCount": 18,
+  "cssVariableCount": 13,
+  "timestamp": "2026-03-28T11:23:08.715Z",
+  "configVersion": "72ffc72c9103"
+}

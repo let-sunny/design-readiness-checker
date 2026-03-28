@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Platform Mobile</title>
+    
+    <style>
+@font-face { font-family: "Inter"; src: url("file:///Users/minseon/Code/design-readiness-checker/assets/fonts/Inter.var.woff2") format("woff2"); font-weight: 100 900; }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        :root {
+            --color-FFFFFF: #FFFFFF;
+            --color-1E1E1E: #1E1E1E;
+            --color-D9D9D9: #D9D9D9;
+            --color-FFF1C2: #FFF1C2;
+            --color-E3E3E3: #E3E3E3;
+            --color-757575: #757575;
+            --color-CFF7D3: #CFF7D3;
+            --color-02542D: #02542D;
+            --color-2C2C2C: #2C2C2C;
+            --color-F5F5F5: #F5F5F5;
+            --color-FAE1FA: #FAE1FA;
+            --color-B3B3B3: #B3B3B3;
+            --color-5A5A5A: #5A5A5A;
+            --color-EBFFEE: #EBFFEE;
+        }
+        
+        .text-heading { font-family: "Inter"; font-weight: 600; font-size: 24px; line-height: 28.8px; letter-spacing: -0.48px; }
+        .text-body-base { font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; }
+        .text-single-line-body-base { font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 16px; }
+        .text-body-strong { font-family: "Inter"; font-weight: 600; font-size: 16px; line-height: 22.4px; }
+        .text-subheading { font-family: "Inter"; font-weight: 400; font-size: 20px; line-height: 24px; }
+        
+        .header { width: 100%; background: var(--color-FFFFFF); border-bottom: 1px solid var(--color-D9D9D9); overflow: hidden; max-width: 1200px; height: 84px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; }
+        
+        .icon-button { border-radius: 32px; overflow: hidden; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; }
+        .icon-button:hover { background: var(--color-F5F5F5); }
+        
+        .button { background: var(--color-2C2C2C); border: 1px solid var(--color-2C2C2C); border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; padding: 12px 16px; }
+        .button:hover { background: var(--color-1E1E1E); }
+        
+        .select-field { width: 100%; }
+        .select { position: relative; width: 100%; background: var(--color-FFFFFF); border: 1px solid var(--color-D9D9D9); border-radius: 8px; min-width: 120px; height: 40px; display: flex; align-items: center; padding: 0 16px; }
+        
+        .tag { background: var(--color-CFF7D3); border-radius: 8px; padding: 8px; display: inline-block; }
+        
+        .review-card { flex-grow: 1; background: var(--color-FAE1FA); border: 1px solid var(--color-D9D9D9); border-radius: 8px; min-width: 240px; padding: 24px; }
+        
+        .text-link-list { width: 100%; }
+        .text-link-list-item { margin-bottom: 4px; }
+    </style>
+</head>
+<body>
+    <div style="width: 375px; height: 3258px; background: var(--color-FFFFFF); overflow: hidden;">
+        <!-- Header -->
+        <div class="header">
+            <div style="width: 40px; height: 35px;">
+                <div style="width: 40px; height: 35px;">
+                    <svg width="54" height="77" viewBox="0 0 54 77" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M26.8333 3.5H15.1667C12.0725 3.5 9.10501 4.72916 6.91709 6.91709C4.72916 9.10501 3.5 12.0725 3.5 15.1667C3.5 18.2609 4.72916 21.2283 6.91709 23.4162C9.10501 25.6042 12.0725 26.8333 15.1667 26.8333M26.8333 3.5V26.8333M26.8333 3.5H38.5C40.0321 3.5 41.5492 3.80177 42.9646 4.38807C44.3801 4.97438 45.6662 5.83374 46.7496 6.91709C47.8329 8.00044 48.6923 9.28656 49.2786 10.702C49.8649 12.1175 50.1667 13.6346 50.1667 15.1667C50.1667 16.6988 49.8649 18.2158 49.2786 19.6313C48.6923 21.0468 47.8329 22.3329 46.7496 23.4162C45.6662 24.4996 44.3801 25.359 42.9646 25.9453C41.5492 26.5316 40.0321 26.8333 38.5 26.8333M26.8333 26.8333H15.1667M26.8333 26.8333H38.5M26.8333 26.8333V50.1667M15.1667 26.8333C12.0725 26.8333 9.10501 28.0625 6.91709 30.2504C4.72916 32.4383 3.5 35.4058 3.5 38.5C3.5 41.5942 4.72916 44.5617 6.91709 46.7496C9.10501 48.9375 12.0725 50.1667 15.1667 50.1667M38.5 26.8333C36.9679 26.8333 35.4508 27.1351 34.0354 27.7214C32.6199 28.3077 31.3338 29.1671 30.2504 30.2504C29.1671 31.3338 28.3077 32.6199 27.7214 34.0354C27.1351 35.4508 26.8333 36.9679 26.8333 38.5C26.8333 40.0321 27.1351 41.5492 27.7214 42.9646C28.3077 44.3801 29.1671 45.6662 30.2504 46.7496C31.3338 47.8329 32.6199 48.6923 34.0354 49.2786C35.4508 49.8649 36.9679 50.1667 38.5 50.1667C40.0321 50.1667 41.5492 49.8649 42.9646 49.2786C44.3801 48.6923 45.6662 47.8329 46.7496 46.7496C47.8329 45.6662 48.6923 44.3801 49.2786 42.9646C49.8649 41.5492 50.1667 40.0321 50.1667 38.5C50.1667 36.9679 49.8649 35.4508 49.2786 34.0354C48.6923 32.6199 47.8329 31.3338 46.7496 30.2504C45.6662 29.1671 44.3801 28.3077 42.9646 27.7214C41.5492 27.1351 40.0321 26.8333 38.5 26.8333ZM15.1667 50.1667C12.0725 50.1667 9.10501 51.3958 6.91709 53.5837C4.72916 55.7717 3.5 58.7391 3.5 61.8333C3.5 64.9275 4.72916 67.895 6.91709 70.0829C9.10501 72.2708 12.0725 73.5 15.1667 73.5C18.2609 73.5 21.2283 72.2708 23.4162 70.0829C25.6042 67.895 26.8333 64.9275 26.8333 61.8333V50.1667M15.1667 50.1667H26.8333" stroke="#1E1E1E" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+            </div>
+            <div class="icon-button">
+                <svg width="34" height="24" viewBox="0 0 34 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M1.64 11.8784H32.36M1.64 1.6384H32.36M1.64 22.1184H32.36" stroke="#1E1E1E" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+        </div>
+
+        <!-- Page Product -->
+        <div style="width: 100%; background: var(--color-FFF1C2); min-width: 240px; max-width: 1200px; height: 1282px; padding: 24px;">
+            <div style="position: relative; width: 100%; height: 1234px;">
+                <!-- Product Image -->
+                <div style="width: 100%; height: 327px; background: var(--color-E3E3E3); overflow: hidden;">
+                    <img src="images/image@2x.png" style="width: 100%; height: 100%; object-fit: contain;" />
+                </div>
+                
+                <!-- Heart Button -->
+                <div style="position: absolute; top: 10px; left: 10px; background: var(--color-2C2C2C); border: 1px solid var(--color-2C2C2C); border-radius: 32px; overflow: hidden; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">
+                    <svg width="39" height="35" viewBox="0 0 39 35" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M34.293 4.7057C33.4382 3.85053 32.4233 3.17215 31.3063 2.70931C30.1893 2.24647 28.992 2.00825 27.7829 2.00825C26.5738 2.00825 25.3765 2.24647 24.2595 2.70931C23.1425 3.17215 22.1276 3.85053 21.2728 4.7057L19.4989 6.47965L17.7249 4.7057C15.9984 2.97912 13.6566 2.00914 11.2149 2.00914C8.77312 2.00914 6.43138 2.97912 4.70481 4.7057C2.97823 6.43228 2.00825 8.77402 2.00825 11.2158C2.00825 13.6575 2.97823 15.9993 4.70481 17.7258L19.4989 32.5199L34.293 17.7258C35.1482 16.8711 35.8265 15.8562 36.2894 14.7392C36.7522 13.6221 36.9904 12.4249 36.9904 11.2158C36.9904 10.0067 36.7522 8.80939 36.2894 7.69237C35.8265 6.57535 35.1482 5.56047 34.293 4.7057Z" stroke="#F5F5F5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+
+                <!-- Product Content -->
+                <div style="width: 100%; margin-top: 24px;">
+                    <!-- Title and Price -->
+                    <div style="width: 100%; margin-bottom: 16px;">
+                        <div style="width: 100%; margin-bottom: 16px;">
+                            <div class="text-heading" style="width: 100%; text-align: left; color: var(--color-1E1E1E); margin-bottom: 16px;">Text Heading</div>
+                            <div style="width: 100%; display: flex; align-items: center; gap: 16px;">
+                                <div class="tag">
+                                    <div class="text-single-line-body-base" style="text-align: left; color: var(--color-02542D);">Tag</div>
+                                </div>
+                                <div style="display: flex; align-items: baseline;">
+                                    <div style="font-family: 'Inter'; font-weight: 700; font-size: 24px; line-height: 24px; letter-spacing: -0.48px; text-align: left; color: var(--color-1E1E1E);">$</div>
+                                    <div style="font-family: 'Inter'; font-weight: 700; font-size: 48px; line-height: 48px; letter-spacing: -0.96px; text-align: left; color: var(--color-1E1E1E);">50</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-body-base" style="width: 100%; text-align: left; color: var(--color-757575);">Text</div>
+                    </div>
+
+                    <!-- Form Fields -->
+                    <div style="width: 100%; margin-bottom: 24px;">
+                        <div class="select-field" style="margin-bottom: 16px;">
+                            <div class="text-body-base" style="width: 100%; text-align: left; color: var(--color-1E1E1E); margin-bottom: 8px;">Label</div>
+                            <div class="select">
+                                <div class="text-single-line-body-base" style="flex-grow: 1; text-align: left; color: var(--color-1E1E1E);">Value</div>
+                                <svg width="20" height="12" viewBox="0 0 20 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M1.66802 1.66637L10 9.99835L18.332 1.66637" stroke="#1E1E1E" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="select-field">
+                            <div class="text-body-base" style="width: 100%; text-align: left; color: var(--color-1E1E1E); margin-bottom: 8px;">Label</div>
+                            <div class="select">
+                                <div class="text-single-line-body-base" style="flex-grow: 1; text-align: left; color: var(--color-1E1E1E);">Value</div>
+                                <svg width="20" height="12" viewBox="0 0 20 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M1.66802 1.66637L10 9.99835L18.332 1.66637" stroke="#1E1E1E" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Button -->
+                    <div class="button" style="width: 100%; margin-bottom: 24px;">
+                        <div class="text-single-line-body-base" style="text-align: left; color: var(--color-F5F5F5);">Button</div>
+                    </div>
+
+                    <!-- Accordion -->
+                    <div style="width: 100%; max-width: 640px;">
+                        <div style="width: 100%; background: var(--color-FFFFFF); border: 1px solid var(--color-D9D9D9); border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+                            <div style="width: 100%; display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                                <div class="text-body-strong" style="flex-grow: 1; text-align: left; color: var(--color-1E1E1E);">Title</div>
+                                <svg width="24" height="14" viewBox="0 0 24 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M22 12L12 2L2 12" stroke="#1E1E1E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </div>
+                            <div class="text-body-base" style="width: 100%; text-align: left; color: var(--color-1E1E1E);">Answer the frequently asked question in a simple sentence, a longish paragraph, or even in a list.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reviews Section -->
+        <div style="width: 100%; background: rgba(0, 0, 0, 0.5); max-width: 1200px; height: 800px; padding: 24px;">
+            <div class="text-heading" style="text-align: left; color: var(--color-1E1E1E); margin-bottom: 24px;">Latest reviews</div>
+            <div style="width: 100%; display: flex; flex-direction: column; gap: 16px;">
+                <!-- Review Card 1 -->
+                <div class="review-card">
+                    <div style="display: flex; gap: 4px; margin-bottom: 16px;">
+                        <svg width="38" height="36" viewBox="0 0 38 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M18.8236 2.01681L24.0168 12.5378L35.6303 14.2353L27.2269 22.4202L29.2101 33.9832L18.8236 28.521L8.43699 33.9832L10.4202 22.4202L2.01681 14.2353L13.6303 12.5378L18.8236 2.01681Z" stroke="#2C2C2C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <svg width="38" height="36" viewBox="0 0 38 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M18.8236 2.01681L24.0168 12.5378L35.6303 14.2353L27.2269 22.4202L29.2101 33.9832L18.8236 28.521L8.43699 33.9832L10.4202 22.4202L2.01681 14.2353L13.6303 12.5378L18.8236 2.01681Z" stroke="#2C2C2C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <svg width="38" height="36" viewBox="0 0 38 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M18.8236 2.01681L24.0168 12.5378L35.6303 14.2353L27.2269 22.4202L29.2101 33.9832L18.8236 28.521L8.43699 33.9832L10.4202 22.4202L2.01681 14.2353L13.6303 12.5378L18.8236 2.01681Z" stroke="#2C2C2C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <svg width="38" height="36" viewBox="0 0 38 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M18.8236 2.01681L24.0168 12.5378L35.6303 14.2353L27.2269 22.4202L29.2101 33.9832L18.8236 28.521L8.43699 33.9832L10.4202 22.4202L2.01681 14.2353L13.6303 12.5378L18.8236 2.01681Z" stroke="#2C2C2C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <svg width="38" height="36" viewBox="0 0 38 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M18.8236 2.01681L24.0168 12.5378L35.6303 14.2353L27.2269 22.4202L29.2101 33.9832L18.8236 28.521L8.43699 33.9832L10.4202 22.4202L2.01681 14.2353L13.6303 12.5378L18.8236 2.01681Z" stroke="#2C2C2C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div style="width: 100%; margin-bottom: 16px;">
+                        <div class="text-heading" style="text-align: left; color: var(--color-1E1E1E); margin-bottom: 8px;">Review title</div>
+                        <div class="text-body-base" style="width: 100%; text-align: left; color: var(--color-1E1E1E);">Review body</div>
+                    </div>
+                    <div style="width: 100%; display: flex; align-items: center; gap: 12px;">
+                        <div style="border-radius: 9999px; overflow: hidden; width: 40px; height: 40px;">
+                            <img src="images/shape@2x.png" style="width: 100%; height: 100%; object-fit: cover;" />
+                        </div>
+                        <div style="flex-grow: 1;">
+                            <div class="text-body-strong" style="width: 100%; text-align: left; color: var(--color-757575);">Reviewer name</div>
+                            <div class="text-body-base" style="width: 100%; text-align: left; color: var(--color-B3B3B3);">Date</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Review Card 2 -->
+                <div class="review-card">
+                    <div style="display: flex; gap: 4px; margin-bottom: 16px;">
+                        <svg width="38" height="36" viewBox="0 0 38 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M18.8236 2.01681L24.0168 12.5378L35.6303 14.2353L27.2269 22.4202L29.2101 33.9832L18.8236 28.521L8.43699 33.9832L10.4202 22.4202L2.01681 14.2353L13.6303 12.5378L18.8236 2.01681Z" stroke="#2C2C2C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <svg width="38" height="36" viewBox="0 0 38 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M18.8236 2.01681L24.0168 12.5378L35.6303 14.2353L27.2269 22.4202L29.2101 33.9832L18.8236 28.521L8.43699 33.9832L10.4202 22.4202L2.01681 14.2353L13.6303 12.5378L18.8236 2.01681Z" stroke="#2C2C2C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <svg width="38" height="36" viewBox="0 0 38 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M18.8236 2.01681L24.0168 12.5378L35.6303 14.2353L27.2269 22.4202L29.2101 33.9832L18.8236 28.521L8.43699 33.9832L10.4202 22.4202L2.01681 14.2353L13.6303 12.5378L18.8236 2.01681Z" stroke="#2C2C2C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <svg width="38" height="36" viewBox="0 0 38 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M18.8236 2.01681L24.0168 12.5378L35.6303 14.2353L27.2269 22.4202L29.2101 33.9832L18.8236 28.521L8.43699 33.9832L10.4202 22.4202L2.01681 14.2353L13.6303 12.5378L18.8236 2.01681Z" stroke="#2C2C2C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <svg width="38" height="36" viewBox="0 0 38 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M18.8236 2.01681L24.0168 12.5378L35.6303 14.2353L27.2269 22.4202L29.2101 33.9832L18.8236 28.521L8.43699 33.9832L10.4202 22.4202L2.01681 14.2353L13.6303 12.5378L18.8236 2.01681Z" stroke="#2C2C2C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div style="width: 100%; margin-bottom: 16px;">
+                        <div class="text-heading" style="text-align: left; color: var(--color-1E1E1E); margin-bottom: 8px;">Review title</div>
+                        <div class="text-body-base" style="width: 100%; text-align: left; color: var(--color-1E1E1E);">Review body</div>
+                    </div>
+                    <div style="width: 100%; display: flex; align-items: center; gap: 12px;">
+                        <div style="border-radius: 9999px; overflow: hidden; width: 40px; height: 40px;">
+                            <img src="images/shape-2@2x.png" style="width: 100%; height: 100%; object-fit: cover;" />
+                        </div>
+                        <div style="flex-grow: 1;">
+                            <div class="text-body-strong" style="width: 100%; text-align: left; color: var(--color-757575);">Reviewer name</div>
+                            <div class="text-body-base" style="width: 100%; text-align: left; color: var(--color-B3B3B3);">Date</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Review Card 3 -->
+                <div class="review-card">
+                    <div style="display: flex; gap: 4px; margin-bottom: 16px;">
+                        <svg width="38" height="36" viewBox="0 0 38 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M18.8236 2.01681L24.0168 12.5378L35.6303 14.2353L27.2269 22.4202L29.2101 33.9832L18.8236 28.521L8.43699 33.9832L10.4202 22.4202L2.01681 14.2353L13.6303 12.5378L18.8236 2.01681Z" stroke="#2C2C2C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <svg width="38" height="36" viewBox="0 0 38 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M18.8236 2.01681L24.0168 12.5378L35.6303 14.2353L27.2269 22.4202L29.2101 33.9832L18.8236 28.521L8.43699 33.9832L10.4202 22.4202L2.01681 14.2353L13.6303 12.5378L18.8236 2.01681Z" stroke="#2C2C2C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <svg width="38" height="36" viewBox="0 0 38 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M18.8236 2.01681L24.0168 12.5378L35.6303 14.2353L27.2269 22.4202L29.2101 33.9832L18.8236 28.521L8.43699 33.9832L10.4202 22.4202L2.01681 14.2353L13.6303 12.5378L18.8236 2.01681Z" stroke="#2C2C2C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <svg width="38" height="36" viewBox="0 0 38 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M18.8236 2.01681L24.0168 12.5378L35.6303 14.2353L27.2269 22.4202L29.2101 33.9832L18.8236 28.521L8.43699 33.9832L10.4202 22.4202L2.01681 14.2353L13.6303 12.5378L18.8236 2.01681Z" stroke="#2C2C2C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <svg width="38" height="36" viewBox="0 0 38 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M18.8236 2.01681L24.0168 12.5378L35.6303 14.2353L27.2269 22.4202L29.2101 33.9832L18.8236 28.521L8.43699 33.9832L10.4202 22.4202L2.01681 14.2353L13.6303 12.5378L18.8236 2.01681Z" stroke="#2C2C2C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div style="width: 100%; margin-bottom: 16px;">
+                        <div class="text-heading" style="text-align: left; color: var(--color-1E1E1E); margin-bottom: 8px;">Review title</div>
+                        <div class="text-body-base" style="width: 100%; text-align: left; color: var(--color-1E1E1E);">Review body</div>
+                    </div>
+                    <div style="width: 100%; display: flex; align-items: center; gap: 12px;">
+                        <div style="border-radius: 9999px; overflow: hidden; width: 40px; height: 40px;">
+                            <img src="images/shape-3@2x.png" style="width: 100%; height: 100%; object-fit: cover;" />
+                        </div>
+                        <div style="flex-grow: 1;">
+                            <div class="text-body-strong" style="width: 100%; text-align: left; color: var(--color-757575);">Reviewer name</div>
+                            <div class="text-body-base" style="width: 100%; text-align: left; color: var(--color-B3B3B3);">Date</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Newsletter Section -->
+        <div style="width: 100%; background: var(--color-D9D9D9); max-width: 1200px; height: 173px; padding: 24px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+            <div style="width: 100%; text-align: center; margin-bottom: 24px;">
+                <div class="text-heading" style="text-align: center; color: var(--color-1E1E1E); margin-bottom: 8px;">Follow the latest trends</div>
+                <div class="text-subheading" style="text-align: center; color: var(--color-757575);">With our daily newsletterWith our daily newsletterWith our daily newsletter</div>
+            </div>
+            <div style="width: 100%; display: flex; gap: 12px;">
+                <div style="flex-grow: 1; background: var(--color-FFFFFF); border: 1px solid var(--color-D9D9D9); border-radius: 8px; overflow: hidden; min-width: 120px; height: 40px; display: flex; align-items: center; padding: 0 16px;">
+                    <div class="text-single-line-body-base" style="flex-grow: 1; text-align: left; color: var(--color-1E1E1E);">you@example.com</div>
+                </div>
+                <div class="button" style="height: 40px;">
+                    <div class="text-single-line-body-base" style="text-align: left; color: var(--color-F5F5F5);">Submit</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div style="width: 100%; background: var(--color-5A5A5A); border-top: 1px solid var(--color-D9D9D9); overflow: hidden; max-width: 1200px; height: 919px; padding: 32px 24px;">
+            <!-- Footer Title -->
+            <div style="width: 100%; background: var(--color-CFF7D3); min-width: 240px; height: 35px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; padding: 0 16px;">
+                <div style="width: 23px; height: 35px;">
+                    <svg width="54" height="77" viewBox="0 0 54 77" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M26.8333 3.5H15.1667C12.0725 3.5 9.10501 4.72916 6.91709 6.91709C4.72916 9.10501 3.5 12.0725 3.5 15.1667C3.5 18.2609 4.72916 21.2283 6.91709 23.4162C9.10501 25.6042 12.0725 26.8333 15.1667 26.8333M26.8333 3.5V26.8333M26.8333 3.5H38.5C40.0321 3.5 41.5492 3.80177 42.9646 4.38807C44.3801 4.97438 45.6662 5.83374 46.7496 6.91709C47.8329 8.00044 48.6923 9.28656 49.2786 10.702C49.8649 12.1175 50.1667 13.6346 50.1667 15.1667C50.1667 16.6988 49.8649 18.2158 49.2786 19.6313C48.6923 21.0468 47.8329 22.3329 46.7496 23.4162C45.6662 24.4996 44.3801 25.359 42.9646 25.9453C41.5492 26.5316 40.0321 26.8333 38.5 26.8333M26.8333 26.8333H15.1667M26.8333 26.8333H38.5M26.8333 26.8333V50.1667M15.1667 26.8333C12.0725 26.8333 9.10501 28.0625 6.91709 30.2504C4.72916 32.4383 3.5 35.4058 3.5 38.5C3.5 41.5942 4.72916 44.5617 6.91709 46.7496C9.10501 48.9375 12.0725 50.1667 15.1667 50.1667M38.5 26.8333C36.9679 26.8333 35.4508 27.1351 34.0354 27.7214C32.6199 28.3077 31.3338 29.1671 30.2504 30.2504C29.1671 31.3338 28.3077 32.6199 27.7214 34.0354C27.1351 35.4508 26.8333 36.9679 26.8333 38.5C26.8333 40.0321 27.1351 41.5492 27.7214 42.9646C28.3077 44.3801 29.1671 45.6662 30.2504 46.7496C31.3338 47.8329 32.6199 48.6923 34.0354 49.2786C35.4508 49.8649 36.9679 50.1667 38.5 50.1667C40.0321 50.1667 41.5492 49.8649 42.9646 49.2786C44.3801 48.6923 45.6662 47.8329 46.7496 46.7496C47.8329 45.6662 48.6923 44.3801 49.2786 42.9646C49.8649 41.5492 50.1667 40.0321 50.1667 38.5C50.1667 36.9679 49.8649 35.4508 49.2786 34.0354C48.6923 32.6199 47.8329 31.3338 46.7496 30.2504C45.6662 29.1671 44.3801 28.3077 42.9646 27.7214C41.5492 27.1351 40.0321 26.8333 38.5 26.8333ZM15.1667 50.1667C12.0725 50.1667 9.10501 51.3958 6.91709 53.5837C4.72916 55.7717 3.5 58.7391 3.5 61.8333C3.5 64.9275 4.72916 67.895 6.91709 70.0829C9.10501 72.2708 12.0725 73.5 15.1667 73.5C18.2609 73.5 21.2283 72.2708 23.4162 70.0829C25.6042 67.895 26.8333 64.9275 26.8333 61.8333V50.1667M15.1667 50.1667H26.8333" stroke="#1E1E1E" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <div style="width: 24px; height: 24px;">
+                        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M28.5474 20.3271L46.4045 0H42.1745L26.6626 17.6461L14.2825 0H0L18.7252 26.6866L0 48H4.23007L20.6004 29.3611L33.6775 48H47.96M5.7568 3.1238H12.2554L42.1713 45.0297H35.6711" fill="#1E1E1E"/>
+                        </svg>
+                    </div>
+                    <div style="width: 24px; height: 24px; overflow: hidden;">
+                        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M24 4.326C30.408 4.326 31.168 4.35 33.7 4.466C40.204 4.762 43.242 7.848 43.538 14.304C43.654 16.834 43.676 17.594 43.676 24.002C43.676 30.412 43.652 31.17 43.538 33.7C43.24 40.15 40.21 43.242 33.7 43.538C31.168 43.654 30.412 43.678 24 43.678C17.592 43.678 16.832 43.654 14.302 43.538C7.782 43.24 4.76 40.14 4.464 33.698C4.348 31.168 4.324 30.41 4.324 24C4.324 17.592 4.35 16.834 4.464 14.302C4.762 7.848 7.792 4.76 14.302 4.464C16.834 4.35 17.592 4.326 24 4.326ZM24 0C17.482 0 16.666 0.028 14.106 0.144C5.39 0.544 0.546 5.38 0.146 14.104C0.028 16.666 0 17.482 0 24C0 30.518 0.028 31.336 0.144 33.896C0.544 42.612 5.38 47.456 14.104 47.856C16.666 47.972 17.482 48 24 48C30.518 48 31.336 47.972 33.896 47.856C42.604 47.456 47.46 42.62 47.854 33.896C47.972 31.336 48 30.518 48 24C48 17.482 47.972 16.666 47.856 14.106C47.464 5.398 42.622 0.546 33.898 0.146C31.336 0.028 30.518 0 24 0ZM24 11.676C17.194 11.676 11.676 17.194 11.676 24C11.676 30.806 17.194 36.326 24 36.326C30.806 36.326 36.324 30.808 36.324 24C36.324 17.194 30.806 11.676 24 11.676ZM24 32C19.582 32 16 28.42 16 24C16 19.582 19.582 16 24 16C28.418 16 32 19.582 32 24C32 28.42 28.418 32 24 32ZM36.812 8.31C35.22 8.31 33.93 9.6 33.93 11.19C33.93 12.78 35.22 14.07 36.812 14.07C38.402 14.07 39.69 12.78 39.69 11.19C39.69 9.6 38.402 8.31 36.812 8.31Z" fill="#1E1E1E"/>
+                        </svg>
+                    </div>
+                    <div style="width: 24px; height: 24px; overflow: hidden;">
+                        <svg width="48" height="36" viewBox="0 0 48 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M39.2295 0.368245C32.0216 -0.123748 15.9678 -0.121748 8.76988 0.368245C0.975987 0.900238 0.0579992 5.60817 0 18C0.0579992 30.3698 0.967987 35.0978 8.76988 35.6318C15.9698 36.1218 32.0216 36.1238 39.2295 35.6318C47.0234 35.0998 47.9414 30.3918 47.9993 18C47.9414 5.63017 47.0314 0.902238 39.2295 0.368245ZM17.9998 25.9999V10.0001L33.9995 17.986L17.9998 25.9999Z" fill="#1E1E1E"/>
+                        </svg>
+                    </div>
+                    <div style="width: 24px; height: 24px; overflow: hidden;">
+                        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M38 0H10C4.478 0 0 4.478 0 10V38C0 43.522 4.478 48 10 48H38C43.524 48 48 43.522 48 38V10C48 4.478 43.524 0 38 0ZM16 38H10V16H16V38ZM13 13.464C11.068 13.464 9.5 11.884 9.5 9.936C9.5 7.988 11.068 6.408 13 6.408C14.932 6.408 16.5 7.988 16.5 9.936C16.5 11.884 14.934 13.464 13 13.464ZM40 38H34V26.792C34 20.056 26 20.566 26 26.792V38H20V16H26V19.53C28.792 14.358 40 13.976 40 24.482V38Z" fill="#1E1E1E"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Links -->
+            <div style="width: 100%; background: var(--color-EBFFEE); height: 756px; padding: 24px;">
+                <!-- Use cases -->
+                <div class="text-link-list" style="margin-bottom: 32px;">
+                    <div style="width: 100%; margin-bottom: 8px;">
+                        <div style="font-family: 'Inter'; font-weight: 700; font-size: 16px; line-height: 22.4px; text-align: left; color: var(--color-1E1E1E);">Use cases</div>
+                    </div>
+                    <div class="text-link-list-item">
+                        <div class="text-body-base" style="text-align: left; color: var(--color-1E1E1E);">UI design</div>
+                    </div>
+                    <div class="text-link-list-item">
+                        <div class="text-body-base" style="text-align: left; color: var(--color-1E1E1E);">UX design</div>
+                    </div>
+                    <div class="text-link-list-item">
+                        <div class="text-body-base" style="text-align: left; color: var(--color-1E1E1E);">Wireframing</div>
+                    </div>
+                    <div class="text-link-list-item">
+                        <div class="text-body-base" style="text-align: left; color: var(--color-1E1E1E);">Diagramming</div>
+                    </div>
+                    <div class="text-link-list-item">
+                        <div class="text-body-base" style="text-align: left; color: var(--color-1E1E1E);">Brainstorming</div>
+                    </div>
+                    <div class="text-link-list-item">
+                        <div class="text-body-base" style="text-align: left; color: var(--color-1E1E1E);">Online whiteboard</div>
+                    </div>
+                    <div class="text-link-list-item">
+                        <div class="text-body-base" style="text-align: left; color: var(--color-1E1E1E);">Team collaboration</div>
+                    </div>
+                </div>
+
+                <!-- Explore -->
+                <div class="text-link-list" style="margin-bottom: 32px;">
+                    <div style="width: 100%; margin-bottom: 8px;">
+                        <div style="font-family: 'Inter'; font-weight: 700; font-size: 16px; line-height: 22.4px; text-align: left; color: var(--color-1E1E1E);">Explore</div>
+                    </div>
+                    <div class="text-link-list-item">
+                        <div class="text-body-base" style="text-align: left; color: var(--color-1E1E1E);">Design</div>
+                    </div>
+                    <div class="text-link-list-item">
+                        <div class="text-body-base" style="text-align: left; color: var(--color-1E1E1E);">Prototyping</div>
+                    </div>
+                    <div class="text-link-list-item">
+                        <div class="text-body-base" style="text-align: left; color: var(--color-1E1E1E);">Development features</div>
+                    </div>
+                    <div class="text-link-list-item">
+                        <div class="text-body-base" style="text-align: left; color: var(--color-1E1E1E);">Design systems</div>
+                    </div>
+                    <div class="text-link-list-item">
+                        <div class="text-body-base" style="text-align: left; color: var(--color-1E1E1E);">Collaboration features</div>
+                    </div>
+                    <div class="text-link-list-item">
+                        <div class="text-body-base" style="text-align: left; color: var(--color-1E1E1E);">Design process</div>
+                    </div>
+                    <div class="text-link-list-item">
+                        <div class="text-body-base" style="text-align: left; color: var(--color-1E1E1E);">FigJam</div>
+                    </div>
+                </div>
+
+                <!-- Resources -->
+                <div class="text-link-list">
+                    <div style="width: 100%; margin-bottom: 8px;">
+                        <div style="font-family: 'Inter'; font-weight: 700; font-size: 16px; line-height: 22.4px; text-align: left; color: var(--color-1E1E1E);">Resources</div>
+                    </div>
+                    <div class="text-link-list-item">
+                        <div class="text-body-base" style="text-align: left; color: var(--color-1E1E1E);">Blog</div>
+                    </div>
+                    <div class="text-link-list-item">
+                        <div class="text-body-base" style="text-align: left; color: var(--color-1E1E1E);">Best practices</div>
+                    </div>
+                    <div class="text-link-list-item">
+                        <div class="text-body-base" style="text-align: left; color: var(--color-1E1E1E);">Colors</div>
+                    </div>
+                    <div class="text-link-list-item">
+                        <div class="text-body-base" style="text-align: left; color: var(--color-1E1E1E);">Color wheel</div>
+                    </div>
+                    <div class="text-link-list-item">
+                        <div class="text-body-base" style="text-align: left; color: var(--color-1E1E1E);">Support</div>
+                    </div>
+                    <div class="text-link-list-item">
+                        <div class="text-body-base" style="text-align: left; color: var(--color-1E1E1E);">Developers</div>
+                    </div>
+                    <div class="text-link-list-item">
+                        <div class="text-body-base" style="text-align: left; color: var(--color-1E1E1E);">Resource library</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

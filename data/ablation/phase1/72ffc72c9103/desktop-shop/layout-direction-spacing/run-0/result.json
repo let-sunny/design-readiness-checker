@@ -1,0 +1,15 @@
+{
+  "fixture": "desktop-shop",
+  "type": "layout-direction-spacing",
+  "runIndex": 0,
+  "similarity": 75,
+  "inputTokens": 23159,
+  "outputTokens": 13611,
+  "totalTokens": 36770,
+  "htmlBytes": 36629,
+  "htmlLines": 426,
+  "cssClassCount": 19,
+  "cssVariableCount": 15,
+  "timestamp": "2026-03-28T12:14:34.330Z",
+  "configVersion": "72ffc72c9103"
+}

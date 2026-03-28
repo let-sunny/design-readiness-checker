@@ -1,0 +1,15 @@
+{
+  "fixture": "desktop-pricing",
+  "type": "node-names-hierarchy",
+  "runIndex": 0,
+  "similarity": 96,
+  "inputTokens": 25618,
+  "outputTokens": 17444,
+  "totalTokens": 43062,
+  "htmlBytes": 50849,
+  "htmlLines": 625,
+  "cssClassCount": 18,
+  "cssVariableCount": 13,
+  "timestamp": "2026-03-28T12:05:59.162Z",
+  "configVersion": "72ffc72c9103"
+}

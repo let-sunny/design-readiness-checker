@@ -1,0 +1,15 @@
+{
+  "fixture": "mobile-shop",
+  "type": "variable-references",
+  "runIndex": 0,
+  "similarity": 98,
+  "inputTokens": 17558,
+  "outputTokens": 13027,
+  "totalTokens": 30585,
+  "htmlBytes": 36255,
+  "htmlLines": 467,
+  "cssClassCount": 14,
+  "cssVariableCount": 12,
+  "timestamp": "2026-03-28T11:42:01.616Z",
+  "configVersion": "72ffc72c9103"
+}

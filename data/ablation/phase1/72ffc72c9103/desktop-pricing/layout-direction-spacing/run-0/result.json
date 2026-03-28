@@ -1,0 +1,15 @@
+{
+  "fixture": "desktop-pricing",
+  "type": "layout-direction-spacing",
+  "runIndex": 0,
+  "similarity": 84,
+  "inputTokens": 20328,
+  "outputTokens": 11265,
+  "totalTokens": 31593,
+  "htmlBytes": 29179,
+  "htmlLines": 435,
+  "cssClassCount": 22,
+  "cssVariableCount": 13,
+  "timestamp": "2026-03-28T11:59:50.267Z",
+  "configVersion": "72ffc72c9103"
+}

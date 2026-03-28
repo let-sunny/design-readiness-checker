@@ -1,0 +1,15 @@
+{
+  "fixture": "mobile-pricing",
+  "type": "layout-direction-spacing",
+  "runIndex": 0,
+  "similarity": 90,
+  "inputTokens": 19110,
+  "outputTokens": 12167,
+  "totalTokens": 31277,
+  "htmlBytes": 32699,
+  "htmlLines": 592,
+  "cssClassCount": 39,
+  "cssVariableCount": 13,
+  "timestamp": "2026-03-28T11:46:44.836Z",
+  "configVersion": "72ffc72c9103"
+}

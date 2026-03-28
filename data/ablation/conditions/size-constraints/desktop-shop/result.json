@@ -1,0 +1,14 @@
+{
+  "fixture": "desktop-shop",
+  "type": "size-constraints",
+  "baseWidth": 1200,
+  "expandedWidth": 1920,
+  "baselineSimilarity": 97,
+  "strippedSimilarity": 81,
+  "deltaV": 16,
+  "strippedTokens": {
+    "input": 28534,
+    "output": 19207
+  },
+  "timestamp": "2026-03-28T12:57:09.216Z"
+}
