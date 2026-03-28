@@ -1,0 +1,18 @@
+{
+  "fixture": "desktop-product-detail",
+  "type": "size-constraints",
+  "baseWidth": 1200,
+  "expandedWidth": 1920,
+  "baselineSimilarity": 98,
+  "strippedSimilarity": 92,
+  "deltaV": 6,
+  "baselineTokens": {
+    "input": 27891,
+    "output": 18751
+  },
+  "strippedTokens": {
+    "input": 27337,
+    "output": 19485
+  },
+  "timestamp": "2026-03-28T09:03:36.486Z"
+}

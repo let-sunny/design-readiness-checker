@@ -1,0 +1,15 @@
+{
+  "fixture": "desktop-landing-page",
+  "type": "variable-references",
+  "runIndex": 0,
+  "similarity": 98,
+  "inputTokens": 20132,
+  "outputTokens": 15206,
+  "totalTokens": 35338,
+  "htmlBytes": 40458,
+  "htmlLines": 478,
+  "cssClassCount": 20,
+  "cssVariableCount": 14,
+  "timestamp": "2026-03-28T09:54:17.306Z",
+  "configVersion": "72ffc72c9103"
+}

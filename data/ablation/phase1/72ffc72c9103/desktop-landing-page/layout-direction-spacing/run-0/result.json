@@ -1,0 +1,15 @@
+{
+  "fixture": "desktop-landing-page",
+  "type": "layout-direction-spacing",
+  "runIndex": 0,
+  "similarity": 93,
+  "inputTokens": 18130,
+  "outputTokens": 12828,
+  "totalTokens": 30958,
+  "htmlBytes": 32759,
+  "htmlLines": 455,
+  "cssClassCount": 20,
+  "cssVariableCount": 14,
+  "timestamp": "2026-03-28T09:46:14.669Z",
+  "configVersion": "72ffc72c9103"
+}

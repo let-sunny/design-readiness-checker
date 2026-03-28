@@ -1,0 +1,15 @@
+{
+  "fixture": "desktop-product-detail",
+  "type": "node-names-hierarchy",
+  "runIndex": 0,
+  "similarity": 98,
+  "inputTokens": 28144,
+  "outputTokens": 20168,
+  "totalTokens": 48312,
+  "htmlBytes": 56197,
+  "htmlLines": 748,
+  "cssClassCount": 31,
+  "cssVariableCount": 29,
+  "timestamp": "2026-03-28T09:36:49.240Z",
+  "configVersion": "72ffc72c9103"
+}

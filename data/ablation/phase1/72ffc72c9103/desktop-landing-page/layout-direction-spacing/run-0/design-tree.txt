@@ -1,0 +1,331 @@
+# Design Tree
+# Root: 1200px x 2120px
+# Each node shows: name (TYPE, WxH) followed by CSS-like styles
+# Reproduce this tree as HTML. Each node = one HTML element.
+# Every style value is from Figma data — use exactly as shown.
+
+Platform=Desktop (COMPONENT, 1200x2120)
+  style: background: #FFFFFF /* var:VariableID:3919:36423 */; overflow: hidden
+  Header (INSTANCE, 1200x99) [component: Platform=Desktop, State=Default]
+    component-properties: Platform=Desktop, State=Default
+    style: width: 100%; background: #FFFFFF /* var:VariableID:3919:36423 */; border-bottom: 1px solid #D9D9D9; overflow: hidden; min-width: 1200px
+    Block (FRAME, 40x35)
+      Figma (FRAME, 40x35)
+        Icon (VECTOR, 23x35)
+          style: border: 3.5px solid #1E1E1E; svg: <svg width="54" height="77" viewBox="0 0 54 77" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M26.8333 3.5H15.1667C12.0725 3.5 9.10501 4.72916 6.91709 6.91709C4.72916 9.10501 3.5 12.0725 3.5 15.1667C3.5 18.2609 4.72916 21.2283 6.91709 23.4162C9.10501 25.6042 12.0725 26.8333 15.1667 26.8333M26.8333 3.5V26.8333M26.8333 3.5H38.5C40.0321 3.5 41.5492 3.80177 42.9646 4.38807C44.3801 4.97438 45.6662 5.83374 46.7496 6.91709C47.8329 8.00044 48.6923 9.28656 49.2786 10.702C49.8649 12.1175 50.1667 13.6346 50.1667 15.1667C50.1667 16.6988 49.8649 18.2158 49.2786 19.6313C48.6923 21.0468 47.8329 22.3329 46.7496 23.4162C45.6662 24.4996 44.3801 25.359 42.9646 25.9453C41.5492 26.5316 40.0321 26.8333 38.5 26.8333M26.8333 26.8333H15.1667M26.8333 26.8333H38.5M26.8333 26.8333V50.1667M15.1667 26.8333C12.0725 26.8333 9.10501 28.0625 6.91709 30.2504C4.72916 32.4383 3.5 35.4058 3.5 38.5C3.5 41.5942 4.72916 44.5617 6.91709 46.7496C9.10501 48.9375 12.0725 50.1667 15.1667 50.1667M38.5 26.8333C36.9679 26.8333 35.4508 27.1351 34.0354 27.7214C32.6199 28.3077 31.3338 29.1671 30.2504 30.2504C29.1671 31.3338 28.3077 32.6199 27.7214 34.0354C27.1351 35.4508 26.8333 36.9679 26.8333 38.5C26.8333 40.0321 27.1351 41.5492 27.7214 42.9646C28.3077 44.3801 29.1671 45.6662 30.2504 46.7496C31.3338 47.8329 32.6199 48.6923 34.0354 49.2786C35.4508 49.8649 36.9679 50.1667 38.5 50.1667C40.0321 50.1667 41.5492 49.8649 42.9646 49.2786C44.3801 48.6923 45.6662 47.8329 46.7496 46.7496C47.8329 45.6662 48.6923 44.3801 49.2786 42.9646C49.8649 41.5492 50.1667 40.0321 50.1667 38.5C50.1667 36.9679 49.8649 35.4508 49.2786 34.0354C48.6923 32.6199 47.8329 31.3338 46.7496 30.2504C45.6662 29.1671 44.3801 28.3077 42.9646 27.7214C41.5492 27.1351 40.0321 26.8333 38.5 26.8333ZM15.1667 50.1667C12.0725 50.1667 9.10501 51.3958 6.91709 53.5837C4.72916 55.7717 3.5 58.7391 3.5 61.8333C3.5 64.9275 4.72916 67.895 6.91709 70.0829C9.10501 72.2708 12.0725 73.5 15.1667 73.5C18.2609 73.5 21.2283 72.2708 23.4162 70.0829C25.6042 67.895 26.8333 64.9275 26.8333 61.8333V50.1667M15.1667 50.1667H26.8333" stroke="#1E1E1E" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/> </svg>
+    Navigation Pill List (INSTANCE, 870x32) [component: Direction=Row]
+      component-properties: Slot 2#6061:3={"guid":{"sessionID":-1,"localID":-1}}, Slot#6061:0={"guid":{"sessionID":-1,"localID":-1}}, Link 6#2194:3=true, Link 4#2194:6=true, Link 3#2194:7=true, Link 5#2194:5=true, Link 7#3529:0=false, Link 2#2194:4=true, Link 1#2194:8=true, Direction=Row
+      style: flex-grow: 1
+      Slot (SLOT, 553x32)
+        Navigation Pill (INSTANCE, 84x32) [component: State=Active]
+          component-properties: Label#156:33=Products, State=Active
+          style: background: #F5F5F5 /* var:VariableID:9670:11772 */; border-radius: 8px
+          Title (TEXT, 68x16)
+            style: /* text-style: Single Line/Body Base */; font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 16px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36461 */; text: "Products"
+        Navigation Pill (INSTANCE, 86x32) [component: State=Default]
+          component-properties: Label#156:33=Solutions, State=Default
+          style: border-radius: 8px
+          Title (TEXT, 70x16)
+            style: /* text-style: Single Line/Body Base */; font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 16px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Solutions"
+        Navigation Pill (INSTANCE, 103x32) [component: State=Default]
+          component-properties: Label#156:33=Community, State=Default
+          style: border-radius: 8px
+          Title (TEXT, 87x16)
+            style: /* text-style: Single Line/Body Base */; font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 16px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Community"
+        Navigation Pill (INSTANCE, 95x32) [component: State=Default]
+          component-properties: Label#156:33=Resources, State=Default
+          style: border-radius: 8px
+          Title (TEXT, 79x16)
+            style: /* text-style: Single Line/Body Base */; font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 16px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Resources"
+        Navigation Pill (INSTANCE, 68x32) [component: State=Default]
+          component-properties: Label#156:33=Pricing, State=Default
+          style: border-radius: 8px
+          Title (TEXT, 52x16)
+            style: /* text-style: Single Line/Body Base */; font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 16px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Pricing"
+        Navigation Pill (INSTANCE, 77x32) [component: State=Default]
+          component-properties: Label#156:33=Contact, State=Default
+          style: border-radius: 8px
+          Title (TEXT, 61x16)
+            style: /* text-style: Single Line/Body Base */; font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 16px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Contact"
+    Header Auth (INSTANCE, 178x32) [component: State=Logged Out]
+      component-properties: State=Logged Out
+      Button (INSTANCE, 83x32) [component: Variant=Neutral, State=Default, Size=Small]
+        component-properties: Icon End#4:0=68:16113, Icon Start#4:192=68:16009, Has Icon End#4:64=false, Has Icon Start#4:128=false, Label#2:0=Sign in, Variant=Neutral, State=Default, Size=Small
+        style: flex-grow: 1; background: #E3E3E3 /* var:VariableID:106:12468 */; border: 1px solid #767676; border-radius: 8px; overflow: hidden
+        [hover]: background: #CDCDCD /* var:VariableID:106:12469 */
+        Button (TEXT, 51x16)
+          style: /* text-style: Single Line/Body Base */; font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 16px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Sign in"
+      Button (INSTANCE, 83x32) [component: Variant=Primary, State=Default, Size=Small]
+        component-properties: Icon End#4:0=68:16113, Icon Start#4:192=68:16009, Has Icon End#4:64=false, Has Icon Start#4:128=false, Label#2:0=Register, Variant=Primary, State=Default, Size=Small
+        style: flex-grow: 1; background: #2C2C2C /* var:VariableID:3919:36428 */; border: 1px solid #2C2C2C; border-radius: 8px; overflow: hidden
+        [hover]: background: #1E1E1E /* var:VariableID:3919:36431 */
+        Button (TEXT, 63x16)
+          style: /* text-style: Single Line/Body Base */; font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 16px; text-align: left; color: #F5F5F5 /* var:VariableID:3919:36459 */; text: "Register"
+  Hero Image (INSTANCE, 1200x524) [component: Platform=Desktop]
+    component-properties: Platform=Desktop
+    style: width: 100%; background: rgba(255, 255, 255, 0.800000011920929) /* var:VariableID:7753:3701 */; background-image: url(images/hero-image@2x.png); background-position: center; background-repeat: no-repeat; background-size: cover; min-width: 1200px; max-width: 1920px
+    Text Content Title (INSTANCE, 151x132) [component: Align=Center]
+      component-properties: Has Subtitle#2153:13=true, Subtitle#2153:12=Subtitle, Title#2153:14=Title, Align=Center
+      Title (TEXT, 151x86)
+        style: width: 100%; /* text-style: Title Hero */; font-family: "Inter"; font-weight: 700; font-size: 72px; line-height: 86.4px; letter-spacing: -2.16px; text-align: center; color: #0C0C0D /* var:VariableID:9643:10770 */; text: "Title"
+      Subtitle (TEXT, 151x38)
+        style: width: 100%; /* text-style: Subtitle */; font-family: "Inter"; font-weight: 400; font-size: 32px; line-height: 38.4px; text-align: center; color: #0C0C0D /* var:VariableID:9643:10770 */; text: "Subtitle"
+    Button Group (INSTANCE, 166x40) [component: Align=Center]
+      component-properties: Button End#2106:5=true, Button Start#2106:0=true, Align=Center
+      Button (INSTANCE, 75x40) [component: Variant=Neutral, State=Default, Size=Medium]
+        component-properties: Icon End#4:0=68:16113, Icon Start#4:192=68:16009, Has Icon End#4:64=false, Has Icon Start#4:128=false, Label#2:0=Button, Variant=Neutral, State=Default, Size=Medium
+        style: background: #E3E3E3 /* var:VariableID:106:12468 */; border: 1px solid #767676; border-radius: 8px; overflow: hidden
+        [hover]: background: #CDCDCD /* var:VariableID:106:12469 */
+        Button (TEXT, 51x16)
+          style: /* text-style: Single Line/Body Base */; font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 16px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Button"
+      Button (INSTANCE, 75x40) [component: Variant=Primary, State=Default, Size=Medium]
+        component-properties: Icon End#4:0=68:16113, Icon Start#4:192=68:16009, Has Icon End#4:64=false, Has Icon Start#4:128=false, Label#2:0=Button, Variant=Primary, State=Default, Size=Medium
+        style: background: #2C2C2C /* var:VariableID:3919:36428 */; border: 1px solid #2C2C2C; border-radius: 8px; overflow: hidden
+        [hover]: background: #1E1E1E /* var:VariableID:3919:36431 */
+        Button (TEXT, 51x16)
+          style: /* text-style: Single Line/Body Base */; font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 16px; text-align: left; color: #F5F5F5 /* var:VariableID:3919:36459 */; text: "Button"
+  Panel Image Double (INSTANCE, 1200x478) [component: Platform=Desktop]
+    component-properties: Platform=Desktop
+    style: width: 100%; background: #5A5A5A /* var:VariableID:106:12464 */; opacity: 0.8; min-width: 1200px; max-width: 1920px
+    Image (FRAME, 512x350)
+      style: flex-grow: 1; height: 100%; background: #E3E3E3 /* var:VariableID:3919:36535 */; content-image: url(images/image@2x.png); object-fit: contain; overflow: hidden
+    Image (FRAME, 512x350)
+      style: flex-grow: 1; height: 100%; background: #E3E3E3 /* var:VariableID:3919:36535 */; content-image: url(images/image-2@2x.png); object-fit: contain; overflow: hidden
+  Card Grid Icon (INSTANCE, 1200x551) [component: Platform=Desktop]
+    component-properties: Cards#6062:30={"guid":{"sessionID":-1,"localID":-1}}, Platform=Desktop
+    style: width: 100%; background: #FFFBEB /* var:VariableID:2002:7448 */; min-width: 1200px; max-width: 1920px
+    Text Content Heading (INSTANCE, 113x61) [component: Align=Start]
+      component-properties: Has Subheading#2153:9=true, Subheading#2153:11=Subheading, Heading#2153:10=Heading, Align=Start
+      Heading (TEXT, 113x29)
+        style: width: 100%; /* text-style: Heading */; font-family: "Inter"; font-weight: 600; font-size: 24px; line-height: 28.8px; letter-spacing: -0.48px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Heading"
+      Subheading (TEXT, 113x24)
+        style: width: 100%; /* text-style: Subheading */; font-family: "Inter"; font-weight: 400; font-size: 20px; line-height: 24px; text-align: left; color: #757575 /* var:VariableID:3919:36451 */; text: "Subheading"
+    Cards (SLOT, 1072x314)
+      style: width: 100%; background: #EBFFEE /* var:VariableID:2002:7433 */
+      Card (INSTANCE, 300x125) [component: Asset Type=Icon, Variant=Default, Direction=Horizontal]
+        component-properties: Body2#6062:54={"guid":{"sessionID":-1,"localID":-1}}, Icon#280:68=4039:11823, Asset#113:13=true, Body#280:13=Body text for whatever you’d like to say. Add main takeaway points, quotes, anecdotes, or even a very very short story. , Heading#280:0=Title, Button#113:15=false, Asset Type=Icon, Variant=Default, Direction=Horizontal
+        style: min-width: 240px; max-width: 300px
+        Info (INSTANCE, 32x32) [component: Info]
+          style: overflow: hidden
+          Icon (VECTOR, 27x27)
+            style: border: 3px solid #1E1E1E; svg: <svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M30 40.7866V30M30 19.2135H30.027M56.9664 30C56.9664 44.8931 44.8931 56.9664 30 56.9664C15.1069 56.9664 3.03371 44.8931 3.03371 30C3.03371 15.1069 15.1069 3.03371 30 3.03371C44.8931 3.03371 56.9664 15.1069 56.9664 30Z" stroke="#1E1E1E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/> </svg>
+        Body2 (SLOT, 244x125)
+          style: flex-grow: 1; min-width: 160px
+          Text (FRAME, 244x125)
+            style: width: 100%
+            Title (TEXT, 244x29)
+              style: width: 100%; /* text-style: Heading */; font-family: "Inter"; font-weight: 600; font-size: 24px; line-height: 28.8px; letter-spacing: -0.48px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Title"
+            Body text for whatever you’d like to say. Add main takeaway points, quotes, anecdotes, or even a very very short story. (TEXT, 244x88)
+              style: width: 100%; /* text-style: Body Base */; font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; color: #757575 /* var:VariableID:3919:36451 */; text: "Body text for whatever you’d like to say. Add main takeaway points, quotes, anecdotes, or even a very very short story. "
+      Card (INSTANCE, 300x125) [component: Asset Type=Icon, Variant=Default, Direction=Horizontal]
+        component-properties: Body2#6062:54={"guid":{"sessionID":-1,"localID":-1}}, Icon#280:68=4039:11823, Asset#113:13=true, Body#280:13=Body text for whatever you’d like to say. Add main takeaway points, quotes, anecdotes, or even a very very short story. , Heading#280:0=Title, Button#113:15=false, Asset Type=Icon, Variant=Default, Direction=Horizontal
+        style: flex-grow: 1; min-width: 240px; max-width: 300px
+        Info (INSTANCE, 32x32) [component: Info]
+          style: overflow: hidden
+          Icon (VECTOR, 27x27)
+            style: border: 3px solid #1E1E1E; svg: <svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M30 40.7866V30M30 19.2135H30.027M56.9664 30C56.9664 44.8931 44.8931 56.9664 30 56.9664C15.1069 56.9664 3.03371 44.8931 3.03371 30C3.03371 15.1069 15.1069 3.03371 30 3.03371C44.8931 3.03371 56.9664 15.1069 56.9664 30Z" stroke="#1E1E1E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/> </svg>
+        Body2 (SLOT, 244x125)
+          style: flex-grow: 1; min-width: 160px
+          Text (FRAME, 244x125)
+            style: width: 100%
+            Title (TEXT, 244x29)
+              style: width: 100%; /* text-style: Heading */; font-family: "Inter"; font-weight: 600; font-size: 24px; line-height: 28.8px; letter-spacing: -0.48px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Title"
+            Body text for whatever you’d like to say. Add main takeaway points, quotes, anecdotes, or even a very very short story. (TEXT, 244x88)
+              style: width: 100%; /* text-style: Body Base */; font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; color: #757575 /* var:VariableID:3919:36451 */; text: "Body text for whatever you’d like to say. Add main takeaway points, quotes, anecdotes, or even a very very short story. "
+      Card (INSTANCE, 300x125) [component: Asset Type=Icon, Variant=Default, Direction=Horizontal]
+        component-properties: Body2#6062:54={"guid":{"sessionID":-1,"localID":-1}}, Icon#280:68=4039:11823, Asset#113:13=true, Body#280:13=Body text for whatever you’d like to say. Add main takeaway points, quotes, anecdotes, or even a very very short story. , Heading#280:0=Title, Button#113:15=false, Asset Type=Icon, Variant=Default, Direction=Horizontal
+        style: flex-grow: 1; min-width: 240px; max-width: 300px
+        Info (INSTANCE, 32x32) [component: Info]
+          style: overflow: hidden
+          Icon (VECTOR, 27x27)
+            style: border: 3px solid #1E1E1E; svg: <svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M30 40.7866V30M30 19.2135H30.027M56.9664 30C56.9664 44.8931 44.8931 56.9664 30 56.9664C15.1069 56.9664 3.03371 44.8931 3.03371 30C3.03371 15.1069 15.1069 3.03371 30 3.03371C44.8931 3.03371 56.9664 15.1069 56.9664 30Z" stroke="#1E1E1E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/> </svg>
+        Body2 (SLOT, 244x125)
+          style: flex-grow: 1; min-width: 160px
+          Text (FRAME, 244x125)
+            style: width: 100%
+            Title (TEXT, 244x29)
+              style: width: 100%; /* text-style: Heading */; font-family: "Inter"; font-weight: 600; font-size: 24px; line-height: 28.8px; letter-spacing: -0.48px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Title"
+            Body text for whatever you’d like to say. Add main takeaway points, quotes, anecdotes, or even a very very short story. (TEXT, 244x88)
+              style: width: 100%; /* text-style: Body Base */; font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; color: #757575 /* var:VariableID:3919:36451 */; text: "Body text for whatever you’d like to say. Add main takeaway points, quotes, anecdotes, or even a very very short story. "
+      Card (INSTANCE, 300x125) [component: Asset Type=Icon, Variant=Default, Direction=Horizontal]
+        component-properties: Body2#6062:54={"guid":{"sessionID":-1,"localID":-1}}, Icon#280:68=4039:11823, Asset#113:13=true, Body#280:13=Body text for whatever you’d like to say. Add main takeaway points, quotes, anecdotes, or even a very very short story. , Heading#280:0=Title, Button#113:15=false, Asset Type=Icon, Variant=Default, Direction=Horizontal
+        style: flex-grow: 1; min-width: 240px; max-width: 300px
+        Info (INSTANCE, 32x32) [component: Info]
+          style: overflow: hidden
+          Icon (VECTOR, 27x27)
+            style: border: 3px solid #1E1E1E; svg: <svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M30 40.7866V30M30 19.2135H30.027M56.9664 30C56.9664 44.8931 44.8931 56.9664 30 56.9664C15.1069 56.9664 3.03371 44.8931 3.03371 30C3.03371 15.1069 15.1069 3.03371 30 3.03371C44.8931 3.03371 56.9664 15.1069 56.9664 30Z" stroke="#1E1E1E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/> </svg>
+        Body2 (SLOT, 244x125)
+          style: flex-grow: 1; min-width: 160px
+          Text (FRAME, 244x125)
+            style: width: 100%
+            Title (TEXT, 244x29)
+              style: width: 100%; /* text-style: Heading */; font-family: "Inter"; font-weight: 600; font-size: 24px; line-height: 28.8px; letter-spacing: -0.48px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Title"
+            Body text for whatever you’d like to say. Add main takeaway points, quotes, anecdotes, or even a very very short story. (TEXT, 244x88)
+              style: width: 100%; /* text-style: Body Base */; font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; color: #757575 /* var:VariableID:3919:36451 */; text: "Body text for whatever you’d like to say. Add main takeaway points, quotes, anecdotes, or even a very very short story. "
+      Card (INSTANCE, 300x125) [component: Asset Type=Icon, Variant=Default, Direction=Horizontal]
+        component-properties: Body2#6062:54={"guid":{"sessionID":-1,"localID":-1}}, Icon#280:68=4039:11823, Asset#113:13=true, Body#280:13=Body text for whatever you’d like to say. Add main takeaway points, quotes, anecdotes, or even a very very short story. , Heading#280:0=Title, Button#113:15=false, Asset Type=Icon, Variant=Default, Direction=Horizontal
+        style: flex-grow: 1; min-width: 240px; max-width: 300px
+        Info (INSTANCE, 32x32) [component: Info]
+          style: overflow: hidden
+          Icon (VECTOR, 27x27)
+            style: border: 3px solid #1E1E1E; svg: <svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M30 40.7866V30M30 19.2135H30.027M56.9664 30C56.9664 44.8931 44.8931 56.9664 30 56.9664C15.1069 56.9664 3.03371 44.8931 3.03371 30C3.03371 15.1069 15.1069 3.03371 30 3.03371C44.8931 3.03371 56.9664 15.1069 56.9664 30Z" stroke="#1E1E1E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/> </svg>
+        Body2 (SLOT, 244x125)
+          style: flex-grow: 1; min-width: 160px
+          Text (FRAME, 244x125)
+            style: width: 100%
+            Title (TEXT, 244x29)
+              style: width: 100%; /* text-style: Heading */; font-family: "Inter"; font-weight: 600; font-size: 24px; line-height: 28.8px; letter-spacing: -0.48px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Title"
+            Body text for whatever you’d like to say. Add main takeaway points, quotes, anecdotes, or even a very very short story. (TEXT, 244x88)
+              style: width: 100%; /* text-style: Body Base */; font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; color: #757575 /* var:VariableID:3919:36451 */; text: "Body text for whatever you’d like to say. Add main takeaway points, quotes, anecdotes, or even a very very short story. "
+      Card (INSTANCE, 300x125) [component: Asset Type=Icon, Variant=Default, Direction=Horizontal]
+        component-properties: Body2#6062:54={"guid":{"sessionID":-1,"localID":-1}}, Icon#280:68=4039:11823, Asset#113:13=true, Body#280:13=Body text for whatever you’d like to say. Add main takeaway points, quotes, anecdotes, or even a very very short story. , Heading#280:0=Title, Button#113:15=false, Asset Type=Icon, Variant=Default, Direction=Horizontal
+        style: flex-grow: 1; min-width: 240px; max-width: 300px
+        Info (INSTANCE, 32x32) [component: Info]
+          style: overflow: hidden
+          Icon (VECTOR, 27x27)
+            style: border: 3px solid #1E1E1E; svg: <svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M30 40.7866V30M30 19.2135H30.027M56.9664 30C56.9664 44.8931 44.8931 56.9664 30 56.9664C15.1069 56.9664 3.03371 44.8931 3.03371 30C3.03371 15.1069 15.1069 3.03371 30 3.03371C44.8931 3.03371 56.9664 15.1069 56.9664 30Z" stroke="#1E1E1E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/> </svg>
+        Body2 (SLOT, 244x125)
+          style: flex-grow: 1; min-width: 160px
+          Text (FRAME, 244x125)
+            style: width: 100%
+            Title (TEXT, 244x29)
+              style: width: 100%; /* text-style: Heading */; font-family: "Inter"; font-weight: 600; font-size: 24px; line-height: 28.8px; letter-spacing: -0.48px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Title"
+            Body text for whatever you’d like to say. Add main takeaway points, quotes, anecdotes, or even a very very short story. (TEXT, 244x88)
+              style: width: 100%; /* text-style: Body Base */; font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; color: #757575 /* var:VariableID:3919:36451 */; text: "Body text for whatever you’d like to say. Add main takeaway points, quotes, anecdotes, or even a very very short story. "
+  Footer (INSTANCE, 1200x468) [component: Platform=Desktop]
+    component-properties: Title#6062:15={"guid":{"sessionID":-1,"localID":-1}}, Slot#6062:12={"guid":{"sessionID":-1,"localID":-1}}, Platform=Desktop
+    style: width: 100%; background: #5A5A5A /* var:VariableID:106:12464 */; border-top: 1px solid #D9D9D9; overflow: hidden; min-width: 1200px; max-width: 1920px
+    Title (SLOT, 262x83)
+      style: background: #CFF7D3 /* var:VariableID:3919:36435 */; min-width: 240px
+      Figma (FRAME, 23x35)
+        Icon (VECTOR, 23x35)
+          style: border: 3.5px solid #1E1E1E; svg: <svg width="54" height="77" viewBox="0 0 54 77" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M26.8333 3.5H15.1667C12.0725 3.5 9.10501 4.72916 6.91709 6.91709C4.72916 9.10501 3.5 12.0725 3.5 15.1667C3.5 18.2609 4.72916 21.2283 6.91709 23.4162C9.10501 25.6042 12.0725 26.8333 15.1667 26.8333M26.8333 3.5V26.8333M26.8333 3.5H38.5C40.0321 3.5 41.5492 3.80177 42.9646 4.38807C44.3801 4.97438 45.6662 5.83374 46.7496 6.91709C47.8329 8.00044 48.6923 9.28656 49.2786 10.702C49.8649 12.1175 50.1667 13.6346 50.1667 15.1667C50.1667 16.6988 49.8649 18.2158 49.2786 19.6313C48.6923 21.0468 47.8329 22.3329 46.7496 23.4162C45.6662 24.4996 44.3801 25.359 42.9646 25.9453C41.5492 26.5316 40.0321 26.8333 38.5 26.8333M26.8333 26.8333H15.1667M26.8333 26.8333H38.5M26.8333 26.8333V50.1667M15.1667 26.8333C12.0725 26.8333 9.10501 28.0625 6.91709 30.2504C4.72916 32.4383 3.5 35.4058 3.5 38.5C3.5 41.5942 4.72916 44.5617 6.91709 46.7496C9.10501 48.9375 12.0725 50.1667 15.1667 50.1667M38.5 26.8333C36.9679 26.8333 35.4508 27.1351 34.0354 27.7214C32.6199 28.3077 31.3338 29.1671 30.2504 30.2504C29.1671 31.3338 28.3077 32.6199 27.7214 34.0354C27.1351 35.4508 26.8333 36.9679 26.8333 38.5C26.8333 40.0321 27.1351 41.5492 27.7214 42.9646C28.3077 44.3801 29.1671 45.6662 30.2504 46.7496C31.3338 47.8329 32.6199 48.6923 34.0354 49.2786C35.4508 49.8649 36.9679 50.1667 38.5 50.1667C40.0321 50.1667 41.5492 49.8649 42.9646 49.2786C44.3801 48.6923 45.6662 47.8329 46.7496 46.7496C47.8329 45.6662 48.6923 44.3801 49.2786 42.9646C49.8649 41.5492 50.1667 40.0321 50.1667 38.5C50.1667 36.9679 49.8649 35.4508 49.2786 34.0354C48.6923 32.6199 47.8329 31.3338 46.7496 30.2504C45.6662 29.1671 44.3801 28.3077 42.9646 27.7214C41.5492 27.1351 40.0321 26.8333 38.5 26.8333ZM15.1667 50.1667C12.0725 50.1667 9.10501 51.3958 6.91709 53.5837C4.72916 55.7717 3.5 58.7391 3.5 61.8333C3.5 64.9275 4.72916 67.895 6.91709 70.0829C9.10501 72.2708 12.0725 73.5 15.1667 73.5C18.2609 73.5 21.2283 72.2708 23.4162 70.0829C25.6042 67.895 26.8333 64.9275 26.8333 61.8333V50.1667M15.1667 50.1667H26.8333" stroke="#1E1E1E" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/> </svg>
+      Button List (FRAME, 144x24)
+        X Logo (FRAME, 24x24)
+          Icon (VECTOR, 24x24)
+            style: background: #1E1E1E /* var:VariableID:3919:36482 */; svg: <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M28.5474 20.3271L46.4045 0H42.1745L26.6626 17.6461L14.2825 0H0L18.7252 26.6866L0 48H4.23007L20.6004 29.3611L33.6775 48H47.96M5.7568 3.1238H12.2554L42.1713 45.0297H35.6711" fill="#1E1E1E"/> </svg>
+        Logo Instagram (FRAME, 24x24)
+          style: overflow: hidden
+          Icon (VECTOR, 24x24)
+            style: background: #1E1E1E /* var:VariableID:3919:36482 */; svg: <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M24 4.326C30.408 4.326 31.168 4.35 33.7 4.466C40.204 4.762 43.242 7.848 43.538 14.304C43.654 16.834 43.676 17.594 43.676 24.002C43.676 30.412 43.652 31.17 43.538 33.7C43.24 40.15 40.21 43.242 33.7 43.538C31.168 43.654 30.412 43.678 24 43.678C17.592 43.678 16.832 43.654 14.302 43.538C7.782 43.24 4.76 40.14 4.464 33.698C4.348 31.168 4.324 30.41 4.324 24C4.324 17.592 4.35 16.834 4.464 14.302C4.762 7.848 7.792 4.76 14.302 4.464C16.834 4.35 17.592 4.326 24 4.326ZM24 0C17.482 0 16.666 0.028 14.106 0.144C5.39 0.544 0.546 5.38 0.146 14.104C0.028 16.666 0 17.482 0 24C0 30.518 0.028 31.336 0.144 33.896C0.544 42.612 5.38 47.456 14.104 47.856C16.666 47.972 17.482 48 24 48C30.518 48 31.336 47.972 33.896 47.856C42.604 47.456 47.46 42.62 47.854 33.896C47.972 31.336 48 30.518 48 24C48 17.482 47.972 16.666 47.856 14.106C47.464 5.398 42.622 0.546 33.898 0.146C31.336 0.028 30.518 0 24 0ZM24 11.676C17.194 11.676 11.676 17.194 11.676 24C11.676 30.806 17.194 36.326 24 36.326C30.806 36.326 36.324 30.808 36.324 24C36.324 17.194 30.806 11.676 24 11.676ZM24 32C19.582 32 16 28.42 16 24C16 19.582 19.582 16 24 16C28.418 16 32 19.582 32 24C32 28.42 28.418 32 24 32ZM36.812 8.31C35.22 8.31 33.93 9.6 33.93 11.19C33.93 12.78 35.22 14.07 36.812 14.07C38.402 14.07 39.69 12.78 39.69 11.19C39.69 9.6 38.402 8.31 36.812 8.31Z" fill="#1E1E1E"/> </svg>
+        Logo YouTube (FRAME, 24x24)
+          style: overflow: hidden
+          Icon (VECTOR, 24x18)
+            style: background: #1E1E1E /* var:VariableID:3919:36482 */; svg: <svg width="48" height="36" viewBox="0 0 48 36" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M39.2295 0.368245C32.0216 -0.123748 15.9678 -0.121748 8.76988 0.368245C0.975987 0.900238 0.0579992 5.60817 0 18C0.0579992 30.3698 0.967987 35.0978 8.76988 35.6318C15.9698 36.1218 32.0216 36.1238 39.2295 35.6318C47.0234 35.0998 47.9414 30.3918 47.9993 18C47.9414 5.63017 47.0314 0.902238 39.2295 0.368245ZM17.9998 25.9999V10.0001L33.9995 17.986L17.9998 25.9999Z" fill="#1E1E1E"/> </svg>
+        LinkedIn (FRAME, 24x24)
+          style: overflow: hidden
+          Icon (VECTOR, 24x24)
+            style: background: #1E1E1E /* var:VariableID:3919:36482 */; svg: <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M38 0H10C4.478 0 0 4.478 0 10V38C0 43.522 4.478 48 10 48H38C43.524 48 48 43.522 48 38V10C48 4.478 43.524 0 38 0ZM16 38H10V16H16V38ZM13 13.464C11.068 13.464 9.5 11.884 9.5 9.936C9.5 7.988 11.068 6.408 13 6.408C14.932 6.408 16.5 7.988 16.5 9.936C16.5 11.884 14.934 13.464 13 13.464ZM40 38H34V26.792C34 20.056 26 20.566 26 26.792V38H20V16H26V19.53C28.792 14.358 40 13.976 40 24.482V38Z" fill="#1E1E1E"/> </svg>
+    Slot (SLOT, 818x276)
+      style: background: #EBFFEE /* var:VariableID:2002:7433 */
+      Text Link List (INSTANCE, 262x276) [component: Density=Default]
+        component-properties: Slot#6062:6={"guid":{"sessionID":-1,"localID":-1}}, Has Title#322:21=true, Density=Default
+        Title (FRAME, 262x38)
+          style: width: 100%
+          Text Strong (INSTANCE, 80x22) [component: Text Strong]
+            component-properties: Text#2104:8=Use cases
+            Text Strong (TEXT, 80x22)
+              style: /* text-style: Body Strong */; font-family: "Inter"; font-weight: 600; font-size: 16px; line-height: 22.4px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Use cases"
+        Slot (SLOT, 144x226)
+          Text Link List Item (INSTANCE, 72x22) [component: Text Link List Item]
+            component-properties: Text#2153:15=UI design
+            List item (TEXT, 72x22)
+              style: /* text-style: Body Base */; font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "UI design"
+          Text Link List Item (INSTANCE, 78x22) [component: Text Link List Item]
+            component-properties: Text#2153:15=UX design
+            List item (TEXT, 78x22)
+              style: /* text-style: Body Base */; font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "UX design"
+          Text Link List Item (INSTANCE, 92x22) [component: Text Link List Item]
+            component-properties: Text#2153:15=Wireframing
+            List item (TEXT, 92x22)
+              style: /* text-style: Body Base */; font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Wireframing"
+          Text Link List Item (INSTANCE, 100x22) [component: Text Link List Item]
+            component-properties: Text#2153:15=Diagramming
+            List item (TEXT, 100x22)
+              style: /* text-style: Body Base */; font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Diagramming"
+          Text Link List Item (INSTANCE, 105x22) [component: Text Link List Item]
+            component-properties: Text#2153:15=Brainstorming
+            List item (TEXT, 105x22)
+              style: /* text-style: Body Base */; font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Brainstorming"
+          Text Link List Item (INSTANCE, 138x22) [component: Text Link List Item]
+            component-properties: Text#2153:15=Online whiteboard
+            List item (TEXT, 138x22)
+              style: /* text-style: Body Base */; font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Online whiteboard"
+          Text Link List Item (INSTANCE, 144x22) [component: Text Link List Item]
+            component-properties: Text#2153:15=Team collaboration
+            List item (TEXT, 144x22)
+              style: /* text-style: Body Base */; font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Team collaboration"
+      Text Link List (INSTANCE, 262x276) [component: Density=Default]
+        component-properties: Slot#6062:6={"guid":{"sessionID":-1,"localID":-1}}, Has Title#322:21=true, Density=Default
+        Title (FRAME, 262x38)
+          style: width: 100%
+          Text Strong (INSTANCE, 59x22) [component: Text Strong]
+            component-properties: Text#2104:8=Explore
+            Text Strong (TEXT, 59x22)
+              style: /* text-style: Body Strong */; font-family: "Inter"; font-weight: 600; font-size: 16px; line-height: 22.4px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Explore"
+        Slot (SLOT, 168x226)
+          Text Link List Item (INSTANCE, 53x22) [component: Text Link List Item]
+            component-properties: Text#2153:15=Design
+            List item (TEXT, 53x22)
+              style: /* text-style: Body Base */; font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Design"
+          Text Link List Item (INSTANCE, 89x22) [component: Text Link List Item]
+            component-properties: Text#2153:15=Prototyping
+            List item (TEXT, 89x22)
+              style: /* text-style: Body Base */; font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Prototyping"
+          Text Link List Item (INSTANCE, 167x22) [component: Text Link List Item]
+            component-properties: Text#2153:15=Development features
+            List item (TEXT, 167x22)
+              style: /* text-style: Body Base */; font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Development features"
+          Text Link List Item (INSTANCE, 120x22) [component: Text Link List Item]
+            component-properties: Text#2153:15=Design systems
+            List item (TEXT, 120x22)
+              style: /* text-style: Body Base */; font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Design systems"
+          Text Link List Item (INSTANCE, 168x22) [component: Text Link List Item]
+            component-properties: Text#2153:15=Collaboration features
+            List item (TEXT, 168x22)
+              style: /* text-style: Body Base */; font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Collaboration features"
+          Text Link List Item (INSTANCE, 117x22) [component: Text Link List Item]
+            component-properties: Text#2153:15=Design process
+            List item (TEXT, 117x22)
+              style: /* text-style: Body Base */; font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Design process"
+          Text Link List Item (INSTANCE, 55x22) [component: Text Link List Item]
+            component-properties: Text#2153:15=FigJam
+            List item (TEXT, 55x22)
+              style: /* text-style: Body Base */; font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "FigJam"
+      Text Link List (INSTANCE, 262x276) [component: Density=Default]
+        component-properties: Slot#6062:6={"guid":{"sessionID":-1,"localID":-1}}, Has Title#322:21=true, Density=Default
+        Title (FRAME, 262x38)
+          style: width: 100%
+          Text Strong (INSTANCE, 82x22) [component: Text Strong]
+            component-properties: Text#2104:8=Resources
+            Text Strong (TEXT, 82x22)
+              style: /* text-style: Body Strong */; font-family: "Inter"; font-weight: 600; font-size: 16px; line-height: 22.4px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Resources"
+        Slot (SLOT, 123x226)
+          Text Link List Item (INSTANCE, 34x22) [component: Text Link List Item]
+            component-properties: Text#2153:15=Blog
+            List item (TEXT, 34x22)
+              style: /* text-style: Body Base */; font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Blog"
+          Text Link List Item (INSTANCE, 109x22) [component: Text Link List Item]
+            component-properties: Text#2153:15=Best practices
+            List item (TEXT, 109x22)
+              style: /* text-style: Body Base */; font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Best practices"
+          Text Link List Item (INSTANCE, 49x22) [component: Text Link List Item]
+            component-properties: Text#2153:15=Colors
+            List item (TEXT, 49x22)
+              style: /* text-style: Body Base */; font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Colors"
+          Text Link List Item (INSTANCE, 90x22) [component: Text Link List Item]
+            component-properties: Text#2153:15=Color wheel
+            List item (TEXT, 90x22)
+              style: /* text-style: Body Base */; font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Color wheel"
+          Text Link List Item (INSTANCE, 61x22) [component: Text Link List Item]
+            component-properties: Text#2153:15=Support
+            List item (TEXT, 61x22)
+              style: /* text-style: Body Base */; font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Support"
+          Text Link List Item (INSTANCE, 86x22) [component: Text Link List Item]
+            component-properties: Text#2153:15=Developers
+            List item (TEXT, 86x22)
+              style: /* text-style: Body Base */; font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Developers"
+          Text Link List Item (INSTANCE, 123x22) [component: Text Link List Item]
+            component-properties: Text#2153:15=Resource library
+            List item (TEXT, 123x22)
+              style: /* text-style: Body Base */; font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Resource library"

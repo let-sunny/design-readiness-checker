@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Platform Desktop</title>
+    
+    <style>
+@font-face { font-family: "Inter"; src: url("file:///Users/minseon/Code/design-readiness-checker/assets/fonts/Inter.var.woff2") format("woff2"); font-weight: 100 900; }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        :root {
+            --color-2C2C2C: #2C2C2C;
+            --color-FFFFFF: #FFFFFF;
+            --color-D9D9D9: #D9D9D9;
+            --color-1E1E1E: #1E1E1E;
+            --color-F5F5F5: #F5F5F5;
+            --color-FFF1C2: #FFF1C2;
+            --color-FFFBEB: #FFFBEB;
+            --color-B3B3B3: #B3B3B3;
+            --color-5A5A5A: #5A5A5A;
+            --color-CFF7D3: #CFF7D3;
+            --color-EBFFEE: #EBFFEE;
+            --color-E3E3E3: #E3E3E3;
+            --color-767676: #767676;
+            --color-ABB2BF: #ABB2BF;
+            --color-757575: #757575;
+            --gap-8: 8px;
+            --gap-12: 12px;
+            --gap-16: 16px;
+            --gap-24: 24px;
+            --gap-32: 32px;
+            --padding-8: 8px;
+            --padding-16: 16px;
+            --padding-32: 32px;
+        }
+        
+        .text-single-line-body-base {
+            font-family: "Inter";
+            font-weight: 400;
+            font-size: 16px;
+            line-height: 16px;
+        }
+        
+        .text-body-strong {
+            font-family: "Inter";
+            font-weight: 600;
+            font-size: 16px;
+            line-height: 22.4px;
+        }
+        
+        .text-body-base {
+            font-family: "Inter";
+            font-weight: 400;
+            font-size: 16px;
+            line-height: 22.4px;
+        }
+        
+        .text-body-small-strong {
+            font-family: "Inter";
+            font-weight: 600;
+            font-size: 14px;
+            line-height: 19.6px;
+        }
+        
+        .text-body-code {
+            font-family: "Roboto Mono";
+            font-weight: 400;
+            font-size: 16px;
+            line-height: 20.8px;
+        }
+        
+        .header {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            column-gap: var(--gap-24);
+            row-gap: 0px;
+            align-items: center;
+            align-self: stretch;
+            padding: var(--padding-32);
+            background: var(--color-FFFFFF);
+            border-bottom: 1px solid var(--color-D9D9D9);
+            overflow: hidden;
+        }
+        
+        .navigation-pill {
+            display: flex;
+            flex-direction: row;
+            column-gap: var(--gap-8);
+            justify-content: center;
+            align-items: center;
+            padding: var(--padding-8);
+            border-radius: 8px;
+        }
+        
+        .navigation-pill.active {
+            background: var(--color-F5F5F5);
+        }
+        
+        .button {
+            display: flex;
+            flex-direction: row;
+            column-gap: var(--gap-8);
+            justify-content: center;
+            align-items: center;
+            padding: var(--padding-8);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .button.neutral {
+            background: var(--color-E3E3E3);
+            border: 1px solid var(--color-767676);
+        }
+        
+        .button.neutral:hover {
+            background: #CDCDCD;
+        }
+        
+        .button.primary {
+            background: var(--color-2C2C2C);
+            border: 1px solid var(--color-2C2C2C);
+        }
+        
+        .button.primary:hover {
+            background: var(--color-1E1E1E);
+        }
+        
+        .icon-button {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
+            padding: var(--padding-8);
+            border-radius: 32px;
+            overflow: hidden;
+        }
+        
+        .icon-button.subtle:hover {
+            background: var(--color-F5F5F5);
+        }
+        
+        .icon-button.disabled {
+            background: var(--color-D9D9D9);
+            border: 1px solid var(--color-B3B3B3);
+        }
+    </style>
+</head>
+<body>
+    <div style="display: flex; flex-direction: column; align-items: flex-start; background: var(--color-2C2C2C); overflow: hidden; width: 100%; height: 1606px;">
+        <!-- Header -->
+        <div class="header" style="width: 100%; height: 99px;">
+            <div style="display: flex; flex-direction: row; column-gap: var(--gap-24); align-items: center; width: 40px; height: 35px;">
+                <div style="display: flex; flex-direction: row; justify-content: center; align-items: center; width: 40px; height: 35px;">
+                    <svg width="54" height="77" viewBox="0 0 54 77" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 23px; height: 35px; border: 3.5px solid var(--color-1E1E1E);">
+                        <path d="M26.8333 3.5H15.1667C12.0725 3.5 9.10501 4.72916 6.91709 6.91709C4.72916 9.10501 3.5 12.0725 3.5 15.1667C3.5 18.2609 4.72916 21.2283 6.91709 23.4162C9.10501 25.6042 12.0725 26.8333 15.1667 26.8333M26.8333 3.5V26.8333M26.8333 3.5H38.5C40.0321 3.5 41.5492 3.80177 42.9646 4.38807C44.3801 4.97438 45.6662 5.83374 46.7496 6.91709C47.8329 8.00044 48.6923 9.28656 49.2786 10.702C49.8649 12.1175 50.1667 13.6346 50.1667 15.1667C50.1667 16.6988 49.8649 18.2158 49.2786 19.6313C48.6923 21.0468 47.8329 22.3329 46.7496 23.4162C45.6662 24.4996 44.3801 25.359 42.9646 25.9453C41.5492 26.5316 40.0321 26.8333 38.5 26.8333M26.8333 26.8333H15.1667M26.8333 26.8333H38.5M26.8333 26.8333V50.1667M15.1667 26.8333C12.0725 26.8333 9.10501 28.0625 6.91709 30.2504C4.72916 32.4383 3.5 35.4058 3.5 38.5C3.5 41.5942 4.72916 44.5617 6.91709 46.7496C9.10501 48.9375 12.0725 50.1667 15.1667 50.1667M38.5 26.8333C36.9679 26.8333 35.4508 27.1351 34.0354 27.7214C32.6199 28.3077 31.3338 29.1671 30.2504 30.2504C29.1671 31.3338 28.3077 32.6199 27.7214 34.0354C27.1351 35.4508 26.8333 36.9679 26.8333 38.5C26.8333 40.0321 27.1351 41.5492 27.7214 42.9646C28.3077 44.3801 29.1671 45.6662 30.2504 46.7496C31.3338 47.8329 32.6199 48.6923 34.0354 49.2786C35.4508 49.8649 36.9679 50.1667 38.5 50.1667C40.0321 50.1667 41.5492 49.8649 42.9646 49.2786C44.3801 48.6923 45.6662 47.8329 46.7496 46.7496C47.8329 45.6662 48.6923 44.3801 49.2786 42.9646C49.8649 41.5492 50.1667 40.0321 50.1667 38.5C50.1667 36.9679 49.8649 35.4508 49.2786 34.0354C48.6923 32.6199 47.8329 31.3338 46.7496 30.2504C45.6662 29.1671 44.3801 28.3077 42.9646 27.7214C41.5492 27.1351 40.0321 26.8333 38.5 26.8333ZM15.1667 50.1667C12.0725 50.1667 9.10501 51.3958 6.91709 53.5837C4.72916 55.7717 3.5 58.7391 3.5 61.8333C3.5 64.9275 4.72916 67.895 6.91709 70.0829C9.10501 72.2708 12.0725 73.5 15.1667 73.5C18.2609 73.5 21.2283 72.2708 23.4162 70.0829C25.6042 67.895 26.8333 64.9275 26.8333 61.8333V50.1667M15.1667 50.1667H26.8333" stroke="#1E1E1E" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+            </div>
+            
+            <div style="display: flex; flex-direction: row; flex-wrap: wrap; column-gap: var(--gap-8); row-gap: var(--gap-8); justify-content: flex-end; align-items: flex-start; width: 870px; height: 32px;">
+                <div style="display: flex; flex-direction: row; column-gap: var(--gap-8); align-items: center; width: 553px; height: 32px;">
+                    <div class="navigation-pill active" style="width: 84px; height: 32px;">
+                        <span class="text-single-line-body-base" style="text-align: left; display: flex; align-items: center; color: var(--color-1E1E1E); width: 68px; height: 16px;">Products</span>
+                    </div>
+                    <div class="navigation-pill" style="width: 86px; height: 32px;">
+                        <span class="text-single-line-body-base" style="text-align: left; display: flex; align-items: center; color: var(--color-1E1E1E); width: 70px; height: 16px;">Solutions</span>
+                    </div>
+                    <div class="navigation-pill" style="width: 103px; height: 32px;">
+                        <span class="text-single-line-body-base" style="text-align: left; display: flex; align-items: center; color: var(--color-1E1E1E); width: 87px; height: 16px;">Community</span>
+                    </div>
+                    <div class="navigation-pill" style="width: 95px; height: 32px;">
+                        <span class="text-single-line-body-base" style="text-align: left; display: flex; align-items: center; color: var(--color-1E1E1E); width: 79px; height: 16px;">Resources</span>
+                    </div>
+                    <div class="navigation-pill" style="width: 68px; height: 32px;">
+                        <span class="text-single-line-body-base" style="text-align: left; display: flex; align-items: center; color: var(--color-1E1E1E); width: 52px; height: 16px;">Pricing</span>
+                    </div>
+                    <div class="navigation-pill" style="width: 77px; height: 32px;">
+                        <span class="text-single-line-body-base" style="text-align: left; display: flex; align-items: center; color: var(--color-1E1E1E); width: 61px; height: 16px;">Contact</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="display: flex; flex-direction: row; column-gap: var(--gap-12); align-items: center; width: 178px; height: 32px;">
+                <div class="button neutral" style="width: 83px; height: 32px;">
+                    <span class="text-single-line-body-base" style="text-align: left; color: var(--color-1E1E1E); width: 51px; height: 16px;">Sign in</span>
+                </div>
+                <div class="button primary" style="width: 83px; height: 32px;">
+                    <span class="text-single-line-body-base" style="text-align: left; color: var(--color-F5F5F5); width: 63px; height: 16px;">Register</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- AI Chatbot -->
+        <div style="display: flex; flex-direction: row; column-gap: var(--gap-32); align-items: flex-start; align-self: stretch; background: var(--color-F5F5F5); width: 100%; height: 1039px;">
+            <!-- AI Sidebar -->
+            <div style="display: flex; flex-direction: column; row-gap: var(--gap-16); justify-content: space-between; align-items: flex-start; align-self: stretch; padding: var(--padding-16); background: var(--color-FFF1C2); border-right: 1px solid var(--color-D9D9D9); width: 320px; height: 1039px;">
+                <div style="display: flex; flex-direction: column; row-gap: var(--gap-16); align-items: flex-start; align-self: stretch; width: 288px; height: 306px;">
+                    <div style="display: flex; flex-direction: row; column-gap: var(--gap-16); align-items: center; align-self: stretch; width: 288px; height: 24px;">
+                        <div style="overflow: hidden; width: 24px; height: 24px;">
+                            <svg width="41" height="29" viewBox="0 0 41 29" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 18px; height: 12px; border: 2.5px solid var(--color-1E1E1E);">
+                                <path d="M2.5 14.5H38.5M2.5 2.5H38.5M2.5 26.5H38.5" stroke="#1E1E1E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        <span class="text-body-strong" style="text-align: left; color: var(--color-1E1E1E); width: 208px; height: 22px;">Flippy chats</span>
+                        <div style="overflow: hidden; width: 24px; height: 24px;">
+                            <svg width="45" height="45" viewBox="0 0 45 45" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 20px; height: 20px; border: 2.5px solid var(--color-1E1E1E);">
+                                <path d="M22.5 14.5V30.5M14.5 22.5H30.5M42.5 22.5C42.5 33.5457 33.5457 42.5 22.5 42.5C11.4543 42.5 2.5 33.5457 2.5 22.5C2.5 11.4543 11.4543 2.5 22.5 2.5C33.5457 2.5 42.5 11.4543 42.5 22.5Z" stroke="#1E1E1E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; flex-direction: row; column-gap: var(--gap-8); align-items: center; align-self: stretch; padding: 12px var(--gap-16); background: var(--color-FFFFFF); border: 1px solid var(--color-D9D9D9); border-radius: 9999px; overflow: hidden; width: 288px; height: 40px;">
+                        <span class="text-single-line-body-base" style="text-align: left; color: var(--color-B3B3B3); width: 232px; height: 16px;">Search</span>
+                        <div style="overflow: hidden; width: 16px; height: 16px;">
+                            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 12px; height: 12px; border: 1.600000023841858px solid var(--color-1E1E1E);">
+                                <path d="M26.3515 26.3499L20.3816 20.38M23.6067 12.626C23.6067 18.6896 18.6912 23.6051 12.6276 23.6051C6.564 23.6051 1.64848 18.6896 1.64848 12.626C1.64848 6.56237 6.564 1.64684 12.6276 1.64684C18.6912 1.64684 23.6067 6.56237 23.6067 12.626Z" stroke="#1E1E1E" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; flex-direction: column; row-gap: var(--gap-8); align-items: flex-start; align-self: stretch; width: 288px; height: 210px;">
+                        <div style="display: flex; flex-direction: column; row-gap: 10px; justify-content: center; align-items: center; align-self: stretch; width: 288px; height: 20px;">
+                            <span class="text-body-small-strong" style="align-self: stretch; text-align: left; color: var(--color-757575); width: 288px; height: 20px;">Chats</span>
+                        </div>
+                        <div style="display: flex; flex-direction: column; row-gap: var(--gap-8); align-items: flex-start; align-self: stretch; width: 288px; height: 182px;">
+                            <div style="display: flex; flex-direction: row; column-gap: var(--gap-16); align-items: center; align-self: stretch; padding: 4px 6px; background: var(--color-FFFFFF); border-radius: 8px; width: 288px; height: 30px;">
+                                <span class="text-body-base" style="text-align: left; color: var(--color-1E1E1E); width: 276px; height: 22px;">Analog Clock React app</span>
+                            </div>
+                            <div style="display: flex; flex-direction: row; column-gap: var(--gap-16); align-items: center; align-self: stretch; padding: 4px 6px; border-radius: 8px; width: 288px; height: 30px;">
+                                <span class="text-body-base" style="text-align: left; color: var(--color-1E1E1E); width: 276px; height: 22px;">Simple Design System</span>
+                            </div>
+                            <div style="display: flex; flex-direction: row; column-gap: var(--gap-16); align-items: center; align-self: stretch; padding: 4px 6px; border-radius: 8px; width: 288px; height: 30px;">
+                                <span class="text-body-base" style="text-align: left; color: var(--color-1E1E1E); width: 276px; height: 22px;">Figma variable planning</span>
+                            </div>
+                            <div style="display: flex; flex-direction: row; column-gap: var(--gap-16); align-items: center; align-self: stretch; padding: 4px 6px; border-radius: 8px; width: 288px; height: 30px;">
+                                <span class="text-body-base" style="text-align: left; color: var(--color-1E1E1E); width: 276px; height: 22px;">OKCLH token algorithm</span>
+                            </div>
+                            <div style="display: flex; flex-direction: row; column-gap: var(--gap-16); align-items: center; align-self: stretch; padding: 4px 6px; border-radius: 8px; width: 288px; height: 30px;">
+                                <span class="text-body-base" style="text-align: left; color: var(--color-1E1E1E); width: 276px; height: 22px;">Component naming advice</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="display: flex; flex-direction: row; column-gap: var(--gap-16); align-items: center; align-self: stretch; width: 288px; height: 24px;">
+                    <div style="border-radius: 9999px; overflow: hidden; width: 24px; height: 24px;">
+                        <img src="images/shape@2x.png" style="width: 24px; height: 24px; object-fit: cover;" />
+                    </div>
+                    <span class="text-body-base" style="text-align: left; color: var(--color-1E1E1E); width: 248px; height: 22px;">flippy@figma.com</span>
+                </div>
+            </div>
+            
+            <!-- Main Chat Area -->
+            <div style="display: flex; flex-direction: column; row-gap: var(--gap-24); align-items: flex-start; padding: var(--gap-24) var(--gap-24) var(--gap-24) 0px; background: var(--color-FFFBEB); width: 848px; height: 1039px;">
+                <div style="display: flex; flex-direction: column; row-gap: var(--gap-24); align-items: flex-start; align-self: stretch; width: 824px; height: 853px;">
+                    <div style="display: flex; flex-direction: column; row-gap: var(--gap-24); align-items: flex-start; align-self: stretch; width: 824px; height: 853px;">
+                        <div style="display: flex; flex-direction: column; row-gap: 10px; align-items: flex-end; align-self: stretch; width: 824px; height: 34px;">
+                            <div style="display: flex; flex-direction: column; align-items: flex-start; padding: 6px var(--gap-8); background: var(--color-F5F5F5); border: 1px solid var(--color-D9D9D9); border-radius: 8px; overflow: hidden; width: 480px; height: 34px;">
+                                <span class="text-body-base" style="align-self: stretch; text-align: left; color: var(--color-1E1E1E); width: 464px; height: 22px;">Hey Flippy! Write me a script for building an Analag Clock.</span>
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; flex-direction: row; column-gap: var(--gap-8); align-items: flex-start; border-radius: 8px; overflow: hidden; width: 560px; height: 88px;">
+                            <div style="overflow: hidden; width: 20px; height: 20px;">
+                                <svg width="28" height="39" viewBox="0 0 28 39" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 12px; height: 18px; border: 2px solid var(--color-1E1E1E);">
+                                    <path d="M13.6667 2H7.83333C6.28624 2 4.80251 2.61458 3.70854 3.70854C2.61458 4.80251 2 6.28624 2 7.83333C2 9.38043 2.61458 10.8642 3.70854 11.9581C4.80251 13.0521 6.28624 13.6667 7.83333 13.6667M13.6667 2V13.6667M13.6667 2H19.5C20.266 2 21.0246 2.15088 21.7323 2.44404C22.4401 2.73719 23.0831 3.16687 23.6248 3.70854C24.1665 4.25022 24.5961 4.89328 24.8893 5.60101C25.1824 6.30875 25.3333 7.06729 25.3333 7.83333C25.3333 8.59938 25.1824 9.35792 24.8893 10.0657C24.5961 10.7734 24.1665 11.4164 23.6248 11.9581C23.0831 12.4998 22.4401 12.9295 21.7323 13.2226C21.0246 13.5158 20.266 13.6667 19.5 13.6667M13.6667 13.6667H7.83333M13.6667 13.6667H19.5M13.6667 13.6667V25.3333M7.83333 13.6667C6.28624 13.6667 4.80251 14.2812 3.70854 15.3752C2.61458 16.4692 2 17.9529 2 19.5C2 21.0471 2.61458 22.5308 3.70854 23.6248C4.80251 24.7188 6.28624 25.3333 7.83333 25.3333M19.5 13.6667C18.734 13.6667 17.9754 13.8175 17.2677 14.1107C16.5599 14.4039 15.9169 14.8335 15.3752 15.3752C14.8335 15.9169 14.4039 16.5599 14.1107 17.2677C13.8175 17.9754 13.6667 18.734 13.6667 19.5C13.6667 20.266 13.8175 21.0246 14.1107 21.7323C14.4039 22.4401 14.8335 23.0831 15.3752 23.6248C15.9169 24.1665 16.5599 24.5961 17.2677 24.8893C17.9754 25.1824 18.734 25.3333 19.5 25.3333C20.266 25.3333 21.0246 25.1824 21.7323 24.8893C22.4401 24.5961 23.0831 24.1665 23.6248 23.6248C24.1665 23.0831 24.5961 22.4401 24.8893 21.7323C25.1824 21.0246 25.3333 20.266 25.3333 19.5C25.3333 18.734 25.1824 17.9754 24.8893 17.2677C24.5961 16.5599 24.1665 15.9169 23.6248 15.3752C23.0831 14.8335 22.4401 14.4039 21.7323 14.1107C21.0246 13.8175 20.266 13.6667 19.5 13.6667ZM7.83333 25.3333C6.28624 25.3333 4.80251 25.9479 3.70854 27.0419C2.61458 28.1358 2 29.6196 2 31.1667C2 32.7138 2.61458 34.1975 3.70854 35.2915C4.80251 36.3854 6.28624 37 7.83333 37C9.38043 37 10.8642 36.3854 11.9581 35.2915C13.0521 34.1975 13.6667 32.7138 13.6667 31.1667V25.3333M7.83333 25.3333H13.6667" stroke="#1E1E1E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </div>
+                            <span class="text-body-base" style="text-align: left; color: var(--color-1E1E1E); width: 532px; height: 88px;">Sure. Here is a Typescript code block for your Analog Clock project. It is built using React, and uses the local time for London, England as standard. Let me know if you would like to make any refinements to the code.</span>
+                        </div>
+                        
+                        <div style="display: flex; flex-direction: row; align-items: flex-start; align-self: stretch; border: 1px solid var(--color-D9D9D9); border-radius: 16px; overflow: hidden; width: 824px; height: 683px;">
+                            <div style="display: flex; flex-direction: column; align-items: flex-end; align-self: stretch; padding: var(--gap-16) var(--gap-8); background: var(--color-FFFFFF); border-right: 1px solid var(--color-D9D9D9); overflow: hidden; width: 48px; height: 683px;">
+                                <span class="text-body-code" style="text-align: right; color: var(--color-B3B3B3); width: 20px; height: 651px;">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31</span>
+                            </div>
+                            <div style="display: flex; flex-direction: column; align-items: flex-start; padding: var(--gap-16) var(--gap-8); background: var(--color-F5F5F5); border-right: 1px solid var(--color-D9D9D9); overflow: hidden; width: 776px; height: 662px;">
+                                <span class="text-body-code" style="align-self: stretch; text-align: left; color: var(--color-ABB2BF); width: 760px; height: 630px;">import React, { useState, useEffect } from "react";
+import { defineProperties } from "figma:react";
+
+export default function AnalogClock({ 
+  updateInterval = 1000,
+  secondHandColor = "red", 
+  minuteHandColor = "black", 
+  hourHandColor = "black", 
+}) {
+  const [time, setTime] = useState({ hours: 0, minutes: 0, seconds: 0 });
+
+  useEffect(() => {
+    const updateClock = () => {
+      // Get London's local time using en-GB format
+      const londonTimeString = new Date().toLocaleTimeString("en-GB", {
+        timeZone: "Europe/London",
+        hour12: false
+      });
+      const [hoursStr, minutesStr, secondsStr] = londonTimeString.split(":");
+      setTime({
+        hours: parseInt(hoursStr, 10),
+        minutes: parseInt(minutesStr, 10),
+        seconds: parseInt(secondsStr, 10)
+      });
+    };
+
+    updateClock();
+    const timerId = setInterval(updateClock, updateInterval);
+    return () => clearInterval(timerId);
+  }, [updateInterval]);</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="display: flex; flex-direction: column; row-gap: var(--gap-24); align-items: flex-start; align-self: stretch; padding: var(--gap-16); background: var(--color-FFFFFF); border: 1px solid var(--color-D9D9D9); border-radius: 16px; overflow: hidden; width: 824px; height: 114px;">
+                    <span class="text-body-base" style="align-self: stretch; text-align: left; color: var(--color-B3B3B3); width: 792px; height: 22px;">What would you like to know?</span>
+                    <div style="display: flex; flex-direction: row; justify-content: space-between; align-items: flex-start; align-self: stretch; overflow: hidden; width: 792px; height: 36px;">
+                        <div style="display: flex; flex-direction: row; column-gap: var(--gap-8); align-items: center; width: 124px; height: 36px;">
+                            <div class="icon-button subtle" style="width: 36px; height: 36px;">
+                                <div style="overflow: hidden; width: 20px; height: 20px;">
+                                    <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 15px; height: 15px; border: 2px solid var(--color-1E1E1E);">
+                                        <path d="M5.33333 32H28.6667C30.5076 32 32 30.5076 32 28.6667V5.33333C32 3.49238 30.5076 2 28.6667 2H5.33333C3.49238 2 2 3.49238 2 5.33333V28.6667C2 30.5076 3.49238 32 5.33333 32ZM5.33333 32L23.6667 13.6667L32 22M13.6667 11.1667C13.6667 12.5474 12.5474 13.6667 11.1667 13.6667C9.78595 13.6667 8.66667 12.5474 8.66667 11.1667C8.66667 9.78595 9.78595 8.66667 11.1667 8.66667C12.5474 8.66667 13.6667 9.78595 13.6667 11.1667Z" stroke="#1E1E1E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="icon-button subtle" style="width: 36px; height: 36px;">
+                                <div style="overflow: hidden; width: 20px; height: 20px;">
+                                    <svg width="38" height="24" viewBox="0 0 38 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 17px; height: 10px; border: 2px solid var(--color-1E1E1E);">
+                                        <path d="M25.3333 22L35.3333 12L25.3333 2M12 2L2 12L12 22" stroke="#1E1E1E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="icon-button subtle" style="width: 36px; height: 36px;">
+                                <div style="overflow: hidden; width: 20px; height: 20px;">
+                                    <svg width="28" height="41" viewBox="0 0 28 41" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 12px; height: 18px; border: 2px solid var(--color-1E1E1E);">
+                                        <path d="M25.5409 17.1393V20.5C25.5409 23.6195 24.3017 26.6113 22.0958 28.8171C19.89 31.023 16.8982 32.2622 13.7787 32.2622M13.7787 32.2622C10.6591 32.2622 7.66733 31.023 5.46148 28.8171C3.25562 26.6113 2.01639 23.6195 2.01639 20.5V17.1393M13.7787 32.2622V38.9835M7.05736 38.9835H20.5M13.7787 2.01639C12.4417 2.01639 11.1595 2.54749 10.2142 3.49286C9.26879 4.43822 8.73769 5.72041 8.73769 7.05736V20.5C8.73769 21.8369 9.26879 23.1191 10.2142 24.0645C11.1595 25.0098 12.4417 25.5409 13.7787 25.5409C15.1156 25.5409 16.3978 25.0098 17.3432 24.0645C18.2885 23.1191 18.8196 21.8369 18.8196 20.5V7.05736C18.8196 5.72041 18.2885 4.43822 17.3432 3.49286C16.3978 2.54749 15.1156 2.01639 13.7787 2.01639Z" stroke="#1E1E1E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="icon-button disabled" style="width: 36px; height: 36px;">
+                            <div style="overflow: hidden; width: 20px; height: 20px;">
+                                <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 12px; height: 12px; border: 2px solid var(--color-B3B3B3);">
+                                    <path d="M14 25.9513V2.04879M14 2.04879L2.04879 14M14 2.04879L25.9513 14" stroke="#B3B3B3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div style="display: flex; flex-direction: row; flex-wrap: wrap; column-gap: var(--gap-16); row-gap: var(--gap-16); align-items: flex-start; align-self: stretch; padding: var(--padding-32) var(--padding-32) 160px var(--padding-32); background: var(--color-5A5A5A); border-top: 1px solid var(--color-D9D9D9); overflow: hidden; width: 100%; height: 468px;">
+            <div style="display: flex; flex-direction: column; row-gap: var(--gap-24); align-items: flex-start; background: var(--color-CFF7D3); width: 262px; height: 83px;">
+                <div style="display: flex; flex-direction: row; justify-content: center; align-items: center; width: 23px; height: 35px;">
+                    <svg width="54" height="77" viewBox="0 0 54 77" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 23px; height: 35px; border: 3.5px solid var(--color-1E1E1E);">
+                        <path d="M26.8333 3.5H15.1667C12.0725 3.5 9.10501 4.72916 6.91709 6.91709C4.72916 9.10501 3.5 12.0725 3.5 15.1667C3.5 18.2609 4.72916 21.2283 6.91709 23.4162C9.10501 25.6042 12.0725 26.8333 15.1667 26.8333M26.8333 3.5V26.8333M26.8333 3.5H38.5C40.0321 3.5 41.5492 3.80177 42.9646 4.38807C44.3801 4.97438 45.6662 5.83374 46.7496 6.91709C47.8329 8.00044 48.6923 9.28656 49.2786 10.702C49.8649 12.1175 50.1667 13.6346 50.1667 15.1667C50.1667 16.6988 49.8649 18.2158 49.2786 19.6313C48.6923 21.0468 47.8329 22.3329 46.7496 23.4162C45.6662 24.4996 44.3801 25.359 42.9646 25.9453C41.5492 26.5316 40.0321 26.8333 38.5 26.8333M26.8333 26.8333H15.1667M26.8333 26.8333H38.5M26.8333 26.8333V50.1667M15.1667 26.8333C12.0725 26.8333 9.10501 28.0625 6.91709 30.2504C4.72916 32.4383 3.5 35.4058 3.5 38.5C3.5 41.5942 4.72916 44.5617 6.91709 46.7496C9.10501 48.9375 12.0725 50.1667 15.1667 50.1667M38.5 26.8333C36.9679 26.8333 35.4508 27.1351 34.0354 27.7214C32.6199 28.3077 31.3338 29.1671 30.2504 30.2504C29.1671 31.3338 28.3077 32.6199 27.7214 34.0354C27.1351 35.4508 26.8333 36.9679 26.8333 38.5C26.8333 40.0321 27.1351 41.5492 27.7214 42.9646C28.3077 44.3801 29.1671 45.6662 30.2504 46.7496C31.3338 47.8329 32.6199 48.6923 34.0354 49.2786C35.4508 49.8649 36.9679 50.1667 38.5 50.1667C40.0321 50.1667 41.5492 49.8649 42.9646 49.2786C44.3801 48.6923 45.6662 47.8329 46.7496 46.7496C47.8329 45.6662 48.6923 44.3801 49.2786 42.9646C49.8649 41.5492 50.1667 40.0321 50.1667 38.5C50.1667 36.9679 49.8649 35.4508 49.2786 34.0354C48.6923 32.6199 47.8329 31.3338 46.7496 30.2504C45.6662 29.1671 44.3801 28.3077 42.9646 27.7214C41.5492 27.1351 40.0321 26.8333 38.5 26.8333ZM15.1667 50.1667C12.0725 50.1667 9.10501 51.3958 6.91709 53.5837C4.72916 55.7717 3.5 58.7391 3.5 61.8333C3.5 64.9275 4.72916 67.895 6.91709 70.0829C9.10501 72.2708 12.0725 73.5 15.1667 73.5C18.2609 73.5 21.2283 72.2708 23.4162 70.0829C25.6042 67.895 26.8333 64.9275 26.8333 61.8333V50.1667M15.1667 50.1667H26.8333" stroke="#1E1E1E" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <div style="display: flex; flex-direction: row; column-gap: var(--gap-16); align-items: center; width: 144px; height: 24px;">
+                    <div style="width: 24px; height: 24px;">
+                        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 24px; height: 24px; background: var(--color-1E1E1E);">
+                            <path d="M28.5474 20.3271L46.4045 0H42.1745L26.6626 17.6461L14.2825 0H0L18.7252 26.6866L0 48H4.23007L20.6004 29.3611L33.6775 48H47.96M5.7568 3.1238H12.2554L42.1713 45.0297H35.6711" fill="#1E1E1E"/>
+                        </svg>
+                    </div>
+                    <div style="overflow: hidden; width: 24px; height: 24px;">
+                        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 24px; height: 24px; background: var(--color-1E1E1E);">
+                            <path d="M24 4.326C30.408 4.326 31.168 4.35 33.7 4.466C40.204 4.762 43.242 7.848 43.538 14.304C43.654 16.834 43.676 17.594 43.676 24.002C43.676 30.412 43.652 31.17 43.538 33.7C43.24 40.15 40.21 43.242 33.7 43.538C31.168 43.654 30.412 43.678 24 43.678C17.592 43.678 16.832 43.654 14.302 43.538C7.782 43.24 4.76 40.14 4.464 33.698C4.348 31.168 4.324 30.41 4.324 24C4.324 17.592 4.35 16.834 4.464 14.302C4.762 7.848 7.792 4.76 14.302 4.464C16.834 4.35 17.592 4.326 24 4.326ZM24 0C17.482 0 16.666 0.028 14.106 0.144C5.39 0.544 0.546 5.38 0.146 14.104C0.028 16.666 0 17.482 0 24C0 30.518 0.028 31.336 0.144 33.896C0.544 42.612 5.38 47.456 14.104 47.856C16.666 47.972 17.482 48 24 48C30.518 48 31.336 47.972 33.896 47.856C42.604 47.456 47.46 42.62 47.854 33.896C47.972 31.336 48 30.518 48 24C48 17.482 47.972 16.666 47.856 14.106C47.464 5.398 42.622 0.546 33.898 0.146C31.336 0.028 30.518 0 24 0ZM24 11.676C17.194 11.676 11.676 17.194 11.676 24C11.676 30.806 17.194 36.326 24 36.326C30.806 36.326 36.324 30.808 36.324 24C36.324 17.194 30.806 11.676 24 11.676ZM24 32C19.582 32 16 28.42 16 24C16 19.582 19.582 16 24 16C28.418 16 32 19.582 32 24C32 28.42 28.418 32 24 32ZM36.812 8.31C35.22 8.31 33.93 9.6 33.93 11.19C33.93 12.78 35.22 14.07 36.812 14.07C38.402 14.07 39.69 12.78 39.69 11.19C39.69 9.6 38.402 8.31 36.812 8.31Z" fill="#1E1E1E"/>
+                        </svg>
+                    </div>
+                    <div style="overflow: hidden; width: 24px; height: 24px;">
+                        <svg width="48" height="36" viewBox="0 0 48 36" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 24px; height: 18px; background: var(--color-1E1E1E);">
+                            <path d="M39.2295 0.368245C32.0216 -0.123748 15.9678 -0.121748 8.76988 0.368245C0.975987 0.900238 0.0579992 5.60817 0 18C0.0579992 30.3698 0.967987 35.0978 8.76988 35.6318C15.9698 36.1218 32.0216 36.1238 39.2295 35.6318C47.0234 35.0998 47.9414 30.3918 47.9993 18C47.9414 5.63017 47.0314 0.902238 39.2295 0.368245ZM17.9998 25.9999V10.0001L33.9995 17.986L17.9998 25.9999Z" fill="#1E1E1E"/>
+                        </svg>
+                    </div>
+                    <div style="overflow: hidden; width: 24px; height: 24px;">
+                        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 24px; height: 24px; background: var(--color-1E1E1E);">
+                            <path d="M38 0H10C4.478 0 0 4.478 0 10V38C0 43.522 4.478 48 10 48H38C43.524 48 48 43.522 48 38V10C48 4.478 43.524 0 38 0ZM16 38H10V16H16V38ZM13 13.464C11.068 13.464 9.5 11.884 9.5 9.936C9.5 7.988 11.068 6.408 13 6.408C14.932 6.408 16.5 7.988 16.5 9.936C16.5 11.884 14.934 13.464 13 13.464ZM40 38H34V26.792C34 20.056 26 20.566 26 26.792V38H20V16H26V19.53C28.792 14.358 40 13.976 40 24.482V38Z" fill="#1E1E1E"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="display: flex; flex-direction: row; column-gap: var(--gap-16); align-items: center; background: var(--color-EBFFEE); width: 818px; height: 276px;">
+                <div style="display: flex; flex-direction: column; row-gap: var(--gap-12); align-items: flex-start; width: 262px; height: 276px;">
+                    <div style="display: flex; flex-direction: column; align-items: flex-start; align-self: stretch; padding: 0px 0px var(--gap-16) 0px; width: 262px; height: 38px;">
+                        <div style="display: flex; flex-direction: row; align-items: flex-start; width: 80px; height: 22px;">
+                            <span class="text-body-strong" style="text-align: left; color: var(--color-1E1E1E); width: 80px; height: 22px;">Use cases</span>
+                        </div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; row-gap: var(--gap-12); align-items: flex-start; width: 144px; height: 226px;">
+                        <div style="display: flex; flex-direction: row; justify-content: center; align-items: center; width: 72px; height: 22px;">
+                            <span class="text-body-base" style="text-align: left; display: flex; align-items: center; color: var(--color-1E1E1E); width: 72px; height: 22px;">UI design</span>
+                        </div>
+                        <div style="display: flex; flex-direction: row; justify-content: center; align-items: center; width: 78px; height: 22px;">
+                            <span class="text-body-base" style="text-align: left; display: flex; align-items: center; color: var(--color-1E1E1E); width: 78px; height: 22px;">UX design</span>
+                        </div>
+                        <div style="display: flex; flex-direction: row; justify-content: center; align-items: center; width: 92px; height: 22px;">
+                            <span class="text-body-base" style="text-align: left; display: flex; align-items: center; color: var(--color-1E1E1E); width: 92px; height: 22px;">Wireframing</span>
+                        </div>
+                        <div style="display: flex; flex-direction: row; justify-content: center; align-items: center; width: 100px; height: 22px;">
+                            <span class="text-body-base" style="text-align: left; display: flex; align-items: center; color: var(--color-1E1E1E); width: 100px; height: 22px;">Diagramming</span>
+                        </div>
+                        <div style="display: flex; flex-direction: row; justify-content: center; align-items: center; width: 105px; height: 22px;">
+                            <span class="text-body-base" style="text-align: left; display: flex; align-items: center; color: var(--color-1E1E1E); width: 105px; height: 22px;">Brainstorming</span>
+                        </div>
+                        <div style="display: flex; flex-direction: row; justify-content: center; align-items: center; width: 138px; height: 22px;">
+                            <span class="text-body-base" style="text-align: left; display: flex; align-items: center; color: var(--color-1E1E1E); width: 138px; height: 22px;">Online whiteboard</span>
+                        </div>
+                        <div style="display: flex; flex-direction: row; justify-content: center; align-items: center; width: 144px; height: 22px;">
+                            <span class="text-body-base" style="text-align: left; display: flex; align-items: center; color: var(--color-1E1E1E); width: 144px; height: 22px;">Team collaboration</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="display: flex; flex-direction: column; row-gap: var(--gap-12); align-items: flex-start; width: 262px; height: 276px;">
+                    <div style="display: flex; flex-direction: column; align-items: flex-start; align-self: stretch; padding: 0px 0px var(--gap-16) 0px; width: 262px; height: 38px;">
+                        <div style="display: flex; flex-direction: row; align-items: flex-start; width: 59px; height: 22px;">
+                            <span class="text-body-strong" style="text-align: left; color: var(--color-1E1E1E); width: 59px; height: 22px;">Explore</span>
+                        </div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; row-gap: var(--gap-12); align-items: flex-start; width: 168px; height: 226px;">
+                        <div style="display: flex; flex-direction: row; justify-content: center; align-items: center; width: 53px; height: 22px;">
+                            <span class="text-body-base" style="text-align: left; display: flex; align-items: center; color: var(--color-1E1E1E); width: 53px; height: 22px;">Design</span>
+                        </div>
+                        <div style="display: flex; flex-direction: row; justify-content: center; align-items: center; width: 89px; height: 22px;">
+                            <span class="text-body-base" style="text-align: left; display: flex; align-items: center; color: var(--color-1E1E1E); width: 89px; height: 22px;">Prototyping</span>
+                        </div>
+                        <div style="display: flex; flex-direction: row; justify-content: center; align-items: center; width: 167px; height: 22px;">
+                            <span class="text-body-base" style="text-align: left; display: flex; align-items: center; color: var(--color-1E1E1E); width: 167px; height: 22px;">Development features</span>
+                        </div>
+                        <div style="display: flex; flex-direction: row; justify-content: center; align-items: center; width: 120px; height: 22px;">
+                            <span class="text-body-base" style="text-align: left; display: flex; align-items: center; color: var(--color-1E1E1E); width: 120px; height: 22px;">Design systems</span>
+                        </div>
+                        <div style="display: flex; flex-direction: row; justify-content: center; align-items: center; width: 168px; height: 22px;">
+                            <span class="text-body-base" style="text-align: left; display: flex; align-items: center; color: var(--color-1E1E1E); width: 168px; height: 22px;">Collaboration features</span>
+                        </div>
+                        <div style="display: flex; flex-direction: row; justify-content: center; align-items: center; width: 117px; height: 22px;">
+                            <span class="text-body-base" style="text-align: left; display: flex; align-items: center; color: var(--color-1E1E1E); width: 117px; height: 22px;">Design process</span>
+                        </div>
+                        <div style="display: flex; flex-direction: row; justify-content: center; align-items: center; width: 55px; height: 22px;">
+                            <span class="text-body-base" style="text-align: left; display: flex; align-items: center; color: var(--color-1E1E1E); width: 55px; height: 22px;">FigJam</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="display: flex; flex-direction: column; row-gap: var(--gap-12); align-items: flex-start; width: 262px; height: 276px;">
+                    <div style="display: flex; flex-direction: column; align-items: flex-start; align-self: stretch; padding: 0px 0px var(--gap-16) 0px; width: 262px; height: 38px;">
+                        <div style="display: flex; flex-direction: row; align-items: flex-start; width: 82px; height: 22px;">
+                            <span class="text-body-strong" style="text-align: left; color: var(--color-1E1E1E); width: 82px; height: 22px;">Resources</span>
+                        </div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; row-gap: var(--gap-12); align-items: flex-start; width: 123px; height: 226px;">
+                        <div style="display: flex; flex-direction: row; justify-content: center; align-items: center; width: 34px; height: 22px;">
+                            <span class="text-body-base" style="text-align: left; display: flex; align-items: center; color: var(--color-1E1E1E); width: 34px; height: 22px;">Blog</span>
+                        </div>
+                        <div style="display: flex; flex-direction: row; justify-content: center; align-items: center; width: 109px; height: 22px;">
+                            <span class="text-body-base" style="text-align: left; display: flex; align-items: center; color: var(--color-1E1E1E); width: 109px; height: 22px;">Best practices</span>
+                        </div>
+                        <div style="display: flex; flex-direction: row; justify-content: center; align-items: center; width: 49px; height: 22px;">
+                            <span class="text-body-base" style="text-align: left; display: flex; align-items: center; color: var(--color-1E1E1E); width: 49px; height: 22px;">Colors</span>
+                        </div>
+                        <div style="display: flex; flex-direction: row; justify-content: center; align-items: center; width: 90px; height: 22px;">
+                            <span class="text-body-base" style="text-align: left; display: flex; align-items: center; color: var(--color-1E1E1E); width: 90px; height: 22px;">Color wheel</span>
+                        </div>
+                        <div style="display: flex; flex-direction: row; justify-content: center; align-items: center; width: 61px; height: 22px;">
+                            <span class="text-body-base" style="text-align: left; display: flex; align-items: center; color: var(--color-1E1E1E); width: 61px; height: 22px;">Support</span>
+                        </div>
+                        <div style="display: flex; flex-direction: row; justify-content: center; align-items: center; width: 86px; height: 22px;">
+                            <span class="text-body-base" style="text-align: left; display: flex; align-items: center; color: var(--color-1E1E1E); width: 86px; height: 22px;">Developers</span>
+                        </div>
+                        <div style="display: flex; flex-direction: row; justify-content: center; align-items: center; width: 123px; height: 22px;">
+                            <span class="text-body-base" style="text-align: left; display: flex; align-items: center; color: var(--color-1E1E1E); width: 123px; height: 22px;">Resource library</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

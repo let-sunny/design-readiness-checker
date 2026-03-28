@@ -1,0 +1,15 @@
+{
+  "fixture": "desktop-product-detail",
+  "type": "baseline",
+  "runIndex": 0,
+  "similarity": 98,
+  "inputTokens": 27891,
+  "outputTokens": 18731,
+  "totalTokens": 46622,
+  "htmlBytes": 52425,
+  "htmlLines": 697,
+  "cssClassCount": 24,
+  "cssVariableCount": 16,
+  "timestamp": "2026-03-28T08:36:29.145Z",
+  "configVersion": "72ffc72c9103"
+}

@@ -1,0 +1,444 @@
+{
+  "configVersion": "72ffc72c9103",
+  "model": "sonnet",
+  "runsPerCondition": 1,
+  "fixtures": [
+    "desktop-product-detail",
+    "desktop-landing-page",
+    "desktop-ai-chat"
+  ],
+  "results": [
+    {
+      "fixture": "desktop-product-detail",
+      "type": "baseline",
+      "runIndex": 0,
+      "similarity": 98,
+      "inputTokens": 27891,
+      "outputTokens": 18731,
+      "totalTokens": 46622,
+      "htmlBytes": 52425,
+      "htmlLines": 697,
+      "cssClassCount": 24,
+      "cssVariableCount": 16,
+      "timestamp": "2026-03-28T08:36:29.145Z",
+      "configVersion": "72ffc72c9103"
+    },
+    {
+      "fixture": "desktop-product-detail",
+      "type": "layout-direction-spacing",
+      "runIndex": 0,
+      "similarity": 89,
+      "inputTokens": 22931,
+      "outputTokens": 14988,
+      "totalTokens": 37919,
+      "htmlBytes": 38389,
+      "htmlLines": 422,
+      "cssClassCount": 21,
+      "cssVariableCount": 16,
+      "timestamp": "2026-03-28T09:29:40.879Z",
+      "configVersion": "72ffc72c9103"
+    },
+    {
+      "fixture": "desktop-product-detail",
+      "type": "component-references",
+      "runIndex": 0,
+      "similarity": 99,
+      "inputTokens": 25249,
+      "outputTokens": 20438,
+      "totalTokens": 45687,
+      "htmlBytes": 56185,
+      "htmlLines": 569,
+      "cssClassCount": 11,
+      "cssVariableCount": 16,
+      "timestamp": "2026-03-28T09:33:14.453Z",
+      "configVersion": "72ffc72c9103"
+    },
+    {
+      "fixture": "desktop-product-detail",
+      "type": "node-names-hierarchy",
+      "runIndex": 0,
+      "similarity": 98,
+      "inputTokens": 28144,
+      "outputTokens": 20168,
+      "totalTokens": 48312,
+      "htmlBytes": 56197,
+      "htmlLines": 748,
+      "cssClassCount": 31,
+      "cssVariableCount": 29,
+      "timestamp": "2026-03-28T09:36:49.240Z",
+      "configVersion": "72ffc72c9103"
+    },
+    {
+      "fixture": "desktop-product-detail",
+      "type": "variable-references",
+      "runIndex": 0,
+      "similarity": 98,
+      "inputTokens": 25437,
+      "outputTokens": 20460,
+      "totalTokens": 45897,
+      "htmlBytes": 56669,
+      "htmlLines": 723,
+      "cssClassCount": 27,
+      "cssVariableCount": 16,
+      "timestamp": "2026-03-28T09:40:24.579Z",
+      "configVersion": "72ffc72c9103"
+    },
+    {
+      "fixture": "desktop-product-detail",
+      "type": "style-references",
+      "runIndex": 0,
+      "similarity": 98,
+      "inputTokens": 27316,
+      "outputTokens": 19956,
+      "totalTokens": 47272,
+      "htmlBytes": 55022,
+      "htmlLines": 690,
+      "cssClassCount": 22,
+      "cssVariableCount": 16,
+      "timestamp": "2026-03-28T09:43:53.163Z",
+      "configVersion": "72ffc72c9103"
+    },
+    {
+      "fixture": "desktop-landing-page",
+      "type": "baseline",
+      "runIndex": 0,
+      "similarity": 99,
+      "inputTokens": 22076,
+      "outputTokens": 14403,
+      "totalTokens": 36479,
+      "htmlBytes": 38420,
+      "htmlLines": 454,
+      "cssClassCount": 18,
+      "cssVariableCount": 14,
+      "timestamp": "2026-03-28T08:39:01.879Z",
+      "configVersion": "72ffc72c9103"
+    },
+    {
+      "fixture": "desktop-landing-page",
+      "type": "layout-direction-spacing",
+      "runIndex": 0,
+      "similarity": 93,
+      "inputTokens": 18130,
+      "outputTokens": 12828,
+      "totalTokens": 30958,
+      "htmlBytes": 32759,
+      "htmlLines": 455,
+      "cssClassCount": 20,
+      "cssVariableCount": 14,
+      "timestamp": "2026-03-28T09:46:14.669Z",
+      "configVersion": "72ffc72c9103"
+    },
+    {
+      "fixture": "desktop-landing-page",
+      "type": "component-references",
+      "runIndex": 0,
+      "similarity": 99,
+      "inputTokens": 19549,
+      "outputTokens": 15997,
+      "totalTokens": 35546,
+      "htmlBytes": 43376,
+      "htmlLines": 405,
+      "cssClassCount": 9,
+      "cssVariableCount": 22,
+      "timestamp": "2026-03-28T09:49:03.549Z",
+      "configVersion": "72ffc72c9103"
+    },
+    {
+      "fixture": "desktop-landing-page",
+      "type": "node-names-hierarchy",
+      "runIndex": 0,
+      "similarity": 98,
+      "inputTokens": 22055,
+      "outputTokens": 14606,
+      "totalTokens": 36661,
+      "htmlBytes": 39215,
+      "htmlLines": 434,
+      "cssClassCount": 16,
+      "cssVariableCount": 14,
+      "timestamp": "2026-03-28T09:51:36.255Z",
+      "configVersion": "72ffc72c9103"
+    },
+    {
+      "fixture": "desktop-landing-page",
+      "type": "variable-references",
+      "runIndex": 0,
+      "similarity": 98,
+      "inputTokens": 20132,
+      "outputTokens": 15206,
+      "totalTokens": 35338,
+      "htmlBytes": 40458,
+      "htmlLines": 478,
+      "cssClassCount": 20,
+      "cssVariableCount": 14,
+      "timestamp": "2026-03-28T09:54:17.306Z",
+      "configVersion": "72ffc72c9103"
+    },
+    {
+      "fixture": "desktop-landing-page",
+      "type": "style-references",
+      "runIndex": 0,
+      "similarity": 99,
+      "inputTokens": 21594,
+      "outputTokens": 15201,
+      "totalTokens": 36795,
+      "htmlBytes": 39677,
+      "htmlLines": 403,
+      "cssClassCount": 11,
+      "cssVariableCount": 14,
+      "timestamp": "2026-03-28T09:56:53.839Z",
+      "configVersion": "72ffc72c9103"
+    },
+    {
+      "fixture": "desktop-ai-chat",
+      "type": "baseline",
+      "runIndex": 0,
+      "similarity": 91,
+      "inputTokens": 23305,
+      "outputTokens": 16445,
+      "totalTokens": 39750,
+      "htmlBytes": 43346,
+      "htmlLines": 616,
+      "cssClassCount": 23,
+      "cssVariableCount": 21,
+      "timestamp": "2026-03-28T08:29:54.552Z",
+      "configVersion": "72ffc72c9103"
+    },
+    {
+      "fixture": "desktop-ai-chat",
+      "type": "layout-direction-spacing",
+      "runIndex": 0,
+      "similarity": 96,
+      "inputTokens": 19371,
+      "outputTokens": 13950,
+      "totalTokens": 33321,
+      "htmlBytes": 34183,
+      "htmlLines": 393,
+      "cssClassCount": 14,
+      "cssVariableCount": 17,
+      "timestamp": "2026-03-28T09:59:44.838Z",
+      "configVersion": "72ffc72c9103"
+    },
+    {
+      "fixture": "desktop-ai-chat",
+      "type": "component-references",
+      "runIndex": 0,
+      "similarity": 97,
+      "inputTokens": 21544,
+      "outputTokens": 16839,
+      "totalTokens": 38383,
+      "htmlBytes": 43841,
+      "htmlLines": 389,
+      "cssClassCount": 8,
+      "cssVariableCount": 16,
+      "timestamp": "2026-03-28T10:02:56.322Z",
+      "configVersion": "72ffc72c9103"
+    },
+    {
+      "fixture": "desktop-ai-chat",
+      "type": "node-names-hierarchy",
+      "runIndex": 0,
+      "similarity": 97,
+      "inputTokens": 23052,
+      "outputTokens": 17346,
+      "totalTokens": 40398,
+      "htmlBytes": 45309,
+      "htmlLines": 457,
+      "cssClassCount": 8,
+      "cssVariableCount": 15,
+      "timestamp": "2026-03-28T10:06:13.301Z",
+      "configVersion": "72ffc72c9103"
+    },
+    {
+      "fixture": "desktop-ai-chat",
+      "type": "variable-references",
+      "runIndex": 0,
+      "similarity": 96,
+      "inputTokens": 21407,
+      "outputTokens": 17137,
+      "totalTokens": 38544,
+      "htmlBytes": 44512,
+      "htmlLines": 557,
+      "cssClassCount": 19,
+      "cssVariableCount": 16,
+      "timestamp": "2026-03-28T10:09:30.267Z",
+      "configVersion": "72ffc72c9103"
+    },
+    {
+      "fixture": "desktop-ai-chat",
+      "type": "style-references",
+      "runIndex": 0,
+      "similarity": 96,
+      "inputTokens": 22863,
+      "outputTokens": 18547,
+      "totalTokens": 41410,
+      "htmlBytes": 47914,
+      "htmlLines": 580,
+      "cssClassCount": 18,
+      "cssVariableCount": 16,
+      "timestamp": "2026-03-28T10:12:56.511Z",
+      "configVersion": "72ffc72c9103"
+    }
+  ],
+  "rankings": [
+    {
+      "type": "layout-direction-spacing",
+      "avgDeltaV": 3.3333333333333335,
+      "avgDeltaOutputTokens": -2604.3333333333335,
+      "avgDeltaHtmlBytes": -9620,
+      "avgDeltaCssClasses": -3.3333333333333335,
+      "avgDeltaCssVariables": -1.3333333333333333,
+      "fixtureCount": 3,
+      "perFixture": {
+        "desktop-product-detail": {
+          "deltaV": 9,
+          "deltaOutputTokens": -3743,
+          "deltaHtmlBytes": -14036,
+          "deltaCssClasses": -3,
+          "deltaCssVariables": 0
+        },
+        "desktop-landing-page": {
+          "deltaV": 6,
+          "deltaOutputTokens": -1575,
+          "deltaHtmlBytes": -5661,
+          "deltaCssClasses": 2,
+          "deltaCssVariables": 0
+        },
+        "desktop-ai-chat": {
+          "deltaV": -5,
+          "deltaOutputTokens": -2495,
+          "deltaHtmlBytes": -9163,
+          "deltaCssClasses": -9,
+          "deltaCssVariables": -4
+        }
+      }
+    },
+    {
+      "type": "variable-references",
+      "avgDeltaV": -1.3333333333333333,
+      "avgDeltaOutputTokens": 1074.6666666666667,
+      "avgDeltaHtmlBytes": 2482.6666666666665,
+      "avgDeltaCssClasses": 0.3333333333333333,
+      "avgDeltaCssVariables": -1.6666666666666667,
+      "fixtureCount": 3,
+      "perFixture": {
+        "desktop-product-detail": {
+          "deltaV": 0,
+          "deltaOutputTokens": 1729,
+          "deltaHtmlBytes": 4244,
+          "deltaCssClasses": 3,
+          "deltaCssVariables": 0
+        },
+        "desktop-landing-page": {
+          "deltaV": 1,
+          "deltaOutputTokens": 803,
+          "deltaHtmlBytes": 2038,
+          "deltaCssClasses": 2,
+          "deltaCssVariables": 0
+        },
+        "desktop-ai-chat": {
+          "deltaV": -5,
+          "deltaOutputTokens": 692,
+          "deltaHtmlBytes": 1166,
+          "deltaCssClasses": -4,
+          "deltaCssVariables": -5
+        }
+      }
+    },
+    {
+      "type": "style-references",
+      "avgDeltaV": -1.6666666666666667,
+      "avgDeltaOutputTokens": 1375,
+      "avgDeltaHtmlBytes": 2807.3333333333335,
+      "avgDeltaCssClasses": -4.666666666666667,
+      "avgDeltaCssVariables": -1.6666666666666667,
+      "fixtureCount": 3,
+      "perFixture": {
+        "desktop-product-detail": {
+          "deltaV": 0,
+          "deltaOutputTokens": 1225,
+          "deltaHtmlBytes": 2597,
+          "deltaCssClasses": -2,
+          "deltaCssVariables": 0
+        },
+        "desktop-landing-page": {
+          "deltaV": 0,
+          "deltaOutputTokens": 798,
+          "deltaHtmlBytes": 1257,
+          "deltaCssClasses": -7,
+          "deltaCssVariables": 0
+        },
+        "desktop-ai-chat": {
+          "deltaV": -5,
+          "deltaOutputTokens": 2102,
+          "deltaHtmlBytes": 4568,
+          "deltaCssClasses": -5,
+          "deltaCssVariables": -5
+        }
+      }
+    },
+    {
+      "type": "node-names-hierarchy",
+      "avgDeltaV": -1.6666666666666667,
+      "avgDeltaOutputTokens": 847,
+      "avgDeltaHtmlBytes": 2176.6666666666665,
+      "avgDeltaCssClasses": -3.3333333333333335,
+      "avgDeltaCssVariables": 2.3333333333333335,
+      "fixtureCount": 3,
+      "perFixture": {
+        "desktop-product-detail": {
+          "deltaV": 0,
+          "deltaOutputTokens": 1437,
+          "deltaHtmlBytes": 3772,
+          "deltaCssClasses": 7,
+          "deltaCssVariables": 13
+        },
+        "desktop-landing-page": {
+          "deltaV": 1,
+          "deltaOutputTokens": 203,
+          "deltaHtmlBytes": 795,
+          "deltaCssClasses": -2,
+          "deltaCssVariables": 0
+        },
+        "desktop-ai-chat": {
+          "deltaV": -6,
+          "deltaOutputTokens": 901,
+          "deltaHtmlBytes": 1963,
+          "deltaCssClasses": -15,
+          "deltaCssVariables": -6
+        }
+      }
+    },
+    {
+      "type": "component-references",
+      "avgDeltaV": -2.3333333333333335,
+      "avgDeltaOutputTokens": 1231.6666666666667,
+      "avgDeltaHtmlBytes": 3070.3333333333335,
+      "avgDeltaCssClasses": -12.333333333333334,
+      "avgDeltaCssVariables": 1,
+      "fixtureCount": 3,
+      "perFixture": {
+        "desktop-product-detail": {
+          "deltaV": -1,
+          "deltaOutputTokens": 1707,
+          "deltaHtmlBytes": 3760,
+          "deltaCssClasses": -13,
+          "deltaCssVariables": 0
+        },
+        "desktop-landing-page": {
+          "deltaV": 0,
+          "deltaOutputTokens": 1594,
+          "deltaHtmlBytes": 4956,
+          "deltaCssClasses": -9,
+          "deltaCssVariables": 8
+        },
+        "desktop-ai-chat": {
+          "deltaV": -6,
+          "deltaOutputTokens": 394,
+          "deltaHtmlBytes": 495,
+          "deltaCssClasses": -15,
+          "deltaCssVariables": -5
+        }
+      }
+    }
+  ]
+}

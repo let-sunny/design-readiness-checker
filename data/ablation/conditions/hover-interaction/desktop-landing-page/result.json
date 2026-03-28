@@ -1,0 +1,27 @@
+{
+  "fixture": "desktop-landing-page",
+  "type": "hover-interaction",
+  "hoverBlocksInDesignTree": 4,
+  "withHoverData": {
+    "hoverCssRules": 2,
+    "hoverCssContent": [
+      "\n        \n        .button.neutral:hover {\n            background: var(--color-CDCDCD);\n        }",
+      "\n        \n        .button.primary:hover {\n            background: var(--color-1E1E1E);\n        }"
+    ],
+    "tokens": {
+      "input": 22076,
+      "output": 14439
+    },
+    "htmlBytes": 38504
+  },
+  "withoutHoverData": {
+    "hoverCssRules": 0,
+    "hoverCssContent": [],
+    "tokens": {
+      "input": 21966,
+      "output": 14352
+    },
+    "htmlBytes": 38267
+  },
+  "timestamp": "2026-03-28T08:52:57.169Z"
+}

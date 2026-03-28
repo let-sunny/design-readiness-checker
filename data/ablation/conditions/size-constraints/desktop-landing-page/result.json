@@ -1,0 +1,18 @@
+{
+  "fixture": "desktop-landing-page",
+  "type": "size-constraints",
+  "baseWidth": 1200,
+  "expandedWidth": 1920,
+  "baselineSimilarity": 99,
+  "strippedSimilarity": 91,
+  "deltaV": 8,
+  "baselineTokens": {
+    "input": 22076,
+    "output": 14403
+  },
+  "strippedTokens": {
+    "input": 21557,
+    "output": 14777
+  },
+  "timestamp": "2026-03-28T08:46:57.957Z"
+}

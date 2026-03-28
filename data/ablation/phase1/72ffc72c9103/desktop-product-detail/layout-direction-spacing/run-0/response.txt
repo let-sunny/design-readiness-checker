@@ -1,0 +1,430 @@
+```html
+// filename: index.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Platform Desktop</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        :root {
+            --color-FFFFFF: #FFFFFF;
+            --color-D9D9D9: #D9D9D9;
+            --color-1E1E1E: #1E1E1E;
+            --color-F5F5F5: #F5F5F5;
+            --color-E3E3E3: #E3E3E3;
+            --color-767676: #767676;
+            --color-CDCDCD: #CDCDCD;
+            --color-2C2C2C: #2C2C2C;
+            --color-FFF1C2: #FFF1C2;
+            --color-CFF7D3: #CFF7D3;
+            --color-02542D: #02542D;
+            --color-757575: #757575;
+            --color-FAE1FA: #FAE1FA;
+            --color-5A5A5A: #5A5A5A;
+            --color-EBFFEE: #EBFFEE;
+            --color-B3B3B3: #B3B3B3;
+        }
+        
+        .text-single-line-body-base { font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 16px; }
+        .text-heading { font-family: "Inter"; font-weight: 600; font-size: 24px; line-height: 28.8px; letter-spacing: -0.48px; }
+        .text-body-base { font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; }
+        .text-body-strong { font-family: "Inter"; font-weight: 600; font-size: 16px; line-height: 22.4px; }
+        .text-subheading { font-family: "Inter"; font-weight: 400; font-size: 20px; line-height: 24px; }
+        
+        .header { width: 100%; background: var(--color-FFFFFF); border-bottom: 1px solid var(--color-D9D9D9); overflow: hidden; min-width: 1200px; height: 99px; display: flex; align-items: center; padding: 0 64px; gap: 32px; }
+        
+        .navigation-pill { border-radius: 8px; padding: 8px; display: flex; align-items: center; justify-content: center; }
+        .navigation-pill.active { background: var(--color-F5F5F5); }
+        
+        .button { border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; padding: 8px 16px; border: 1px solid; cursor: pointer; }
+        .button.neutral { background: var(--color-E3E3E3); border-color: var(--color-767676); }
+        .button.neutral:hover { background: var(--color-CDCDCD); }
+        .button.primary { background: var(--color-2C2C2C); border-color: var(--color-2C2C2C); }
+        .button.primary:hover { background: var(--color-1E1E1E); }
+        .button.primary .text { color: var(--color-F5F5F5); }
+        
+        .icon-button { border-radius: 32px; overflow: hidden; display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border: 1px solid; cursor: pointer; }
+        .icon-button.primary { background: var(--color-2C2C2C); border-color: var(--color-2C2C2C); }
+        .icon-button.primary:hover { background: var(--color-1E1E1E); }
+        
+        .tag { border-radius: 8px; padding: 8px; display: flex; align-items: center; justify-content: center; }
+        .tag.positive { background: var(--color-CFF7D3); }
+        
+        .select-field { position: relative; width: 100%; background: var(--color-FFFFFF); border: 1px solid var(--color-D9D9D9); border-radius: 8px; min-width: 120px; height: 40px; display: flex; align-items: center; padding: 0 16px; gap: 8px; }
+        
+        .input-field { width: 100%; background: var(--color-FFFFFF); border: 1px solid var(--color-D9D9D9); border-radius: 8px; overflow: hidden; min-width: 120px; height: 40px; display: flex; align-items: center; padding: 0 16px; }
+        
+        .accordion-item { width: 100%; background: var(--color-FFFFFF); border: 1px solid var(--color-D9D9D9); border-radius: 8px; padding: 16px; }
+        
+        .review-card { flex-grow: 1; background: var(--color-FAE1FA); border: 1px solid var(--color-D9D9D9); border-radius: 8px; min-width: 240px; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+        
+        .text-link-list { display: flex; flex-direction: column; gap: 16px; }
+        .text-link-list-item { display: flex; align-items: center; }
+    </style>
+</head>
+<body>
+    <div style="background: var(--color-FFFFFF); overflow: hidden; width: 1200px; height: 2105px;">
+        <!-- Header -->
+        <div class="header">
+            <div style="width: 40px; height: 35px;">
+                <div style="width: 40px; height: 35px;">
+                    <svg width="23" height="35" viewBox="0 0 54 77" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M26.8333 3.5H15.1667C12.0725 3.5 9.10501 4.72916 6.91709 6.91709C4.72916 9.10501 3.5 12.0725 3.5 15.1667C3.5 18.2609 4.72916 21.2283 6.91709 23.4162C9.10501 25.6042 12.0725 26.8333 15.1667 26.8333M26.8333 3.5V26.8333M26.8333 3.5H38.5C40.0321 3.5 41.5492 3.80177 42.9646 4.38807C44.3801 4.97438 45.6662 5.83374 46.7496 6.91709C47.8329 8.00044 48.6923 9.28656 49.2786 10.702C49.8649 12.1175 50.1667 13.6346 50.1667 15.1667C50.1667 16.6988 49.8649 18.2158 49.2786 19.6313C48.6923 21.0468 47.8329 22.3329 46.7496 23.4162C45.6662 24.4996 44.3801 25.359 42.9646 25.9453C41.5492 26.5316 40.0321 26.8333 38.5 26.8333M26.8333 26.8333H15.1667M26.8333 26.8333H38.5M26.8333 26.8333V50.1667M15.1667 26.8333C12.0725 26.8333 9.10501 28.0625 6.91709 30.2504C4.72916 32.4383 3.5 35.4058 3.5 38.5C3.5 41.5942 4.72916 44.5617 6.91709 46.7496C9.10501 48.9375 12.0725 50.1667 15.1667 50.1667M38.5 26.8333C36.9679 26.8333 35.4508 27.1351 34.0354 27.7214C32.6199 28.3077 31.3338 29.1671 30.2504 30.2504C29.1671 31.3338 28.3077 32.6199 27.7214 34.0354C27.1351 35.4508 26.8333 36.9679 26.8333 38.5C26.8333 40.0321 27.1351 41.5492 27.7214 42.9646C28.3077 44.3801 29.1671 45.6662 30.2504 46.7496C31.3338 47.8329 32.6199 48.6923 34.0354 49.2786C35.4508 49.8649 36.9679 50.1667 38.5 50.1667C40.0321 50.1667 41.5492 49.8649 42.9646 49.2786C44.3801 48.6923 45.6662 47.8329 46.7496 46.7496C47.8329 45.6662 48.6923 44.3801 49.2786 42.9646C49.8649 41.5492 50.1667 40.0321 50.1667 38.5C50.1667 36.9679 49.8649 35.4508 49.2786 34.0354C48.6923 32.6199 47.8329 31.3338 46.7496 30.2504C45.6662 29.1671 44.3801 28.3077 42.9646 27.7214C41.5492 27.1351 40.0321 26.8333 38.5 26.8333ZM15.1667 50.1667C12.0725 50.1667 9.10501 51.3958 6.91709 53.5837C4.72916 55.7717 3.5 58.7391 3.5 61.8333C3.5 64.9275 4.72916 67.895 6.91709 70.0829C9.10501 72.2708 12.0725 73.5 15.1667 73.5C18.2609 73.5 21.2283 72.2708 23.4162 70.0829C25.6042 67.895 26.8333 64.9275 26.8333 61.8333V50.1667M15.1667 50.1667H26.8333" stroke="#1E1E1E" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+            </div>
+            
+            <div style="flex-grow: 1; height: 32px; display: flex; align-items: center; gap: 16px;">
+                <div class="navigation-pill active">
+                    <span class="text-single-line-body-base" style="color: var(--color-1E1E1E);">Products</span>
+                </div>
+                <div class="navigation-pill">
+                    <span class="text-single-line-body-base" style="color: var(--color-1E1E1E);">Solutions</span>
+                </div>
+                <div class="navigation-pill">
+                    <span class="text-single-line-body-base" style="color: var(--color-1E1E1E);">Community</span>
+                </div>
+                <div class="navigation-pill">
+                    <span class="text-single-line-body-base" style="color: var(--color-1E1E1E);">Resources</span>
+                </div>
+                <div class="navigation-pill">
+                    <span class="text-single-line-body-base" style="color: var(--color-1E1E1E);">Pricing</span>
+                </div>
+                <div class="navigation-pill">
+                    <span class="text-single-line-body-base" style="color: var(--color-1E1E1E);">Contact</span>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 12px;">
+                <div class="button neutral">
+                    <span class="text-single-line-body-base" style="color: var(--color-1E1E1E);">Sign in</span>
+                </div>
+                <div class="button primary">
+                    <span class="text-single-line-body-base text" style="color: var(--color-F5F5F5);">Register</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Page Product -->
+        <div style="width: 100%; background: var(--color-FFF1C2); min-width: 1200px; max-width: 1920px; height: 863px; display: flex; align-items: center; justify-content: center; position: relative;">
+            <div style="position: relative; width: 1072px; height: 735px; display: flex;">
+                <div style="flex-grow: 1; height: 100%; background: var(--color-E3E3E3); overflow: hidden;">
+                    <img src="images/image@2x.png" style="width: 100%; height: 100%; object-fit: contain;" />
+                </div>
+                
+                <div style="flex-grow: 1; display: flex; flex-direction: column; padding: 64px; gap: 32px;">
+                    <div style="width: 100%; display: flex; flex-direction: column; gap: 16px;">
+                        <div style="width: 100%; display: flex; flex-direction: column; gap: 16px;">
+                            <div style="width: 100%;">
+                                <h1 class="text-heading" style="color: var(--color-1E1E1E);">Text Heading</h1>
+                            </div>
+                            <div style="width: 100%; display: flex; flex-direction: column; gap: 16px;">
+                                <div class="tag positive">
+                                    <span class="text-single-line-body-base" style="color: var(--color-02542D);">Tag</span>
+                                </div>
+                                <div style="display: flex; align-items: baseline; gap: 4px;">
+                                    <span style="font-family: 'Inter'; font-weight: 700; font-size: 24px; line-height: 24px; letter-spacing: -0.48px; color: var(--color-1E1E1E);">$</span>
+                                    <span style="font-family: 'Inter'; font-weight: 700; font-size: 48px; line-height: 48px; letter-spacing: -0.96px; color: var(--color-1E1E1E);">50</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="width: 100%;">
+                            <p class="text-body-base" style="color: var(--color-757575);">Text</p>
+                        </div>
+                    </div>
+                    
+                    <div style="width: 100%; display: flex; gap: 24px;">
+                        <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 8px;">
+                            <label class="text-body-base" style="color: var(--color-1E1E1E);">Label</label>
+                            <div class="select-field">
+                                <span class="text-single-line-body-base" style="flex-grow: 1; color: var(--color-1E1E1E);">Value</span>
+                                <svg width="8" height="4" viewBox="0 0 20 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M1.66802 1.66637L10 9.99835L18.332 1.66637" stroke="#1E1E1E" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 8px;">
+                            <label class="text-body-base" style="color: var(--color-1E1E1E);">Label</label>
+                            <div class="select-field">
+                                <span class="text-single-line-body-base" style="flex-grow: 1; color: var(--color-1E1E1E);">Value</span>
+                                <svg width="8" height="4" viewBox="0 0 20 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M1.66802 1.66637L10 9.99835L18.332 1.66637" stroke="#1E1E1E" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="button primary" style="width: 100%; height: 40px;">
+                        <span class="text-single-line-body-base" style="color: var(--color-F5F5F5);">Button</span>
+                    </div>
+                    
+                    <div style="width: 100%; max-width: 640px; display: flex; flex-direction: column; gap: 16px;">
+                        <div class="accordion-item">
+                            <div style="width: 100%; display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                                <h3 class="text-body-strong" style="color: var(--color-1E1E1E);">Title</h3>
+                                <svg width="10" height="5" viewBox="0 0 24 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M22 12L12 2L2 12" stroke="#1E1E1E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </div>
+                            <div style="width: 100%;">
+                                <p class="text-body-base" style="color: var(--color-1E1E1E);">Answer the frequently asked question in a simple sentence, a longish paragraph, or even in a list.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="icon-button primary" style="position: absolute; top: 10px; left: 10px;">
+                <svg width="17" height="15" viewBox="0 0 39 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M34.1694 4.33914C33.3077 3.47699 32.2845 2.79308 31.1584 2.32646C30.0322 1.85985 28.8252 1.61968 27.6062 1.61968C26.3873 1.61968 25.1802 1.85985 24.0541 2.32646C22.928 2.79308 21.9048 3.47699 21.0431 4.33914L19.2546 6.12756L17.4662 4.33914C15.7255 2.59848 13.3647 1.62058 10.903 1.62058C8.44135 1.62058 6.08051 2.59848 4.33984 4.33914C2.59918 6.0798 1.62129 8.44065 1.62129 10.9023C1.62129 13.364 2.59918 15.7248 4.33984 17.4655L19.2546 32.3803L34.1694 17.4655C35.0316 16.6038 35.7155 15.5806 36.1821 14.4545C36.6487 13.3283 36.8889 12.1213 36.8889 10.9023C36.8889 9.68334 36.6487 8.47631 36.1821 7.35018C35.7155 6.22405 35.0316 5.20088 34.1694 4.33914Z" stroke="#F5F5F5" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+        </div>
+        
+        <!-- Card Grid Reviews -->
+        <div style="width: 100%; background: rgba(0, 0, 0, 0.5); min-width: 1200px; max-width: 1920px; height: 422px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 32px; padding: 64px;">
+            <h2 class="text-heading" style="color: var(--color-1E1E1E);">Latest reviews</h2>
+            
+            <div style="width: 1072px; display: flex; gap: 24px;">
+                <div class="review-card">
+                    <div style="display: flex; gap: 4px;">
+                        <svg width="17" height="16" viewBox="0 0 38 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M18.8236 2.01681L24.0168 12.5378L35.6303 14.2353L27.2269 22.4202L29.2101 33.9832L18.8236 28.521L8.43699 33.9832L10.4202 22.4202L2.01681 14.2353L13.6303 12.5378L18.8236 2.01681Z" stroke="#2C2C2C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <svg width="17" height="16" viewBox="0 0 38 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M18.8236 2.01681L24.0168 12.5378L35.6303 14.2353L27.2269 22.4202L29.2101 33.9832L18.8236 28.521L8.43699 33.9832L10.4202 22.4202L2.01681 14.2353L13.6303 12.5378L18.8236 2.01681Z" stroke="#2C2C2C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <svg width="17" height="16" viewBox="0 0 38 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M18.8236 2.01681L24.0168 12.5378L35.6303 14.2353L27.2269 22.4202L29.2101 33.9832L18.8236 28.521L8.43699 33.9832L10.4202 22.4202L2.01681 14.2353L13.6303 12.5378L18.8236 2.01681Z" stroke="#2C2C2C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <svg width="17" height="16" viewBox="0 0 38 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M18.8236 2.01681L24.0168 12.5378L35.6303 14.2353L27.2269 22.4202L29.2101 33.9832L18.8236 28.521L8.43699 33.9832L10.4202 22.4202L2.01681 14.2353L13.6303 12.5378L18.8236 2.01681Z" stroke="#2C2C2C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <svg width="17" height="16" viewBox="0 0 38 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M18.8236 2.01681L24.0168 12.5378L35.6303 14.2353L27.2269 22.4202L29.2101 33.9832L18.8236 28.521L8.43699 33.9832L10.4202 22.4202L2.01681 14.2353L13.6303 12.5378L18.8236 2.01681Z" stroke="#2C2C2C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div style="width: 100%; display: flex; flex-direction: column; gap: 8px;">
+                        <h3 class="text-heading" style="color: var(--color-1E1E1E);">Review title</h3>
+                        <p class="text-body-base" style="color: var(--color-1E1E1E);">Review body</p>
+                    </div>
+                    <div style="width: 100%; display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 40px; height: 40px; border-radius: 9999px; overflow: hidden;">
+                            <img src="images/shape@2x.png" style="width: 100%; height: 100%; object-fit: cover;" />
+                        </div>
+                        <div style="flex-grow: 1; display: flex; flex-direction: column;">
+                            <span class="text-body-strong" style="color: var(--color-757575);">Reviewer name</span>
+                            <span class="text-body-base" style="color: var(--color-B3B3B3);">Date</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="review-card">
+                    <div style="display: flex; gap: 4px;">
+                        <svg width="17" height="16" viewBox="0 0 38 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M18.8236 2.01681L24.0168 12.5378L35.6303 14.2353L27.2269 22.4202L29.2101 33.9832L18.8236 28.521L8.43699 33.9832L10.4202 22.4202L2.01681 14.2353L13.6303 12.5378L18.8236 2.01681Z" stroke="#2C2C2C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <svg width="17" height="16" viewBox="0 0 38 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M18.8236 2.01681L24.0168 12.5378L35.6303 14.2353L27.2269 22.4202L29.2101 33.9832L18.8236 28.521L8.43699 33.9832L10.4202 22.4202L2.01681 14.2353L13.6303 12.5378L18.8236 2.01681Z" stroke="#2C2C2C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <svg width="17" height="16" viewBox="0 0 38 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M18.8236 2.01681L24.0168 12.5378L35.6303 14.2353L27.2269 22.4202L29.2101 33.9832L18.8236 28.521L8.43699 33.9832L10.4202 22.4202L2.01681 14.2353L13.6303 12.5378L18.8236 2.01681Z" stroke="#2C2C2C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <svg width="17" height="16" viewBox="0 0 38 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M18.8236 2.01681L24.0168 12.5378L35.6303 14.2353L27.2269 22.4202L29.2101 33.9832L18.8236 28.521L8.43699 33.9832L10.4202 22.4202L2.01681 14.2353L13.6303 12.5378L18.8236 2.01681Z" stroke="#2C2C2C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <svg width="17" height="16" viewBox="0 0 38 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M18.8236 2.01681L24.0168 12.5378L35.6303 14.2353L27.2269 22.4202L29.2101 33.9832L18.8236 28.521L8.43699 33.9832L10.4202 22.4202L2.01681 14.2353L13.6303 12.5378L18.8236 2.01681Z" stroke="#2C2C2C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div style="width: 100%; display: flex; flex-direction: column; gap: 8px;">
+                        <h3 class="text-heading" style="color: var(--color-1E1E1E);">Review title</h3>
+                        <p class="text-body-base" style="color: var(--color-1E1E1E);">Review body</p>
+                    </div>
+                    <div style="width: 100%; display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 40px; height: 40px; border-radius: 9999px; overflow: hidden;">
+                            <img src="images/shape-2@2x.png" style="width: 100%; height: 100%; object-fit: cover;" />
+                        </div>
+                        <div style="flex-grow: 1; display: flex; flex-direction: column;">
+                            <span class="text-body-strong" style="color: var(--color-757575);">Reviewer name</span>
+                            <span class="text-body-base" style="color: var(--color-B3B3B3);">Date</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="review-card">
+                    <div style="display: flex; gap: 4px;">
+                        <svg width="17" height="16" viewBox="0 0 38 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M18.8236 2.01681L24.0168 12.5378L35.6303 14.2353L27.2269 22.4202L29.2101 33.9832L18.8236 28.521L8.43699 33.9832L10.4202 22.4202L2.01681 14.2353L13.6303 12.5378L18.8236 2.01681Z" stroke="#2C2C2C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <svg width="17" height="16" viewBox="0 0 38 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M18.8236 2.01681L24.0168 12.5378L35.6303 14.2353L27.2269 22.4202L29.2101 33.9832L18.8236 28.521L8.43699 33.9832L10.4202 22.4202L2.01681 14.2353L13.6303 12.5378L18.8236 2.01681Z" stroke="#2C2C2C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <svg width="17" height="16" viewBox="0 0 38 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M18.8236 2.01681L24.0168 12.5378L35.6303 14.2353L27.2269 22.4202L29.2101 33.9832L18.8236 28.521L8.43699 33.9832L10.4202 22.4202L2.01681 14.2353L13.6303 12.5378L18.8236 2.01681Z" stroke="#2C2C2C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <svg width="17" height="16" viewBox="0 0 38 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M18.8236 2.01681L24.0168 12.5378L35.6303 14.2353L27.2269 22.4202L29.2101 33.9832L18.8236 28.521L8.43699 33.9832L10.4202 22.4202L2.01681 14.2353L13.6303 12.5378L18.8236 2.01681Z" stroke="#2C2C2C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <svg width="17" height="16" viewBox="0 0 38 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M18.8236 2.01681L24.0168 12.5378L35.6303 14.2353L27.2269 22.4202L29.2101 33.9832L18.8236 28.521L8.43699 33.9832L10.4202 22.4202L2.01681 14.2353L13.6303 12.5378L18.8236 2.01681Z" stroke="#2C2C2C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div style="width: 100%; display: flex; flex-direction: column; gap: 8px;">
+                        <h3 class="text-heading" style="color: var(--color-1E1E1E);">Review title</h3>
+                        <p class="text-body-base" style="color: var(--color-1E1E1E);">Review body</p>
+                    </div>
+                    <div style="width: 100%; display: flex; align-items: center; gap: 12px;">
+                        <div style="width: 40px; height: 40px; border-radius: 9999px; overflow: hidden;">
+                            <img src="images/shape-3@2x.png" style="width: 100%; height: 100%; object-fit: cover;" />
+                        </div>
+                        <div style="flex-grow: 1; display: flex; flex-direction: column;">
+                            <span class="text-body-strong" style="color: var(--color-757575);">Reviewer name</span>
+                            <span class="text-body-base" style="color: var(--color-B3B3B3);">Date</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Page Newsletter -->
+        <div style="width: 100%; background: var(--color-D9D9D9); min-width: 1200px; max-width: 1920px; height: 253px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 32px;">
+            <div style="text-align: center;">
+                <h2 class="text-heading" style="color: var(--color-1E1E1E); margin-bottom: 8px;">Follow the latest trends</h2>
+                <p class="text-subheading" style="color: var(--color-757575);">With our daily newsletter</p>
+            </div>
+            
+            <div style="display: flex; gap: 12px;">
+                <div class="input-field" style="width: 249px;">
+                    <span class="text-single-line-body-base" style="color: var(--color-1E1E1E);">you@example.com</span>
+                </div>
+                <div class="button primary" style="height: 40px;">
+                    <span class="text-single-line-body-base" style="color: var(--color-F5F5F5);">Submit</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div style="width: 100%; background: var(--color-5A5A5A); border-top: 1px solid var(--color-D9D9D9); overflow: hidden; min-width: 1200px; max-width: 1920px; height: 468px; display: flex; flex-direction: column; padding: 64px;">
+            <div style="display: flex; gap: 64px; margin-bottom: 32px;">
+                <div style="background: var(--color-CFF7D3); min-width: 240px; padding: 24px; display: flex; flex-direction: column; gap: 24px;">
+                    <div style="width: 23px; height: 35px;">
+                        <svg width="23" height="35" viewBox="0 0 54 77" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M26.8333 3.5H15.1667C12.0725 3.5 9.10501 4.72916 6.91709 6.91709C4.72916 9.10501 3.5 12.0725 3.5 15.1667C3.5 18.2609 4.72916 21.2283 6.91709 23.4162C9.10501 25.6042 12.0725 26.8333 15.1667 26.8333M26.8333 3.5V26.8333M26.8333 3.5H38.5C40.0321 3.5 41.5492 3.80177 42.9646 4.38807C44.3801 4.97438 45.6662 5.83374 46.7496 6.91709C47.8329 8.00044 48.6923 9.28656 49.2786 10.702C49.8649 12.1175 50.1667 13.6346 50.1667 15.1667C50.1667 16.6988 49.8649 18.2158 49.2786 19.6313C48.6923 21.0468 47.8329 22.3329 46.7496 23.4162C45.6662 24.4996 44.3801 25.359 42.9646 25.9453C41.5492 26.5316 40.0321 26.8333 38.5 26.8333M26.8333 26.8333H15.1667M26.8333 26.8333H38.5M26.8333 26.8333V50.1667M15.1667 26.8333C12.0725 26.8333 9.10501 28.0625 6.91709 30.2504C4.72916 32.4383 3.5 35.4058 3.5 38.5C3.5 41.5942 4.72916 44.5617 6.91709 46.7496C9.10501 48.9375 12.0725 50.1667 15.1667 50.1667M38.5 26.8333C36.9679 26.8333 35.4508 27.1351 34.0354 27.7214C32.6199 28.3077 31.3338 29.1671 30.2504 30.2504C29.1671 31.3338 28.3077 32.6199 27.7214 34.0354C27.1351 35.4508 26.8333 36.9679 26.8333 38.5C26.8333 40.0321 27.1351 41.5492 27.7214 42.9646C28.3077 44.3801 29.1671 45.6662 30.2504 46.7496C31.3338 47.8329 32.6199 48.6923 34.0354 49.2786C35.4508 49.8649 36.9679 50.1667 38.5 50.1667C40.0321 50.1667 41.5492 49.8649 42.9646 49.2786C44.3801 48.6923 45.6662 47.8329 46.7496 46.7496C47.8329 45.6662 48.6923 44.3801 49.2786 42.9646C49.8649 41.5492 50.1667 40.0321 50.1667 38.5C50.1667 36.9679 49.8649 35.4508 49.2786 34.0354C48.6923 32.6199 47.8329 31.3338 46.7496 30.2504C45.6662 29.1671 44.3801 28.3077 42.9646 27.7214C41.5492 27.1351 40.0321 26.8333 38.5 26.8333ZM15.1667 50.1667C12.0725 50.1667 9.10501 51.3958 6.91709 53.5837C4.72916 55.7717 3.5 58.7391 3.5 61.8333C3.5 64.9275 4.72916 67.895 6.91709 70.0829C9.10501 72.2708 12.0725 73.5 15.1667 73.5C18.2609 73.5 21.2283 72.2708 23.4162 70.0829C25.6042 67.895 26.8333 64.9275 26.8333 61.8333V50.1667M15.1667 50.1667H26.8333" stroke="#1E1E1E" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <svg width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M28.5474 20.3271L46.4045 0H42.1745L26.6626 17.6461L14.2825 0H0L18.7252 26.6866L0 48H4.23007L20.6004 29.3611L33.6775 48H47.96M5.7568 3.1238H12.2554L42.1713 45.0297H35.6711" fill="#1E1E1E"/>
+                        </svg>
+                        <svg width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M24 4.326C30.408 4.326 31.168 4.35 33.7 4.466C40.204 4.762 43.242 7.848 43.538 14.304C43.654 16.834 43.676 17.594 43.676 24.002C43.676 30.412 43.652 31.17 43.538 33.7C43.24 40.15 40.21 43.242 33.7 43.538C31.168 43.654 30.412 43.678 24 43.678C17.592 43.678 16.832 43.654 14.302 43.538C7.782 43.24 4.76 40.14 4.464 33.698C4.348 31.168 4.324 30.41 4.324 24C4.324 17.592 4.35 16.834 4.464 14.302C4.762 7.848 7.792 4.76 14.302 4.464C16.834 4.35 17.592 4.326 24 4.326ZM24 0C17.482 0 16.666 0.028 14.106 0.144C5.39 0.544 0.546 5.38 0.146 14.104C0.028 16.666 0 17.482 0 24C0 30.518 0.028 31.336 0.144 33.896C0.544 42.612 5.38 47.456 14.104 47.856C16.666 47.972 17.482 48 24 48C30.518 48 31.336 47.972 33.896 47.856C42.604 47.456 47.46 42.62 47.854 33.896C47.972 31.336 48 30.518 48 24C48 17.482 47.972 16.666 47.856 14.106C47.464 5.398 42.622 0.546 33.898 0.146C31.336 0.028 30.518 0 24 0ZM24 11.676C17.194 11.676 11.676 17.194 11.676 24C11.676 30.806 17.194 36.326 24 36.326C30.806 36.326 36.324 30.808 36.324 24C36.324 17.194 30.806 11.676 24 11.676ZM24 32C19.582 32 16 28.42 16 24C16 19.582 19.582 16 24 16C28.418 16 32 19.582 32 24C32 28.42 28.418 32 24 32ZM36.812 8.31C35.22 8.31 33.93 9.6 33.93 11.19C33.93 12.78 35.22 14.07 36.812 14.07C38.402 14.07 39.69 12.78 39.69 11.19C39.69 9.6 38.402 8.31 36.812 8.31Z" fill="#1E1E1E"/>
+                        </svg>
+                        <svg width="24" height="18" viewBox="0 0 48 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M39.2295 0.368245C32.0216 -0.123748 15.9678 -0.121748 8.76988 0.368245C0.975987 0.900238 0.0579992 5.60817 0 18C0.0579992 30.3698 0.967987 35.0978 8.76988 35.6318C15.9698 36.1218 32.0216 36.1238 39.2295 35.6318C47.0234 35.0998 47.9414 30.3918 47.9993 18C47.9414 5.63017 47.0314 0.902238 39.2295 0.368245ZM17.9998 25.9999V10.0001L33.9995 17.986L17.9998 25.9999Z" fill="#1E1E1E"/>
+                        </svg>
+                        <svg width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M38 0H10C4.478 0 0 4.478 0 10V38C0 43.522 4.478 48 10 48H38C43.524 48 48 43.522 48 38V10C48 4.478 43.524 0 38 0ZM16 38H10V16H16V38ZM13 13.464C11.068 13.464 9.5 11.884 9.5 9.936C9.5 7.988 11.068 6.408 13 6.408C14.932 6.408 16.5 7.988 16.5 9.936C16.5 11.884 14.934 13.464 13 13.464ZM40 38H34V26.792C34 20.056 26 20.566 26 26.792V38H20V16H26V19.53C28.792 14.358 40 13.976 40 24.482V38Z" fill="#1E1E1E"/>
+                        </svg>
+                    </div>
+                </div>
+                
+                <div style="background: var(--color-EBFFEE); flex-grow: 1; display: flex; gap: 64px; padding: 24px;">
+                    <div class="text-link-list">
+                        <h3 class="text-body-strong" style="color: var(--color-1E1E1E);">Use cases</h3>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <div class="text-link-list-item">
+                                <span class="text-body-base" style="color: var(--color-1E1E1E);">UI design</span>
+                            </div>
+                            <div class="text-link-list-item">
+                                <span class="text-body-base" style="color: var(--color-1E1E1E);">UX design</span>
+                            </div>
+                            <div class="text-link-list-item">
+                                <span class="text-body-base" style="color: var(--color-1E1E1E);">Wireframing</span>
+                            </div>
+                            <div class="text-link-list-item">
+                                <span class="text-body-base" style="color: var(--color-1E1E1E);">Diagramming</span>
+                            </div>
+                            <div class="text-link-list-item">
+                                <span class="text-body-base" style="color: var(--color-1E1E1E);">Brainstorming</span>
+                            </div>
+                            <div class="text-link-list-item">
+                                <span class="text-body-base" style="color: var(--color-1E1E1E);">Online whiteboard</span>
+                            </div>
+                            <div class="text-link-list-item">
+                                <span class="text-body-base" style="color: var(--color-1E1E1E);">Team collaboration</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-link-list">
+                        <h3 class="text-body-strong" style="color: var(--color-1E1E1E);">Explore</h3>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <div class="text-link-list-item">
+                                <span class="text-body-base" style="color: var(--color-1E1E1E);">Design</span>
+                            </div>
+                            <div class="text-link-list-item">
+                                <span class="text-body-base" style="color: var(--color-1E1E1E);">Prototyping</span>
+                            </div>
+                            <div class="text-link-list-item">
+                                <span class="text-body-base" style="color: var(--color-1E1E1E);">Development features</span>
+                            </div>
+                            <div class="text-link-list-item">
+                                <span class="text-body-base" style="color: var(--color-1E1E1E);">Design systems</span>
+                            </div>
+                            <div class="text-link-list-item">
+                                <span class="text-body-base" style="color: var(--color-1E1E1E);">Collaboration features</span>
+                            </div>
+                            <div class="text-link-list-item">
+                                <span class="text-body-base" style="color: var(--color-1E1E1E);">Design process</span>
+                            </div>
+                            <div class="text-link-list-item">
+                                <span class="text-body-base" style="color: var(--color-1E1E1E);">FigJam</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-link-list">
+                        <h3 class="text-body-strong" style="color: var(--color-1E1E1E);">Resources</h3>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <div class="text-link-list-item">
+                                <span class="text-body-base" style="color: var(--color-1E1E1E);">Blog</span>
+                            </div>
+                            <div class="text-link-list-item">
+                                <span class="text-body-base" style="color: var(--color-1E1E1E);">Best practices</span>
+                            </div>
+                            <div class="text-link-list-item">
+                                <span class="text-body-base" style="color: var(--color-1E1E1E);">Colors</span>
+                            </div>
+                            <div class="text-link-list-item">
+                                <span class="text-body-base" style="color: var(--color-1E1E1E);">Color wheel</span>
+                            </div>
+                            <div class="text-link-list-item">
+                                <span class="text-body-base" style="color: var(--color-1E1E1E);">Support</span>
+                            </div>
+                            <div class="text-link-list-item">
+                                <span class="text-body-base" style="color: var(--color-1E1E1E);">Developers</span>
+                            </div>
+                            <div class="text-link-list-item">
+                                <span class="text-body-base" style="color: var(--color-1E1E1E);">Resource library</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+```
+
+// interpretations:
+- Used flexbox layout for complex multi-column sections where exact positioning wasn't specified
+- Applied standard padding values (64px, 24px, 16px, 8px) for spacing between sections and components where gaps weren't explicitly defined
+- Used display: flex with gap properties for consistent spacing in navigation and button groups
+- Applied cursor: pointer to interactive elements (buttons, icon buttons) for better UX
+- Used standard margin-bottom for text hierarchy in newsletter section

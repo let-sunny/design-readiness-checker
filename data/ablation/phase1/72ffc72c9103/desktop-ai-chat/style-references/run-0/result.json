@@ -1,0 +1,15 @@
+{
+  "fixture": "desktop-ai-chat",
+  "type": "style-references",
+  "runIndex": 0,
+  "similarity": 96,
+  "inputTokens": 22863,
+  "outputTokens": 18547,
+  "totalTokens": 41410,
+  "htmlBytes": 47914,
+  "htmlLines": 580,
+  "cssClassCount": 18,
+  "cssVariableCount": 16,
+  "timestamp": "2026-03-28T10:12:56.511Z",
+  "configVersion": "72ffc72c9103"
+}

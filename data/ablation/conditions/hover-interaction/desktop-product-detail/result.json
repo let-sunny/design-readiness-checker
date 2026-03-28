@@ -1,0 +1,26 @@
+{
+  "fixture": "desktop-product-detail",
+  "type": "hover-interaction",
+  "hoverBlocksInDesignTree": 5,
+  "withHoverData": {
+    "hoverCssRules": 1,
+    "hoverCssContent": [
+      "\n        \n        .icon-button:hover {\n            background: var(--color-1E1E1E);\n        }"
+    ],
+    "tokens": {
+      "input": 27891,
+      "output": 18731
+    },
+    "htmlBytes": 52425
+  },
+  "withoutHoverData": {
+    "hoverCssRules": 0,
+    "hoverCssContent": [],
+    "tokens": {
+      "input": 27749,
+      "output": 17425
+    },
+    "htmlBytes": 46460
+  },
+  "timestamp": "2026-03-28T09:16:42.300Z"
+}

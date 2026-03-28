@@ -1,0 +1,28 @@
+{
+  "fixture": "desktop-ai-chat",
+  "type": "hover-interaction",
+  "hoverBlocksInDesignTree": 5,
+  "withHoverData": {
+    "hoverCssRules": 3,
+    "hoverCssContent": [
+      "\n        \n        .button.neutral:hover {\n            background: var(--color-CDCDCD);\n        }",
+      "\n        \n        .button.primary:hover {\n            background: var(--color-1E1E1E);\n        }",
+      "\n        \n        .icon-button.subtle:hover {\n            background: var(--color-F5F5F5);\n        }"
+    ],
+    "tokens": {
+      "input": 23305,
+      "output": 16445
+    },
+    "htmlBytes": 43346
+  },
+  "withoutHoverData": {
+    "hoverCssRules": 0,
+    "hoverCssContent": [],
+    "tokens": {
+      "input": 23160,
+      "output": 16894
+    },
+    "htmlBytes": 44469
+  },
+  "timestamp": "2026-03-28T09:23:02.347Z"
+}

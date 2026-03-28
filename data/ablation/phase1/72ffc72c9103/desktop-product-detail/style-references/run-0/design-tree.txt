@@ -1,0 +1,522 @@
+# Design Tree
+# Root: 1200px x 2105px
+# Each node shows: name (TYPE, WxH) followed by CSS-like styles
+# Reproduce this tree as HTML. Each node = one HTML element.
+# Every style value is from Figma data — use exactly as shown.
+
+Platform=Desktop (COMPONENT, 1200x2105)
+  style: display: flex; flex-direction: column; align-items: flex-start; background: #FFFFFF /* var:VariableID:3919:36423 */; overflow: hidden
+  Header (INSTANCE, 1200x99) [component: Platform=Desktop, State=Default]
+    component-properties: Platform=Desktop, State=Default
+    style: display: flex; flex-direction: row; flex-wrap: wrap; column-gap: 24px /* var:VariableID:9:11262 */; row-gap: 0px; align-items: center; align-self: STRETCH; padding: 32px 32px 32px 32px /* var:VariableID:346:10902 */; width: 100%; background: #FFFFFF /* var:VariableID:3919:36423 */; border-bottom: 1px solid #D9D9D9; overflow: hidden; min-width: 1200px
+    Block (FRAME, 40x35)
+      style: display: flex; flex-direction: row; column-gap: 24px; align-items: center
+      Figma (FRAME, 40x35)
+        style: display: flex; flex-direction: row; justify-content: center; align-items: center
+        Icon (VECTOR, 23x35)
+          style: border: 3.5px solid #1E1E1E; svg: <svg width="54" height="77" viewBox="0 0 54 77" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M26.8333 3.5H15.1667C12.0725 3.5 9.10501 4.72916 6.91709 6.91709C4.72916 9.10501 3.5 12.0725 3.5 15.1667C3.5 18.2609 4.72916 21.2283 6.91709 23.4162C9.10501 25.6042 12.0725 26.8333 15.1667 26.8333M26.8333 3.5V26.8333M26.8333 3.5H38.5C40.0321 3.5 41.5492 3.80177 42.9646 4.38807C44.3801 4.97438 45.6662 5.83374 46.7496 6.91709C47.8329 8.00044 48.6923 9.28656 49.2786 10.702C49.8649 12.1175 50.1667 13.6346 50.1667 15.1667C50.1667 16.6988 49.8649 18.2158 49.2786 19.6313C48.6923 21.0468 47.8329 22.3329 46.7496 23.4162C45.6662 24.4996 44.3801 25.359 42.9646 25.9453C41.5492 26.5316 40.0321 26.8333 38.5 26.8333M26.8333 26.8333H15.1667M26.8333 26.8333H38.5M26.8333 26.8333V50.1667M15.1667 26.8333C12.0725 26.8333 9.10501 28.0625 6.91709 30.2504C4.72916 32.4383 3.5 35.4058 3.5 38.5C3.5 41.5942 4.72916 44.5617 6.91709 46.7496C9.10501 48.9375 12.0725 50.1667 15.1667 50.1667M38.5 26.8333C36.9679 26.8333 35.4508 27.1351 34.0354 27.7214C32.6199 28.3077 31.3338 29.1671 30.2504 30.2504C29.1671 31.3338 28.3077 32.6199 27.7214 34.0354C27.1351 35.4508 26.8333 36.9679 26.8333 38.5C26.8333 40.0321 27.1351 41.5492 27.7214 42.9646C28.3077 44.3801 29.1671 45.6662 30.2504 46.7496C31.3338 47.8329 32.6199 48.6923 34.0354 49.2786C35.4508 49.8649 36.9679 50.1667 38.5 50.1667C40.0321 50.1667 41.5492 49.8649 42.9646 49.2786C44.3801 48.6923 45.6662 47.8329 46.7496 46.7496C47.8329 45.6662 48.6923 44.3801 49.2786 42.9646C49.8649 41.5492 50.1667 40.0321 50.1667 38.5C50.1667 36.9679 49.8649 35.4508 49.2786 34.0354C48.6923 32.6199 47.8329 31.3338 46.7496 30.2504C45.6662 29.1671 44.3801 28.3077 42.9646 27.7214C41.5492 27.1351 40.0321 26.8333 38.5 26.8333ZM15.1667 50.1667C12.0725 50.1667 9.10501 51.3958 6.91709 53.5837C4.72916 55.7717 3.5 58.7391 3.5 61.8333C3.5 64.9275 4.72916 67.895 6.91709 70.0829C9.10501 72.2708 12.0725 73.5 15.1667 73.5C18.2609 73.5 21.2283 72.2708 23.4162 70.0829C25.6042 67.895 26.8333 64.9275 26.8333 61.8333V50.1667M15.1667 50.1667H26.8333" stroke="#1E1E1E" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/> </svg>
+    Navigation Pill List (INSTANCE, 870x32) [component: Direction=Row]
+      component-properties: Slot 2#6061:3={"guid":{"sessionID":-1,"localID":-1}}, Slot#6061:0={"guid":{"sessionID":-1,"localID":-1}}, Link 6#2194:3=true, Link 4#2194:6=true, Link 3#2194:7=true, Link 5#2194:5=true, Link 7#3529:0=false, Link 2#2194:4=true, Link 1#2194:8=true, Direction=Row
+      style: display: flex; flex-direction: row; flex-wrap: wrap; column-gap: 8px /* var:VariableID:9:11259 */; row-gap: 8px; justify-content: flex-end; align-items: flex-start; flex-grow: 1
+      Slot (SLOT, 553x32)
+        style: display: flex; flex-direction: row; column-gap: 8px; align-items: center
+        Navigation Pill (INSTANCE, 84x32) [component: State=Active]
+          component-properties: Label#156:33=Products, State=Active
+          style: display: flex; flex-direction: row; column-gap: 8px /* var:VariableID:9:11259 */; justify-content: center; align-items: center; padding: 8px 8px 8px 8px /* var:VariableID:9:11259 */; background: #F5F5F5 /* var:VariableID:9670:11772 */; border-radius: 8px
+          Title (TEXT, 68x16)
+            style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 16px; text-align: left; display: flex; align-items: center; color: #1E1E1E /* var:VariableID:3919:36461 */; text: "Products"
+        Navigation Pill (INSTANCE, 86x32) [component: State=Default]
+          component-properties: Label#156:33=Solutions, State=Default
+          style: display: flex; flex-direction: row; column-gap: 8px /* var:VariableID:9:11259 */; justify-content: center; align-items: center; padding: 8px 8px 8px 8px /* var:VariableID:9:11259 */; border-radius: 8px
+          Title (TEXT, 70x16)
+            style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 16px; text-align: left; display: flex; align-items: center; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Solutions"
+        Navigation Pill (INSTANCE, 103x32) [component: State=Default]
+          component-properties: Label#156:33=Community, State=Default
+          style: display: flex; flex-direction: row; column-gap: 8px /* var:VariableID:9:11259 */; justify-content: center; align-items: center; padding: 8px 8px 8px 8px /* var:VariableID:9:11259 */; border-radius: 8px
+          Title (TEXT, 87x16)
+            style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 16px; text-align: left; display: flex; align-items: center; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Community"
+        Navigation Pill (INSTANCE, 95x32) [component: State=Default]
+          component-properties: Label#156:33=Resources, State=Default
+          style: display: flex; flex-direction: row; column-gap: 8px /* var:VariableID:9:11259 */; justify-content: center; align-items: center; padding: 8px 8px 8px 8px /* var:VariableID:9:11259 */; border-radius: 8px
+          Title (TEXT, 79x16)
+            style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 16px; text-align: left; display: flex; align-items: center; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Resources"
+        Navigation Pill (INSTANCE, 68x32) [component: State=Default]
+          component-properties: Label#156:33=Pricing, State=Default
+          style: display: flex; flex-direction: row; column-gap: 8px /* var:VariableID:9:11259 */; justify-content: center; align-items: center; padding: 8px 8px 8px 8px /* var:VariableID:9:11259 */; border-radius: 8px
+          Title (TEXT, 52x16)
+            style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 16px; text-align: left; display: flex; align-items: center; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Pricing"
+        Navigation Pill (INSTANCE, 77x32) [component: State=Default]
+          component-properties: Label#156:33=Contact, State=Default
+          style: display: flex; flex-direction: row; column-gap: 8px /* var:VariableID:9:11259 */; justify-content: center; align-items: center; padding: 8px 8px 8px 8px /* var:VariableID:9:11259 */; border-radius: 8px
+          Title (TEXT, 61x16)
+            style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 16px; text-align: left; display: flex; align-items: center; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Contact"
+    Header Auth (INSTANCE, 178x32) [component: State=Logged Out]
+      component-properties: State=Logged Out
+      style: display: flex; flex-direction: row; column-gap: 12px /* var:VariableID:9:11260 */; align-items: center
+      Button (INSTANCE, 83x32) [component: Variant=Neutral, State=Default, Size=Small]
+        component-properties: Icon End#4:0=68:16113, Icon Start#4:192=68:16009, Has Icon End#4:64=false, Has Icon Start#4:128=false, Label#2:0=Sign in, Variant=Neutral, State=Default, Size=Small
+        style: display: flex; flex-direction: row; column-gap: 8px /* var:VariableID:9:11259 */; justify-content: center; align-items: center; flex-grow: 1; padding: 8px 8px 8px 8px /* var:VariableID:9:11259 */; background: #E3E3E3 /* var:VariableID:106:12468 */; border: 1px solid #767676; border-radius: 8px; overflow: hidden
+        [hover]: background: #CDCDCD /* var:VariableID:106:12469 */
+        Button (TEXT, 51x16)
+          style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 16px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Sign in"
+      Button (INSTANCE, 83x32) [component: Variant=Primary, State=Default, Size=Small]
+        component-properties: Icon End#4:0=68:16113, Icon Start#4:192=68:16009, Has Icon End#4:64=false, Has Icon Start#4:128=false, Label#2:0=Register, Variant=Primary, State=Default, Size=Small
+        style: display: flex; flex-direction: row; column-gap: 8px /* var:VariableID:9:11259 */; justify-content: center; align-items: center; flex-grow: 1; padding: 8px 8px 8px 8px /* var:VariableID:9:11259 */; background: #2C2C2C /* var:VariableID:3919:36428 */; border: 1px solid #2C2C2C; border-radius: 8px; overflow: hidden
+        [hover]: background: #1E1E1E /* var:VariableID:3919:36431 */
+        Button (TEXT, 63x16)
+          style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 16px; text-align: left; color: #F5F5F5 /* var:VariableID:3919:36459 */; text: "Register"
+  Page Product (INSTANCE, 1200x863) [component: Platform=Desktop]
+    component-properties: Column#6062:42={"guid":{"sessionID":-1,"localID":-1}}, Platform=Desktop
+    style: display: flex; flex-direction: column; row-gap: 24px /* var:VariableID:9:11262 */; align-items: flex-start; align-self: STRETCH; padding: 64px 64px 64px 64px /* var:VariableID:107:11150 */; width: 100%; background: #FFF1C2 /* var:VariableID:3919:36440 */; min-width: 1200px; max-width: 1920px
+    Section (FRAME, 1072x735)
+      style: display: flex; flex-direction: row; column-gap: 64px /* var:VariableID:107:11150 */; align-items: flex-start; align-self: STRETCH; position: relative; width: 100%
+      Image (FRAME, 504x735)
+        style: display: flex; flex-direction: column; justify-content: center; align-items: center; align-self: STRETCH; flex-grow: 1; height: 100%; background: #E3E3E3 /* var:VariableID:3919:36535 */; content-image: url(images/image@2x.png); object-fit: contain; overflow: hidden
+      Column (SLOT, 504x735)
+        style: display: flex; flex-direction: column; row-gap: 24px /* var:VariableID:9:11262 */; justify-content: center; align-items: flex-start; flex-grow: 1
+        Body (FRAME, 504x167)
+          style: display: flex; flex-direction: column; row-gap: 16px /* var:VariableID:9:11261 */; align-items: flex-start; align-self: STRETCH; width: 100%
+          Title (FRAME, 504x129)
+            style: display: flex; flex-direction: column; row-gap: 16px /* var:VariableID:9:11261 */; align-items: flex-start; align-self: STRETCH; width: 100%
+            Text Heading (INSTANCE, 504x29) [component: Text Heading]
+              component-properties: Text#2104:5=Text Heading
+              style: display: flex; flex-direction: row; align-items: flex-start; align-self: STRETCH; width: 100%
+              Text Heading (TEXT, 149x29)
+                style: font-family: "Inter"; font-weight: 600; font-size: 24px; line-height: 28.8px; letter-spacing: -0.48px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Text Heading"
+            Price (FRAME, 504x84)
+              style: display: flex; flex-direction: column; row-gap: 4px /* var:VariableID:9:11258 */; justify-content: center; align-items: flex-start; align-self: STRETCH; width: 100%
+              Tag (INSTANCE, 44x32) [component: Scheme=Positive, State=Default, Variant=Secondary]
+                component-properties: Label#9765:0=Tag, Removable#147:0=false, Scheme=Positive, State=Default, Variant=Secondary
+                style: display: flex; flex-direction: row; column-gap: 8px /* var:VariableID:9:11259 */; justify-content: center; align-items: center; padding: 8px 8px 8px 8px /* var:VariableID:9:11259 */; background: #CFF7D3 /* var:VariableID:3919:36435 */; border-radius: 8px
+                Tag (TEXT, 28x16)
+                  style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 16px; text-align: left; color: #02542D /* var:VariableID:3919:36467 */; text: "Tag"
+              Text Price (INSTANCE, 80x48) [component: Size=Large]
+                component-properties: Price#1443:0=50, Label#1443:1=/ mo, Currency#1443:2=$, Has Label#1443:3=false, Size=Large
+                style: display: flex; flex-direction: row; justify-content: center; align-items: flex-end
+                Price (FRAME, 80x48)
+                  style: display: flex; flex-direction: row; align-items: flex-start
+                  $ (TEXT, 16x24)
+                    style: font-family: "Inter"; font-weight: 700; font-size: 24px; line-height: 24px; letter-spacing: -0.48px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "$"
+                  50 (TEXT, 64x48)
+                    style: font-family: "Inter"; font-weight: 700; font-size: 48px; line-height: 48px; letter-spacing: -0.96px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "50"
+          Text (INSTANCE, 504x22) [component: Text]
+            component-properties: Text#2104:7=Text
+            style: display: flex; flex-direction: row; align-items: flex-start; align-self: STRETCH; width: 100%
+            Text (TEXT, 504x22)
+              style: flex-grow: 1; font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; color: #757575 /* var:VariableID:3919:36451 */; text: "Text"
+        Fields (FRAME, 504x70)
+          style: display: flex; flex-direction: row; column-gap: 24px /* var:VariableID:9:11262 */; align-items: center; align-self: STRETCH; width: 100%
+          Select Field (INSTANCE, 240x70) [component: State=Default, Value Type=Default]
+            component-properties: Error#280:88=Error, Value#630:7=Value, Has Description#611:4=false, Has Error#72:6=true, Description#611:0=Description, Label#280:85=Label, Open#586:0=false, Has Label#57:0=true, State=Default, Value Type=Default
+            style: display: flex; flex-direction: column; row-gap: 8px /* var:VariableID:9:11259 */; align-items: flex-start; flex-grow: 1
+            Label (TEXT, 240x22)
+              style: align-self: STRETCH; width: 100%; font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Label"
+            Select (FRAME, 240x40)
+              style: display: flex; flex-direction: row; column-gap: 8px /* var:VariableID:9:11259 */; align-items: center; align-self: STRETCH; position: relative; padding: 12px 12px 12px 16px /* var:VariableID:9:11260 */; width: 100%; background: #FFFFFF /* var:VariableID:3919:36423 */; border: 1px solid #D9D9D9; border-radius: 8px; min-width: 120px
+              Value (TEXT, 188x16)
+                style: flex-grow: 1; font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 16px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Value"
+              Chevron down (INSTANCE, 16x16) [component: Chevron down]
+                style: overflow: hidden
+                Icon (VECTOR, 8x4)
+                  style: border: 1.600000023841858px solid #1E1E1E; svg: <svg width="20" height="12" viewBox="0 0 20 12" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M1.66802 1.66637L10 9.99835L18.332 1.66637" stroke="#1E1E1E" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/> </svg>
+          Select Field (INSTANCE, 240x70) [component: State=Default, Value Type=Default]
+            component-properties: Error#280:88=Error, Value#630:7=Value, Has Description#611:4=false, Has Error#72:6=true, Description#611:0=Description, Label#280:85=Label, Open#586:0=false, Has Label#57:0=true, State=Default, Value Type=Default
+            style: display: flex; flex-direction: column; row-gap: 8px /* var:VariableID:9:11259 */; align-items: flex-start; flex-grow: 1
+            Label (TEXT, 240x22)
+              style: align-self: STRETCH; width: 100%; font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Label"
+            Select (FRAME, 240x40)
+              style: display: flex; flex-direction: row; column-gap: 8px /* var:VariableID:9:11259 */; align-items: center; align-self: STRETCH; position: relative; padding: 12px 12px 12px 16px /* var:VariableID:9:11260 */; width: 100%; background: #FFFFFF /* var:VariableID:3919:36423 */; border: 1px solid #D9D9D9; border-radius: 8px; min-width: 120px
+              Value (TEXT, 188x16)
+                style: flex-grow: 1; font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 16px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Value"
+              Chevron down (INSTANCE, 16x16) [component: Chevron down]
+                style: overflow: hidden
+                Icon (VECTOR, 8x4)
+                  style: border: 1.600000023841858px solid #1E1E1E; svg: <svg width="20" height="12" viewBox="0 0 20 12" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M1.66802 1.66637L10 9.99835L18.332 1.66637" stroke="#1E1E1E" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/> </svg>
+        Button (INSTANCE, 504x40) [component: Variant=Primary, State=Default, Size=Medium]
+          component-properties: Icon End#4:0=68:16113, Icon Start#4:192=68:16009, Has Icon End#4:64=false, Has Icon Start#4:128=false, Label#2:0=Button, Variant=Primary, State=Default, Size=Medium
+          style: display: flex; flex-direction: row; column-gap: 8px /* var:VariableID:9:11259 */; justify-content: center; align-items: center; align-self: STRETCH; padding: 12px 12px 12px 12px /* var:VariableID:9:11260 */; width: 100%; background: #2C2C2C /* var:VariableID:3919:36428 */; border: 1px solid #2C2C2C; border-radius: 8px; overflow: hidden
+          [hover]: background: #1E1E1E /* var:VariableID:3919:36431 */
+          Button (TEXT, 51x16)
+            style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 16px; text-align: left; color: #F5F5F5 /* var:VariableID:3919:36459 */; text: "Button"
+        Accordion (INSTANCE, 504x386) [component: Accordion]
+          component-properties: Items#6031:6={"guid":{"sessionID":-1,"localID":-1}}
+          style: display: flex; flex-direction: column; row-gap: 16px /* var:VariableID:9:11261 */; align-items: flex-start; align-self: STRETCH; width: 100%; max-width: 640px
+          Accordion Item (INSTANCE, 504x106) [component: State=Open]
+            component-properties: Content#149:27=Answer the frequently asked question in a simple sentence, a longish paragraph, or even in a list., Title#149:24=Title, State=Open
+            style: display: flex; flex-direction: column; row-gap: 8px /* var:VariableID:9:11259 */; align-items: flex-start; align-self: STRETCH; padding: 16px 16px 16px 16px /* var:VariableID:9:11271 */; width: 100%; background: #FFFFFF /* var:VariableID:3919:36423 */; border: 1px solid #D9D9D9; border-radius: 8px
+            Accordion Title (FRAME, 472x22)
+              style: display: flex; flex-direction: row; column-gap: 8px /* var:VariableID:9:11259 */; align-items: center; align-self: STRETCH; width: 100%
+              Title (TEXT, 444x22)
+                style: flex-grow: 1; font-family: "Inter"; font-weight: 600; font-size: 16px; line-height: 22.4px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Title"
+              Chevron up (INSTANCE, 20x20) [component: Chevron up]
+                style: overflow: hidden
+                Icon (VECTOR, 10x5)
+                  style: border: 2px solid #1E1E1E; svg: <svg width="24" height="14" viewBox="0 0 24 14" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M22 12L12 2L2 12" stroke="#1E1E1E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/> </svg>
+            Accordion Content (FRAME, 472x44)
+              style: display: flex; flex-direction: row; justify-content: center; align-items: center; align-self: STRETCH; width: 100%
+              Body (TEXT, 472x44)
+                style: flex-grow: 1; font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Answer the frequently asked question in a simple sentence, a longish paragraph, or even in a list."
+          Items (SLOT, 504x264)
+            style: display: flex; flex-direction: column; row-gap: 16px; align-items: flex-start; align-self: STRETCH; width: 100%
+      Icon Button (INSTANCE, 44x44) [component: Variant=Primary, State=Default, Size=Medium]
+        component-properties: Icon#4:192=68:15809, Variant=Primary, State=Default, Size=Medium
+        style: display: flex; flex-direction: row; column-gap: 8px /* var:VariableID:9:11259 */; justify-content: center; align-items: center; position: absolute; top: 10px; left: 10px; padding: 12px 12px 12px 12px /* var:VariableID:9:11260 */; background: #2C2C2C /* var:VariableID:3919:36428 */; border: 1px solid #2C2C2C; border-radius: 32px; overflow: hidden
+        [hover]: background: #1E1E1E /* var:VariableID:3919:36431 */
+        Heart (INSTANCE, 20x20) [component: Heart]
+          style: overflow: hidden
+          Icon (VECTOR, 17x15)
+            style: border: 1.600000023841858px solid #F5F5F5; svg: <svg width="39" height="34" viewBox="0 0 39 34" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M34.1694 4.33914C33.3077 3.47699 32.2845 2.79308 31.1584 2.32646C30.0322 1.85985 28.8252 1.61968 27.6062 1.61968C26.3873 1.61968 25.1802 1.85985 24.0541 2.32646C22.928 2.79308 21.9048 3.47699 21.0431 4.33914L19.2546 6.12756L17.4662 4.33914C15.7255 2.59848 13.3647 1.62058 10.903 1.62058C8.44135 1.62058 6.08051 2.59848 4.33984 4.33914C2.59918 6.0798 1.62129 8.44065 1.62129 10.9023C1.62129 13.364 2.59918 15.7248 4.33984 17.4655L19.2546 32.3803L34.1694 17.4655C35.0316 16.6038 35.7155 15.5806 36.1821 14.4545C36.6487 13.3283 36.8889 12.1213 36.8889 10.9023C36.8889 9.68334 36.6487 8.47631 36.1821 7.35018C35.7155 6.22405 35.0316 5.20088 34.1694 4.33914Z" stroke="#F5F5F5" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/> </svg>
+  Card Grid Reviews (INSTANCE, 1200x422) [component: Platform=Desktop]
+    component-properties: Platform=Desktop
+    style: display: flex; flex-direction: column; row-gap: 48px /* var:VariableID:346:10903 */; align-items: flex-start; align-self: STRETCH; padding: 64px 64px 64px 64px /* var:VariableID:107:11150 */; width: 100%; background: rgba(0, 0, 0, 0.5) /* var:VariableID:7786:36548 */; min-width: 1200px; max-width: 1920px
+    Text Heading (INSTANCE, 163x29) [component: Text Heading]
+      component-properties: Text#2104:5=Latest reviews
+      style: display: flex; flex-direction: row; align-items: flex-start
+      Text Heading (TEXT, 163x29)
+        style: font-family: "Inter"; font-weight: 600; font-size: 24px; line-height: 28.8px; letter-spacing: -0.48px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Latest reviews"
+    Card Grid (FRAME, 1072x217)
+      style: display: flex; flex-direction: row; flex-wrap: wrap; column-gap: 48px /* var:VariableID:346:10903 */; row-gap: 48px; align-items: flex-start; align-self: STRETCH; width: 100%
+      Review Card (INSTANCE, 325x217) [component: Review Card]
+        style: display: flex; flex-direction: column; row-gap: 24px /* var:VariableID:9:11262 */; align-items: flex-start; flex-grow: 1; padding: 24px 24px 24px 24px /* var:VariableID:9:11262 */; background: #FAE1FA /* var:VariableID:72:9197 */; border: 1px solid #D9D9D9; border-radius: 8px; min-width: 240px
+        Rating (FRAME, 116x20)
+          style: display: flex; flex-direction: row; column-gap: 4px /* var:VariableID:9:11258 */; align-items: center
+          Star (INSTANCE, 20x20) [component: Star]
+            style: overflow: hidden
+            Icon (VECTOR, 17x16)
+              style: border: 2px solid #2C2C2C; svg: <svg width="38" height="36" viewBox="0 0 38 36" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M18.8236 2.01681L24.0168 12.5378L35.6303 14.2353L27.2269 22.4202L29.2101 33.9832L18.8236 28.521L8.43699 33.9832L10.4202 22.4202L2.01681 14.2353L13.6303 12.5378L18.8236 2.01681Z" stroke="#2C2C2C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/> </svg>
+          Star (INSTANCE, 20x20) [component: Star]
+            style: overflow: hidden
+            Icon (VECTOR, 17x16)
+              style: border: 2px solid #2C2C2C; svg: <svg width="38" height="36" viewBox="0 0 38 36" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M18.8236 2.01681L24.0168 12.5378L35.6303 14.2353L27.2269 22.4202L29.2101 33.9832L18.8236 28.521L8.43699 33.9832L10.4202 22.4202L2.01681 14.2353L13.6303 12.5378L18.8236 2.01681Z" stroke="#2C2C2C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/> </svg>
+          Star (INSTANCE, 20x20) [component: Star]
+            style: overflow: hidden
+            Icon (VECTOR, 17x16)
+              style: border: 2px solid #2C2C2C; svg: <svg width="38" height="36" viewBox="0 0 38 36" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M18.8236 2.01681L24.0168 12.5378L35.6303 14.2353L27.2269 22.4202L29.2101 33.9832L18.8236 28.521L8.43699 33.9832L10.4202 22.4202L2.01681 14.2353L13.6303 12.5378L18.8236 2.01681Z" stroke="#2C2C2C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/> </svg>
+          Star (INSTANCE, 20x20) [component: Star]
+            style: overflow: hidden
+            Icon (VECTOR, 17x16)
+              style: border: 2px solid #2C2C2C; svg: <svg width="38" height="36" viewBox="0 0 38 36" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M18.8236 2.01681L24.0168 12.5378L35.6303 14.2353L27.2269 22.4202L29.2101 33.9832L18.8236 28.521L8.43699 33.9832L10.4202 22.4202L2.01681 14.2353L13.6303 12.5378L18.8236 2.01681Z" stroke="#2C2C2C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/> </svg>
+          Star (INSTANCE, 20x20) [component: Star]
+            style: overflow: hidden
+            Icon (VECTOR, 17x16)
+              style: border: 2px solid #2C2C2C; svg: <svg width="38" height="36" viewBox="0 0 38 36" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M18.8236 2.01681L24.0168 12.5378L35.6303 14.2353L27.2269 22.4202L29.2101 33.9832L18.8236 28.521L8.43699 33.9832L10.4202 22.4202L2.01681 14.2353L13.6303 12.5378L18.8236 2.01681Z" stroke="#2C2C2C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/> </svg>
+        Review Body (FRAME, 277x55)
+          style: display: flex; flex-direction: column; row-gap: 4px /* var:VariableID:9:11258 */; align-items: flex-start; align-self: STRETCH; width: 100%
+          Text Heading (INSTANCE, 130x29) [component: Text Heading]
+            component-properties: Text#2104:5=Review title
+            style: display: flex; flex-direction: row; align-items: flex-start
+            Text Heading (TEXT, 130x29)
+              style: font-family: "Inter"; font-weight: 600; font-size: 24px; line-height: 28.8px; letter-spacing: -0.48px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Review title"
+          Text (INSTANCE, 277x22) [component: Text]
+            component-properties: Text#2104:7=Review body
+            style: display: flex; flex-direction: row; align-items: flex-start; align-self: STRETCH; width: 100%
+            Text (TEXT, 277x22)
+              style: flex-grow: 1; font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Review body"
+        Avatar Block (INSTANCE, 277x46) [component: Avatar Block]
+          component-properties: Description#2010:8=Date, Title#2010:7=Reviewer name
+          style: display: flex; flex-direction: row; column-gap: 12px /* var:VariableID:9:11260 */; align-items: flex-start; align-self: STRETCH; width: 100%
+          Avatar (INSTANCE, 40x40) [component: Type=Image, Size=Large, Shape=Circle]
+            component-properties: Initials#24:281=F, Type=Image, Size=Large, Shape=Circle
+            style: border-radius: 9999px; overflow: hidden
+            Shape (RECTANGLE, 40x40)
+              style: content-image: url(images/shape@2x.png); object-fit: cover
+          Info (FRAME, 225x46)
+            style: display: flex; flex-direction: column; row-gap: 2px; align-items: flex-start; flex-grow: 1
+            Title (TEXT, 225x22)
+              style: align-self: STRETCH; width: 100%; font-family: "Inter"; font-weight: 600; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #757575 /* var:VariableID:3919:36451 */; text: "Reviewer name"
+            Description (TEXT, 225x22)
+              style: align-self: STRETCH; width: 100%; font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #B3B3B3 /* var:VariableID:3919:36452 */; text: "Date"
+      Review Card (INSTANCE, 325x217) [component: Review Card]
+        style: display: flex; flex-direction: column; row-gap: 24px /* var:VariableID:9:11262 */; align-items: flex-start; flex-grow: 1; padding: 24px 24px 24px 24px /* var:VariableID:9:11262 */; background: #FAE1FA /* var:VariableID:72:9197 */; border: 1px solid #D9D9D9; border-radius: 8px; min-width: 240px
+        Rating (FRAME, 116x20)
+          style: display: flex; flex-direction: row; column-gap: 4px /* var:VariableID:9:11258 */; align-items: center
+          Star (INSTANCE, 20x20) [component: Star]
+            style: overflow: hidden
+            Icon (VECTOR, 17x16)
+              style: border: 2px solid #2C2C2C; svg: <svg width="38" height="36" viewBox="0 0 38 36" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M18.8236 2.01681L24.0168 12.5378L35.6303 14.2353L27.2269 22.4202L29.2101 33.9832L18.8236 28.521L8.43699 33.9832L10.4202 22.4202L2.01681 14.2353L13.6303 12.5378L18.8236 2.01681Z" stroke="#2C2C2C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/> </svg>
+          Star (INSTANCE, 20x20) [component: Star]
+            style: overflow: hidden
+            Icon (VECTOR, 17x16)
+              style: border: 2px solid #2C2C2C; svg: <svg width="38" height="36" viewBox="0 0 38 36" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M18.8236 2.01681L24.0168 12.5378L35.6303 14.2353L27.2269 22.4202L29.2101 33.9832L18.8236 28.521L8.43699 33.9832L10.4202 22.4202L2.01681 14.2353L13.6303 12.5378L18.8236 2.01681Z" stroke="#2C2C2C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/> </svg>
+          Star (INSTANCE, 20x20) [component: Star]
+            style: overflow: hidden
+            Icon (VECTOR, 17x16)
+              style: border: 2px solid #2C2C2C; svg: <svg width="38" height="36" viewBox="0 0 38 36" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M18.8236 2.01681L24.0168 12.5378L35.6303 14.2353L27.2269 22.4202L29.2101 33.9832L18.8236 28.521L8.43699 33.9832L10.4202 22.4202L2.01681 14.2353L13.6303 12.5378L18.8236 2.01681Z" stroke="#2C2C2C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/> </svg>
+          Star (INSTANCE, 20x20) [component: Star]
+            style: overflow: hidden
+            Icon (VECTOR, 17x16)
+              style: border: 2px solid #2C2C2C; svg: <svg width="38" height="36" viewBox="0 0 38 36" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M18.8236 2.01681L24.0168 12.5378L35.6303 14.2353L27.2269 22.4202L29.2101 33.9832L18.8236 28.521L8.43699 33.9832L10.4202 22.4202L2.01681 14.2353L13.6303 12.5378L18.8236 2.01681Z" stroke="#2C2C2C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/> </svg>
+          Star (INSTANCE, 20x20) [component: Star]
+            style: overflow: hidden
+            Icon (VECTOR, 17x16)
+              style: border: 2px solid #2C2C2C; svg: <svg width="38" height="36" viewBox="0 0 38 36" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M18.8236 2.01681L24.0168 12.5378L35.6303 14.2353L27.2269 22.4202L29.2101 33.9832L18.8236 28.521L8.43699 33.9832L10.4202 22.4202L2.01681 14.2353L13.6303 12.5378L18.8236 2.01681Z" stroke="#2C2C2C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/> </svg>
+        Review Body (FRAME, 277x55)
+          style: display: flex; flex-direction: column; row-gap: 4px /* var:VariableID:9:11258 */; align-items: flex-start; align-self: STRETCH; width: 100%
+          Text Heading (INSTANCE, 130x29) [component: Text Heading]
+            component-properties: Text#2104:5=Review title
+            style: display: flex; flex-direction: row; align-items: flex-start
+            Text Heading (TEXT, 130x29)
+              style: font-family: "Inter"; font-weight: 600; font-size: 24px; line-height: 28.8px; letter-spacing: -0.48px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Review title"
+          Text (INSTANCE, 277x22) [component: Text]
+            component-properties: Text#2104:7=Review body
+            style: display: flex; flex-direction: row; align-items: flex-start; align-self: STRETCH; width: 100%
+            Text (TEXT, 277x22)
+              style: flex-grow: 1; font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Review body"
+        Avatar Block (INSTANCE, 277x46) [component: Avatar Block]
+          component-properties: Description#2010:8=Date, Title#2010:7=Reviewer name
+          style: display: flex; flex-direction: row; column-gap: 12px /* var:VariableID:9:11260 */; align-items: flex-start; align-self: STRETCH; width: 100%
+          Avatar (INSTANCE, 40x40) [component: Type=Image, Size=Large, Shape=Circle]
+            component-properties: Initials#24:281=F, Type=Image, Size=Large, Shape=Circle
+            style: border-radius: 9999px; overflow: hidden
+            Shape (RECTANGLE, 40x40)
+              style: content-image: url(images/shape-2@2x.png); object-fit: cover
+          Info (FRAME, 225x46)
+            style: display: flex; flex-direction: column; row-gap: 2px; align-items: flex-start; flex-grow: 1
+            Title (TEXT, 225x22)
+              style: align-self: STRETCH; width: 100%; font-family: "Inter"; font-weight: 600; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #757575 /* var:VariableID:3919:36451 */; text: "Reviewer name"
+            Description (TEXT, 225x22)
+              style: align-self: STRETCH; width: 100%; font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #B3B3B3 /* var:VariableID:3919:36452 */; text: "Date"
+      Review Card (INSTANCE, 325x217) [component: Review Card]
+        style: display: flex; flex-direction: column; row-gap: 24px /* var:VariableID:9:11262 */; align-items: flex-start; flex-grow: 1; padding: 24px 24px 24px 24px /* var:VariableID:9:11262 */; background: #FAE1FA /* var:VariableID:72:9197 */; border: 1px solid #D9D9D9; border-radius: 8px; min-width: 240px
+        Rating (FRAME, 116x20)
+          style: display: flex; flex-direction: row; column-gap: 4px /* var:VariableID:9:11258 */; align-items: center
+          Star (INSTANCE, 20x20) [component: Star]
+            style: overflow: hidden
+            Icon (VECTOR, 17x16)
+              style: border: 2px solid #2C2C2C; svg: <svg width="38" height="36" viewBox="0 0 38 36" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M18.8236 2.01681L24.0168 12.5378L35.6303 14.2353L27.2269 22.4202L29.2101 33.9832L18.8236 28.521L8.43699 33.9832L10.4202 22.4202L2.01681 14.2353L13.6303 12.5378L18.8236 2.01681Z" stroke="#2C2C2C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/> </svg>
+          Star (INSTANCE, 20x20) [component: Star]
+            style: overflow: hidden
+            Icon (VECTOR, 17x16)
+              style: border: 2px solid #2C2C2C; svg: <svg width="38" height="36" viewBox="0 0 38 36" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M18.8236 2.01681L24.0168 12.5378L35.6303 14.2353L27.2269 22.4202L29.2101 33.9832L18.8236 28.521L8.43699 33.9832L10.4202 22.4202L2.01681 14.2353L13.6303 12.5378L18.8236 2.01681Z" stroke="#2C2C2C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/> </svg>
+          Star (INSTANCE, 20x20) [component: Star]
+            style: overflow: hidden
+            Icon (VECTOR, 17x16)
+              style: border: 2px solid #2C2C2C; svg: <svg width="38" height="36" viewBox="0 0 38 36" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M18.8236 2.01681L24.0168 12.5378L35.6303 14.2353L27.2269 22.4202L29.2101 33.9832L18.8236 28.521L8.43699 33.9832L10.4202 22.4202L2.01681 14.2353L13.6303 12.5378L18.8236 2.01681Z" stroke="#2C2C2C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/> </svg>
+          Star (INSTANCE, 20x20) [component: Star]
+            style: overflow: hidden
+            Icon (VECTOR, 17x16)
+              style: border: 2px solid #2C2C2C; svg: <svg width="38" height="36" viewBox="0 0 38 36" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M18.8236 2.01681L24.0168 12.5378L35.6303 14.2353L27.2269 22.4202L29.2101 33.9832L18.8236 28.521L8.43699 33.9832L10.4202 22.4202L2.01681 14.2353L13.6303 12.5378L18.8236 2.01681Z" stroke="#2C2C2C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/> </svg>
+          Star (INSTANCE, 20x20) [component: Star]
+            style: overflow: hidden
+            Icon (VECTOR, 17x16)
+              style: border: 2px solid #2C2C2C; svg: <svg width="38" height="36" viewBox="0 0 38 36" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M18.8236 2.01681L24.0168 12.5378L35.6303 14.2353L27.2269 22.4202L29.2101 33.9832L18.8236 28.521L8.43699 33.9832L10.4202 22.4202L2.01681 14.2353L13.6303 12.5378L18.8236 2.01681Z" stroke="#2C2C2C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/> </svg>
+        Review Body (FRAME, 277x55)
+          style: display: flex; flex-direction: column; row-gap: 4px /* var:VariableID:9:11258 */; align-items: flex-start; align-self: STRETCH; width: 100%
+          Text Heading (INSTANCE, 130x29) [component: Text Heading]
+            component-properties: Text#2104:5=Review title
+            style: display: flex; flex-direction: row; align-items: flex-start
+            Text Heading (TEXT, 130x29)
+              style: font-family: "Inter"; font-weight: 600; font-size: 24px; line-height: 28.8px; letter-spacing: -0.48px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Review title"
+          Text (INSTANCE, 277x22) [component: Text]
+            component-properties: Text#2104:7=Review body
+            style: display: flex; flex-direction: row; align-items: flex-start; align-self: STRETCH; width: 100%
+            Text (TEXT, 277x22)
+              style: flex-grow: 1; font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Review body"
+        Avatar Block (INSTANCE, 277x46) [component: Avatar Block]
+          component-properties: Description#2010:8=Date, Title#2010:7=Reviewer name
+          style: display: flex; flex-direction: row; column-gap: 12px /* var:VariableID:9:11260 */; align-items: flex-start; align-self: STRETCH; width: 100%
+          Avatar (INSTANCE, 40x40) [component: Type=Image, Size=Large, Shape=Circle]
+            component-properties: Initials#24:281=F, Type=Image, Size=Large, Shape=Circle
+            style: border-radius: 9999px; overflow: hidden
+            Shape (RECTANGLE, 40x40)
+              style: content-image: url(images/shape-3@2x.png); object-fit: cover
+          Info (FRAME, 225x46)
+            style: display: flex; flex-direction: column; row-gap: 2px; align-items: flex-start; flex-grow: 1
+            Title (TEXT, 225x22)
+              style: align-self: STRETCH; width: 100%; font-family: "Inter"; font-weight: 600; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #757575 /* var:VariableID:3919:36451 */; text: "Reviewer name"
+            Description (TEXT, 225x22)
+              style: align-self: STRETCH; width: 100%; font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #B3B3B3 /* var:VariableID:3919:36452 */; text: "Date"
+  Page Newsletter (INSTANCE, 1200x253) [component: Platform=Desktop]
+    component-properties: Platform=Desktop
+    style: display: flex; flex-direction: column; row-gap: 24px /* var:VariableID:9:11262 */; align-items: center; align-self: STRETCH; padding: 64px 64px 64px 64px /* var:VariableID:107:11150 */; width: 100%; background: #D9D9D9 /* var:VariableID:3919:36448 */; min-width: 1200px; max-width: 1920px
+    Text Content Heading (INSTANCE, 261x61) [component: Align=Center]
+      component-properties: Has Subheading#2153:9=true, Subheading#2153:11=With our daily newsletter, Heading#2153:10=Follow the latest trends, Align=Center
+      style: display: flex; flex-direction: column; row-gap: 8px /* var:VariableID:9:11259 */; align-items: center
+      Heading (TEXT, 261x29)
+        style: align-self: STRETCH; width: 100%; font-family: "Inter"; font-weight: 600; font-size: 24px; line-height: 28.8px; letter-spacing: -0.48px; text-align: center; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Follow the latest trends"
+      Subheading (TEXT, 261x24)
+        style: align-self: STRETCH; width: 100%; font-family: "Inter"; font-weight: 400; font-size: 20px; line-height: 24px; text-align: center; display: flex; align-items: center; color: #757575 /* var:VariableID:3919:36451 */; text: "With our daily newsletter"
+    Form Newsletter (INSTANCE, 338x40) [component: Form Newsletter]
+      style: display: flex; flex-direction: row; column-gap: 12px /* var:VariableID:9:11260 */; align-items: flex-start
+      Input Field (INSTANCE, 249x40) [component: State=Default, Value Type=Default]
+        component-properties: Value#630:14=you@example.com, Description#611:27=Description, Has Label#57:0=false, Error#280:44=Error, Has Error#72:6=false, Label#280:41=Email address, Has Description#611:20=false, State=Default, Value Type=Default
+        style: display: flex; flex-direction: column; row-gap: 8px /* var:VariableID:9:11259 */; align-items: flex-start; flex-grow: 1
+        Input (FRAME, 249x40)
+          style: display: flex; flex-direction: row; align-items: center; align-self: STRETCH; padding: 12px 16px 12px 16px /* var:VariableID:9:11260 */; width: 100%; background: #FFFFFF /* var:VariableID:3919:36423 */; border: 1px solid #D9D9D9; border-radius: 8px; overflow: hidden; min-width: 120px
+          Value (TEXT, 217x16)
+            style: flex-grow: 1; font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 16px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "you@example.com"
+      Button (INSTANCE, 77x40) [component: Variant=Primary, State=Default, Size=Medium]
+        component-properties: Icon End#4:0=68:16113, Icon Start#4:192=68:16009, Has Icon End#4:64=false, Has Icon Start#4:128=false, Label#2:0=Submit, Variant=Primary, State=Default, Size=Medium
+        style: display: flex; flex-direction: row; column-gap: 8px /* var:VariableID:9:11259 */; justify-content: center; align-items: center; padding: 12px 12px 12px 12px /* var:VariableID:9:11260 */; background: #2C2C2C /* var:VariableID:3919:36428 */; border: 1px solid #2C2C2C; border-radius: 8px; overflow: hidden
+        [hover]: background: #1E1E1E /* var:VariableID:3919:36431 */
+        Button (TEXT, 53x16)
+          style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 16px; text-align: left; color: #F5F5F5 /* var:VariableID:3919:36459 */; text: "Submit"
+  Footer (INSTANCE, 1200x468) [component: Platform=Desktop]
+    component-properties: Title#6062:15={"guid":{"sessionID":-1,"localID":-1}}, Slot#6062:12={"guid":{"sessionID":-1,"localID":-1}}, Platform=Desktop
+    style: display: flex; flex-direction: row; flex-wrap: wrap; column-gap: 16px /* var:VariableID:9:11261 */; row-gap: 16px; align-items: flex-start; align-self: STRETCH; padding: 32px 32px 160px 32px /* var:VariableID:346:10902 */; width: 100%; background: #5A5A5A /* var:VariableID:106:12464 */; border-top: 1px solid #D9D9D9; overflow: hidden; min-width: 1200px; max-width: 1920px
+    Title (SLOT, 262x83)
+      style: display: flex; flex-direction: column; row-gap: 24px /* var:VariableID:9:11262 */; align-items: flex-start; background: #CFF7D3 /* var:VariableID:3919:36435 */; min-width: 240px
+      Figma (FRAME, 23x35)
+        style: display: flex; flex-direction: row; justify-content: center; align-items: center
+        Icon (VECTOR, 23x35)
+          style: border: 3.5px solid #1E1E1E; svg: <svg width="54" height="77" viewBox="0 0 54 77" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M26.8333 3.5H15.1667C12.0725 3.5 9.10501 4.72916 6.91709 6.91709C4.72916 9.10501 3.5 12.0725 3.5 15.1667C3.5 18.2609 4.72916 21.2283 6.91709 23.4162C9.10501 25.6042 12.0725 26.8333 15.1667 26.8333M26.8333 3.5V26.8333M26.8333 3.5H38.5C40.0321 3.5 41.5492 3.80177 42.9646 4.38807C44.3801 4.97438 45.6662 5.83374 46.7496 6.91709C47.8329 8.00044 48.6923 9.28656 49.2786 10.702C49.8649 12.1175 50.1667 13.6346 50.1667 15.1667C50.1667 16.6988 49.8649 18.2158 49.2786 19.6313C48.6923 21.0468 47.8329 22.3329 46.7496 23.4162C45.6662 24.4996 44.3801 25.359 42.9646 25.9453C41.5492 26.5316 40.0321 26.8333 38.5 26.8333M26.8333 26.8333H15.1667M26.8333 26.8333H38.5M26.8333 26.8333V50.1667M15.1667 26.8333C12.0725 26.8333 9.10501 28.0625 6.91709 30.2504C4.72916 32.4383 3.5 35.4058 3.5 38.5C3.5 41.5942 4.72916 44.5617 6.91709 46.7496C9.10501 48.9375 12.0725 50.1667 15.1667 50.1667M38.5 26.8333C36.9679 26.8333 35.4508 27.1351 34.0354 27.7214C32.6199 28.3077 31.3338 29.1671 30.2504 30.2504C29.1671 31.3338 28.3077 32.6199 27.7214 34.0354C27.1351 35.4508 26.8333 36.9679 26.8333 38.5C26.8333 40.0321 27.1351 41.5492 27.7214 42.9646C28.3077 44.3801 29.1671 45.6662 30.2504 46.7496C31.3338 47.8329 32.6199 48.6923 34.0354 49.2786C35.4508 49.8649 36.9679 50.1667 38.5 50.1667C40.0321 50.1667 41.5492 49.8649 42.9646 49.2786C44.3801 48.6923 45.6662 47.8329 46.7496 46.7496C47.8329 45.6662 48.6923 44.3801 49.2786 42.9646C49.8649 41.5492 50.1667 40.0321 50.1667 38.5C50.1667 36.9679 49.8649 35.4508 49.2786 34.0354C48.6923 32.6199 47.8329 31.3338 46.7496 30.2504C45.6662 29.1671 44.3801 28.3077 42.9646 27.7214C41.5492 27.1351 40.0321 26.8333 38.5 26.8333ZM15.1667 50.1667C12.0725 50.1667 9.10501 51.3958 6.91709 53.5837C4.72916 55.7717 3.5 58.7391 3.5 61.8333C3.5 64.9275 4.72916 67.895 6.91709 70.0829C9.10501 72.2708 12.0725 73.5 15.1667 73.5C18.2609 73.5 21.2283 72.2708 23.4162 70.0829C25.6042 67.895 26.8333 64.9275 26.8333 61.8333V50.1667M15.1667 50.1667H26.8333" stroke="#1E1E1E" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/> </svg>
+      Button List (FRAME, 144x24)
+        style: display: flex; flex-direction: row; column-gap: 16px /* var:VariableID:9:11261 */; align-items: center
+        X Logo (FRAME, 24x24)
+          Icon (VECTOR, 24x24)
+            style: background: #1E1E1E /* var:VariableID:3919:36482 */; svg: <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M28.5474 20.3271L46.4045 0H42.1745L26.6626 17.6461L14.2825 0H0L18.7252 26.6866L0 48H4.23007L20.6004 29.3611L33.6775 48H47.96M5.7568 3.1238H12.2554L42.1713 45.0297H35.6711" fill="#1E1E1E"/> </svg>
+        Logo Instagram (FRAME, 24x24)
+          style: overflow: hidden
+          Icon (VECTOR, 24x24)
+            style: background: #1E1E1E /* var:VariableID:3919:36482 */; svg: <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M24 4.326C30.408 4.326 31.168 4.35 33.7 4.466C40.204 4.762 43.242 7.848 43.538 14.304C43.654 16.834 43.676 17.594 43.676 24.002C43.676 30.412 43.652 31.17 43.538 33.7C43.24 40.15 40.21 43.242 33.7 43.538C31.168 43.654 30.412 43.678 24 43.678C17.592 43.678 16.832 43.654 14.302 43.538C7.782 43.24 4.76 40.14 4.464 33.698C4.348 31.168 4.324 30.41 4.324 24C4.324 17.592 4.35 16.834 4.464 14.302C4.762 7.848 7.792 4.76 14.302 4.464C16.834 4.35 17.592 4.326 24 4.326ZM24 0C17.482 0 16.666 0.028 14.106 0.144C5.39 0.544 0.546 5.38 0.146 14.104C0.028 16.666 0 17.482 0 24C0 30.518 0.028 31.336 0.144 33.896C0.544 42.612 5.38 47.456 14.104 47.856C16.666 47.972 17.482 48 24 48C30.518 48 31.336 47.972 33.896 47.856C42.604 47.456 47.46 42.62 47.854 33.896C47.972 31.336 48 30.518 48 24C48 17.482 47.972 16.666 47.856 14.106C47.464 5.398 42.622 0.546 33.898 0.146C31.336 0.028 30.518 0 24 0ZM24 11.676C17.194 11.676 11.676 17.194 11.676 24C11.676 30.806 17.194 36.326 24 36.326C30.806 36.326 36.324 30.808 36.324 24C36.324 17.194 30.806 11.676 24 11.676ZM24 32C19.582 32 16 28.42 16 24C16 19.582 19.582 16 24 16C28.418 16 32 19.582 32 24C32 28.42 28.418 32 24 32ZM36.812 8.31C35.22 8.31 33.93 9.6 33.93 11.19C33.93 12.78 35.22 14.07 36.812 14.07C38.402 14.07 39.69 12.78 39.69 11.19C39.69 9.6 38.402 8.31 36.812 8.31Z" fill="#1E1E1E"/> </svg>
+        Logo YouTube (FRAME, 24x24)
+          style: overflow: hidden
+          Icon (VECTOR, 24x18)
+            style: background: #1E1E1E /* var:VariableID:3919:36482 */; svg: <svg width="48" height="36" viewBox="0 0 48 36" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M39.2295 0.368245C32.0216 -0.123748 15.9678 -0.121748 8.76988 0.368245C0.975987 0.900238 0.0579992 5.60817 0 18C0.0579992 30.3698 0.967987 35.0978 8.76988 35.6318C15.9698 36.1218 32.0216 36.1238 39.2295 35.6318C47.0234 35.0998 47.9414 30.3918 47.9993 18C47.9414 5.63017 47.0314 0.902238 39.2295 0.368245ZM17.9998 25.9999V10.0001L33.9995 17.986L17.9998 25.9999Z" fill="#1E1E1E"/> </svg>
+        LinkedIn (FRAME, 24x24)
+          style: overflow: hidden
+          Icon (VECTOR, 24x24)
+            style: background: #1E1E1E /* var:VariableID:3919:36482 */; svg: <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M38 0H10C4.478 0 0 4.478 0 10V38C0 43.522 4.478 48 10 48H38C43.524 48 48 43.522 48 38V10C48 4.478 43.524 0 38 0ZM16 38H10V16H16V38ZM13 13.464C11.068 13.464 9.5 11.884 9.5 9.936C9.5 7.988 11.068 6.408 13 6.408C14.932 6.408 16.5 7.988 16.5 9.936C16.5 11.884 14.934 13.464 13 13.464ZM40 38H34V26.792C34 20.056 26 20.566 26 26.792V38H20V16H26V19.53C28.792 14.358 40 13.976 40 24.482V38Z" fill="#1E1E1E"/> </svg>
+    Slot (SLOT, 818x276)
+      style: display: flex; flex-direction: row; column-gap: 16px; align-items: center; background: #EBFFEE /* var:VariableID:2002:7433 */
+      Text Link List (INSTANCE, 262x276) [component: Density=Default]
+        component-properties: Slot#6062:6={"guid":{"sessionID":-1,"localID":-1}}, Has Title#322:21=true, Density=Default
+        style: display: flex; flex-direction: column; row-gap: 12px /* var:VariableID:9:11260 */; align-items: flex-start
+        Title (FRAME, 262x38)
+          style: display: flex; flex-direction: column; align-items: flex-start; align-self: STRETCH; padding: 0px 0px 16px 0px /* var:VariableID:9:11261 */; width: 100%
+          Text Strong (INSTANCE, 80x22) [component: Text Strong]
+            component-properties: Text#2104:8=Use cases
+            style: display: flex; flex-direction: row; align-items: flex-start
+            Text Strong (TEXT, 80x22)
+              style: font-family: "Inter"; font-weight: 600; font-size: 16px; line-height: 22.4px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Use cases"
+        Slot (SLOT, 144x226)
+          style: display: flex; flex-direction: column; row-gap: 12px; align-items: flex-start
+          Text Link List Item (INSTANCE, 72x22) [component: Text Link List Item]
+            component-properties: Text#2153:15=UI design
+            style: display: flex; flex-direction: row; justify-content: center; align-items: center
+            List item (TEXT, 72x22)
+              style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "UI design"
+          Text Link List Item (INSTANCE, 78x22) [component: Text Link List Item]
+            component-properties: Text#2153:15=UX design
+            style: display: flex; flex-direction: row; justify-content: center; align-items: center
+            List item (TEXT, 78x22)
+              style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "UX design"
+          Text Link List Item (INSTANCE, 92x22) [component: Text Link List Item]
+            component-properties: Text#2153:15=Wireframing
+            style: display: flex; flex-direction: row; justify-content: center; align-items: center
+            List item (TEXT, 92x22)
+              style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Wireframing"
+          Text Link List Item (INSTANCE, 100x22) [component: Text Link List Item]
+            component-properties: Text#2153:15=Diagramming
+            style: display: flex; flex-direction: row; justify-content: center; align-items: center
+            List item (TEXT, 100x22)
+              style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Diagramming"
+          Text Link List Item (INSTANCE, 105x22) [component: Text Link List Item]
+            component-properties: Text#2153:15=Brainstorming
+            style: display: flex; flex-direction: row; justify-content: center; align-items: center
+            List item (TEXT, 105x22)
+              style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Brainstorming"
+          Text Link List Item (INSTANCE, 138x22) [component: Text Link List Item]
+            component-properties: Text#2153:15=Online whiteboard
+            style: display: flex; flex-direction: row; justify-content: center; align-items: center
+            List item (TEXT, 138x22)
+              style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Online whiteboard"
+          Text Link List Item (INSTANCE, 144x22) [component: Text Link List Item]
+            component-properties: Text#2153:15=Team collaboration
+            style: display: flex; flex-direction: row; justify-content: center; align-items: center
+            List item (TEXT, 144x22)
+              style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Team collaboration"
+      Text Link List (INSTANCE, 262x276) [component: Density=Default]
+        component-properties: Slot#6062:6={"guid":{"sessionID":-1,"localID":-1}}, Has Title#322:21=true, Density=Default
+        style: display: flex; flex-direction: column; row-gap: 12px /* var:VariableID:9:11260 */; align-items: flex-start
+        Title (FRAME, 262x38)
+          style: display: flex; flex-direction: column; align-items: flex-start; align-self: STRETCH; padding: 0px 0px 16px 0px /* var:VariableID:9:11261 */; width: 100%
+          Text Strong (INSTANCE, 59x22) [component: Text Strong]
+            component-properties: Text#2104:8=Explore
+            style: display: flex; flex-direction: row; align-items: flex-start
+            Text Strong (TEXT, 59x22)
+              style: font-family: "Inter"; font-weight: 600; font-size: 16px; line-height: 22.4px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Explore"
+        Slot (SLOT, 168x226)
+          style: display: flex; flex-direction: column; row-gap: 12px; align-items: flex-start
+          Text Link List Item (INSTANCE, 53x22) [component: Text Link List Item]
+            component-properties: Text#2153:15=Design
+            style: display: flex; flex-direction: row; justify-content: center; align-items: center
+            List item (TEXT, 53x22)
+              style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Design"
+          Text Link List Item (INSTANCE, 89x22) [component: Text Link List Item]
+            component-properties: Text#2153:15=Prototyping
+            style: display: flex; flex-direction: row; justify-content: center; align-items: center
+            List item (TEXT, 89x22)
+              style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Prototyping"
+          Text Link List Item (INSTANCE, 167x22) [component: Text Link List Item]
+            component-properties: Text#2153:15=Development features
+            style: display: flex; flex-direction: row; justify-content: center; align-items: center
+            List item (TEXT, 167x22)
+              style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Development features"
+          Text Link List Item (INSTANCE, 120x22) [component: Text Link List Item]
+            component-properties: Text#2153:15=Design systems
+            style: display: flex; flex-direction: row; justify-content: center; align-items: center
+            List item (TEXT, 120x22)
+              style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Design systems"
+          Text Link List Item (INSTANCE, 168x22) [component: Text Link List Item]
+            component-properties: Text#2153:15=Collaboration features
+            style: display: flex; flex-direction: row; justify-content: center; align-items: center
+            List item (TEXT, 168x22)
+              style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Collaboration features"
+          Text Link List Item (INSTANCE, 117x22) [component: Text Link List Item]
+            component-properties: Text#2153:15=Design process
+            style: display: flex; flex-direction: row; justify-content: center; align-items: center
+            List item (TEXT, 117x22)
+              style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Design process"
+          Text Link List Item (INSTANCE, 55x22) [component: Text Link List Item]
+            component-properties: Text#2153:15=FigJam
+            style: display: flex; flex-direction: row; justify-content: center; align-items: center
+            List item (TEXT, 55x22)
+              style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "FigJam"
+      Text Link List (INSTANCE, 262x276) [component: Density=Default]
+        component-properties: Slot#6062:6={"guid":{"sessionID":-1,"localID":-1}}, Has Title#322:21=true, Density=Default
+        style: display: flex; flex-direction: column; row-gap: 12px /* var:VariableID:9:11260 */; align-items: flex-start
+        Title (FRAME, 262x38)
+          style: display: flex; flex-direction: column; align-items: flex-start; align-self: STRETCH; padding: 0px 0px 16px 0px /* var:VariableID:9:11261 */; width: 100%
+          Text Strong (INSTANCE, 82x22) [component: Text Strong]
+            component-properties: Text#2104:8=Resources
+            style: display: flex; flex-direction: row; align-items: flex-start
+            Text Strong (TEXT, 82x22)
+              style: font-family: "Inter"; font-weight: 600; font-size: 16px; line-height: 22.4px; text-align: left; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Resources"
+        Slot (SLOT, 123x226)
+          style: display: flex; flex-direction: column; row-gap: 12px; align-items: flex-start
+          Text Link List Item (INSTANCE, 34x22) [component: Text Link List Item]
+            component-properties: Text#2153:15=Blog
+            style: display: flex; flex-direction: row; justify-content: center; align-items: center
+            List item (TEXT, 34x22)
+              style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Blog"
+          Text Link List Item (INSTANCE, 109x22) [component: Text Link List Item]
+            component-properties: Text#2153:15=Best practices
+            style: display: flex; flex-direction: row; justify-content: center; align-items: center
+            List item (TEXT, 109x22)
+              style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Best practices"
+          Text Link List Item (INSTANCE, 49x22) [component: Text Link List Item]
+            component-properties: Text#2153:15=Colors
+            style: display: flex; flex-direction: row; justify-content: center; align-items: center
+            List item (TEXT, 49x22)
+              style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Colors"
+          Text Link List Item (INSTANCE, 90x22) [component: Text Link List Item]
+            component-properties: Text#2153:15=Color wheel
+            style: display: flex; flex-direction: row; justify-content: center; align-items: center
+            List item (TEXT, 90x22)
+              style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Color wheel"
+          Text Link List Item (INSTANCE, 61x22) [component: Text Link List Item]
+            component-properties: Text#2153:15=Support
+            style: display: flex; flex-direction: row; justify-content: center; align-items: center
+            List item (TEXT, 61x22)
+              style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Support"
+          Text Link List Item (INSTANCE, 86x22) [component: Text Link List Item]
+            component-properties: Text#2153:15=Developers
+            style: display: flex; flex-direction: row; justify-content: center; align-items: center
+            List item (TEXT, 86x22)
+              style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Developers"
+          Text Link List Item (INSTANCE, 123x22) [component: Text Link List Item]
+            component-properties: Text#2153:15=Resource library
+            style: display: flex; flex-direction: row; justify-content: center; align-items: center
+            List item (TEXT, 123x22)
+              style: font-family: "Inter"; font-weight: 400; font-size: 16px; line-height: 22.4px; text-align: left; display: flex; align-items: center; color: #1E1E1E /* var:VariableID:3919:36450 */; text: "Resource library"
