@@ -1,16 +1,16 @@
 /**
  * Ablation Phase 1: Strip experiments.
  *
- * For each of 5 strip types × N fixtures × M runs:
+ * For each selected strip type × N fixtures × M runs:
  *   Strip info from design-tree → implement via API → render → compare → record metrics
  *
  * Usage:
  *   ANTHROPIC_API_KEY=sk-... npx tsx src/agents/ablation/run-phase1.ts
  *
  * Environment variables:
- *   ANTHROPIC_API_KEY, ABLATION_FIXTURES, ABLATION_TYPES, ABLATION_RUNS
+ *   ANTHROPIC_API_KEY, ABLATION_FIXTURES, ABLATION_TYPES, ABLATION_RUNS, ABLATION_BASELINE_ONLY
  *
- * Output: logs/ablation/phase1/{config-version}/{fixture}/{type}/run-{n}/
+ * Output: data/ablation/phase1/{config-version}/{fixture}/{type}/run-{n}/
  */
 
 import { createHash } from "node:crypto";
@@ -39,6 +39,8 @@ function computeConfigVersion(): string {
     resolve("src/core/engine/visual-compare.ts"),
     resolve("src/core/engine/visual-compare-helpers.ts"),
     resolve("src/core/adapters/figma-file-loader.ts"),
+    resolve("src/agents/ablation/helpers.ts"),
+    PROMPT_PATH,
   ];
   const hash = createHash("sha256");
   for (const f of coreFiles) {
@@ -75,6 +77,7 @@ interface RankingEntry {
   avgDeltaHtmlBytes: number;
   avgDeltaCssClasses: number;
   avgDeltaCssVariables: number;
+  fixtureCount: number;
   perFixture: Record<string, {
     deltaV: number; deltaOutputTokens: number; deltaHtmlBytes: number;
     deltaCssClasses: number; deltaCssVariables: number;
@@ -194,6 +197,7 @@ function computeRankings(results: RunResult[]): RankingEntry[] {
       avgDeltaHtmlBytes: n > 0 ? sH / n : 0,
       avgDeltaCssClasses: n > 0 ? sC / n : 0,
       avgDeltaCssVariables: n > 0 ? sVa / n : 0,
+      fixtureCount: n,
       perFixture: pf,
     });
   }
@@ -203,11 +207,11 @@ function computeRankings(results: RunResult[]): RankingEntry[] {
 
 function printRankings(rankings: RankingEntry[]): void {
   console.log("\n=== ABLATION RANKINGS ===\n");
-  console.log("  Rank  Type                          ΔV%     ΔOutTok  ΔHTML(B)  ΔClass  ΔVars");
-  console.log("  ----  ----------------------------  ------  -------  --------  ------  -----");
+  console.log("  Rank  Type                          ΔV%     ΔOutTok  ΔHTML(B)  ΔClass  ΔVars  N");
+  console.log("  ----  ----------------------------  ------  -------  --------  ------  -----  -");
   let rank = 1;
   for (const r of rankings) {
-    console.log(`  ${String(rank++).padStart(4)}  ${r.type.padEnd(28)}  ${r.avgDeltaV.toFixed(1).padStart(6)}%  ${((r.avgDeltaOutputTokens > 0 ? "+" : "") + r.avgDeltaOutputTokens.toFixed(0)).padStart(7)}  ${((r.avgDeltaHtmlBytes > 0 ? "+" : "") + r.avgDeltaHtmlBytes.toFixed(0)).padStart(8)}  ${((r.avgDeltaCssClasses > 0 ? "+" : "") + r.avgDeltaCssClasses.toFixed(0)).padStart(6)}  ${((r.avgDeltaCssVariables > 0 ? "+" : "") + r.avgDeltaCssVariables.toFixed(0)).padStart(5)}`);
+    console.log(`  ${String(rank++).padStart(4)}  ${r.type.padEnd(28)}  ${r.avgDeltaV.toFixed(1).padStart(6)}%  ${((r.avgDeltaOutputTokens > 0 ? "+" : "") + r.avgDeltaOutputTokens.toFixed(0)).padStart(7)}  ${((r.avgDeltaHtmlBytes > 0 ? "+" : "") + r.avgDeltaHtmlBytes.toFixed(0)).padStart(8)}  ${((r.avgDeltaCssClasses > 0 ? "+" : "") + r.avgDeltaCssClasses.toFixed(0)).padStart(6)}  ${((r.avgDeltaCssVariables > 0 ? "+" : "") + r.avgDeltaCssVariables.toFixed(0)).padStart(5)}  ${r.fixtureCount}`);
   }
   console.log("");
 }
