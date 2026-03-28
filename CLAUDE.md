@@ -126,6 +126,45 @@ Calibration commands are NOT exposed as CLI commands. They run exclusively insid
 - A/B Validation: implements entire design with/without the rule's data, compares similarity
 - Critic decides KEEP / ADJUST / DROP
 
+**Ablation experiments (`src/agents/ablation/`)**
+
+Two scripts, shared helpers:
+
+**`run-phase1.ts` — Strip experiments**
+```bash
+ANTHROPIC_API_KEY=sk-... npx tsx src/agents/ablation/run-phase1.ts
+ABLATION_FIXTURES=desktop-product-detail ABLATION_TYPES=component-references npx tsx ...
+```
+- Strips info from design-tree → implements via Claude API → renders → compares vs Figma screenshot
+- 5 strip types: layout-direction-spacing, component-references, node-names-hierarchy, variable-references, style-references
+- Output: `data/ablation/phase1/{config-version}/{fixture}/{type}/run-{n}/`
+- Metrics recorded: pixel similarity, input/output tokens, HTML bytes/lines, CSS class count, CSS variable count
+- Cache: versioned by config hash. Never delete — previous versions preserved automatically.
+
+**`run-condition.ts` — Condition experiments**
+```bash
+ANTHROPIC_API_KEY=sk-... npx tsx src/agents/ablation/run-condition.ts --type size-constraints
+ANTHROPIC_API_KEY=sk-... npx tsx src/agents/ablation/run-condition.ts --type hover-interaction
+```
+- **size-constraints**: strip size info → implement via API → `removeRootFixedWidth` (1200px→100%, min-width→0) → render at 1920px (desktop) or 768px (mobile) → compare vs screenshot-1920/768.png. Both baseline and stripped get same treatment.
+- **hover-interaction**: implement with vs without `[hover]:` data → compare :hover CSS rules and values
+- Output: `data/ablation/conditions/{type}/{fixture}/`
+
+**`helpers.ts` — Shared utilities**
+- API call with retry (429/529), HTML parsing/sanitization, local font injection
+- CSS metrics, render+compare+crop pipeline, fixture validation
+
+**Parallel execution across agents**
+- Results saved to `data/ablation/` (git-tracked) so multiple cloud agents can contribute
+- Same config-version → same directory. Split work by fixture or type:
+  ```
+  Agent A: ABLATION_BASELINE_ONLY=true                              # baseline only
+  Agent B: ABLATION_TYPES=layout-direction-spacing,component-references
+  Agent C: ABLATION_TYPES=node-names-hierarchy,variable-references,style-references
+  ```
+- **Do NOT assign the same fixture+type+run to multiple agents** — results will conflict
+- After all agents finish, re-run the script (cached results reused) to generate combined summary.json
+
 ### File Output Structure
 
 ```

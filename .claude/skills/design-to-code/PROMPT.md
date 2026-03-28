@@ -12,6 +12,7 @@ This prompt is used by all code generation pipelines:
 ## Conventions
 - Semantic HTML elements
 - Flexbox / Grid for layout
+- Always include `* { box-sizing: border-box; margin: 0; padding: 0; }` reset
 
 ## CRITICAL: Do NOT Interpret. Reproduce Exactly.
 
@@ -115,7 +116,9 @@ Do not silently guess — always declare what you assumed.
 ## Output
 
 ### 1. Code
-Output as a code block with filename:
+- Place the entire design inside a single root `<div>` as the first child of `<body>` — do NOT apply design styles directly to `<body>` or `<html>`
+- Output as a code block with filename:
+
 ```html
 // filename: index.html
 <!DOCTYPE html>
