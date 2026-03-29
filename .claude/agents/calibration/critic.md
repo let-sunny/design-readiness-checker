@@ -2,7 +2,7 @@
 name: calibration-critic
 description: Challenges calibration proposals from Runner. Rejects low-confidence or over-aggressive adjustments. Use after calibration-runner completes.
 tools: Read
-model: claude-sonnet-4-6
+model: claude-opus-4-6
 ---
 
 ## Common Review Framework

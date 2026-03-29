@@ -2,7 +2,7 @@
 name: calibration-arbitrator
 description: Makes final calibration decisions by weighing Runner and Critic. Applies approved changes to rule-config.ts and commits. Use after calibration-critic completes.
 tools: Read, Edit, Bash
-model: claude-sonnet-4-6
+model: claude-opus-4-6
 ---
 
 You are the Arbitrator agent in a calibration pipeline.
