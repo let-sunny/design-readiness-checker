@@ -70,11 +70,10 @@ export function renderReportBody(data: ReportData): string {
 ${CATEGORIES.map(cat => {
     const cs = scores.byCategory[cat];
     const desc = CATEGORY_DESCRIPTIONS[cat];
-    return `        <a href="#cat-${cat}" class="rpt-gauge-item">
+    return `        <a href="#cat-${cat}" class="rpt-gauge-item" title="${esc(desc)}">
           ${renderGaugeSvg(cs.percentage, 100, 7)}
           <span class="rpt-gauge-label">${CATEGORY_LABELS[cat]}</span>
           <span class="rpt-gauge-count">${cs.issueCount} issues</span>
-          <div class="rpt-tooltip">${esc(desc)}</div>
         </a>`;
   }).join("\n")}
       </div>
@@ -123,7 +122,6 @@ export function renderSummaryDot(sevClass: string, count: number, label: string)
           <span class="rpt-dot ${sevClass}"></span>
           <span class="rpt-summary-count">${count}</span>
           <span class="rpt-summary-label">${label}</span>
-          <div class="rpt-tooltip">${esc(tooltip)}</div>
         </div>`;
 }
 

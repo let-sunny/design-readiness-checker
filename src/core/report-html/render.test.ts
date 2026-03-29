@@ -201,7 +201,7 @@ describe("renderSummaryDot", () => {
   it("includes tooltip text", () => {
     const html = renderSummaryDot("sev-risk", 1, "Risk");
     expect(html).toContain("Implementable now but will break");
-    expect(html).toContain('class="rpt-tooltip"');
+    expect(html).toContain('title=');
   });
 
   it("renders zero count", () => {
