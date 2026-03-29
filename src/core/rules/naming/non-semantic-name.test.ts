@@ -42,7 +42,7 @@ describe("non-semantic-name", () => {
       const node = makeNode({ type: "FRAME", name, children: [makeNode()] });
       const result = nonSemanticName.check(node, makeContext());
       expect(result).not.toBeNull();
-      expect(result!.subType).not.toBe("shape-name"); // caught by isDefaultName first
+      expect(result!.subType).toBe("frame"); // FRAME type → caught by isDefaultName first
     },
   );
 
