@@ -76,9 +76,9 @@ export function renderReportBody(data: ReportData): string {
     <!-- Category Gauges -->
     <section class="card rpt-gauges">
       <div class="rpt-gauges-grid">
-${CATEGORIES.map(cat => {
+${CATEGORIES.map((cat, i) => {
     const cs = scores.byCategory[cat];
-    return `        <button type="button" class="rpt-gauge-item" data-tab="${cat}">
+    return `        <button type="button" class="rpt-gauge-item${i === 0 ? " active" : ""}" data-tab="${cat}">
           ${renderGaugeSvg(cs.percentage, 100, 7)}
           <span class="rpt-gauge-label">${CATEGORY_LABELS[cat]}</span>
           <span class="rpt-gauge-count">${cs.issueCount} issues</span>
@@ -183,18 +183,18 @@ export function renderRuleSection(
   return `        <details class="card rpt-rule" data-rule="${esc(rg.ruleId)}"${isOpen ? " open" : ""}>
           <summary class="rpt-rule-header">
             <span class="rpt-badge score-red">${rg.totalScore}</span>
-            <div class="rpt-rule-title">
+            <span class="rpt-rule-title">
               <span class="rpt-rule-name">${esc(rg.ruleName)}</span>
               <span class="rpt-rule-meta">
                 <span class="rpt-dot-sm ${rg.severityClass}"></span>
                 ${esc(rg.severity)} · ${rg.issues.length} issues
               </span>
-              <div class="rpt-rule-info">
-                <p><strong>Why:</strong> ${esc(rg.why)}</p>
-                <p><strong>Impact:</strong> ${esc(rg.impact)}</p>
-                <p><strong>Fix:</strong> ${esc(rg.fix)}</p>
-              </div>
-            </div>
+              <span class="rpt-rule-info">
+                <span class="rpt-rule-info-line"><strong>Why:</strong> ${esc(rg.why)}</span>
+                <span class="rpt-rule-info-line"><strong>Impact:</strong> ${esc(rg.impact)}</span>
+                <span class="rpt-rule-info-line"><strong>Fix:</strong> ${esc(rg.fix)}</span>
+              </span>
+            </span>
             <svg class="rpt-rule-chevron no-print" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 9l-7 7-7-7"/></svg>
           </summary>
           <div class="rpt-rule-issues">

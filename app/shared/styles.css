@@ -392,10 +392,6 @@ body {
 .rpt-rule[open] > .rpt-rule-header .rpt-rule-chevron {
   transform: rotate(180deg);
 }
-.rpt-rule-title {
-  flex: 1;
-  min-width: 0;
-}
 .rpt-rule-name {
   font-size: 14px;
   font-weight: 600;
@@ -409,14 +405,23 @@ body {
   gap: 6px;
   margin-top: 2px;
 }
+.rpt-rule-title {
+  display: block;
+  flex: 1;
+  min-width: 0;
+}
 .rpt-rule-info {
-  padding: 8px 20px 12px;
+  display: block;
+  padding: 8px 0 4px;
   font-size: 12px;
   color: var(--fg-muted);
   line-height: 1.6;
   margin-top: 8px;
 }
-.rpt-rule-info > * + * {
+.rpt-rule-info-line {
+  display: block;
+}
+.rpt-rule-info-line + .rpt-rule-info-line {
   margin-top: 4px;
 }
 .rpt-rule-info strong {
