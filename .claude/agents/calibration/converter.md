@@ -47,7 +47,7 @@ Read and follow `.claude/skills/design-to-code/PROMPT.md` for all code generatio
 
 ## Steps
 
-1. Read `docs/DESIGN-TO-CODE-PROMPT.md` for code generation rules
+1. Read `.claude/skills/design-to-code/PROMPT.md` for code generation rules
 2. Generate design tree (CLI)
 3. Convert the design tree to a single standalone HTML+CSS file
    - Each node in the tree maps 1:1 to an HTML element
@@ -92,7 +92,7 @@ Write results to `$RUN_DIR/conversion.json`.
   "notes": "Summary of the conversion experience",
   "ruleImpactAssessment": [
     {
-      "ruleId": "raw-color",
+      "ruleId": "raw-value",
       "issueCount": 4,
       "actualImpact": "easy",
       "description": "Colors were directly available in design tree, no difficulty"
@@ -111,7 +111,7 @@ Write results to `$RUN_DIR/conversion.json`.
   "uncoveredStruggles": [
     {
       "description": "A difficulty not covered by any flagged rule",
-      "suggestedCategory": "structure | token | component | naming | behavior",
+      "suggestedCategory": "pixel-critical | responsive-critical | code-quality | token-management | interaction | minor",
       "estimatedImpact": "easy | moderate | hard | failed"
     }
   ]

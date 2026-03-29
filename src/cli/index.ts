@@ -33,6 +33,7 @@ import { registerCalibrateEvaluate } from "./commands/internal/calibrate-evaluat
 import { registerCalibrateGapReport } from "./commands/internal/calibrate-gap-report.js";
 import { registerCalibrateRun } from "./commands/internal/calibrate-run.js";
 import { registerGatherEvidence, registerFinalizeDebate } from "./commands/internal/calibrate-debate.js";
+import { registerFilterDiscoveryEvidence, registerApplyDecision } from "./commands/internal/rule-discovery.js";
 import { registerFixtureManagement, registerEvidenceEnrich, registerEvidencePrune } from "./commands/internal/fixture-management.js";
 
 const require = createRequire(import.meta.url);
@@ -84,6 +85,8 @@ registerFinalizeDebate(cli);
 registerFixtureManagement(cli);
 registerEvidenceEnrich(cli);
 registerEvidencePrune(cli);
+registerFilterDiscoveryEvidence(cli);
+registerApplyDecision(cli);
 
 // ============================================
 // Documentation command

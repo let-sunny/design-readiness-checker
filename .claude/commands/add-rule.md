@@ -23,12 +23,18 @@ Create `$RUN_DIR/activity.jsonl` with a session-start entry.
 
 ### Step 1 — Researcher
 
-Read `data/discovery-evidence.json` and filter entries whose `category` matches (case-insensitive) the concept being investigated. These entries are pre-filtered to exclude environment/tooling noise (font CDN, DPI, network issues).
+Filter discovery evidence (deterministic CLI — no LLM):
+
+```bash
+npx canicode discovery-filter-evidence "<concept>" --run-dir $RUN_DIR
+```
+
+This reads `data/discovery-evidence.json`, filters by category, and writes `$RUN_DIR/prior-evidence.json`.
 
 Spawn the `rule-discovery-researcher` subagent. Provide:
 - The concept to investigate
 - The fixture paths
-- Discovery evidence entries matching this concept (from `data/discovery-evidence.json`)
+- The filtered evidence from `$RUN_DIR/prior-evidence.json`
 - **Tell the agent: "Return your findings as JSON. Do NOT write any files."**
 
 After the Researcher returns, **you** write the JSON to `$RUN_DIR/research.json`.
@@ -132,12 +138,20 @@ Append to `$RUN_DIR/activity.jsonl`:
 
 ### Step 7 — Apply Decision
 
-Based on the Critic's decision:
-- **KEEP**: Commit the new rule. Message: `feat: add rule <rule-id> via discovery pipeline`
-  - **Prune discovery evidence**: `npx canicode discovery-prune-evidence <category>` (the implemented rule's category). Include the pruned file in the commit.
-- **ADJUST**: Apply the Critic's suggested changes, run tests, then commit.
-  - **Prune discovery evidence**: same as KEEP.
-- **DROP**: Revert all changes to src/. Log the reason.
+Read the decision (deterministic CLI — no LLM):
+
+```bash
+npx canicode rule-apply-decision $RUN_DIR
+```
+
+This outputs JSON: `{"action": "commit"|"adjust"|"revert", "ruleId": "...", "category": "..."}`.
+
+Based on the action:
+- **commit** (KEEP): Commit the new rule. Message: `feat: add rule <rule-id> via discovery pipeline`
+  - **Prune discovery evidence**: `npx canicode discovery-prune-evidence <category>`. Include the pruned file in the commit.
+- **adjust** (ADJUST): Apply the Critic's suggested changes from `$RUN_DIR/decision.json`, run tests, then commit.
+  - **Prune discovery evidence**: same as commit.
+- **revert** (DROP): Revert all changes to src/. Log the reason.
 
 ### Done
 
