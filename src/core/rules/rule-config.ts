@@ -30,6 +30,7 @@ export const RULE_ID_CATEGORY: Record<RuleId, Category> = {
   "missing-interaction-state": "interaction",
   "missing-prototype": "interaction",
   // Minor
+  "non-standard-naming": "minor",
   "default-name": "minor",
   "non-semantic-name": "minor",
   "inconsistent-naming-convention": "minor",
@@ -135,6 +136,11 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
   },
 
   // ── Minor ──
+  "non-standard-naming": {
+    severity: "suggestion",
+    score: -1,
+    enabled: true,
+  },
   "default-name": {
     severity: "suggestion",
     score: -1,

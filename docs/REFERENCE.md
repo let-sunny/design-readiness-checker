@@ -129,10 +129,11 @@ Override score, severity, or enable/disable individual rules:
 | `missing-interaction-state` | -3 | missing-info |
 | `missing-prototype` | -3 | missing-info |
 
-**Minor (3 rules)** — naming issues with negligible impact (ΔV < 2%)
+**Minor (4 rules)** — naming issues with negligible impact (ΔV < 2%)
 
 | Rule ID | Default Score | Default Severity |
 |---------|--------------|-----------------|
+| `non-standard-naming` | -1 | suggestion |
 | `default-name` | -1 | suggestion |
 | `non-semantic-name` | -1 | suggestion |
 | `inconsistent-naming-convention` | -1 | suggestion |

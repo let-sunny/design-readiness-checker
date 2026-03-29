@@ -111,6 +111,15 @@ export const detachedInstanceMsg = (name: string, componentName: string) =>
 export const variantStructureMismatchMsg = (name: string, mismatchCount: number, totalVariants: number) =>
   `"${name}" has ${mismatchCount}/${totalVariants} variants with different child structures — unify variant structures using visibility toggles for optional elements`;
 
+// ── non-standard-naming ──────────────────────────────────────────────────────
+
+export type NonStandardNamingSubType = "state-name";
+
+export const nonStandardNamingMsg = {
+  stateName: (name: string, nonStandard: string, suggestion: string) =>
+    `"${name}" has non-standard state name "${nonStandard}" — use "${suggestion}" for dev-friendly naming`,
+};
+
 // ── default-name ─────────────────────────────────────────────────────────────
 
 export type DefaultNameSubType = "frame" | "group" | "vector" | "shape" | "text" | "image" | "component" | "instance";

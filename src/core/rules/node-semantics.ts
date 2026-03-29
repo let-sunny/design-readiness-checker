@@ -103,6 +103,44 @@ export function isStatefulComponent(node: AnalysisNode): boolean {
   return getStatefulComponentType(node) !== null;
 }
 
+/**
+ * Standard state names accepted across web + mobile platforms.
+ * Used by missing-interaction-state (to detect presence) and
+ * non-standard-naming (to flag non-standard names).
+ */
+export const STANDARD_STATE_NAMES = new Set([
+  // CSS pseudo-classes (web)
+  "default", "hover", "active", "focus", "focused", "disabled",
+  // Material Design (Android)
+  "pressed",
+  // UIKit (iOS)
+  "highlighted",
+  // Common
+  "selected",
+]);
+
+/**
+ * Patterns that look like state names but aren't in the standard set.
+ * Maps common non-standard names to their standard equivalent for suggestions.
+ */
+export const STATE_NAME_SUGGESTIONS: Record<string, string> = {
+  on: "active",
+  off: "disabled",
+  clicked: "pressed",
+  tapped: "pressed",
+  inactive: "disabled",
+  normal: "default",
+  rest: "default",
+  enabled: "default",
+  hovered: "hover",
+  activated: "active",
+  checked: "selected",
+  unchecked: "default",
+};
+
+/** Pattern to detect state-like variant option names (broad match) */
+export const STATE_LIKE_PATTERN = /\b(on|off|clicked|tapped|inactive|normal|rest|enabled|hovered|activated|checked|unchecked)\b/i;
+
 // ── Overlay / Carousel patterns ──────────────────────────────────────────────
 
 /** Elements that open on top of current view */

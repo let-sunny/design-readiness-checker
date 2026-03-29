@@ -1,7 +1,7 @@
 import type { RuleCheckFn, RuleDefinition } from "../../contracts/rule.js";
 import { defineRule } from "../rule-registry.js";
-import { defaultNameMsg, getDefaultNameSubType, nonSemanticNameMsg, inconsistentNamingMsg } from "../rule-messages.js";
-import { isExcludedName, isDefaultName, isNonSemanticName } from "../node-semantics.js";
+import { defaultNameMsg, getDefaultNameSubType, nonSemanticNameMsg, inconsistentNamingMsg, nonStandardNamingMsg } from "../rule-messages.js";
+import { isExcludedName, isDefaultName, isNonSemanticName, STANDARD_STATE_NAMES, STATE_NAME_SUGGESTIONS, STATE_LIKE_PATTERN } from "../node-semantics.js";
 
 function detectNamingConvention(name: string): string | null {
   if (/^[a-z]+(-[a-z]+)*$/.test(name)) return "kebab-case";
@@ -139,5 +139,60 @@ const inconsistentNamingConventionCheck: RuleCheckFn = (node, context) => {
 export const inconsistentNamingConvention = defineRule({
   definition: inconsistentNamingConventionDef,
   check: inconsistentNamingConventionCheck,
+});
+
+// ============================================
+// non-standard-naming
+// ============================================
+
+const nonStandardNamingDef: RuleDefinition = {
+  id: "non-standard-naming",
+  name: "Non-Standard Naming",
+  category: "minor",
+  why: "Non-standard state names prevent interaction rules from detecting state variants — AI cannot generate correct :hover/:active/:disabled styles",
+  impact: "Interaction state detection fails, resulting in static UI with no state transitions",
+  fix: "Use platform-standard state names: hover, active, pressed, selected, highlighted, disabled, focus, focused",
+};
+
+const nonStandardNamingCheck: RuleCheckFn = (node, context) => {
+  // Only check COMPONENT_SET (variant container)
+  if (node.type !== "COMPONENT_SET") return null;
+  if (!node.componentPropertyDefinitions) return null;
+
+  for (const prop of Object.values(node.componentPropertyDefinitions)) {
+    const p = prop as Record<string, unknown>;
+    if (p["type"] !== "VARIANT") continue;
+    const options = p["variantOptions"];
+    if (!Array.isArray(options)) continue;
+
+    for (const opt of options) {
+      if (typeof opt !== "string") continue;
+      const lower = opt.toLowerCase().trim();
+
+      // Skip if it's a standard name
+      if (STANDARD_STATE_NAMES.has(lower)) continue;
+
+      // Check if it matches a known non-standard state name
+      if (STATE_LIKE_PATTERN.test(opt)) {
+        const suggestion = STATE_NAME_SUGGESTIONS[lower];
+        if (suggestion) {
+          return {
+            ruleId: nonStandardNamingDef.id,
+            subType: "state-name" as const,
+            nodeId: node.id,
+            nodePath: context.path.join(" > "),
+            message: nonStandardNamingMsg.stateName(node.name, opt, suggestion),
+          };
+        }
+      }
+    }
+  }
+
+  return null;
+};
+
+export const nonStandardNaming = defineRule({
+  definition: nonStandardNamingDef,
+  check: nonStandardNamingCheck,
 });
 
