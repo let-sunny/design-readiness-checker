@@ -101,6 +101,17 @@ describe("inconsistent-naming-convention", () => {
     expect(result).not.toBeNull();
   });
 
+  it("splits acronym runs correctly in suggested name", () => {
+    const sibA = makeNode({ id: "2:1", name: "my-card" }); // kebab-case
+    const sibB = makeNode({ id: "2:2", name: "my-header" }); // kebab-case
+    const node = makeNode({ id: "1:1", name: "myURLParser" }); // camelCase with acronym
+    const siblings = [node, sibA, sibB];
+
+    const result = inconsistentNamingConvention.check(node, makeContext({ siblings }));
+    expect(result).not.toBeNull();
+    expect(result!.suggestion).toContain('"my-url-parser"');
+  });
+
   it("still flags multi-word PascalCase in Title Case context", () => {
     const sibA = makeNode({ id: "2:1", name: "Card Grid" }); // Title Case
     const sibB = makeNode({ id: "2:2", name: "Review Card" }); // Title Case

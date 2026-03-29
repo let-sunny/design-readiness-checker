@@ -28,8 +28,11 @@ function splitWords(name: string): string[] {
   if (name.includes("_")) return name.split("_");
   // kebab-case
   if (name.includes("-")) return name.split("-");
-  // camelCase / PascalCase — split on uppercase boundaries
-  return name.replace(/([a-z])([A-Z])/g, "$1\0$2").split("\0");
+  // camelCase / PascalCase — split on uppercase boundaries (including acronym runs)
+  return name
+    .replace(/([a-z0-9])([A-Z])/g, "$1\0$2")
+    .replace(/([A-Z]+)([A-Z][a-z])/g, "$1\0$2")
+    .split("\0");
 }
 
 /** Convert a name to the target convention */
