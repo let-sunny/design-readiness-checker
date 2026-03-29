@@ -94,7 +94,7 @@ describe("loadConfigFile", () => {
     const filePath = join(tempDir, "unknown-rule.json");
     writeFileSync(filePath, JSON.stringify(invalid));
 
-    await expect(loadConfigFile(filePath)).rejects.toThrow(/Unknown rule ID/);
+    await expect(loadConfigFile(filePath)).rejects.toThrow(/Unknown rule ID[\s\S]*Valid IDs/i);
   });
 });
 

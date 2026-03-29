@@ -454,6 +454,7 @@ describe("buildResultJson", () => {
     const json = buildResultJson("TestFile", result, scores);
     const issues = json.issues as Array<{ ruleId: string; subType?: string }>;
 
+    expect(issues).toHaveLength(1);
     expect(issues[0]!["subType"]).toBeUndefined();
   });
 
