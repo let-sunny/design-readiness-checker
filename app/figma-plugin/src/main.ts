@@ -323,7 +323,9 @@ async function transformPluginNode(node: SceneNode): Promise<AnalysisNode> {
   // Component properties
   if (node.type === "INSTANCE") {
     const mainComp = await (node as InstanceNode).getMainComponentAsync();
-    result.componentId = mainComp?.id ?? "";
+    if (mainComp) {
+      result.componentId = mainComp.id;
+    }
     if (
       "componentProperties" in node &&
       node.componentProperties
@@ -426,6 +428,7 @@ function countNodes(node: { children?: readonly unknown[] }): number {
 // ---- Message handler ----
 
 figma.ui.onmessage = async (msg: { type: string }) => {
+  try {
   if (msg.type === "analyze-selection") {
     const selection = figma.currentPage.selection;
     if (selection.length === 0) {
@@ -506,6 +509,12 @@ figma.ui.onmessage = async (msg: { type: string }) => {
   if (msg.type === "resize") {
     const { width, height } = msg as { type: string; width: number; height: number };
     figma.ui.resize(width, height);
+  }
+  } catch (error) {
+    figma.ui.postMessage({
+      type: "error",
+      message: error instanceof Error ? error.message : "An unexpected error occurred.",
+    });
   }
 };
 
