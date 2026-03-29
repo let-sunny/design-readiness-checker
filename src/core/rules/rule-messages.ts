@@ -158,6 +158,19 @@ export const missingInteractionStateMsg = {
     `"${name}" looks interactive but has no Focus state variant — add a State=Focus variant`,
 };
 
+// ── missing-prototype ─────────────────────────────────────────────────────────
+
+export type MissingPrototypeSubType = "navigation" | "tab" | "dropdown";
+
+export const missingPrototypeMsg = {
+  navigation: (name: string) =>
+    `"${name}" looks like a navigation link but has no click prototype — add an ON_CLICK interaction to define the destination`,
+  tab: (name: string) =>
+    `"${name}" looks like a tab but has no click prototype — add an ON_CLICK interaction to define tab switching behavior`,
+  dropdown: (name: string) =>
+    `"${name}" looks like a dropdown but has no click prototype — add an ON_CLICK interaction to define open/close behavior`,
+};
+
 // ── inconsistent-naming-convention ───────────────────────────────────────────
 
 export const inconsistentNamingMsg = (name: string, nodeConvention: string, dominantConvention: string) =>

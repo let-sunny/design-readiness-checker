@@ -2,8 +2,8 @@ import type { RuleCheckFn, RuleDefinition, RuleContext } from "../../contracts/r
 import { getAnalysisState } from "../../contracts/rule.js";
 import type { AnalysisNode } from "../../contracts/figma-node.js";
 import { defineRule } from "../rule-registry.js";
-import type { MissingInteractionStateSubType } from "../rule-messages.js";
-import { missingInteractionStateMsg } from "../rule-messages.js";
+import type { MissingInteractionStateSubType, MissingPrototypeSubType } from "../rule-messages.js";
+import { missingInteractionStateMsg, missingPrototypeMsg } from "../rule-messages.js";
 
 // ============================================
 // Interactive component classification
@@ -170,4 +170,80 @@ const missingInteractionStateCheck: RuleCheckFn = (node, context) => {
 export const missingInteractionState = defineRule({
   definition: missingInteractionStateDef,
   check: missingInteractionStateCheck,
+});
+
+// ============================================
+// missing-prototype
+// ============================================
+
+/** Interactive types that need click prototype */
+const PROTOTYPE_TYPES: Record<string, MissingPrototypeSubType> = {
+  link: "navigation",
+  tab: "tab",
+};
+
+/** Name patterns for dropdown-like elements (separate from INTERACTIVE_PATTERNS) */
+const DROPDOWN_PATTERN = /\b(dropdown|select|combo-?box|popover|accordion)\b/i;
+
+function getPrototypeSubType(node: AnalysisNode): MissingPrototypeSubType | null {
+  const interactiveType = getInteractiveType(node);
+  if (interactiveType) {
+    const mapped = PROTOTYPE_TYPES[interactiveType];
+    if (mapped) return mapped;
+  }
+  if (node.name && DROPDOWN_PATTERN.test(node.name)) return "dropdown";
+  return null;
+}
+
+/** Check if node has any ON_CLICK prototype interaction */
+function hasClickInteraction(node: AnalysisNode): boolean {
+  if (!node.interactions || !Array.isArray(node.interactions)) return false;
+  return node.interactions.some((interaction) => {
+    const i = interaction as { trigger?: { type?: string } };
+    return i.trigger?.type === "ON_CLICK";
+  });
+}
+
+const missingPrototypeDef: RuleDefinition = {
+  id: "missing-prototype",
+  name: "Missing Prototype",
+  category: "interaction",
+  why: "Interactive elements without click prototypes give AI no information about navigation or behavior on click",
+  impact: "AI cannot generate click handlers, routing, or state changes — interactive elements become static",
+  fix: "Add ON_CLICK prototype interactions to define navigation targets or state changes",
+};
+
+const SEEN_PROTO_KEY = "missing-prototype:seen";
+
+function getSeenProto(context: RuleContext): Set<string> {
+  return getAnalysisState(context, SEEN_PROTO_KEY, () => new Set<string>());
+}
+
+const missingPrototypeCheck: RuleCheckFn = (node, context) => {
+  if (node.type !== "INSTANCE" && node.type !== "COMPONENT" && node.type !== "FRAME") return null;
+
+  const subType = getPrototypeSubType(node);
+  if (!subType) return null;
+
+  // Already has click interaction
+  if (hasClickInteraction(node)) return null;
+
+  // Dedup per componentId + subType
+  const seen = getSeenProto(context);
+  const dedupeKey = `${node.componentId ?? node.id}:${subType}`;
+  if (seen.has(dedupeKey)) return null;
+  seen.add(dedupeKey);
+
+  return {
+    ruleId: missingPrototypeDef.id,
+    subType,
+    nodeId: node.id,
+    nodePath: context.path.join(" > "),
+    message: missingPrototypeMsg[subType](node.name),
+  };
+};
+
+export const missingPrototype = defineRule({
+  definition: missingPrototypeDef,
+  check: missingPrototypeCheck,
 });

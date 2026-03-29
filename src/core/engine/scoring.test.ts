@@ -303,7 +303,7 @@ describe("calculateGrade (via calculateScores)", () => {
       "responsive-critical": ["fixed-size-in-auto-layout", "missing-size-constraint"],
       "code-quality": ["missing-component", "detached-instance", "variant-structure-mismatch", "deep-nesting"],
       "token-management": ["raw-value", "irregular-spacing"],
-      "interaction": ["missing-interaction-state"],
+      "interaction": ["missing-interaction-state", "missing-prototype"],
       "minor": ["default-name", "non-semantic-name", "inconsistent-naming-convention"],
     };
 
