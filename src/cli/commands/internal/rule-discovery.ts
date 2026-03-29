@@ -140,7 +140,7 @@ const GapSchema = z.object({
   category: z.string(),
   description: z.string(),
   actionable: z.boolean(),
-  coveredByRule: z.unknown().optional(),
+  coveredByRule: z.unknown().default(null),
 }).passthrough();
 
 const GapsFileSchema = z.object({

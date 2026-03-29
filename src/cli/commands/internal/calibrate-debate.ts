@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import type { CAC } from "cac";
 import { z } from "zod";
@@ -109,8 +109,8 @@ export function registerGatherEvidence(cli: CAC): void {
       const parsed = RUN_DIR_ARG_SCHEMA.safeParse(runDir);
       if (!parsed.success) { console.log(`Invalid runDir: ${parsed.error.issues[0]?.message}`); return; }
       const dir = resolve(parsed.data);
-      if (!existsSync(dir)) {
-        console.log(`Run directory not found: ${runDir}`);
+      if (!existsSync(dir) || !statSync(dir).isDirectory()) {
+        console.log(`Run directory not found or is not a directory: ${runDir}`);
         return;
       }
 
@@ -142,8 +142,8 @@ export function registerFinalizeDebate(cli: CAC): void {
       const parsed = RUN_DIR_ARG_SCHEMA.safeParse(runDir);
       if (!parsed.success) { console.log(`Invalid runDir: ${parsed.error.issues[0]?.message}`); return; }
       const dir = resolve(parsed.data);
-      if (!existsSync(dir)) {
-        console.log(`Run directory not found: ${runDir}`);
+      if (!existsSync(dir) || !statSync(dir).isDirectory()) {
+        console.log(`Run directory not found or is not a directory: ${runDir}`);
         return;
       }
 
