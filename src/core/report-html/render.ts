@@ -76,9 +76,9 @@ export function renderReportBody(data: ReportData): string {
     <!-- Category Gauges -->
     <section class="card rpt-gauges">
       <div class="rpt-gauges-grid">
-${CATEGORIES.map((cat, i) => {
+${CATEGORIES.map((cat) => {
     const cs = scores.byCategory[cat];
-    return `        <button type="button" class="rpt-gauge-item${i === 0 ? " active" : ""}" data-tab="${cat}">
+    return `        <button type="button" class="rpt-gauge-item" data-tab="${cat}">
           ${renderGaugeSvg(cs.percentage, 100, 7)}
           <span class="rpt-gauge-label">${CATEGORY_LABELS[cat]}</span>
           <span class="rpt-gauge-count">${cs.issueCount} issues</span>
@@ -251,9 +251,6 @@ export function initReportInteractions(container: any): void {
     });
     container.querySelectorAll(".rpt-tab-panel").forEach((p: any) => {
       p.classList.toggle("active", p.dataset.panel === cat);
-    });
-    container.querySelectorAll(".rpt-gauge-item").forEach((g: any) => {
-      g.classList.toggle("active", g.dataset.tab === cat);
     });
     if (scrollTo) {
       const tabList = container.querySelector(".rpt-tab-list");

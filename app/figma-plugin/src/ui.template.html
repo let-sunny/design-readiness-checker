@@ -17,7 +17,6 @@
     <!-- Action buttons -->
     <div class="btn-group">
       <button class="btn btn-primary" id="btn-selection" onclick="analyzeSelection()">Analyze Selection</button>
-      <button class="btn" id="btn-page" onclick="analyzePage()">Analyze Page</button>
     </div>
 
     <!-- Error display -->
@@ -26,8 +25,7 @@
     <!-- Empty state -->
     <div id="empty-state" class="empty-state">
       <h2>Ready to analyze</h2>
-      <p>Select a frame, component, or section in Figma, then click <strong>Analyze Selection</strong>.<br>
-      Or click <strong>Analyze Page</strong> to check the entire current page.</p>
+      <p>Select a frame, component, or section in Figma, then click <strong>Analyze Selection</strong>.</p>
     </div>
 
     <!-- Loading -->
@@ -102,11 +100,6 @@
       parent.postMessage({ pluginMessage: { type: 'analyze-selection' } }, '*');
     }
 
-    function analyzePage() {
-      showLoading();
-      parent.postMessage({ pluginMessage: { type: 'analyze-page' } }, '*');
-    }
-
     function showLoading() {
       document.getElementById('empty-state').style.display = 'none';
       document.getElementById('results').className = '';
@@ -114,7 +107,6 @@
       document.getElementById('loading').style.display = 'block';
       document.getElementById('error').style.display = 'none';
       document.getElementById('btn-selection').disabled = true;
-      document.getElementById('btn-page').disabled = true;
     }
 
     function showError(msg) {
@@ -127,7 +119,6 @@
       errEl.textContent = msg;
       errEl.style.display = 'block';
       document.getElementById('btn-selection').disabled = false;
-      document.getElementById('btn-page').disabled = false;
     }
 
     // ---- Render results via shared renderReportBody() ----
@@ -172,8 +163,7 @@
 
       if (msg.type === 'result') {
         document.getElementById('btn-selection').disabled = false;
-        document.getElementById('btn-page').disabled = false;
-
+  
         try {
           var analysisStart = Date.now();
           var file = msg.data;

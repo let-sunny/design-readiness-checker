@@ -452,50 +452,6 @@ figma.ui.onmessage = async (msg: { type: string }) => {
     });
   }
 
-  if (msg.type === "analyze-page") {
-    const page = figma.currentPage;
-    const children = page.children;
-
-    if (children.length === 0) {
-      figma.ui.postMessage({
-        type: "error",
-        message: "Current page is empty.",
-      });
-      return;
-    }
-
-    // Wrap page children into a virtual FRAME document node
-    const allChildren: AnalysisNode[] = [];
-    let totalNodes = 0;
-
-    for (const child of children) {
-      totalNodes += countNodes(child as unknown as { children?: readonly unknown[] });
-      allChildren.push(await transformPluginNode(child));
-    }
-
-    const file: AnalysisFile = {
-      fileKey: figma.fileKey ?? "plugin-local",
-      name: page.name,
-      lastModified: new Date().toISOString(),
-      version: "plugin",
-      document: {
-        id: page.id,
-        name: page.name,
-        type: "CANVAS",
-        visible: true,
-        children: allChildren,
-      },
-      components: {},
-      styles: {},
-    };
-
-    figma.ui.postMessage({
-      type: "result",
-      data: file,
-      nodeCount: totalNodes,
-    });
-  }
-
   if (msg.type === "focus-node") {
     const { nodeId } = msg as { type: string; nodeId: string };
     const node = figma.getNodeByIdAsync(nodeId).then((n) => {

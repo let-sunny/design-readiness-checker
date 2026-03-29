@@ -338,13 +338,6 @@ body {
   text-align: center;
 }
 
-/* ---- Gauge item active highlight ---- */
-.rpt-gauge-item.active {
-  opacity: 1;
-  background: rgba(0,0,0,0.04);
-  border-radius: var(--radius);
-}
-
 /* ---- Score badge ---- */
 .rpt-badge {
   display: inline-flex;
