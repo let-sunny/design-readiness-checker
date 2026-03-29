@@ -1,7 +1,7 @@
 {
   "excludeNodeTypes": ["SLICE", "STICKY"],
   "excludeNodeNames": ["chatbot", "ad-banner", "prototype", "wip"],
-  "gridBase": 4,
+  "gridBase": 2,
   "rules": {
     "no-auto-layout": {
       "score": -15,
@@ -11,7 +11,7 @@
       "score": -3,
       "severity": "missing-info"
     },
-    "default-name": {
+    "non-semantic-name": {
       "enabled": false
     }
   }

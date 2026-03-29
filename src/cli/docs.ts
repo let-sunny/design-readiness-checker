@@ -97,7 +97,7 @@ EXAMPLE
   {
     "excludeNodeTypes": [],
     "excludeNodeNames": [],
-    "gridBase": 4,
+    "gridBase": 2,
     "rules": {
       "no-auto-layout": { "score": -15, "severity": "blocking" },
       "raw-value": { "score": -5 },
@@ -108,7 +108,7 @@ EXAMPLE
 USAGE
   canicode analyze <url> --config ./my-config.json
 
-  Full guide: docs/REFERENCE.md
+  Full guide: docs/CUSTOMIZATION.md
   Examples:   examples/config.json
 `.trimStart());
 }
@@ -245,7 +245,7 @@ SCORING MODEL
   Grades: S(95) A+(90) A(85) B+(80) B(75) C+(70) C(65) D(50) F(<50)
   Floor: 5% minimum.
 
-  Full documentation: https://github.com/let-sunny/canicode/blob/main/docs/SCORING.md
+  Full documentation: https://github.com/let-sunny/canicode/wiki/Scoring-Model
 `.trimStart());
 }
 

@@ -32,7 +32,7 @@ CanICode solves this:
 2. **Generates a design-tree** — a curated, CSS-ready representation that AI implements more accurately and efficiently than raw Figma data
 3. **Scores** responsive readiness, so you fix the design before generating code
 
-- **29 rules** across 5 dimensions: Structure, Token, Component, Naming, Behavior
+- **16 rules** across 6 categories: Pixel Critical, Responsive Critical, Code Quality, Token Management, Interaction, Minor
 - **Deterministic** — no AI tokens consumed per analysis, runs in milliseconds
 - **Validated** — [ablation experiments](https://github.com/let-sunny/canicode/wiki) confirmed design-tree achieves 94% pixel accuracy with 5× fewer tokens than raw JSON
 
@@ -43,7 +43,7 @@ Rule scores aren't guesswork. A 6-agent calibration pipeline converts real Figma
 - Design that's hard to implement accurately → rule score goes **up**
 - Design that's easy despite the flag → rule score goes **down**
 
-The pipeline runs on community fixtures, not on every analysis. See [`docs/CALIBRATION.md`](docs/CALIBRATION.md).
+The pipeline runs on community fixtures, not on every analysis. See the [Calibration wiki](https://github.com/let-sunny/canicode/wiki/Calibration).
 
 ---
 
@@ -82,11 +82,12 @@ claude mcp add canicode -- npx -y -p canicode canicode-mcp
 
 | Category | Rules | What it measures |
 |----------|:-----:|------------------|
-| **Structure** | 9 | Can AI read the layout? (Auto Layout, nesting, positioning, responsive) |
-| **Token** | 7 | Can AI reproduce exact values? (colors, fonts, shadows, spacing) |
-| **Component** | 4 | Is the design efficient for AI context? (reuse, variants, descriptions) |
-| **Naming** | 5 | Can AI infer meaning? (semantic names, conventions) |
-| **Behavior** | 4 | Can AI know what happens? (overflow, truncation, wrap, interactions) |
+| **Pixel Critical** | 3 | Can AI read the layout? (Auto Layout, absolute positioning, groups) |
+| **Responsive Critical** | 2 | Will it work at different viewports? (fixed sizing, size constraints) |
+| **Code Quality** | 4 | Is the design efficient for AI context? (components, variants, nesting) |
+| **Token Management** | 2 | Can AI reproduce exact values? (raw values, spacing grid) |
+| **Interaction** | 2 | Can AI know what happens? (state variants, prototypes) |
+| **Minor** | 3 | Can AI infer meaning? (semantic names, conventions) |
 
 Each issue is classified: **Blocking** > **Risk** > **Missing Info** > **Suggestion**.
 
@@ -133,7 +134,7 @@ With a Figma API token:
 claude mcp add canicode -e FIGMA_TOKEN=figd_xxxxxxxxxxxxx -- npx -y -p canicode canicode-mcp
 ```
 
-For Cursor / Claude Desktop config, see [`docs/REFERENCE.md`](docs/REFERENCE.md).
+For Cursor / Claude Desktop config, see [`docs/CUSTOMIZATION.md`](docs/CUSTOMIZATION.md).
 
 </details>
 
@@ -198,7 +199,7 @@ Posts analysis as a PR comment. Fails if score is below threshold. See [**canico
 | **Presets** | `--preset relaxed \| dev-friendly \| ai-ready \| strict` |
 | **Config overrides** | `--config ./config.json` — adjust scores, severity, exclude nodes |
 
-See [`docs/REFERENCE.md`](docs/REFERENCE.md) for the full guide, examples, and all available options.
+See [`docs/CUSTOMIZATION.md`](docs/CUSTOMIZATION.md) for the full guide, examples, and all available options.
 
 ---
 
@@ -215,7 +216,7 @@ pnpm test       # run tests
 pnpm lint       # type check
 ```
 
-For architecture details, see [`CLAUDE.md`](CLAUDE.md). For calibration pipeline, see [`docs/CALIBRATION.md`](docs/CALIBRATION.md).
+For architecture details, see [`CLAUDE.md`](CLAUDE.md). For calibration pipeline, see the [Calibration wiki](https://github.com/let-sunny/canicode/wiki/Calibration).
 
 ## Contributing
 

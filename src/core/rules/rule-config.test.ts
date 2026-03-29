@@ -9,21 +9,21 @@ import type { RuleId } from "../contracts/rule.js";
 import "./index.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const REFERENCE_PATH = resolve(__dirname, "../../../docs/REFERENCE.md");
+const CUSTOMIZATION_PATH = resolve(__dirname, "../../../docs/CUSTOMIZATION.md");
 
 describe("rule-config sync", () => {
-  describe("REFERENCE.md matches rule-config.ts", () => {
-    const content = readFileSync(REFERENCE_PATH, "utf-8");
+  describe("CUSTOMIZATION.md matches rule-config.ts", () => {
+    const content = readFileSync(CUSTOMIZATION_PATH, "utf-8");
 
     // Parse only the auto-generated rule table block between markers
     const tableStart = content.indexOf("<!-- RULE_TABLE_START");
     const tableEnd = content.indexOf("<!-- RULE_TABLE_END -->");
     if (tableStart === -1 || tableEnd === -1 || tableEnd <= tableStart) {
-      throw new Error("REFERENCE.md rule table markers are missing or misordered");
+      throw new Error("CUSTOMIZATION.md rule table markers are missing or misordered");
     }
     const tableContent = content.slice(tableStart, tableEnd);
 
-    const tableRows = [...tableContent.matchAll(/\| `([^`]+)` \| (-?\d+) \| ([a-z-]+) \|/g)];
+    const tableRows = [...tableContent.matchAll(/\| `([^`]+)`[^|]* \| (-?\d+) \| ([a-z-]+) \|/g)];
     const docRules = new Map(
       tableRows
         .filter((m) => m[1] !== undefined && m[2] !== undefined && m[3] !== undefined)
@@ -44,14 +44,14 @@ describe("rule-config sync", () => {
       });
     }
 
-    it("REFERENCE.md has no extra rules beyond rule-config.ts", () => {
+    it("CUSTOMIZATION.md has no extra rules beyond rule-config.ts", () => {
       const configIds = new Set(Object.keys(RULE_CONFIGS));
       for (const docId of docRules.keys()) {
         expect(configIds.has(docId)).toBe(true);
       }
     });
 
-    it("REFERENCE.md has all rules from rule-config.ts", () => {
+    it("CUSTOMIZATION.md has all rules from rule-config.ts", () => {
       for (const id of Object.keys(RULE_CONFIGS)) {
         expect(docRules.has(id)).toBe(true);
       }

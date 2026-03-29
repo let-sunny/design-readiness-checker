@@ -42,8 +42,8 @@ npx canicode save-fixture "https://www.figma.com/design/ABC123/MyDesign?node-id=
 
 ### Presets
 - `--preset relaxed` — Downgrades blocking to risk, reduces scores by 50%
-- `--preset dev-friendly` — Focuses on layout and handoff rules only
-- `--preset ai-ready` — Boosts structure and naming rule weights by 150%
+- `--preset dev-friendly` — Enables only pixel-critical and responsive-critical rules, disables the rest
+- `--preset ai-ready` — Sets pixel-critical and token-management rule scores to 150% of defaults
 - `--preset strict` — Increases all scores by 150%
 
 ### Config overrides
@@ -58,7 +58,7 @@ npx canicode analyze <input> --json
 
 ## What It Reports
 
-29 rules across 5 categories: Structure, Token, Component, Naming, Behavior.
+16 rules across 6 categories: Pixel Critical, Responsive Critical, Code Quality, Token Management, Interaction, Minor.
 
 Each issue includes:
 - Rule ID and severity (blocking / risk / missing-info / suggestion)

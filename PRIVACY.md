@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Last updated:** 2026-03-25
+**Last updated:** 2026-03-29
 
 CanICode is an open-source CLI tool that analyzes Figma design structures. This document explains what data is collected, how it is used, and how to opt out.
 
@@ -71,7 +71,7 @@ CanICode stores data locally on your machine:
 | Location | Contents |
 |----------|----------|
 | `~/.canicode/config.json` | User configuration (Figma token, telemetry preference) |
-| `reports/` (project directory) | Generated HTML analysis reports |
+| `~/.canicode/reports/` | Generated HTML analysis reports (default; override with `--output`) |
 | `logs/calibration/` | Calibration run data — each run in its own directory (internal/development use) |
 | `logs/rule-discovery/` | Rule discovery run data (internal/development use) |
 | `logs/activity/` | Nightly orchestration logs (internal/development use) |

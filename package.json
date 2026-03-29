@@ -29,7 +29,7 @@
   },
   "files": [
     "dist",
-    "docs/REFERENCE.md",
+    "docs/CUSTOMIZATION.md",
     ".claude/skills/design-to-code/PROMPT.md"
   ],
   "keywords": [

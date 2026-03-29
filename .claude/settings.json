@@ -1,0 +1,11 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "filePattern": "src/core/rules/**",
+        "command": "npx tsx scripts/sync-rule-docs.ts"
+      }
+    ]
+  }
+}

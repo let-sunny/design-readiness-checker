@@ -209,7 +209,7 @@ Use this when the user asks about how to use canicode, configuration, rules, vis
   async ({ topic }) => {
     const selectedTopic = topic ?? "all";
 
-    // Inline topics (not from REFERENCE.md)
+    // Inline topics (not from CUSTOMIZATION.md)
     const inlineTopics: Record<string, string> = {
       "setup": `# Setup
 
@@ -307,20 +307,20 @@ Hero Form (INSTANCE, 375x960)
       };
     }
 
-    // Fall back to REFERENCE.md for config/rules/all
+    // Fall back to CUSTOMIZATION.md for config/rules/all
     const { readFile } = await import("node:fs/promises");
     const { resolve, dirname } = await import("node:path");
     const { fileURLToPath } = await import("node:url");
 
     try {
       const __dirname = dirname(fileURLToPath(import.meta.url));
-      const docPath = resolve(__dirname, "../../docs/REFERENCE.md");
+      const docPath = resolve(__dirname, "../../docs/CUSTOMIZATION.md");
       let content: string;
 
       try {
         content = await readFile(docPath, "utf-8");
       } catch {
-        const altPath = resolve(__dirname, "../docs/REFERENCE.md");
+        const altPath = resolve(__dirname, "../docs/CUSTOMIZATION.md");
         content = await readFile(altPath, "utf-8");
       }
 
