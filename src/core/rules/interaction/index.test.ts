@@ -68,7 +68,7 @@ describe("missing-interaction-state", () => {
     expect(missingInteractionState.check(node, ctx)).toBeNull();
   });
 
-  it("passes when ON_HOVER interaction exists (hover exemption)", () => {
+  it("still flags hover even when ON_HOVER prototype exists (prototype ≠ variant)", () => {
     const node = makeNode({
       id: "1:1",
       name: "Link Item",
@@ -79,7 +79,9 @@ describe("missing-interaction-state", () => {
       ],
     });
     const ctx = makeContext();
-    expect(missingInteractionState.check(node, ctx)).toBeNull();
+    const result = missingInteractionState.check(node, ctx);
+    expect(result).not.toBeNull();
+    expect(result!.subType).toBe("hover");
   });
 
   it("flags input without focus variant", () => {

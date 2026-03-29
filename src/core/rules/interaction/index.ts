@@ -93,17 +93,6 @@ function hasStateInComponentMaster(
   return hasStateInVariantProps(master, statePattern);
 }
 
-/**
- * Check if hover is covered by prototype interaction (ON_HOVER → CHANGE_TO).
- */
-function hasHoverInteraction(node: AnalysisNode): boolean {
-  if (!node.interactions || !Array.isArray(node.interactions)) return false;
-  return node.interactions.some((interaction) => {
-    const i = interaction as { trigger?: { type?: string }; actions?: Array<{ navigation?: string }> };
-    return i.trigger?.type === "ON_HOVER" && i.actions?.some((a) => a.navigation === "CHANGE_TO");
-  });
-}
-
 // ============================================
 // missing-interaction-state
 // ============================================
@@ -135,9 +124,6 @@ const missingInteractionStateCheck: RuleCheckFn = (node, context) => {
     if (seen.has(dedupeKey)) continue;
 
     const pattern = STATE_PATTERNS[state];
-
-    // Skip hover if prototype interaction covers it
-    if (state === "hover" && hasHoverInteraction(node)) continue;
 
     // Check variant properties on instance
     if (hasStateInVariantProps(node, pattern)) continue;
