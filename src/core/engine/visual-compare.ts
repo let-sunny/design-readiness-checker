@@ -42,6 +42,12 @@ export interface VisualCompareOptions {
    * Default 2 matches REST exports and avoids comparing a @2x PNG against a 1× Playwright capture.
    */
   figmaExportScale?: number | undefined;
+  /**
+   * Path to a local Figma screenshot file. When provided, skips URL-based fetch
+   * and uses this file directly as the ground truth. Useful for responsive comparison
+   * where multiple fixture screenshots exist at different viewports.
+   */
+  figmaScreenshotPath?: string | undefined;
 }
 
 /**
@@ -146,10 +152,14 @@ export async function visualCompare(options: VisualCompareOptions): Promise<Visu
 
   const exportScale = options.figmaExportScale ?? 2;
 
-  // Step 1: Fetch Figma screenshot
-  // figma.png in outputDir may come from a previous run with a different scale.
-  // Always re-fetch unless the file was placed by the caller (e.g. converter copying fixture screenshot).
-  if (!existsSync(figmaScreenshotPath)) {
+  // Step 1: Figma screenshot — use local file if provided, otherwise fetch via API
+  if (options.figmaScreenshotPath) {
+    if (!existsSync(options.figmaScreenshotPath)) {
+      throw new Error(`Figma screenshot not found: ${options.figmaScreenshotPath}`);
+    }
+    mkdirSync(dirname(figmaScreenshotPath), { recursive: true });
+    copyFileSync(options.figmaScreenshotPath, figmaScreenshotPath);
+  } else if (!existsSync(figmaScreenshotPath)) {
     await fetchFigmaScreenshot(fileKey, nodeId, options.figmaToken, figmaScreenshotPath, exportScale);
     if (!existsSync(figmaScreenshotPath)) {
       throw new Error(`Figma screenshot was not created at expected path: ${figmaScreenshotPath}`);

@@ -304,6 +304,11 @@ export function runCalibrationEvaluate(
     conversionRecords = [];
   }
 
+  // Extract responsive comparison data if available
+  const responsiveDelta = typeof conversionJson["responsiveDelta"] === "number"
+    ? conversionJson["responsiveDelta"] as number
+    : null;
+
   const evaluationOutput = runEvaluationAgent({
     nodeIssueSummaries: analysisJson.nodeIssueSummaries.map((s) => ({
       nodeId: s.nodeId,
@@ -312,6 +317,7 @@ export function runCalibrationEvaluate(
     })),
     conversionRecords,
     ruleScores,
+    responsiveDelta,
   });
 
   // Load prior evidence if collecting

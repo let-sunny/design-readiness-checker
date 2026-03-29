@@ -60,7 +60,22 @@ Read and follow `.claude/skills/design-to-code/PROMPT.md` for all code generatio
    ```
    This saves `figma.png`, `code.png`, and `diff.png` into the run directory.
    Replace `:` with `-` in the nodeId for the URL.
-5. Use similarity to determine overall difficulty (thresholds defined in `src/agents/orchestrator.ts` → `SIMILARITY_DIFFICULTY_THRESHOLDS`):
+5. **Responsive comparison** (if expanded screenshot exists):
+   Look for `screenshot-*.png` in the fixture directory. Sort by width (number in filename).
+   If there are 2+ screenshots, the smallest is the original and the largest is the expanded viewport.
+   ```bash
+   # Find expanded screenshot
+   ls <fixture-path>/screenshot-*.png | sort -t- -k2 -n
+   # Run responsive visual-compare with --figma-screenshot and --width
+   npx canicode visual-compare $RUN_DIR/output.html \
+     --figma-url "https://www.figma.com/design/<fileKey>/file?node-id=<rootNodeId>" \
+     --figma-screenshot <fixture-path>/screenshot-<largest>.png \
+     --width <largest-width> \
+     --output $RUN_DIR/responsive
+   ```
+   Record `responsiveSimilarity` from the result and calculate `responsiveDelta = similarity - responsiveSimilarity`.
+   If only 1 screenshot exists, skip responsive comparison and set both to `null`.
+6. Use similarity to determine overall difficulty (thresholds defined in `src/agents/orchestrator.ts` → `SIMILARITY_DIFFICULTY_THRESHOLDS`):
 
    | Similarity | Difficulty |
    |-----------|-----------|
@@ -88,6 +103,9 @@ Write results to `$RUN_DIR/conversion.json`.
   "rootNodeId": "562:9069",
   "generatedCode": "// The full HTML page",
   "similarity": 87,
+  "responsiveSimilarity": 72,
+  "responsiveDelta": 15,
+  "responsiveViewport": 1920,
   "difficulty": "moderate",
   "notes": "Summary of the conversion experience",
   "ruleImpactAssessment": [

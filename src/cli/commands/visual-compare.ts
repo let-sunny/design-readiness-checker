@@ -7,6 +7,7 @@ import { getFigmaToken } from "../../core/engine/config-store.js";
 
 const VisualCompareOptionsSchema = z.object({
   figmaUrl: z.string().optional(),
+  figmaScreenshot: z.string().optional(),
   token: z.string().optional(),
   output: z.string().optional(),
   width: z.union([z.string(), z.number()]).optional(),
@@ -21,7 +22,8 @@ export function registerVisualCompare(cli: CAC): void {
       "visual-compare <codePath>",
       "Compare rendered code against Figma screenshot (pixel-level similarity)"
     )
-    .option("--figma-url <url>", "Figma URL with node-id (required)")
+    .option("--figma-url <url>", "Figma URL with node-id (required for API fetch)")
+    .option("--figma-screenshot <path>", "Local Figma screenshot file (skips API fetch)")
     .option("--token <token>", "Figma API token (or use FIGMA_TOKEN env var)")
     .option("--output <dir>", "Output directory for screenshots and diff (default: /tmp/canicode-visual-compare)")
     .option("--width <px>", "Logical viewport width in CSS px (default: infer from Figma PNG ÷ export scale)")
@@ -38,20 +40,21 @@ export function registerVisualCompare(cli: CAC): void {
         }
         const options = parseResult.data;
 
-        if (!options.figmaUrl) {
-          console.error("Error: --figma-url is required");
+        if (!options.figmaUrl && !options.figmaScreenshot) {
+          console.error("Error: --figma-url or --figma-screenshot is required");
           process.exitCode = 1; return;
         }
 
-        // Warn if --figma-url has no node-id
-        if (!parseFigmaUrl(options.figmaUrl).nodeId) {
+        // When using --figma-screenshot, --figma-url is still needed for URL parsing
+        // but token is not required (no API fetch)
+        if (options.figmaUrl && !parseFigmaUrl(options.figmaUrl).nodeId) {
           console.warn("Warning: --figma-url has no node-id. Results may be inaccurate for full files.");
           console.warn("Tip: Add ?node-id=XXX to target a specific section.\n");
         }
 
         const token = options.token ?? getFigmaToken();
-        if (!token) {
-          console.error("Error: Figma token required. Use --token or set FIGMA_TOKEN env var.");
+        if (!token && !options.figmaScreenshot) {
+          console.error("Error: Figma token required. Use --token or set FIGMA_TOKEN env var (or use --figma-screenshot for local files).");
           process.exitCode = 1; return;
         }
 
@@ -82,11 +85,12 @@ export function registerVisualCompare(cli: CAC): void {
         // Progress to stderr so stdout contains only valid JSON
         console.error("Comparing...");
         const result = await visualCompare({
-          figmaUrl: options.figmaUrl,
-          figmaToken: token,
+          figmaUrl: options.figmaUrl ?? "https://www.figma.com/design/local/file?node-id=0-0",
+          figmaToken: token ?? "",
           codePath: resolve(codePath),
           outputDir: options.output,
           ...(exportScale !== undefined ? { figmaExportScale: exportScale } : {}),
+          ...(options.figmaScreenshot ? { figmaScreenshotPath: resolve(options.figmaScreenshot) } : {}),
           ...(hasViewportOverride
             ? {
                 viewport: {

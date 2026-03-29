@@ -6,6 +6,8 @@ import type {
 } from "./contracts/evaluation-agent.js";
 import type { Difficulty } from "./contracts/conversion-agent.js";
 import type { Severity } from "../core/contracts/severity.js";
+import type { RuleId } from "../core/contracts/rule.js";
+import { RULE_ID_CATEGORY } from "../core/rules/rule-config.js";
 
 /**
  * Difficulty-to-score range mapping.
@@ -167,8 +169,41 @@ export function runEvaluationAgent(
     }
   }
 
+  // Override responsive-critical rule evaluations with measured responsiveDelta
+  if (input.responsiveDelta != null) {
+    const responsiveDifficulty = responsiveDeltaToDifficulty(input.responsiveDelta);
+    for (const mismatch of mismatches) {
+      if (!mismatch.ruleId) continue;
+      const category = RULE_ID_CATEGORY[mismatch.ruleId as RuleId];
+      if (category !== "responsive-critical") continue;
+
+      const prevType = mismatch.type;
+      const newType = classifyFlaggedRule(mismatch.currentScore ?? 0, responsiveDifficulty);
+      mismatch.type = newType;
+      mismatch.actualDifficulty = responsiveDifficulty;
+      mismatch.reasoning = buildReasoning(newType, mismatch.ruleId, mismatch.currentScore, responsiveDifficulty)
+        + ` (responsive: delta=${input.responsiveDelta}%p, overrides AI opinion "${prevType}")`;
+
+      if (newType === "validated") {
+        validatedRuleSet.add(mismatch.ruleId);
+      }
+    }
+  }
+
   return {
     mismatches,
     validatedRules: [...validatedRuleSet],
   };
+}
+
+/**
+ * Map responsiveDelta to difficulty.
+ * Based on ablation Experiment 04: structure drops -32%p at different viewport.
+ * Higher delta = more responsive breakage = harder to implement.
+ */
+function responsiveDeltaToDifficulty(delta: number): Difficulty {
+  if (delta <= 5) return "easy";      // minimal responsive breakage
+  if (delta <= 15) return "moderate";  // noticeable breakage
+  if (delta <= 30) return "hard";      // severe breakage
+  return "failed";                     // completely broken at expanded viewport
 }
