@@ -199,14 +199,14 @@ Spawn the `calibration-arbitrator` subagent. In the prompt:
 - Include proposals and the Critic's reviews from `$RUN_DIR/debate.json`
 - **Tell the agent: "Return your decisions as JSON. Only edit rule-config.ts if applying changes. Do NOT write to logs."**
 
-After the Arbitrator returns, **you** update `$RUN_DIR/debate.json` — read the existing content and add the `arbitrator` field:
+After the Arbitrator returns, **you** update `$RUN_DIR/debate.json` — read the existing content and add the `arbitrator` field. Also set `stoppingReason` at the **top level** (canonical location — never inside arbitrator object):
+
 ```json
 {
   "critic": { ... },
   "arbitrator": {
     "timestamp": "<ISO8601>",
     "summary": "applied=<N> revised=<N> rejected=<N> hold=<N>",
-    "stoppingReason": "normal|all-high-confidence-reject|low-confidence-hold",
     "decisions": [
       {
         "ruleId": "X",
@@ -217,7 +217,8 @@ After the Arbitrator returns, **you** update `$RUN_DIR/debate.json` — read the
         "reason": "..."
       }
     ]
-  }
+  },
+  "stoppingReason": "normal|low-confidence-hold"
 }
 ```
 

@@ -136,7 +136,7 @@ export function pruneCalibrationEvidence(
 
 /**
  * Enrich existing calibration evidence entries with Critic's structured review data.
- * Matches by ruleId and updates confidence/pro/con/decision fields.
+ * Matches by (ruleId, fixture) to avoid overwriting entries from other fixtures.
  * Entries without a matching review are left unchanged.
  */
 export function enrichCalibrationEvidence(
@@ -147,6 +147,7 @@ export function enrichCalibrationEvidence(
     con?: string[];
     decision?: "APPROVE" | "REJECT" | "REVISE";
   }>,
+  fixture: string,
   evidencePath: string = DEFAULT_CALIBRATION_PATH
 ): void {
   if (reviews.length === 0) return;
@@ -154,8 +155,10 @@ export function enrichCalibrationEvidence(
   if (existing.length === 0) return;
 
   const reviewByRule = new Map(reviews.map((r) => [r.ruleId.trim(), r]));
+  const fixtureTrimmed = fixture.trim();
 
   const enriched = existing.map((entry) => {
+    if (entry.fixture.trim() !== fixtureTrimmed) return entry;
     const review = reviewByRule.get(entry.ruleId.trim());
     if (!review) return entry;
     return {

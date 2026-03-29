@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import { resolve } from "node:path";
+import { basename, resolve } from "node:path";
 import type { CAC } from "cac";
 
 import {
@@ -7,6 +7,7 @@ import {
   listDoneFixtures,
   moveFixtureToDone,
   parseDebateResult,
+  parseRunDirName,
   extractAppliedRuleIds,
   extractFixtureName,
   resolveLatestRunDir,
@@ -120,13 +121,23 @@ export function registerEvidenceEnrich(cli: CAC): void {
       "Enrich evidence with Critic's pro/con/confidence from debate.json"
     )
     .action((runDir: string) => {
-      if (!existsSync(resolve(runDir))) {
-        console.log(`Run directory not found: ${runDir}`);
+      const resolvedDir = resolve(runDir);
+      if (!existsSync(resolvedDir)) {
+        console.error(`Run directory not found: ${runDir}`);
+        process.exitCode = 1;
         return;
       }
-      const debate = parseDebateResult(resolve(runDir));
+      const debate = parseDebateResult(resolvedDir);
       if (!debate?.critic) {
         console.log("No critic reviews in debate.json — nothing to enrich.");
+        return;
+      }
+
+      // Extract fixture name from run directory (e.g. "material3-kit--2026-03-26-0900" → "material3-kit")
+      const { name: fixture } = parseRunDirName(basename(resolvedDir));
+      if (!fixture) {
+        console.error("Cannot extract fixture name from run directory");
+        process.exitCode = 1;
         return;
       }
 
@@ -144,8 +155,8 @@ export function registerEvidenceEnrich(cli: CAC): void {
         return entry;
       });
 
-      enrichCalibrationEvidence(reviews);
-      console.log(`Enriched calibration evidence with ${reviews.length} review(s)`);
+      enrichCalibrationEvidence(reviews, fixture);
+      console.log(`Enriched calibration evidence for fixture "${fixture}" with ${reviews.length} review(s)`);
     });
 }
 

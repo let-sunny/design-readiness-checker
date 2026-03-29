@@ -318,23 +318,8 @@ export interface ConvergenceOptions {
 
 /**
  * Check if a calibration run has converged.
- * Strict: no applied/revised AND no rejected decisions.
- * Lenient: no applied/revised only (rejected proposals allowed).
+ * Delegates to checkConvergence to avoid duplicating early-stop / hold logic.
  */
 export function isConverged(runDir: string, options?: ConvergenceOptions): boolean {
-  const debate = parseDebateResult(runDir);
-  if (!debate) return false;
-  if (debate.skipped) return true; // zero proposals = converged
-  if (!debate.arbitrator) return false;
-  const decisions = debate.arbitrator.decisions;
-  const applied = decisions.filter((d) => {
-    const dec = d.decision.trim().toLowerCase();
-    return dec === "applied" || dec === "revised";
-  }).length;
-  const hold = decisions.filter((d) => d.decision.trim().toLowerCase() === "hold").length;
-  const rejected = decisions.filter((d) => d.decision.trim().toLowerCase() === "rejected").length;
-  if (options?.lenient) {
-    return applied === 0 && hold === 0;
-  }
-  return applied === 0 && hold === 0 && rejected === 0;
+  return checkConvergence(runDir, options).converged;
 }

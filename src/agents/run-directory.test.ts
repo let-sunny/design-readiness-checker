@@ -333,6 +333,63 @@ describe("checkConvergence", () => {
     expect(summary.converged).toBe(false);
     expect(summary.reason).toBe("no arbitrator result");
   });
+
+  it("converged on early-stop (stoppingReason + no arbitrator)", () => {
+    writeFileSync(
+      join(tempDir, "debate.json"),
+      JSON.stringify({
+        critic: { summary: "rejected=2", reviews: [] },
+        arbitrator: null,
+        stoppingReason: "all-high-confidence-reject",
+      }),
+    );
+    const summary = checkConvergence(tempDir);
+    expect(summary.converged).toBe(true);
+    expect(summary.reason).toContain("early-stop");
+    expect(summary.reason).toContain("all-high-confidence-reject");
+  });
+
+  it("hold decisions prevent convergence", () => {
+    writeFileSync(
+      join(tempDir, "debate.json"),
+      JSON.stringify({
+        arbitrator: {
+          summary: "hold=1",
+          decisions: [{ ruleId: "a", decision: "hold" }],
+        },
+      }),
+    );
+    const summary = checkConvergence(tempDir);
+    expect(summary.converged).toBe(false);
+    expect(summary.hold).toBe(1);
+  });
+
+  it("hold prevents convergence even in lenient mode", () => {
+    writeFileSync(
+      join(tempDir, "debate.json"),
+      JSON.stringify({
+        arbitrator: {
+          summary: "hold=1",
+          decisions: [{ ruleId: "a", decision: "hold" }],
+        },
+      }),
+    );
+    const summary = checkConvergence(tempDir, { lenient: true });
+    expect(summary.converged).toBe(false);
+  });
+
+  it("isConverged delegates to checkConvergence", () => {
+    writeFileSync(
+      join(tempDir, "debate.json"),
+      JSON.stringify({
+        critic: { summary: "rejected=1", reviews: [] },
+        arbitrator: null,
+        stoppingReason: "all-high-confidence-reject",
+      }),
+    );
+    // isConverged should also return true for early-stop
+    expect(isConverged(tempDir)).toBe(true);
+  });
 });
 
 describe("listCalibrationRuns", () => {

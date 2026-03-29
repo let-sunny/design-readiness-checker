@@ -44,7 +44,6 @@ Return this JSON structure:
 {
   "timestamp": "<ISO8601>",
   "summary": "applied=1 revised=1 rejected=1 hold=1 newProposals=0",
-  "stoppingReason": "normal|all-high-confidence-reject|low-confidence-hold",
   "decisions": [
     {"ruleId": "X", "decision": "applied", "before": -10, "after": -7, "confidence": "high", "reason": "Strong evidence, applying Runner's value"},
     {"ruleId": "X", "decision": "revised", "before": -10, "after": -8, "confidence": "medium", "reason": "Critic revised, midpoint applied"},
@@ -59,7 +58,7 @@ Return this JSON structure:
 ### Field requirements
 
 - **confidence**: carried from Critic's review for each decision
-- **stoppingReason**: why the debate ended — `"normal"` (mixed decisions), `"all-high-confidence-reject"` (all rejected with high confidence), `"low-confidence-hold"` (all held due to low confidence)
+- **Note**: `stoppingReason` is written by the orchestrator at the debate.json top level, not inside the arbitrator object
 
 ## Rules
 
