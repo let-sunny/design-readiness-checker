@@ -163,6 +163,16 @@ describe("collectGapEvidence", () => {
     expect(collectGapEvidence(runDir, "fx")).toHaveLength(0);
   });
 
+  it("skips actionable gap when coveredByRule is empty string", () => {
+    writeFileSync(join(runDir, "gaps.json"), JSON.stringify({
+      gaps: [
+        { category: "spacing", description: "x", actionable: true, coveredByRule: "" },
+      ],
+    }));
+
+    expect(collectGapEvidence(runDir, "fx")).toHaveLength(0);
+  });
+
   it("returns empty for malformed gaps.json", () => {
     writeFileSync(join(runDir, "gaps.json"), "not json");
     expect(collectGapEvidence(runDir, "fx")).toHaveLength(0);

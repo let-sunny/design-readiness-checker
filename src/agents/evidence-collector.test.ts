@@ -336,7 +336,7 @@ describe("evidence-collector", () => {
       ], disPath);
 
       appendDiscoveryEvidence([
-        { description: "gap2", category: "color", impact: "moderate", fixture: "fx2", timestamp: "t2", source: "gap-analysis" },
+        { description: "gap2", category: "code-quality", impact: "moderate", fixture: "fx2", timestamp: "t2", source: "gap-analysis" },
       ], disPath);
 
       const raw = JSON.parse(readFileSync(disPath, "utf-8")) as { entries: DiscoveryEvidenceEntry[] };
@@ -472,14 +472,14 @@ describe("evidence-collector", () => {
       appendDiscoveryEvidence([
         { description: "gap1", category: "Pixel-critical", impact: "hard", fixture: "fx1", timestamp: "t1", source: "evaluation" },
         { description: "gap2", category: "pixel-critical", impact: "hard", fixture: "fx2", timestamp: "t2", source: "gap-analysis" },
-        { description: "gap3", category: "color", impact: "moderate", fixture: "fx1", timestamp: "t1", source: "evaluation" },
+        { description: "gap3", category: "token-management", impact: "moderate", fixture: "fx1", timestamp: "t1", source: "evaluation" },
       ], disPath);
 
       pruneDiscoveryEvidence(["pixel-critical"], disPath);
 
       const raw = JSON.parse(readFileSync(disPath, "utf-8")) as { entries: DiscoveryEvidenceEntry[] };
       expect(raw.entries).toHaveLength(1);
-      expect(raw.entries[0]!.category).toBe("color");
+      expect(raw.entries[0]!.category).toBe("token-management");
     });
 
     it("writes versioned format after prune", () => {
