@@ -136,18 +136,17 @@ const missingComponentCheck: RuleCheckFn = (node, context, options) => {
         sameNameFrames &&
         firstFrame !== undefined &&
         sameNameFrames.length >= 2 &&
-        !seenStage1.has(node.name.toLowerCase())
+        !seenStage1.has(node.name.toLowerCase()) &&
+        firstFrame === node.id
       ) {
         seenStage1.add(node.name.toLowerCase());
-        if (firstFrame === node.id) {
-          return {
-            ruleId: missingComponentDef.id,
-            subType: "unused-component" as const,
-            nodeId: node.id,
-            nodePath: context.path.join(" > "),
-            ...missingComponentMsg.unusedComponent(matchingComponent.name, sameNameFrames.length),
-          };
-        }
+        return {
+          ruleId: missingComponentDef.id,
+          subType: "unused-component" as const,
+          nodeId: node.id,
+          nodePath: context.path.join(" > "),
+          ...missingComponentMsg.unusedComponent(matchingComponent.name, sameNameFrames.length),
+        };
       }
     }
 
