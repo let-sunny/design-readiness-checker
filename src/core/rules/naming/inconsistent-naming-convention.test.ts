@@ -68,14 +68,15 @@ describe("inconsistent-naming-convention", () => {
     expect(inconsistentNamingConvention.check(node, makeContext({ siblings }))).toBeNull();
   });
 
-  it("does not flag single-word name in any context", () => {
-    // "Header" in a camelCase-dominant context should not be flagged
+  it("flags single-word PascalCase in camelCase context with concrete suggestion", () => {
     const sibA = makeNode({ id: "2:1", name: "myCard" }); // camelCase
     const sibB = makeNode({ id: "2:2", name: "myFooter" }); // camelCase
-    const node = makeNode({ id: "1:1", name: "Button" }); // single word — ambiguous
+    const node = makeNode({ id: "1:1", name: "Button" }); // PascalCase — not compatible with camelCase
     const siblings = [node, sibA, sibB];
 
-    expect(inconsistentNamingConvention.check(node, makeContext({ siblings }))).toBeNull();
+    const result = inconsistentNamingConvention.check(node, makeContext({ siblings }));
+    expect(result).not.toBeNull();
+    expect(result!.suggestion).toContain('"button"');
   });
 
   it("still flags multi-word PascalCase in Title Case context", () => {

@@ -7,12 +7,50 @@ function detectNamingConvention(name: string): string | null {
   if (/^[a-z]+(-[a-z]+)*$/.test(name)) return "kebab-case";
   if (/^[a-z]+(_[a-z]+)*$/.test(name)) return "snake_case";
   if (/^[a-z]+([A-Z][a-z]*)*$/.test(name)) return "camelCase";
-  // Single capitalized word (e.g., "Header") is ambiguous — compatible with both PascalCase and Title Case
-  if (/^[A-Z][a-z]+$/.test(name)) return null;
-  if (/^[A-Z][a-z]+([A-Z][a-z]*)+$/.test(name)) return "PascalCase";
+  if (/^[A-Z][a-z]+([A-Z][a-z]*)*$/.test(name)) return "PascalCase";
   if (/^[A-Z]+(_[A-Z]+)*$/.test(name)) return "SCREAMING_SNAKE_CASE";
   if (/\s/.test(name)) return "Title Case";
   return null;
+}
+
+/** Single capitalized word is compatible with both PascalCase and Title Case */
+function isCompatible(nodeConvention: string, dominantConvention: string, name: string): boolean {
+  if (!/^[A-Z][a-z]+$/.test(name)) return false;
+  const pair = new Set([nodeConvention, dominantConvention]);
+  return pair.has("PascalCase") && pair.has("Title Case");
+}
+
+/** Split a name into words regardless of convention */
+function splitWords(name: string): string[] {
+  // Title Case / space-separated
+  if (/\s/.test(name)) return name.split(/\s+/);
+  // SCREAMING_SNAKE_CASE or snake_case
+  if (name.includes("_")) return name.split("_");
+  // kebab-case
+  if (name.includes("-")) return name.split("-");
+  // camelCase / PascalCase — split on uppercase boundaries
+  return name.replace(/([a-z])([A-Z])/g, "$1\0$2").split("\0");
+}
+
+/** Convert a name to the target convention */
+function convertName(name: string, target: string): string {
+  const words = splitWords(name);
+  switch (target) {
+    case "kebab-case":
+      return words.map(w => w.toLowerCase()).join("-");
+    case "snake_case":
+      return words.map(w => w.toLowerCase()).join("_");
+    case "camelCase":
+      return words.map((w, i) => i === 0 ? w.toLowerCase() : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join("");
+    case "PascalCase":
+      return words.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join("");
+    case "SCREAMING_SNAKE_CASE":
+      return words.map(w => w.toUpperCase()).join("_");
+    case "Title Case":
+      return words.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(" ");
+    default:
+      return name;
+  }
 }
 
 // ============================================
@@ -111,11 +149,15 @@ const inconsistentNamingConventionCheck: RuleCheckFn = (node, context) => {
   // Check if current node violates the dominant convention
   const nodeConvention = detectNamingConvention(node.name);
   if (nodeConvention && nodeConvention !== dominantConvention && maxCount >= 2) {
+    // Single capitalized word is compatible with both PascalCase and Title Case
+    if (isCompatible(nodeConvention, dominantConvention, node.name)) return null;
+
+    const suggested = convertName(node.name, dominantConvention);
     return {
       ruleId: inconsistentNamingConventionDef.id,
       nodeId: node.id,
       nodePath: context.path.join(" > "),
-      ...inconsistentNamingMsg(node.name, nodeConvention, dominantConvention),
+      ...inconsistentNamingMsg(node.name, nodeConvention, dominantConvention, suggested),
     };
   }
 

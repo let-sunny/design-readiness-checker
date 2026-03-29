@@ -297,7 +297,8 @@ export const missingPrototypeMsg = {
 
 // ── inconsistent-naming-convention ───────────────────────────────────────────
 
-export const inconsistentNamingMsg = (name: string, nodeConvention: string, dominantConvention: string): ViolationMsg => ({
+export const inconsistentNamingMsg = (name: string, nodeConvention: string, dominantConvention: string, suggested: string): ViolationMsg => ({
   message: `"${name}" uses ${nodeConvention} while siblings use ${dominantConvention}`,
-  suggestion: `Rename to match ${dominantConvention} convention`,
+  suggestion: `Rename to "${suggested}"`,
+  guide: `Single-word names and layers without siblings are automatically excluded`,
 });
