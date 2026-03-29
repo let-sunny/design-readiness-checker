@@ -146,13 +146,22 @@ describe("missing-prototype", () => {
     expect(result!.subType).toBe("navigation");
   });
 
-  it("flags dropdown without ON_CLICK", () => {
+  it("flags dropdown without ON_CLICK (overlay subType)", () => {
     const node = makeNode({ id: "1:1", name: "Country Dropdown", type: "FRAME" });
     const ctx = makeContext({ path: ["Page", "Dropdown"] });
     const result = missingPrototype.check(node, ctx);
 
     expect(result).not.toBeNull();
-    expect(result!.subType).toBe("dropdown");
+    expect(result!.subType).toBe("overlay");
+  });
+
+  it("flags drawer without ON_CLICK (overlay subType)", () => {
+    const node = makeNode({ id: "1:1", name: "Side Drawer", type: "FRAME" });
+    const ctx = makeContext({ path: ["Page", "Drawer"] });
+    const result = missingPrototype.check(node, ctx);
+
+    expect(result).not.toBeNull();
+    expect(result!.subType).toBe("overlay");
   });
 
   it("passes when ON_CLICK interaction exists", () => {

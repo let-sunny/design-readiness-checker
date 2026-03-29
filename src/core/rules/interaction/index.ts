@@ -163,13 +163,17 @@ const PROTOTYPE_TYPES: Record<InteractiveType, MissingPrototypeSubType> = {
   toggle: "toggle",
 };
 
-/** Name patterns for dropdown-like elements (separate from INTERACTIVE_PATTERNS) */
-const DROPDOWN_PATTERN = /\b(dropdown|select|combo-?box|popover|accordion)\b/i;
+/** Name patterns for overlay elements (open on top of current view) */
+const OVERLAY_PATTERN = /\b(dropdown|select|combo-?box|popover|accordion|drawer|modal|bottom-?sheet|sheet|sidebar|panel|dialog|popup|toast)\b/i;
+
+/** Name patterns for carousel elements (swipe/slide between items) */
+const CAROUSEL_PATTERN = /\b(carousel|slider|swiper|slide-?show|gallery)\b/i;
 
 function getPrototypeSubType(node: AnalysisNode): MissingPrototypeSubType | null {
   // Check dropdown pattern first — select/dropdown are classified as "input" in
   // INTERACTIVE_PATTERNS but need "dropdown" subType for prototype checks
-  if (node.name && DROPDOWN_PATTERN.test(node.name)) return "dropdown";
+  if (node.name && OVERLAY_PATTERN.test(node.name)) return "overlay";
+  if (node.name && CAROUSEL_PATTERN.test(node.name)) return "carousel";
   const interactiveType = getInteractiveType(node);
   if (interactiveType) {
     const mapped = PROTOTYPE_TYPES[interactiveType];

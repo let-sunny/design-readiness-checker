@@ -160,7 +160,7 @@ export const missingInteractionStateMsg = {
 
 // ── missing-prototype ─────────────────────────────────────────────────────────
 
-export type MissingPrototypeSubType = "button" | "navigation" | "tab" | "dropdown" | "input" | "toggle";
+export type MissingPrototypeSubType = "button" | "navigation" | "tab" | "overlay" | "carousel" | "input" | "toggle";
 
 export const missingPrototypeMsg = {
   button: (name: string) =>
@@ -169,8 +169,10 @@ export const missingPrototypeMsg = {
     `"${name}" looks like a navigation link but has no click prototype — add an ON_CLICK interaction to define the destination`,
   tab: (name: string) =>
     `"${name}" looks like a tab but has no click prototype — add an ON_CLICK interaction to define tab switching behavior`,
-  dropdown: (name: string) =>
-    `"${name}" looks like a dropdown but has no click prototype — add an ON_CLICK interaction to define open/close behavior`,
+  overlay: (name: string) =>
+    `"${name}" looks like an overlay trigger but has no click prototype — add an ON_CLICK interaction to define open/close behavior`,
+  carousel: (name: string) =>
+    `"${name}" looks like a carousel but has no click prototype — add an ON_CLICK interaction to define slide navigation`,
   input: (name: string) =>
     `"${name}" looks like an input but has no click prototype — add an ON_CLICK interaction to define focus/interaction behavior`,
   toggle: (name: string) =>
