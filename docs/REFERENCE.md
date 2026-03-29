@@ -122,6 +122,13 @@ Override score, severity, or enable/disable individual rules:
 | `raw-value` | -3 | missing-info |
 | `irregular-spacing` | -2 | missing-info |
 
+**Interaction (2 rules)** — missing state variants and prototypes for interactive components
+
+| Rule ID | Default Score | Default Severity |
+|---------|--------------|-----------------|
+| `missing-interaction-state` | -3 | missing-info |
+| `missing-prototype` | -3 | missing-info |
+
 **Minor (3 rules)** — naming issues with negligible impact (ΔV < 2%)
 
 | Rule ID | Default Score | Default Severity |

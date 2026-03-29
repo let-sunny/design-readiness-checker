@@ -96,6 +96,7 @@ const CATEGORY_WEIGHT: Record<Category, number> = {
   "responsive-critical": 1.0,
   "code-quality": 1.0,
   "token-management": 1.0,
+  "interaction": 1.0,
   "minor": 1.0,
 };
 

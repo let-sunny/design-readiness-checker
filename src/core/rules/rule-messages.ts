@@ -143,6 +143,42 @@ export const defaultNameMsg = (type: string, name: string) =>
 export const nonSemanticNameMsg = (type: string, name: string) =>
   `${type} "${name}" is a non-semantic name — rename to describe its role (e.g., "Divider", "Background")`;
 
+// ── missing-interaction-state ─────────────────────────────────────────────────
+
+export type MissingInteractionStateSubType = "hover" | "disabled" | "active" | "focus";
+
+export const missingInteractionStateMsg = {
+  hover: (name: string) =>
+    `"${name}" looks interactive but has no Hover state variant — add a State=Hover variant`,
+  disabled: (name: string) =>
+    `"${name}" looks interactive but has no Disabled state variant — add a State=Disabled variant`,
+  active: (name: string) =>
+    `"${name}" looks interactive but has no Active state variant — add a State=Active variant`,
+  focus: (name: string) =>
+    `"${name}" looks interactive but has no Focus state variant — add a State=Focus variant`,
+};
+
+// ── missing-prototype ─────────────────────────────────────────────────────────
+
+export type MissingPrototypeSubType = "button" | "navigation" | "tab" | "overlay" | "carousel" | "input" | "toggle";
+
+export const missingPrototypeMsg = {
+  button: (name: string) =>
+    `"${name}" looks like a button but has no click prototype — add an ON_CLICK interaction to define the click behavior`,
+  navigation: (name: string) =>
+    `"${name}" looks like a navigation link but has no click prototype — add an ON_CLICK interaction to define the destination`,
+  tab: (name: string) =>
+    `"${name}" looks like a tab but has no click prototype — add an ON_CLICK interaction to define tab switching behavior`,
+  overlay: (name: string) =>
+    `"${name}" looks like an overlay trigger but has no click prototype — add an ON_CLICK interaction to define open/close behavior`,
+  carousel: (name: string) =>
+    `"${name}" looks like a carousel but has no click prototype — add an ON_CLICK interaction to define slide navigation`,
+  input: (name: string) =>
+    `"${name}" looks like an input but has no click prototype — add an ON_CLICK interaction to define focus/interaction behavior`,
+  toggle: (name: string) =>
+    `"${name}" looks like a toggle but has no click prototype — add an ON_CLICK interaction to define on/off behavior`,
+};
+
 // ── inconsistent-naming-convention ───────────────────────────────────────────
 
 export const inconsistentNamingMsg = (name: string, nodeConvention: string, dominantConvention: string) =>

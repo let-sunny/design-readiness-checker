@@ -216,6 +216,7 @@ describe("calculateScores", () => {
 
     expect(scores.byCategory["token-management"].percentage).toBe(100);
     expect(scores.byCategory["code-quality"].percentage).toBe(100);
+    expect(scores.byCategory["interaction"].percentage).toBe(100);
     expect(scores.byCategory["minor"].percentage).toBe(100);
     expect(scores.byCategory["responsive-critical"].percentage).toBe(100);
   });
@@ -230,10 +231,11 @@ describe("calculateScores", () => {
       scores.byCategory["responsive-critical"].percentage,
       scores.byCategory["code-quality"].percentage,
       scores.byCategory["token-management"].percentage,
+      scores.byCategory["interaction"].percentage,
       scores.byCategory["minor"].percentage,
     ];
     const expectedOverall = Math.round(
-      categoryPercentages.reduce((a, b) => a + b, 0) / 5
+      categoryPercentages.reduce((a, b) => a + b, 0) / 6
     );
     expect(scores.overall.percentage).toBe(expectedOverall);
   });
@@ -295,12 +297,13 @@ describe("calculateGrade (via calculateScores)", () => {
 
   it("score < 50% -> F", () => {
     const issues: AnalysisIssue[] = [];
-    const categories: Category[] = ["pixel-critical", "responsive-critical", "code-quality", "token-management", "minor"];
+    const categories: Category[] = ["pixel-critical", "responsive-critical", "code-quality", "token-management", "interaction", "minor"];
     const rulesPerCat: Record<Category, string[]> = {
       "pixel-critical": ["no-auto-layout", "non-layout-container", "absolute-position-in-auto-layout"],
       "responsive-critical": ["fixed-size-in-auto-layout", "missing-size-constraint"],
       "code-quality": ["missing-component", "detached-instance", "variant-structure-mismatch", "deep-nesting"],
       "token-management": ["raw-value", "irregular-spacing"],
+      "interaction": ["missing-interaction-state", "missing-prototype"],
       "minor": ["default-name", "non-semantic-name", "inconsistent-naming-convention"],
     };
 

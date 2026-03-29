@@ -9,3 +9,4 @@ export * from "./structure/index.js";
 export * from "./token/index.js";
 export * from "./component/index.js";
 export * from "./naming/index.js";
+export * from "./interaction/index.js";

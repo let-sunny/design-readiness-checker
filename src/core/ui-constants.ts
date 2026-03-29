@@ -20,6 +20,8 @@ export const CATEGORY_DESCRIPTIONS: Record<Category, string> = {
     "Component reuse, detached instances, variant structure, nesting depth",
   "token-management":
     "Design token binding for colors, fonts, shadows, opacity, spacing grid",
+  "interaction":
+    "State variants for interactive components — hover, disabled, active, focus",
   "minor":
     "Semantic layer names, naming conventions, default names",
 };
