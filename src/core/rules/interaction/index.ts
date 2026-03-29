@@ -38,12 +38,12 @@ const EXPECTED_STATES: Record<InteractiveType, MissingInteractionStateSubType[]>
   toggle: ["disabled"],
 };
 
-/** State name patterns in variant property values */
+/** State name patterns — CSS pseudo-class names as primary, common Figma aliases as fallback */
 const STATE_PATTERNS: Record<MissingInteractionStateSubType, RegExp> = {
-  hover: /\bhover(ed)?\b/i,
+  hover: /\bhover\b/i,
   disabled: /\bdisabled\b/i,
-  active: /\b(active|selected|current)\b/i,
-  focus: /\bfocus(ed)?\b/i,
+  active: /\bactive\b/i,
+  focus: /\bfocus\b/i,
 };
 
 // ============================================
