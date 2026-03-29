@@ -95,7 +95,7 @@ function computeTotalScorePerCategory(
  * - interaction: data incomplete (missing-prototype disabled, #139 fixture rebuild pending)
  * - minor: ΔV <2%, negligible code difference
  */
-const CATEGORY_WEIGHT: Record<Category, number> = {
+export const CATEGORY_WEIGHT: Record<Category, number> = {
   "pixel-critical": 2.5,
   "responsive-critical": 3.0,
   "code-quality": 1.0,

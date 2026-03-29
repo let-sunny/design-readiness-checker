@@ -1,4 +1,4 @@
-import { calculateScores, formatScoreSummary, gradeToClassName, getCategoryLabel, getSeverityLabel, buildResultJson } from "./scoring.js";
+import { calculateScores, formatScoreSummary, gradeToClassName, getCategoryLabel, getSeverityLabel, buildResultJson, CATEGORY_WEIGHT } from "./scoring.js";
 import type { AnalysisIssue, AnalysisResult } from "./rule-engine.js";
 import type { AnalysisFile, AnalysisNode } from "../contracts/figma-node.js";
 import type { Rule, RuleConfig, RuleViolation } from "../contracts/rule.js";
@@ -226,18 +226,9 @@ describe("calculateScores", () => {
       makeIssue({ ruleId: "no-auto-layout", category: "pixel-critical", severity: "blocking" }),
     ], 100));
 
-    // Weights from scoring.ts CATEGORY_WEIGHT (ablation-based)
-    const weights: Record<string, number> = {
-      "pixel-critical": 2.5,
-      "responsive-critical": 3.0,
-      "code-quality": 1.0,
-      "token-management": 1.0,
-      "interaction": 0.5,
-      "minor": 0.3,
-    };
     let weightedSum = 0;
     let totalWeight = 0;
-    for (const [cat, w] of Object.entries(weights)) {
+    for (const [cat, w] of Object.entries(CATEGORY_WEIGHT)) {
       weightedSum += scores.byCategory[cat as Category].percentage * w;
       totalWeight += w;
     }
