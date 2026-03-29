@@ -133,7 +133,7 @@ Override score, severity, or enable/disable individual rules:
 
 | Rule ID | Default Score | Default Severity |
 |---------|--------------|-----------------|
-| `non-standard-naming` | -1 | suggestion |
+| `non-standard-naming` | -3 | suggestion |
 | `non-semantic-name` | -1 | suggestion |
 | `inconsistent-naming-convention` | -1 | suggestion |
 <!-- RULE_TABLE_END -->

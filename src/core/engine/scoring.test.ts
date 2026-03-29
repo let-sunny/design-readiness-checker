@@ -226,17 +226,22 @@ describe("calculateScores", () => {
       makeIssue({ ruleId: "no-auto-layout", category: "pixel-critical", severity: "blocking" }),
     ], 100));
 
-    const categoryPercentages = [
-      scores.byCategory["pixel-critical"].percentage,
-      scores.byCategory["responsive-critical"].percentage,
-      scores.byCategory["code-quality"].percentage,
-      scores.byCategory["token-management"].percentage,
-      scores.byCategory["interaction"].percentage,
-      scores.byCategory["minor"].percentage,
-    ];
-    const expectedOverall = Math.round(
-      categoryPercentages.reduce((a, b) => a + b, 0) / 6
-    );
+    // Weights from scoring.ts CATEGORY_WEIGHT (ablation-based)
+    const weights: Record<string, number> = {
+      "pixel-critical": 2.5,
+      "responsive-critical": 3.0,
+      "code-quality": 1.0,
+      "token-management": 1.0,
+      "interaction": 0.5,
+      "minor": 0.3,
+    };
+    let weightedSum = 0;
+    let totalWeight = 0;
+    for (const [cat, w] of Object.entries(weights)) {
+      weightedSum += scores.byCategory[cat as Category].percentage * w;
+      totalWeight += w;
+    }
+    const expectedOverall = Math.round(weightedSum / totalWeight);
     expect(scores.overall.percentage).toBe(expectedOverall);
   });
 

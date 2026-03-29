@@ -131,13 +131,13 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
   "missing-prototype": {
     severity: "missing-info",
     score: -3,
-    enabled: true,
+    enabled: false, // disabled: interactionDestinations data missing from fixtures (#139)
   },
 
   // ── Minor ──
   "non-standard-naming": {
     severity: "suggestion",
-    score: -1,
+    score: -3, // higher than other naming rules: non-standard state names break interaction detection pipeline
     enabled: true,
   },
   "non-semantic-name": {

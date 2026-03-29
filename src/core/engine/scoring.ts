@@ -85,19 +85,23 @@ function computeTotalScorePerCategory(
 }
 
 /**
- * Category weights for overall score.
- * All equal (1.0) by design — no category is inherently more important than another.
- * This avoids subjective bias; individual rule scores within each category already
- * encode relative importance. If calibration reveals certain categories correlate
- * more strongly with visual-compare similarity, these weights can be adjusted.
+ * Category weights for overall score, based on ablation experiment data (PR #149, #150).
+ *
+ * Evidence:
+ * - responsive-critical: ΔV +15.9% at expanded viewport, mobile-shop +46% — highest impact
+ * - pixel-critical: ΔV +5.4% when layout info stripped — direct pixel accuracy impact
+ * - token-management: ΔV +3.5% (style-ref, Phase 2) — moderate
+ * - code-quality: ΔV ≈0%, CSS classes -8~15 — affects structure, not pixels
+ * - interaction: data incomplete (missing-prototype disabled, #139 fixture rebuild pending)
+ * - minor: ΔV <2%, negligible code difference
  */
 const CATEGORY_WEIGHT: Record<Category, number> = {
-  "pixel-critical": 1.0,
-  "responsive-critical": 1.0,
+  "pixel-critical": 2.5,
+  "responsive-critical": 3.0,
   "code-quality": 1.0,
   "token-management": 1.0,
-  "interaction": 1.0,
-  "minor": 1.0,
+  "interaction": 0.5,
+  "minor": 0.3,
 };
 
 /**
