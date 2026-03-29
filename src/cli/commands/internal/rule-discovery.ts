@@ -56,7 +56,7 @@ export function registerFilterDiscoveryEvidence(cli: CAC): void {
         }
       } catch (err) {
         // loadDiscoveryEvidence throws on unsupported schemaVersion
-        console.log(`Failed to read discovery evidence: ${err instanceof Error ? err.message : String(err)}`);
+        console.log(`Failed to filter discovery evidence: ${err instanceof Error ? err.message : String(err)}`);
       }
     });
 }
