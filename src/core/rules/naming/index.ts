@@ -7,7 +7,9 @@ function detectNamingConvention(name: string): string | null {
   if (/^[a-z]+(-[a-z]+)*$/.test(name)) return "kebab-case";
   if (/^[a-z]+(_[a-z]+)*$/.test(name)) return "snake_case";
   if (/^[a-z]+([A-Z][a-z]*)*$/.test(name)) return "camelCase";
-  if (/^[A-Z][a-z]+([A-Z][a-z]*)*$/.test(name)) return "PascalCase";
+  // Single capitalized word (e.g., "Header") is ambiguous — compatible with both PascalCase and Title Case
+  if (/^[A-Z][a-z]+$/.test(name)) return null;
+  if (/^[A-Z][a-z]+([A-Z][a-z]*)+$/.test(name)) return "PascalCase";
   if (/^[A-Z]+(_[A-Z]+)*$/.test(name)) return "SCREAMING_SNAKE_CASE";
   if (/\s/.test(name)) return "Title Case";
   return null;
