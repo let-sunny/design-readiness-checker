@@ -277,19 +277,6 @@ body {
   margin-bottom: 24px;
   position: relative;
 }
-@media (max-width: 600px) {
-  .rpt-tabs::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 32px;
-    height: 40px;
-    background: linear-gradient(to right, transparent, var(--bg));
-    pointer-events: none;
-    border-radius: 0 var(--radius) 0 0;
-  }
-}
 .rpt-tab-list {
   display: flex;
   gap: 4px;
@@ -394,7 +381,6 @@ body {
 .rpt-rule[open] > .rpt-rule-header .rpt-rule-chevron {
   transform: rotate(180deg);
 }
-.rpt-rule-body {}
 .rpt-rule-title {
   flex: 1;
   min-width: 0;
@@ -559,11 +545,12 @@ body {
   .rpt-gauges { padding: 16px; }
   .rpt-summary-inner { gap: 12px; }
   .rpt-summary-total { border-left: none; padding-left: 0; }
+  .rpt-tab-list { gap: 8px; padding: 4px 12px; }
+  .rpt-tab { padding: 6px 14px; }
   .rpt-opps-item { padding: 10px 16px; gap: 10px; }
   .rpt-opps-bar-wrap { width: 80px; }
   .rpt-opps-link { font-size: 11px; }
-  .rpt-cat-header { padding: 10px 14px; gap: 8px; }
-  .rpt-sev-group { padding: 10px 14px; }
+  .rpt-rule-header { padding: 10px 14px; gap: 8px; }
   .rpt-issue-header { padding: 6px 10px; gap: 6px; font-size: 12px; }
   .rpt-issue-body { padding: 10px; font-size: 12px; }
 }
