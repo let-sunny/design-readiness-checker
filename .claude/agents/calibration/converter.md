@@ -53,32 +53,37 @@ Read and follow `.claude/skills/design-to-code/PROMPT.md` for all code generatio
    - Each node in the tree maps 1:1 to an HTML element
    - Copy style values directly — they are already CSS-ready
    - Follow all rules from DESIGN-TO-CODE-PROMPT.md
-3. Save to `$RUN_DIR/output.html`
-4. Run visual comparison:
-   ```
-   npx canicode visual-compare $RUN_DIR/output.html --figma-url "https://www.figma.com/design/<fileKey>/file?node-id=<rootNodeId>" --output $RUN_DIR
-   ```
-   This saves `figma.png`, `code.png`, and `diff.png` into the run directory.
-   Replace `:` with `-` in the nodeId for the URL.
-5. **Responsive comparison** (if expanded screenshot exists):
-
-   Look for `screenshot-*.png` in the fixture directory. Sort by width (number in filename).
-   If there are 2+ screenshots, the smallest is the original and the largest is the expanded viewport.
+4. Save to `$RUN_DIR/output.html`
+5. Run visual comparison:
 
    ```bash
-   # Find expanded screenshot
-   ls <fixture-path>/screenshot-*.png | sort -t- -k2 -n
-   # Run responsive visual-compare with --figma-screenshot and --width
    npx canicode visual-compare $RUN_DIR/output.html \
      --figma-url "https://www.figma.com/design/<fileKey>/file?node-id=<rootNodeId>" \
-     --figma-screenshot <fixture-path>/screenshot-<largest>.png \
-     --width <largest-width> \
+     --output $RUN_DIR
+   ```
+
+   This saves `figma.png`, `code.png`, and `diff.png` into the run directory.
+   Replace `:` with `-` in the nodeId for the URL.
+6. **Responsive comparison** (if expanded screenshot exists):
+
+   List `screenshot-*.png` in the fixture directory. Extract the width number from each filename, sort numerically. If 2+ screenshots exist, the smallest width is the original and the largest is the expanded viewport.
+
+   ```bash
+   # Example: screenshot-1200.png (original), screenshot-1920.png (expanded)
+   SCREENSHOTS=($(ls <fixture-path>/screenshot-*.png | sort -t- -k2 -n))
+   LARGEST="${SCREENSHOTS[-1]}"
+   LARGEST_WIDTH=$(echo "$LARGEST" | grep -oP 'screenshot-\K\d+')
+
+   npx canicode visual-compare $RUN_DIR/output.html \
+     --figma-url "https://www.figma.com/design/<fileKey>/file?node-id=<rootNodeId>" \
+     --figma-screenshot "$LARGEST" \
+     --width "$LARGEST_WIDTH" \
      --output $RUN_DIR/responsive
    ```
 
-   Record `responsiveSimilarity` from the result and calculate `responsiveDelta = similarity - responsiveSimilarity`.
-   If only 1 screenshot exists, skip responsive comparison and set both to `null`.
-6. Use similarity to determine overall difficulty (thresholds defined in `src/agents/orchestrator.ts` → `SIMILARITY_DIFFICULTY_THRESHOLDS`):
+   The command outputs JSON to stdout with a `similarity` field. Record it as `responsiveSimilarity` and calculate `responsiveDelta = similarity - responsiveSimilarity`.
+   If only 1 screenshot exists, skip responsive comparison and set `responsiveSimilarity`, `responsiveDelta`, and `responsiveViewport` to `null`.
+7. Use similarity to determine overall difficulty (thresholds defined in `src/agents/orchestrator.ts` → `SIMILARITY_DIFFICULTY_THRESHOLDS`):
 
    | Similarity | Difficulty |
    |-----------|-----------|
@@ -87,18 +92,18 @@ Read and follow `.claude/skills/design-to-code/PROMPT.md` for all code generatio
    | 50-69% | hard |
    | <50% | failed |
 
-7. **MANDATORY — Rule Impact Assessment**: For EVERY rule ID in `nodeIssueSummaries[].flaggedRuleIds`, assess its actual impact on conversion. Read the analysis JSON, collect all unique `flaggedRuleIds`, and for each one write an entry in `ruleImpactAssessment`. This array MUST NOT be empty if there are flagged rules.
+8. **MANDATORY — Rule Impact Assessment**: For EVERY rule ID in `nodeIssueSummaries[].flaggedRuleIds`, assess its actual impact on conversion. Read the analysis JSON, collect all unique `flaggedRuleIds`, and for each one write an entry in `ruleImpactAssessment`. This array MUST NOT be empty if there are flagged rules.
    - Did this rule's issue actually make the conversion harder?
    - What was its real impact on the final similarity score?
    - Rate as: `easy` (no real difficulty), `moderate` (some guessing needed), `hard` (significant pixel loss), `failed` (could not reproduce)
-8. **Code metrics**: After writing `output.html`, record these in conversion.json:
+9. **Code metrics** (recorded for analysis/reporting — not consumed by evaluation):
    - `htmlBytes`: file size in bytes
    - `htmlLines`: line count
    - `cssClassCount`: unique CSS class selectors in `<style>` block
-   - `cssVariableCount`: unique CSS custom properties (`--*:`) in `<style>` block
-9. Note any difficulties NOT covered by existing rules as `uncoveredStruggles`
-   - **Only include design-related issues** — problems in the Figma file structure, missing tokens, ambiguous layout, etc.
-   - **Exclude environment/tooling issues** — font CDN availability, screenshot DPI/retina scaling, browser rendering quirks, network issues, CI limitations. These are not design problems and create noise in rule discovery.
+   - `cssVariableCount`: unique CSS custom properties (e.g., `--primary-color:`, `--spacing-md:`) in `<style>` block
+10. Note any difficulties NOT covered by existing rules as `uncoveredStruggles`
+    - **Only include design-related issues** — problems in the Figma file structure, missing tokens, ambiguous layout, etc.
+    - **Exclude environment/tooling issues** — font CDN availability, screenshot DPI/retina scaling, browser rendering quirks, network issues, CI limitations. These are not design problems and create noise in rule discovery.
 
 ## Output
 
