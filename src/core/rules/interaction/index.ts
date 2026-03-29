@@ -43,7 +43,7 @@ const STATE_PATTERNS: Record<MissingInteractionStateSubType, RegExp> = {
   hover: /\bhover(ed)?\b/i,
   disabled: /\bdisabled?\b/i,
   active: /\b(active|selected|current)\b/i,
-  focus: /\b(focus(ed)?|focused)\b/i,
+  focus: /\bfocus(ed)?\b/i,
 };
 
 // ============================================
@@ -76,29 +76,21 @@ function hasStateInVariantProps(node: AnalysisNode, statePattern: RegExp): boole
 }
 
 /**
- * Check if a state variant exists via component siblings in metadata.
- * Parses component names like "State=Hover, Size=Medium" from file.components.
+ * Check if a state variant exists via component master's componentPropertyDefinitions.
+ * Falls back to componentDefinitions (fetched masters) when the instance itself
+ * doesn't carry the property definitions.
  */
-function hasStateInComponentSiblings(
+function hasStateInComponentMaster(
   node: AnalysisNode,
   context: RuleContext,
   statePattern: RegExp,
 ): boolean {
-  const componentId = node.componentId;
-  if (!componentId) return false;
-
-  const componentMeta = context.file.components[componentId];
-  if (!componentMeta) return false;
-
-  // Find all components that share the same base name (same component set)
-  // Component names in a set follow: "Property=Value, Property=Value"
-  // We check all components for state-matching names
-  for (const comp of Object.values(context.file.components)) {
-    if (statePattern.test(comp.name)) {
-      return true;
-    }
-  }
-  return false;
+  if (!node.componentId) return false;
+  const defs = context.file.componentDefinitions;
+  if (!defs) return false;
+  const master = defs[node.componentId];
+  if (!master) return false;
+  return hasStateInVariantProps(master, statePattern);
 }
 
 /**
@@ -147,11 +139,11 @@ const missingInteractionStateCheck: RuleCheckFn = (node, context) => {
     // Skip hover if prototype interaction covers it
     if (state === "hover" && hasHoverInteraction(node)) continue;
 
-    // Check variant properties (most reliable)
+    // Check variant properties on instance
     if (hasStateInVariantProps(node, pattern)) continue;
 
-    // Check component siblings in metadata
-    if (hasStateInComponentSiblings(node, context, pattern)) continue;
+    // Check variant properties on component master (fetched definitions)
+    if (hasStateInComponentMaster(node, context, pattern)) continue;
 
     // Missing state — report first missing one
     seen.add(dedupeKey);
