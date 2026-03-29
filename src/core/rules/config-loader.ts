@@ -3,6 +3,9 @@ import { resolve } from "node:path";
 import { z } from "zod";
 import { SeveritySchema } from "../contracts/severity.js";
 import type { RuleConfig } from "../contracts/rule.js";
+import { RULE_CONFIGS } from "./rule-config.js";
+
+const VALID_RULE_IDS = new Set(Object.keys(RULE_CONFIGS));
 
 const RuleOverrideSchema = z.object({
   score: z.number().int().max(0).optional(),
@@ -14,7 +17,17 @@ const ConfigFileSchema = z.object({
   excludeNodeTypes: z.array(z.string()).optional(),
   excludeNodeNames: z.array(z.string()).optional(),
   gridBase: z.number().int().positive().optional(),
-  rules: z.record(z.string(), RuleOverrideSchema).optional(),
+  rules: z.record(z.string(), RuleOverrideSchema)
+    .superRefine((rules, ctx) => {
+      const unknown = Object.keys(rules).filter((id) => !VALID_RULE_IDS.has(id));
+      if (unknown.length > 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Unknown rule ID(s): ${unknown.join(", ")}. Valid IDs: ${[...VALID_RULE_IDS].join(", ")}`,
+        });
+      }
+    })
+    .optional(),
 });
 
 export type ConfigFile = z.infer<typeof ConfigFileSchema>;

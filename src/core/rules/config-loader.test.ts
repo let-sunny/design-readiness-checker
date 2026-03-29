@@ -84,6 +84,18 @@ describe("loadConfigFile", () => {
 
     await expect(loadConfigFile(filePath)).rejects.toThrow();
   });
+
+  it("throws for unknown rule ID", async () => {
+    const invalid = {
+      rules: {
+        "nonexistent-rule": { score: -5 },
+      },
+    };
+    const filePath = join(tempDir, "unknown-rule.json");
+    writeFileSync(filePath, JSON.stringify(invalid));
+
+    await expect(loadConfigFile(filePath)).rejects.toThrow(/Unknown rule ID/);
+  });
 });
 
 describe("mergeConfigs", () => {
