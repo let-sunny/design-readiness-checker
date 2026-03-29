@@ -11,6 +11,21 @@ import { PNG } from "pngjs";
 /** Directory used for caching Figma screenshots. */
 export const FIGMA_CACHE_DIR = "/tmp/canicode-figma-cache";
 
+/**
+ * Known @1x screenshot widths from fixture convention.
+ * Screenshots at these widths are captured at 1x scale (pixel width = logical width).
+ * All other widths are assumed @2x (e.g., 2400px PNG = 1200px logical).
+ */
+export const KNOWN_1X_WIDTHS = [1920, 768];
+
+/**
+ * Infer the export scale of a fixture screenshot based on its pixel width.
+ * Uses KNOWN_1X_WIDTHS convention: 1920/768 = @1x, others = @2x.
+ */
+export function inferExportScale(pngWidth: number): number {
+  return KNOWN_1X_WIDTHS.includes(pngWidth) ? 1 : 2;
+}
+
 /** Cache time-to-live: 1 hour. */
 export const FIGMA_CACHE_TTL_MS = 60 * 60 * 1000;
 
@@ -141,4 +156,37 @@ export function compareScreenshots(
   const similarity = diffPixels === 0 ? 100 : Math.floor((1 - diffPixels / totalPixels) * 100);
 
   return { similarity, diffPixels, totalPixels, width, height };
+}
+
+// ── Code metrics (shared with ablation helpers) ─────────────────────────
+
+/** Count unique CSS class selectors in an HTML string's <style> block. */
+export function countCssClasses(html: string): number {
+  const styleMatch = html.match(/<style[\s\S]*?<\/style>/i);
+  if (!styleMatch) return 0;
+  const classes = styleMatch[0].match(/\.[a-zA-Z][\w-]*\s*[{,:]/g);
+  return new Set(classes?.map((c) => c.replace(/\s*[{,:]$/, ""))).size;
+}
+
+/** Count unique CSS custom property definitions in an HTML string's <style> block. */
+export function countCssVariables(html: string): number {
+  const styleMatch = html.match(/<style[\s\S]*?<\/style>/i);
+  if (!styleMatch) return 0;
+  const vars = styleMatch[0].match(/--[\w-]+\s*:/g);
+  return new Set(vars?.map((v) => v.replace(/\s*:$/, ""))).size;
+}
+
+/** Compute code metrics from an HTML string. */
+export function computeCodeMetrics(html: string): {
+  htmlBytes: number;
+  htmlLines: number;
+  cssClassCount: number;
+  cssVariableCount: number;
+} {
+  return {
+    htmlBytes: Buffer.byteLength(html, "utf-8"),
+    htmlLines: html.split("\n").length,
+    cssClassCount: countCssClasses(html),
+    cssVariableCount: countCssVariables(html),
+  };
 }

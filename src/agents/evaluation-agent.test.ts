@@ -189,6 +189,130 @@ describe("runEvaluationAgent", () => {
     expect(result.validatedRules).toContain("rule-a");
   });
 
+  it("overrides responsive-critical rule from validated to underscored when responsiveDelta is high", () => {
+    const input: EvaluationAgentInput = {
+      nodeIssueSummaries: [
+        { nodeId: "node-1", nodePath: "Page > Frame", flaggedRuleIds: ["fixed-size-in-auto-layout"] },
+      ],
+      conversionRecords: [
+        {
+          nodeId: "node-1",
+          nodePath: "Page > Frame",
+          difficulty: "easy",
+          ruleRelatedStruggles: [
+            { ruleId: "fixed-size-in-auto-layout", description: "Looked fine", actualImpact: "easy" },
+          ],
+          uncoveredStruggles: [],
+        },
+      ],
+      ruleScores: {
+        "fixed-size-in-auto-layout": { score: -6, severity: "risk" },
+      },
+      responsiveDelta: 25,
+    };
+
+    const result = runEvaluationAgent(input);
+
+    const match = result.mismatches.find(m => m.ruleId === "fixed-size-in-auto-layout");
+    expect(match).toBeDefined();
+    // AI said "easy" but responsiveDelta=25 → hard → score -6 is underscored (expected -8 to -12)
+    expect(match!.type).toBe("underscored");
+    expect(match!.actualDifficulty).toBe("hard");
+    expect(match!.reasoning).toContain("responsive");
+    // Must NOT be in validatedRules (was validated before override, removed after)
+    expect(result.validatedRules).not.toContain("fixed-size-in-auto-layout");
+  });
+
+  it("keeps responsive-critical rule validated when responsiveDelta is low", () => {
+    const input: EvaluationAgentInput = {
+      nodeIssueSummaries: [
+        { nodeId: "node-1", nodePath: "Page > Frame", flaggedRuleIds: ["missing-size-constraint"] },
+      ],
+      conversionRecords: [
+        {
+          nodeId: "node-1",
+          nodePath: "Page > Frame",
+          difficulty: "easy",
+          ruleRelatedStruggles: [
+            { ruleId: "missing-size-constraint", description: "Fine", actualImpact: "easy" },
+          ],
+          uncoveredStruggles: [],
+        },
+      ],
+      ruleScores: {
+        "missing-size-constraint": { score: -2, severity: "suggestion" },
+      },
+      responsiveDelta: 3,
+    };
+
+    const result = runEvaluationAgent(input);
+
+    const match = result.mismatches.find(m => m.ruleId === "missing-size-constraint");
+    expect(match).toBeDefined();
+    expect(match!.type).toBe("validated");
+    expect(match!.actualDifficulty).toBe("easy");
+    expect(result.validatedRules).toContain("missing-size-constraint");
+  });
+
+  it("does not override non-responsive-critical rules even with high responsiveDelta", () => {
+    const input: EvaluationAgentInput = {
+      nodeIssueSummaries: [
+        { nodeId: "node-1", nodePath: "Page > Frame", flaggedRuleIds: ["raw-value"] },
+      ],
+      conversionRecords: [
+        {
+          nodeId: "node-1",
+          nodePath: "Page > Frame",
+          difficulty: "easy",
+          ruleRelatedStruggles: [
+            { ruleId: "raw-value", description: "Easy", actualImpact: "easy" },
+          ],
+          uncoveredStruggles: [],
+        },
+      ],
+      ruleScores: {
+        "raw-value": { score: -3, severity: "missing-info" },
+      },
+      responsiveDelta: 30,
+    };
+
+    const result = runEvaluationAgent(input);
+
+    const match = result.mismatches.find(m => m.ruleId === "raw-value");
+    expect(match).toBeDefined();
+    // raw-value is token-management, not responsive-critical — no override
+    expect(match!.type).toBe("validated");
+  });
+
+  it("treats negative responsiveDelta as easy", () => {
+    const input: EvaluationAgentInput = {
+      nodeIssueSummaries: [
+        { nodeId: "node-1", nodePath: "Page > Frame", flaggedRuleIds: ["fixed-size-in-auto-layout"] },
+      ],
+      conversionRecords: [
+        {
+          nodeId: "node-1",
+          nodePath: "Page > Frame",
+          difficulty: "easy",
+          ruleRelatedStruggles: [
+            { ruleId: "fixed-size-in-auto-layout", description: "Fine", actualImpact: "easy" },
+          ],
+          uncoveredStruggles: [],
+        },
+      ],
+      ruleScores: {
+        "fixed-size-in-auto-layout": { score: -2, severity: "suggestion" },
+      },
+      responsiveDelta: -5,
+    };
+
+    const result = runEvaluationAgent(input);
+
+    const match = result.mismatches.find(m => m.ruleId === "fixed-size-in-auto-layout");
+    expect(match).toBeDefined();
+    expect(match!.actualDifficulty).toBe("easy");
+  });
+
   it("returns empty mismatches and validatedRules for empty input", () => {
     const input: EvaluationAgentInput = {
       nodeIssueSummaries: [],

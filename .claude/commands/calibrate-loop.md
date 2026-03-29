@@ -79,9 +79,14 @@ ls $RUN_DIR/conversion.json $RUN_DIR/output.html
 
 If `conversion.json` is missing, write it yourself from the Converter's returned summary.
 
+**Record token usage**: The subagent result includes `total_tokens`, `tool_uses`, `duration_ms` in usage metadata. Read `conversion.json`, add these fields, and write back:
+- `converterTokens`: total tokens consumed by the Converter subagent
+- `converterToolUses`: number of tool calls
+- `converterDurationMs`: execution time in milliseconds
+
 Append to `$RUN_DIR/activity.jsonl`:
 ```json
-{"step":"Converter","timestamp":"<ISO8601>","result":"similarity=<N>% difficulty=<level>","durationMs":<ms>}
+{"step":"Converter","timestamp":"<ISO8601>","result":"similarity=<N>% difficulty=<level> tokens=<N>","durationMs":<ms>}
 ```
 
 ### Step 3 — Gap Analysis

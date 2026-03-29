@@ -47,6 +47,12 @@ export interface EvaluationAgentInput {
     }>;
   }>;
   ruleScores: Record<string, { score: number; severity: string }>;
+  /**
+   * Responsive viewport comparison delta (similarity - responsiveSimilarity).
+   * Positive = design breaks at expanded viewport. Used to evaluate responsive-critical rules.
+   * null/undefined = no responsive comparison available.
+   */
+  responsiveDelta?: number | null | undefined;
 }
 
 export interface EvaluationAgentOutput {
