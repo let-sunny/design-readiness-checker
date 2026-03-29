@@ -304,7 +304,7 @@ describe("calculateGrade (via calculateScores)", () => {
       "code-quality": ["missing-component", "detached-instance", "variant-structure-mismatch", "deep-nesting"],
       "token-management": ["raw-value", "irregular-spacing"],
       "interaction": ["missing-interaction-state", "missing-prototype"],
-      "minor": ["non-standard-naming", "non-semantic-name", "non-semantic-name", "inconsistent-naming-convention"],
+      "minor": ["non-standard-naming", "non-semantic-name", "inconsistent-naming-convention"],
     };
 
     for (const cat of categories) {

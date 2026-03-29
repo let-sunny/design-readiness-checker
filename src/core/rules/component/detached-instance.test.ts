@@ -47,6 +47,26 @@ describe("detached-instance", () => {
     expect(detachedInstance.check(node, makeContext({ file }))).toBeNull();
   });
 
+  it("case-sensitive: 'button' does not match component 'Button'", () => {
+    const file = makeFile({
+      components: {
+        "comp-1": { key: "k1", name: "Button", description: "" },
+      },
+    });
+    const node = makeNode({ type: "FRAME", name: "button" });
+    expect(detachedInstance.check(node, makeContext({ file }))).toBeNull();
+  });
+
+  it("word boundary: 'Discard' does not match component 'Card'", () => {
+    const file = makeFile({
+      components: {
+        "comp-1": { key: "k1", name: "Card", description: "" },
+      },
+    });
+    const node = makeNode({ type: "FRAME", name: "Discard" });
+    expect(detachedInstance.check(node, makeContext({ file }))).toBeNull();
+  });
+
   it("returns null when file has no components", () => {
     const node = makeNode({ type: "FRAME", name: "SomeFrame" });
     expect(detachedInstance.check(node, makeContext())).toBeNull();

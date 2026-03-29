@@ -7,23 +7,21 @@ describe("non-semantic-name", () => {
     expect(nonSemanticName.definition.category).toBe("minor");
   });
 
-  // Default name detection (merged from default-name)
+  // Default name detection (merged from default-name) — exact subType per node type
   it.each([
-    "Frame 1",
-    "Frame",
-    "Group 12",
-    "Ellipse",
-    "Vector 1",
-    "Line 5",
-    "Text 2",
-    "Component 1",
-    "Instance 3",
-  ])("flags Figma default name: %s", (name) => {
-    const node = makeNode({ name });
+    { name: "Frame 1", type: "FRAME", expectedSubType: "frame" },
+    { name: "Group 12", type: "GROUP", expectedSubType: "group" },
+    { name: "Ellipse", type: "ELLIPSE", expectedSubType: "shape" },
+    { name: "Vector 1", type: "VECTOR", expectedSubType: "vector" },
+    { name: "Text 2", type: "TEXT", expectedSubType: "text" },
+    { name: "Component 1", type: "COMPONENT", expectedSubType: "component" },
+    { name: "Instance 3", type: "INSTANCE", expectedSubType: "instance" },
+  ] as const)("flags default name $name → subType $expectedSubType", ({ name, type, expectedSubType }) => {
+    const node = makeNode({ name, type: type as any });
     const result = nonSemanticName.check(node, makeContext());
     expect(result).not.toBeNull();
     expect(result!.ruleId).toBe("non-semantic-name");
-    expect(result!.subType).toBeDefined();
+    expect(result!.subType).toBe(expectedSubType);
   });
 
   // Shape name detection (names only in NON_SEMANTIC_NAMES, not DEFAULT_NAME_PATTERNS)
