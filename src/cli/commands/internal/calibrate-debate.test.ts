@@ -51,11 +51,13 @@ describe("gatherEvidence", () => {
     expect(evidence.uncoveredStruggles).toHaveLength(0);
     expect(evidence.actionableGaps).toHaveLength(0);
     expect(evidence.priorEvidence).toEqual({});
+    expect(evidence.evidenceRatios).toEqual({});
   });
 
-  it("returns empty priorEvidence when no ruleIds proposed", () => {
+  it("returns empty priorEvidence and evidenceRatios when no ruleIds proposed", () => {
     const evidence = gatherEvidence(runDir, []);
     expect(evidence.priorEvidence).toEqual({});
+    expect(evidence.evidenceRatios).toEqual({});
   });
 });
 

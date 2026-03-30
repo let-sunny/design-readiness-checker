@@ -25,8 +25,26 @@ You will receive:
 2. **Converter assessment** — `ruleImpactAssessment` showing actual implementation difficulty per rule
 3. **Gap analysis** — actionable pixel gaps between Figma and generated code
 4. **Prior evidence** — cross-run calibration evidence for the proposed rules (accumulated from past runs)
+5. **Evidence ratios** — `evidenceRatios` object with pre-computed statistical summaries per rule
 
 Use ALL inputs to form pro/con arguments. Do not rely on proposals alone.
+
+### Evidence Ratios (critical for contradictory evidence)
+
+The `evidenceRatios` field contains **deterministic, pre-computed** ratio summaries for each proposed rule. Use these instead of manually interpreting raw overscored/underscored counts.
+
+Each ratio entry includes:
+- `dominantDirection`: `"overscored"` | `"underscored"` | `"mixed"` — the clear signal direction
+- `dominantRate`: percentage of fixtures agreeing (e.g., 0.7 = 70%)
+- `expectedDifficulty`: the most common difficulty from the dominant direction
+- `confidence`: `"high"` | `"medium"` | `"low"` | `"insufficient"` — based on sample size + dominance clarity
+- `summary`: human-readable conclusion
+
+**How to use evidence ratios:**
+- If `confidence` is `"high"` or `"medium"` and `dominantDirection` is NOT `"mixed"`, the direction is clear — do NOT treat it as contradictory even if both overscored and underscored entries exist.
+- If `confidence` is `"insufficient"` (< 3 samples), defer judgment — evidence is too thin.
+- If `dominantDirection` is `"mixed"`, the evidence genuinely lacks a clear signal — REJECT or HOLD.
+- The `summary` field gives a one-line verdict you can reference in your reasoning.
 
 ## Rejection Rules
 
@@ -38,9 +56,13 @@ Reject if ANY of these apply:
    - `confidence: medium` → reject if change exceeds 50% of current value
    - `confidence: low` → reject if change exceeds 30% of current value
 3. **Severity jump without evidence**: severity change proposed without `confidence: high`
+4. **Contradictory evidence with no clear majority**: `evidenceRatios[ruleId].dominantDirection` is `"mixed"` — evidence lacks a clear signal
+
 Note: `supportingCases` includes evidence from prior calibration runs.
 A count of 3 may mean 1 case in the current run + 2 from prior runs.
 This is intentional — cross-run evidence increases confidence.
+
+**Important**: When `evidenceRatios` shows a clear dominant direction (e.g., 70%+ rate), do NOT reject solely because both overscored and underscored entries exist. The ratio resolves the contradiction — trust the pre-computed signal.
 
 ## Decisions
 

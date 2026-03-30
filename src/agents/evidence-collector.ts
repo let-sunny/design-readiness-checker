@@ -10,10 +10,12 @@ import { CategorySchema } from "../core/contracts/category.js";
 import type {
   CalibrationEvidenceEntry,
   CrossRunEvidence,
+  CrossRunEvidenceGroup,
   DiscoveryEvidenceEntry,
+  EvidenceRatioSummary,
 } from "./contracts/evidence.js";
 
-export type { CalibrationEvidenceEntry, CrossRunEvidence, DiscoveryEvidenceEntry };
+export type { CalibrationEvidenceEntry, CrossRunEvidence, CrossRunEvidenceGroup, DiscoveryEvidenceEntry, EvidenceRatioSummary };
 export { DISCOVERY_EVIDENCE_SCHEMA_VERSION };
 
 const DEFAULT_CALIBRATION_PATH = resolve("data/calibration-evidence.json");
@@ -97,6 +99,116 @@ export function loadCalibrationEvidence(
   }
 
   return result;
+}
+
+/**
+ * Minimum sample size before ratio-based confidence kicks in.
+ * Below this threshold, confidence is "insufficient".
+ */
+const MIN_RATIO_SAMPLES = 3;
+
+/**
+ * Difficulty dominance: pick the most frequent difficulty from a list.
+ */
+function dominantDifficulty(difficulties: string[]): string {
+  if (difficulties.length === 0) return "moderate";
+  const counts: Record<string, number> = {};
+  for (const d of difficulties) {
+    counts[d] = (counts[d] ?? 0) + 1;
+  }
+  let best = difficulties[0]!;
+  let bestCount = 0;
+  for (const [d, c] of Object.entries(counts)) {
+    if (c > bestCount) {
+      bestCount = c;
+      best = d;
+    }
+  }
+  return best;
+}
+
+/**
+ * Compute a deterministic ratio summary from cross-run evidence for a single rule.
+ * This pre-digests contradictory evidence into a clear signal so the Critic
+ * doesn't have to do statistics — it just reads the conclusion.
+ */
+export function computeEvidenceRatio(group: CrossRunEvidenceGroup): EvidenceRatioSummary {
+  const total = group.overscoredCount + group.underscoredCount;
+
+  if (total === 0) {
+    return {
+      totalSamples: 0,
+      overscoredCount: 0,
+      underscoredCount: 0,
+      overscoredRate: 0,
+      underscoredRate: 0,
+      dominantDirection: "mixed",
+      dominantRate: 0,
+      expectedDifficulty: "moderate",
+      confidence: "insufficient",
+      summary: "No evidence available.",
+    };
+  }
+
+  const overscoredRate = group.overscoredCount / total;
+  const underscoredRate = group.underscoredCount / total;
+
+  // Determine dominant direction
+  let dir: "overscored" | "underscored" | "mixed";
+  let dominantRate: number;
+  if (overscoredRate >= 0.6) {
+    dir = "overscored";
+    dominantRate = overscoredRate;
+  } else if (underscoredRate >= 0.6) {
+    dir = "underscored";
+    dominantRate = underscoredRate;
+  } else {
+    dir = "mixed";
+    dominantRate = Math.max(overscoredRate, underscoredRate);
+  }
+
+  // Expected difficulty from the dominant direction's difficulties
+  const relevantDifficulties =
+    dir === "underscored"
+      ? group.underscoredDifficulties
+      : dir === "overscored"
+        ? group.overscoredDifficulties
+        : [...group.overscoredDifficulties, ...group.underscoredDifficulties];
+  const expectedDiff = dominantDifficulty(relevantDifficulties);
+
+  // Confidence based on sample size + dominance clarity
+  let confidence: "high" | "medium" | "low" | "insufficient";
+  if (total < MIN_RATIO_SAMPLES) {
+    confidence = "insufficient";
+  } else if (dominantRate >= 0.7 && total >= 5) {
+    confidence = "high";
+  } else if (dominantRate >= 0.6 && total >= MIN_RATIO_SAMPLES) {
+    confidence = "medium";
+  } else {
+    confidence = "low";
+  }
+
+  // Human-readable summary
+  const pct = (r: number) => `${Math.round(r * 100)}%`;
+  let summary: string;
+  if (dir === "mixed") {
+    summary = `Mixed signals: ${group.overscoredCount} overscored (${pct(overscoredRate)}) vs ${group.underscoredCount} underscored (${pct(underscoredRate)}) across ${total} fixtures. No clear direction.`;
+  } else {
+    summary = `${total} fixtures: ${dir} in ${dir === "overscored" ? group.overscoredCount : group.underscoredCount}/${total} (${pct(dominantRate)}). Expected difficulty: ${expectedDiff}. Confidence: ${confidence}.`;
+  }
+
+  return {
+    totalSamples: total,
+    overscoredCount: group.overscoredCount,
+    underscoredCount: group.underscoredCount,
+    overscoredRate: Math.round(overscoredRate * 1000) / 1000,
+    underscoredRate: Math.round(underscoredRate * 1000) / 1000,
+    dominantDirection: dir,
+    dominantRate: Math.round(dominantRate * 1000) / 1000,
+    expectedDifficulty: expectedDiff,
+    confidence,
+    summary,
+  };
 }
 
 /**

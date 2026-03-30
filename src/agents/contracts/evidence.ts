@@ -33,6 +33,23 @@ export type CrossRunEvidenceGroup = z.infer<typeof CrossRunEvidenceGroupSchema>;
 
 export type CrossRunEvidence = Record<string, CrossRunEvidenceGroup>;
 
+// --- Evidence ratio summary (deterministic pre-computation for Critic) ---
+
+export const EvidenceRatioSummarySchema = z.object({
+  totalSamples: z.number(),
+  overscoredCount: z.number(),
+  underscoredCount: z.number(),
+  overscoredRate: z.number(),
+  underscoredRate: z.number(),
+  dominantDirection: z.enum(["overscored", "underscored", "mixed"]),
+  dominantRate: z.number(),
+  expectedDifficulty: z.string(),
+  confidence: z.enum(["high", "medium", "low", "insufficient"]),
+  summary: z.string(),
+});
+
+export type EvidenceRatioSummary = z.infer<typeof EvidenceRatioSummarySchema>;
+
 // --- Discovery evidence ---
 
 export const DISCOVERY_EVIDENCE_SCHEMA_VERSION = 1;

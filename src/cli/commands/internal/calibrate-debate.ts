@@ -3,7 +3,8 @@ import { join } from "node:path";
 import type { CAC } from "cac";
 
 import { parseDebateResult } from "../../../agents/run-directory.js";
-import { loadCalibrationEvidence } from "../../../agents/evidence-collector.js";
+import { loadCalibrationEvidence, computeEvidenceRatio } from "../../../agents/evidence-collector.js";
+import type { EvidenceRatioSummary } from "../../../agents/contracts/evidence.js";
 import { resolveRunDir } from "./cli-helpers.js";
 
 // ─── calibrate-gather-evidence ──────────────────────────────────────────────
@@ -13,6 +14,7 @@ export interface GatheredEvidence {
   uncoveredStruggles: unknown[];
   actionableGaps: unknown[];
   priorEvidence: Record<string, unknown>;
+  evidenceRatios: Record<string, EvidenceRatioSummary>;
 }
 
 /**
@@ -25,6 +27,7 @@ export function gatherEvidence(runDir: string, proposedRuleIds: string[]): Gathe
     uncoveredStruggles: [],
     actionableGaps: [],
     priorEvidence: {},
+    evidenceRatios: {},
   };
 
   // 1. conversion.json → ruleImpactAssessment, uncoveredStruggles
@@ -54,13 +57,14 @@ export function gatherEvidence(runDir: string, proposedRuleIds: string[]): Gathe
     } catch { /* ignore malformed */ }
   }
 
-  // 3. Prior evidence filtered to proposed rules only
+  // 3. Prior evidence filtered to proposed rules only + ratio summaries
   if (proposedRuleIds.length > 0) {
     const allEvidence = loadCalibrationEvidence();
     const ruleSet = new Set(proposedRuleIds.map((id) => id.trim()));
     for (const [ruleId, group] of Object.entries(allEvidence)) {
       if (ruleSet.has(ruleId)) {
         result.priorEvidence[ruleId] = group;
+        result.evidenceRatios[ruleId] = computeEvidenceRatio(group);
       }
     }
   }
@@ -113,7 +117,8 @@ export function registerGatherEvidence(cli: CAC): void {
       // Write to file for orchestrator to include in Critic prompt
       const outPath = join(dir, "critic-evidence.json");
       writeFileSync(outPath, JSON.stringify(evidence, null, 2) + "\n", "utf-8");
-      console.log(`Gathered evidence: ${evidence.ruleImpactAssessment.length} impact assessments, ${evidence.actionableGaps.length} gaps, ${Object.keys(evidence.priorEvidence).length} prior rules`);
+      const ratioCount = Object.keys(evidence.evidenceRatios).length;
+      console.log(`Gathered evidence: ${evidence.ruleImpactAssessment.length} impact assessments, ${evidence.actionableGaps.length} gaps, ${Object.keys(evidence.priorEvidence).length} prior rules (${ratioCount} with ratio summaries)`);
       console.log(`Written to ${outPath}`);
     });
 }

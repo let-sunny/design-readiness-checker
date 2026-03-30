@@ -6,6 +6,7 @@ import {
   appendCalibrationEvidence,
   enrichCalibrationEvidence,
   pruneCalibrationEvidence,
+  computeEvidenceRatio,
   loadDiscoveryEvidence,
   appendDiscoveryEvidence,
   pruneDiscoveryEvidence,
@@ -13,6 +14,7 @@ import {
 } from "./evidence-collector.js";
 import type {
   CalibrationEvidenceEntry,
+  CrossRunEvidenceGroup,
   DiscoveryEvidenceEntry,
 } from "./evidence-collector.js";
 
@@ -236,6 +238,119 @@ describe("evidence-collector", () => {
 
     it("handles missing file gracefully", () => {
       expect(() => pruneCalibrationEvidence(["rule-a"], calPath)).not.toThrow();
+    });
+  });
+
+  // --- Evidence ratio computation ---
+
+  describe("computeEvidenceRatio", () => {
+    it("returns insufficient for empty group", () => {
+      const group: CrossRunEvidenceGroup = {
+        overscoredCount: 0,
+        underscoredCount: 0,
+        overscoredDifficulties: [],
+        underscoredDifficulties: [],
+        allPro: [],
+        allCon: [],
+      };
+      const ratio = computeEvidenceRatio(group);
+      expect(ratio.confidence).toBe("insufficient");
+      expect(ratio.totalSamples).toBe(0);
+      expect(ratio.dominantDirection).toBe("mixed");
+    });
+
+    it("detects clear overscored direction (7/10 = 70%)", () => {
+      const group: CrossRunEvidenceGroup = {
+        overscoredCount: 7,
+        underscoredCount: 3,
+        overscoredDifficulties: ["easy", "easy", "easy", "easy", "moderate", "easy", "easy"],
+        underscoredDifficulties: ["hard", "hard", "failed"],
+        allPro: [],
+        allCon: [],
+      };
+      const ratio = computeEvidenceRatio(group);
+      expect(ratio.totalSamples).toBe(10);
+      expect(ratio.dominantDirection).toBe("overscored");
+      expect(ratio.dominantRate).toBe(0.7);
+      expect(ratio.expectedDifficulty).toBe("easy");
+      expect(ratio.confidence).toBe("high");
+      expect(ratio.summary).toContain("overscored");
+      expect(ratio.summary).toContain("7/10");
+    });
+
+    it("detects clear underscored direction (7/10 = 70%)", () => {
+      const group: CrossRunEvidenceGroup = {
+        overscoredCount: 3,
+        underscoredCount: 7,
+        overscoredDifficulties: ["easy", "easy", "easy"],
+        underscoredDifficulties: ["hard", "hard", "failed", "hard", "hard", "failed", "hard"],
+        allPro: [],
+        allCon: [],
+      };
+      const ratio = computeEvidenceRatio(group);
+      expect(ratio.dominantDirection).toBe("underscored");
+      expect(ratio.dominantRate).toBe(0.7);
+      expect(ratio.expectedDifficulty).toBe("hard");
+      expect(ratio.confidence).toBe("high");
+    });
+
+    it("returns mixed when neither side has 60%+ majority", () => {
+      const group: CrossRunEvidenceGroup = {
+        overscoredCount: 5,
+        underscoredCount: 5,
+        overscoredDifficulties: ["easy", "easy", "easy", "moderate", "easy"],
+        underscoredDifficulties: ["hard", "hard", "hard", "failed", "hard"],
+        allPro: [],
+        allCon: [],
+      };
+      const ratio = computeEvidenceRatio(group);
+      expect(ratio.dominantDirection).toBe("mixed");
+      expect(ratio.confidence).toBe("low");
+      expect(ratio.summary).toContain("Mixed signals");
+    });
+
+    it("returns insufficient confidence for < 3 samples", () => {
+      const group: CrossRunEvidenceGroup = {
+        overscoredCount: 2,
+        underscoredCount: 0,
+        overscoredDifficulties: ["easy", "easy"],
+        underscoredDifficulties: [],
+        allPro: [],
+        allCon: [],
+      };
+      const ratio = computeEvidenceRatio(group);
+      expect(ratio.dominantDirection).toBe("overscored");
+      expect(ratio.confidence).toBe("insufficient");
+    });
+
+    it("returns medium confidence for 60%+ with 3-4 samples", () => {
+      const group: CrossRunEvidenceGroup = {
+        overscoredCount: 2,
+        underscoredCount: 1,
+        overscoredDifficulties: ["easy", "easy"],
+        underscoredDifficulties: ["hard"],
+        allPro: [],
+        allCon: [],
+      };
+      const ratio = computeEvidenceRatio(group);
+      expect(ratio.dominantDirection).toBe("overscored");
+      expect(ratio.confidence).toBe("medium");
+      expect(ratio.dominantRate).toBeCloseTo(0.667, 2);
+    });
+
+    it("handles all-one-direction case", () => {
+      const group: CrossRunEvidenceGroup = {
+        overscoredCount: 5,
+        underscoredCount: 0,
+        overscoredDifficulties: ["easy", "easy", "moderate", "easy", "easy"],
+        underscoredDifficulties: [],
+        allPro: [],
+        allCon: [],
+      };
+      const ratio = computeEvidenceRatio(group);
+      expect(ratio.dominantDirection).toBe("overscored");
+      expect(ratio.dominantRate).toBe(1);
+      expect(ratio.confidence).toBe("high");
     });
   });
 
