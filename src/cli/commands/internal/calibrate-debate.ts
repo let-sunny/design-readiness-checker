@@ -8,6 +8,8 @@ import type { EvidenceRatioSummary } from "../../../agents/contracts/evidence.js
 import { RULE_CONFIGS } from "../../../core/rules/rule-config.js";
 import { resolveRunDir } from "./cli-helpers.js";
 
+const KNOWN_RULE_IDS = new Set(Object.keys(RULE_CONFIGS));
+
 // ─── calibrate-gather-evidence ──────────────────────────────────────────────
 
 export interface GatheredEvidence {
@@ -92,10 +94,9 @@ export function loadProposedRuleIds(runDir: string): string[] {
   if (!existsSync(summaryPath)) return [];
   try {
     const content = readFileSync(summaryPath, "utf-8");
-    const knownRuleIds = new Set(Object.keys(RULE_CONFIGS));
     const ids = new Set<string>();
     for (const match of content.matchAll(/`([a-z][\w-]*)`/g)) {
-      if (match[1] && knownRuleIds.has(match[1])) ids.add(match[1]);
+      if (match[1] && KNOWN_RULE_IDS.has(match[1])) ids.add(match[1]);
     }
     return [...ids];
   } catch {

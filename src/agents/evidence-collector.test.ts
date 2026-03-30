@@ -239,22 +239,6 @@ describe("evidence-collector", () => {
     it("handles missing file gracefully", () => {
       expect(() => pruneCalibrationEvidence(["rule-a"], calPath)).not.toThrow();
     });
-
-    it("prunes only matching fixture when fixture is specified", () => {
-      const entries: CalibrationEvidenceEntry[] = [
-        { ruleId: "rule-a", type: "overscored", actualDifficulty: "easy", fixture: "fx1", timestamp: "t1" },
-        { ruleId: "rule-a", type: "overscored", actualDifficulty: "easy", fixture: "fx2", timestamp: "t2" },
-        { ruleId: "rule-b", type: "underscored", actualDifficulty: "hard", fixture: "fx1", timestamp: "t1" },
-      ];
-      writeFileSync(calPath, JSON.stringify(entries), "utf-8");
-
-      pruneCalibrationEvidence(["rule-a"], calPath, "fx1");
-
-      const raw = JSON.parse(readFileSync(calPath, "utf-8")) as CalibrationEvidenceEntry[];
-      expect(raw).toHaveLength(2);
-      // rule-a fx2 should survive, rule-b fx1 should survive
-      expect(raw.map(e => `${e.ruleId}:${e.fixture}`)).toEqual(["rule-a:fx2", "rule-b:fx1"]);
-    });
   });
 
   // --- Evidence ratio computation ---

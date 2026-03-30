@@ -278,11 +278,13 @@ export function runCalibrationEvaluate(
     ruleRelatedStruggles: Array<{ ruleId: string; description: string; actualImpact: string }>;
     uncoveredStruggles: Array<{ description: string; suggestedCategory: string; estimatedImpact: string }>;
   }>;
+  let wholeDesign = false;
 
   if (Array.isArray(conversionJson["records"])) {
     // Old per-node format
     conversionRecords = conversionJson["records"] as typeof conversionRecords;
   } else if (conversionJson["ruleImpactAssessment"]) {
+    wholeDesign = true;
     // New whole-design format — convert to records format
     const assessment = conversionJson["ruleImpactAssessment"] as Array<{
       ruleId: string; issueCount: number; actualImpact: string; description: string;
@@ -332,6 +334,7 @@ export function runCalibrationEvaluate(
     ruleScores,
     responsiveDelta,
     stripDeltas,
+    wholeDesign,
   });
 
   // Load prior evidence if collecting

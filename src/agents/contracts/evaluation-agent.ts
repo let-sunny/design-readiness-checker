@@ -60,6 +60,12 @@ export interface EvaluationAgentInput {
    * undefined = no strip ablation data available.
    */
   stripDeltas?: Record<string, number> | undefined;
+  /**
+   * Whether the conversion was whole-design (single root record covering the entire page).
+   * When true, evaluation merges all nodeIssueSummaries' flaggedRuleIds into the single record
+   * so rules flagged on child nodes aren't silently dropped.
+   */
+  wholeDesign?: boolean | undefined;
 }
 
 export interface EvaluationAgentOutput {

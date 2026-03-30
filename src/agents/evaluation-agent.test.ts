@@ -490,7 +490,7 @@ describe("runEvaluationAgent", () => {
     expect(responsiveMatch!.reasoning).toContain("responsive");
   });
 
-  it("merges all nodeIssueSummaries when single conversion record (whole-design format)", () => {
+  it("merges all nodeIssueSummaries when wholeDesign is true", () => {
     const input: EvaluationAgentInput = {
       nodeIssueSummaries: [
         { nodeId: "root", nodePath: "Page", flaggedRuleIds: ["rule-a"] },
@@ -513,6 +513,7 @@ describe("runEvaluationAgent", () => {
         "rule-b": { score: -5, severity: "risk" },
         "rule-c": { score: -3, severity: "suggestion" },
       },
+      wholeDesign: true,
     };
 
     const result = runEvaluationAgent(input);
@@ -528,7 +529,7 @@ describe("runEvaluationAgent", () => {
     expect(result.validatedRules).toContain("rule-c");
   });
 
-  it("does not merge summaries when multiple conversion records exist", () => {
+  it("does not merge summaries when wholeDesign is false", () => {
     const input: EvaluationAgentInput = {
       nodeIssueSummaries: [
         { nodeId: "node-1", nodePath: "Page > Card", flaggedRuleIds: ["rule-a"] },

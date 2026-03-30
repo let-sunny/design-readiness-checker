@@ -118,12 +118,8 @@ export function runEvaluationAgent(
     input.nodeIssueSummaries.map((s) => [s.nodeId, s])
   );
 
-  // When there's a single conversion record (whole-design format), merge all
-  // nodeIssueSummaries' flaggedRuleIds so rules flagged on child nodes aren't silently dropped.
-  const isSingleRecord = input.conversionRecords.length === 1;
-
   for (const record of input.conversionRecords) {
-    const summary = isSingleRecord
+    const summary = input.wholeDesign
       ? mergeAllSummaries(input.nodeIssueSummaries, record.nodeId, record.nodePath)
       : nodeSummaryMap.get(record.nodeId);
     const difficulty = record.difficulty as Difficulty;
