@@ -17,6 +17,7 @@ import { generateDesignTree } from "../../core/design-tree/design-tree.js";
 import { stripDesignTree } from "../../core/design-tree/strip.js";
 import { loadFigmaFileFromJson } from "../../core/adapters/figma-file-loader.js";
 import { renderAndCompare } from "../../core/comparison/visual-compare.js";
+import { expandRootWidth } from "../../core/comparison/visual-compare-helpers.js";
 
 import {
   PROMPT_PATH, callApi, processHtml, getResponseText,
@@ -28,14 +29,8 @@ const OUTPUT_DIR = resolve("data/ablation/conditions");
 
 type ConditionType = "size-constraints" | "hover-interaction";
 
-/** Remove root element's fixed width from CSS. */
-function removeRootFixedWidth(html: string): string {
-  return html
-    .replace(/width:\s*1200px/g, "width: 100%")
-    .replace(/width:\s*375px/g, "width: 100%")
-    .replace(/min-width:\s*1200px/g, "min-width: 0")
-    .replace(/min-width:\s*375px/g, "min-width: 0");
-}
+/** @deprecated Use expandRootWidth from visual-compare-helpers.ts instead. */
+const removeRootFixedWidth = expandRootWidth;
 
 // --- Size-constraints ---
 

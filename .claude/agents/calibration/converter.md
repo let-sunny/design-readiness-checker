@@ -78,6 +78,7 @@ Read and follow `.claude/skills/design-to-code/PROMPT.md` for all code generatio
      --figma-url "https://www.figma.com/design/<fileKey>/file?node-id=<rootNodeId>" \
      --figma-screenshot "$LARGEST" \
      --width "$LARGEST_WIDTH" \
+     --expand-root \
      --output $RUN_DIR/responsive
    ```
 
@@ -144,6 +145,7 @@ Read and follow `.claude/skills/design-to-code/PROMPT.md` for all code generatio
          npx canicode visual-compare $RUN_DIR/stripped/size-constraints.html \
            --figma-screenshot "$LARGEST" \
            --width "$LARGEST_WIDTH" \
+           --expand-root \
            --output $RUN_DIR/stripped/size-constraints-responsive
          ```
 

@@ -16,6 +16,7 @@ import {
   padPng,
   compareScreenshots,
   inferDeviceScaleFactor,
+  expandRootWidth,
   FIGMA_CACHE_DIR,
 } from "./visual-compare-helpers.js";
 
@@ -216,6 +217,34 @@ describe("compareScreenshots", () => {
     expect(result.totalPixels).toBe(6 * 4);
     expect(result.width).toBe(6);
     expect(result.height).toBe(4);
+  });
+});
+
+describe("expandRootWidth", () => {
+  it("replaces first fixed pixel width with 100%", () => {
+    const html = `<style>.root { width: 375px; } .card { width: 200px; }</style>`;
+    const result = expandRootWidth(html);
+    expect(result).toContain("width: 100%");
+    expect(result).toContain("width: 200px");
+  });
+
+  it("removes min-width pixel constraints", () => {
+    const html = `<style>.root { width: 1200px; min-width: 1200px; }</style>`;
+    const result = expandRootWidth(html);
+    expect(result).toContain("min-width: 0");
+    expect(result).not.toContain("min-width: 1200px");
+  });
+
+  it("returns unchanged HTML when no style block", () => {
+    const html = `<div style="width: 375px">content</div>`;
+    expect(expandRootWidth(html)).toBe(html);
+  });
+
+  it("only replaces first width occurrence", () => {
+    const html = `<style>.root { width: 375px; } .child { width: 375px; }</style>`;
+    const result = expandRootWidth(html);
+    const matches = result.match(/width: 100%/g);
+    expect(matches).toHaveLength(1);
   });
 });
 

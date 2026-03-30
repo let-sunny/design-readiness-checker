@@ -13,6 +13,7 @@ const VisualCompareOptionsSchema = z.object({
   width: z.union([z.string(), z.number()]).optional(),
   height: z.union([z.string(), z.number()]).optional(),
   figmaScale: z.string().optional(),
+  expandRoot: z.boolean().optional(),
 });
 
 
@@ -29,6 +30,7 @@ export function registerVisualCompare(cli: CAC): void {
     .option("--width <px>", "Logical viewport width in CSS px (default: infer from Figma PNG ÷ export scale)")
     .option("--height <px>", "Logical viewport height in CSS px (default: infer from Figma PNG ÷ export scale)")
     .option("--figma-scale <n>", "Figma export scale (default: 2, matches save-fixture / @2x PNGs)")
+    .option("--expand-root", "Replace root element's fixed width with 100% before rendering (for responsive comparison)")
     .example("  canicode visual-compare ./generated/index.html --figma-url 'https://www.figma.com/design/ABC/File?node-id=1-234'")
     .action(async (codePath: string, rawOptions: Record<string, unknown>) => {
       try {
@@ -99,6 +101,7 @@ export function registerVisualCompare(cli: CAC): void {
                 },
               }
             : {}),
+          ...(options.expandRoot ? { expandRoot: true } : {}),
         });
 
         // JSON output for programmatic use

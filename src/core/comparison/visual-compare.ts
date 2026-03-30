@@ -13,6 +13,7 @@ import {
   inferDeviceScaleFactor,
   inferExportScale,
   compareScreenshots,
+  expandRootWidth,
   type CompareOptions,
 } from "./visual-compare-helpers.js";
 
@@ -50,6 +51,12 @@ export interface VisualCompareOptions {
    * where multiple fixture screenshots exist at different viewports.
    */
   figmaScreenshotPath?: string | undefined;
+  /**
+   * When true, replace the root element's fixed pixel width with `width: 100%`
+   * before rendering. This allows the layout to expand to fill the viewport,
+   * which is needed for responsive comparison (e.g., 375px design rendered at 768px).
+   */
+  expandRoot?: boolean | undefined;
 }
 
 /**
@@ -195,8 +202,15 @@ export async function visualCompare(options: VisualCompareOptions): Promise<Visu
   }
 
   // Step 3: Render code screenshot at matching physical resolution
+  let renderPath = options.codePath;
+  if (options.expandRoot) {
+    const originalHtml = readFileSync(resolve(options.codePath), "utf-8");
+    const expandedHtml = expandRootWidth(originalHtml);
+    renderPath = resolve(outputDir, "code-expanded.html");
+    writeFileSync(renderPath, expandedHtml);
+  }
   await renderCodeScreenshot(
-    options.codePath,
+    renderPath,
     codeScreenshotPath,
     { width: logicalW, height: logicalH },
     deviceScaleFactor,
@@ -226,6 +240,8 @@ export interface RenderAndCompareOptions {
   suffix?: string;
   /** pixelmatch threshold. Default: 0.1. */
   threshold?: number;
+  /** Replace root element's fixed width with 100% before rendering. */
+  expandRoot?: boolean;
 }
 
 /**
@@ -250,8 +266,15 @@ export async function renderAndCompare(
   const logicalW = Math.max(1, Math.round(figmaWidth / exportScale));
   const logicalH = Math.max(1, Math.round(figmaImage.height / exportScale));
 
+  let renderHtmlPath = htmlPath;
+  if (options?.expandRoot) {
+    const originalHtml = readFileSync(resolve(htmlPath), "utf-8");
+    const expandedHtml = expandRootWidth(originalHtml);
+    renderHtmlPath = resolve(outputDir, `code-expanded-${suffix}.html`);
+    writeFileSync(renderHtmlPath, expandedHtml);
+  }
   const codePngPath = resolve(outputDir, `code-${suffix}.png`);
-  await renderCodeScreenshot(htmlPath, codePngPath, { width: logicalW, height: logicalH }, exportScale);
+  await renderCodeScreenshot(renderHtmlPath, codePngPath, { width: logicalW, height: logicalH }, exportScale);
 
   const figmaCopyPath = resolve(outputDir, `figma-${suffix}.png`);
   copyFileSync(figmaScreenshotPath, figmaCopyPath);

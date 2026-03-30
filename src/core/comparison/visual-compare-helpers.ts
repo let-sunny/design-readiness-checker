@@ -179,6 +179,40 @@ export function compareScreenshots(
   return { similarity, diffPixels, totalPixels, width, height };
 }
 
+// ── Root width expansion (for responsive comparison) ─────────────────────
+
+/**
+ * Replace fixed root-element widths in HTML with fluid values so the layout
+ * can expand to fill a wider viewport.
+ *
+ * Targets the first CSS rule that sets a pixel `width` on the root container
+ * (commonly `.root`, `body > div`, etc.) and replaces it with `width: 100%`.
+ * Also removes `min-width` pixel constraints.
+ *
+ * Originally from `src/experiments/ablation/run-condition.ts`.
+ */
+export function expandRootWidth(html: string): string {
+  // Match first occurrence of root-level fixed width in <style> block
+  const styleMatch = html.match(/<style[\s\S]*?<\/style>/i);
+  if (!styleMatch) return html;
+
+  const style = styleMatch[0];
+  // Replace the first fixed pixel width (root element) with 100%
+  let replaced = false;
+  const newStyle = style.replace(/width:\s*\d+px/g, (match) => {
+    if (!replaced) {
+      replaced = true;
+      return "width: 100%";
+    }
+    return match;
+  });
+
+  let result = html.replace(style, newStyle);
+  // Remove all min-width pixel constraints
+  result = result.replace(/min-width:\s*\d+px/g, "min-width: 0");
+  return result;
+}
+
 // ── Code metrics (shared with ablation helpers) ─────────────────────────
 
 /** Count unique CSS class selectors in an HTML string's <style> block. */
