@@ -113,20 +113,20 @@ Override score, severity, or enable/disable individual rules:
 | `deep-nesting` | -3 | risk |
 | `missing-component` | -7 | risk |
 | `detached-instance` | -4 | risk |
-| `variant-structure-mismatch` | -4 | risk |
+| `variant-structure-mismatch` | -6 | risk |
 
 **Token Management (2 rules)**
 
 | Rule ID | Default Score | Default Severity |
 |---------|--------------|-----------------|
 | `raw-value` | -3 | missing-info |
-| `irregular-spacing` | -2 | missing-info |
+| `irregular-spacing` | -5 | risk |
 
 **Minor (3 rules)**
 
 | Rule ID | Default Score | Default Severity |
 |---------|--------------|-----------------|
-| `non-semantic-name` | -1 | suggestion |
+| `non-semantic-name` | -4 | risk |
 | `inconsistent-naming-convention` | -1 | suggestion |
 | `non-standard-naming` | -3 | suggestion |
 
@@ -134,7 +134,7 @@ Override score, severity, or enable/disable individual rules:
 
 | Rule ID | Default Score | Default Severity |
 |---------|--------------|-----------------|
-| `missing-interaction-state` | -3 | missing-info |
+| `missing-interaction-state` | -5 | risk |
 | `missing-prototype` *(disabled)* | -3 | missing-info |
 <!-- RULE_TABLE_END -->
 

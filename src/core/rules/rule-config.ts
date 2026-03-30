@@ -37,13 +37,13 @@ export const RULE_ID_CATEGORY: Record<RuleId, Category> = {
 
 /**
  * Central configuration for all rules.
- * Scores based on ablation experiment impact data (PR #149, #150):
+ * Scores based on ablation experiment + AI implementation interview (#200):
  * - pixel-critical: -10 ~ -7 (layout strip caused ΔV +5.4%)
  * - responsive-critical: -7 ~ -5 (size-constraints ΔV +15.9% at responsive viewports)
- * - code-quality: -5 ~ -3 (CSS classes -8~15, no pixel impact)
- * - token-management: -3 ~ -2 (wrong input = wrong output, but values still present)
- * - interaction: -3 (data incomplete)
- * - minor: -2 ~ -1 (ΔV < 2%, negligible)
+ * - code-quality: -7 ~ -3 (CSS classes -8~15, no pixel impact)
+ * - token-management: -5 ~ -3 (wrong input = wrong output, irregular spacing actively causes errors)
+ * - interaction: -5 (wrong guess > omission, interview confirmed)
+ * - semantic: -4 ~ -1 (non-semantic-name upgraded per interview — causes actual implementation errors)
  *
  * Category weights removed (#196) — overall score is simple average of categories.
  */
@@ -98,7 +98,7 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
   },
   "variant-structure-mismatch": {
     severity: "risk",
-    score: -4,
+    score: -6,
     enabled: true,
   },
   "deep-nesting": {
@@ -117,8 +117,8 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
     enabled: true,
   },
   "irregular-spacing": {
-    severity: "missing-info",
-    score: -2,
+    severity: "risk",
+    score: -5,
     enabled: true,
     options: {
       gridBase: 2,
@@ -127,8 +127,8 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
 
   // ── Interaction ──
   "missing-interaction-state": {
-    severity: "missing-info",
-    score: -3,
+    severity: "risk",
+    score: -5,
     enabled: true,
   },
   "missing-prototype": {
@@ -144,8 +144,8 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
     enabled: true,
   },
   "non-semantic-name": {
-    severity: "suggestion",
-    score: -1,
+    severity: "risk",
+    score: -4,
     enabled: true,
   },
   "inconsistent-naming-convention": {
