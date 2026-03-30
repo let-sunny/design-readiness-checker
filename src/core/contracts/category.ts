@@ -5,7 +5,7 @@ export const CategorySchema = z.enum([
   "responsive-critical",
   "code-quality",
   "token-management",
-  "minor",
+  "semantic",
   "interaction",
 ]);
 
@@ -18,6 +18,6 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   "responsive-critical": "Responsive Critical",
   "code-quality": "Code Quality",
   "token-management": "Token Management",
-  "minor": "Minor",
+  "semantic": "Semantic",
   "interaction": "Interaction",
 };

@@ -22,7 +22,7 @@ export const CATEGORY_DESCRIPTIONS: Record<Category, string> = {
     "Design token binding for colors, fonts, shadows, opacity, spacing grid",
   "interaction":
     "State variants for interactive components — hover, disabled, active, focus",
-  "minor":
+  "semantic":
     "Semantic layer names, naming conventions, default names",
 };
 

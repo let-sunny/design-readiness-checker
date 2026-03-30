@@ -63,7 +63,7 @@ function convertName(name: string, target: string): string {
 const nonSemanticNameDef: RuleDefinition = {
   id: "non-semantic-name",
   name: "Non-Semantic Name",
-  category: "minor",
+  category: "semantic",
   why: "Default or shape names give AI no semantic context — it cannot choose appropriate HTML tags or class names",
   impact: "AI generates generic <div> wrappers instead of semantic elements like <header>, <nav>, <article>",
   fix: "Rename with a descriptive, purpose-driven name (e.g., 'Header', 'ProductCard', 'Divider')",
@@ -116,7 +116,7 @@ export const nonSemanticName = defineRule({
 const inconsistentNamingConventionDef: RuleDefinition = {
   id: "inconsistent-naming-convention",
   name: "Inconsistent Naming Convention",
-  category: "minor",
+  category: "semantic",
   why: "Mixed naming conventions (camelCase + kebab-case + Title Case) at the same level confuse AI pattern recognition",
   impact: "AI generates inconsistent class/component names, making the codebase harder to maintain",
   fix: "Pick one convention for sibling elements (e.g., kebab-case: 'product-card', or PascalCase: 'ProductCard') — AI maps names to CSS classes and component names, so mixed conventions produce inconsistent code",
@@ -195,7 +195,7 @@ export const inconsistentNamingConvention = defineRule({
 const nonStandardNamingDef: RuleDefinition = {
   id: "non-standard-naming",
   name: "Non-Standard Naming",
-  category: "minor",
+  category: "semantic",
   why: "Non-standard state names prevent interaction rules from detecting state variants — AI cannot generate correct :hover/:active/:disabled styles",
   impact: "Interaction state detection fails, resulting in static UI with no state transitions",
   fix: "Use platform-standard state names: default, hover, active, pressed, selected, highlighted, disabled, enabled, focus, focused, dragged",

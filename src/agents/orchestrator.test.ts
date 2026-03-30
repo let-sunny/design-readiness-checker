@@ -121,8 +121,8 @@ describe("runCalibrationEvaluate", () => {
             diversityScore: 100,
             bySeverity: { blocking: 0, risk: 0, "missing-info": 0, suggestion: 0 },
           },
-          minor: {
-            category: "minor" as const,
+          semantic: {
+            category: "semantic" as const,
             score: 100,
             maxScore: 100,
             percentage: 100,

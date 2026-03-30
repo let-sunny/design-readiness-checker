@@ -5,7 +5,7 @@ describe("non-standard-naming", () => {
   it("has correct rule definition metadata", () => {
     const def = nonStandardNaming.definition;
     expect(def.id).toBe("non-standard-naming");
-    expect(def.category).toBe("minor");
+    expect(def.category).toBe("semantic");
   });
 
   it("flags non-standard state name 'Clicked'", () => {

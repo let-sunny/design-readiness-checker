@@ -188,7 +188,7 @@ Write results to `$RUN_DIR/conversion.json`.
   "uncoveredStruggles": [
     {
       "description": "A difficulty not covered by any flagged rule",
-      "suggestedCategory": "pixel-critical | responsive-critical | code-quality | token-management | interaction | minor",
+      "suggestedCategory": "pixel-critical | responsive-critical | code-quality | token-management | interaction | semantic",
       "estimatedImpact": "easy | moderate | hard | failed"
     }
   ]

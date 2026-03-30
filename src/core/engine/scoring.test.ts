@@ -75,7 +75,7 @@ describe("calculateScores", () => {
       makeIssue({ ruleId: "no-auto-layout", category: "pixel-critical", severity: "blocking" }),
       makeIssue({ ruleId: "non-layout-container", category: "pixel-critical", severity: "risk" }),
       makeIssue({ ruleId: "raw-value", category: "token-management", severity: "missing-info" }),
-      makeIssue({ ruleId: "non-semantic-name", category: "minor", severity: "suggestion" }),
+      makeIssue({ ruleId: "non-semantic-name", category: "semantic", severity: "suggestion" }),
     ];
     const scores = calculateScores(makeResult(issues));
 
@@ -90,14 +90,14 @@ describe("calculateScores", () => {
     const heavyIssue = makeIssue({ ruleId: "no-auto-layout", category: "pixel-critical", severity: "blocking", score: -10 });
     heavyIssue.calculatedScore = -15; // Simulate depthWeight effect
 
-    const lightIssue = makeIssue({ ruleId: "non-semantic-name", category: "minor", severity: "suggestion", score: -1 });
+    const lightIssue = makeIssue({ ruleId: "non-semantic-name", category: "semantic", severity: "suggestion", score: -1 });
     lightIssue.calculatedScore = -1;
 
     const heavy = calculateScores(makeResult([heavyIssue], 100));
     const light = calculateScores(makeResult([lightIssue], 100));
 
     expect(heavy.byCategory["pixel-critical"].weightedIssueCount).toBe(15);
-    expect(light.byCategory["minor"].weightedIssueCount).toBe(1);
+    expect(light.byCategory["semantic"].weightedIssueCount).toBe(1);
   });
 
   it("differentiates rules within the same severity by score", () => {
@@ -159,24 +159,24 @@ describe("calculateScores", () => {
     ], 100));
 
     const lightRule = calculateScores(makeResult([
-      makeIssue({ ruleId: "non-semantic-name", category: "minor", severity: "suggestion", score: -1 }),
+      makeIssue({ ruleId: "non-semantic-name", category: "semantic", severity: "suggestion", score: -1 }),
     ], 100));
 
     expect(heavyRule.byCategory["pixel-critical"].diversityScore).toBeLessThan(
-      lightRule.byCategory["minor"].diversityScore
+      lightRule.byCategory["semantic"].diversityScore
     );
   });
 
   it("low-severity rules have minimal diversity impact (intentional)", () => {
     const lowSeverity = calculateScores(makeResult([
-      makeIssue({ ruleId: "non-semantic-name", category: "minor", severity: "suggestion", score: -1 }),
+      makeIssue({ ruleId: "non-semantic-name", category: "semantic", severity: "suggestion", score: -1 }),
     ], 100));
 
     const highSeverity = calculateScores(makeResult([
       makeIssue({ ruleId: "no-auto-layout", category: "pixel-critical", severity: "blocking", score: -10 }),
     ], 100));
 
-    expect(lowSeverity.byCategory["minor"].diversityScore).toBeGreaterThan(50);
+    expect(lowSeverity.byCategory["semantic"].diversityScore).toBeGreaterThan(50);
     expect(highSeverity.byCategory["pixel-critical"].diversityScore).toBeLessThan(80);
   });
 
@@ -217,7 +217,7 @@ describe("calculateScores", () => {
     expect(scores.byCategory["token-management"].percentage).toBe(100);
     expect(scores.byCategory["code-quality"].percentage).toBe(100);
     expect(scores.byCategory["interaction"].percentage).toBe(100);
-    expect(scores.byCategory["minor"].percentage).toBe(100);
+    expect(scores.byCategory["semantic"].percentage).toBe(100);
     expect(scores.byCategory["responsive-critical"].percentage).toBe(100);
   });
 
@@ -292,14 +292,14 @@ describe("calculateGrade (via calculateScores)", () => {
 
   it("score < 50% -> F", () => {
     const issues: AnalysisIssue[] = [];
-    const categories: Category[] = ["pixel-critical", "responsive-critical", "code-quality", "token-management", "interaction", "minor"];
+    const categories: Category[] = ["pixel-critical", "responsive-critical", "code-quality", "token-management", "interaction", "semantic"];
     const rulesPerCat: Record<Category, string[]> = {
       "pixel-critical": ["no-auto-layout", "non-layout-container", "absolute-position-in-auto-layout"],
       "responsive-critical": ["fixed-size-in-auto-layout", "missing-size-constraint"],
       "code-quality": ["missing-component", "detached-instance", "variant-structure-mismatch", "deep-nesting"],
       "token-management": ["raw-value", "irregular-spacing"],
       "interaction": ["missing-interaction-state", "missing-prototype"],
-      "minor": ["non-standard-naming", "non-semantic-name", "inconsistent-naming-convention"],
+      "semantic": ["non-standard-naming", "non-semantic-name", "inconsistent-naming-convention"],
     };
 
     for (const cat of categories) {
@@ -336,7 +336,7 @@ describe("formatScoreSummary", () => {
     expect(summary).toContain("Overall: S (100%)");
   });
 
-  it("includes all 5 categories", () => {
+  it("includes all categories", () => {
     const scores = calculateScores(makeResult([]));
     const summary = formatScoreSummary(scores);
 
@@ -344,7 +344,8 @@ describe("formatScoreSummary", () => {
     expect(summary).toContain("responsive-critical:");
     expect(summary).toContain("code-quality:");
     expect(summary).toContain("token-management:");
-    expect(summary).toContain("minor:");
+    expect(summary).toContain("interaction:");
+    expect(summary).toContain("semantic:");
   });
 
   it("includes severity breakdown", () => {
@@ -366,7 +367,7 @@ describe("getCategoryLabel", () => {
     expect(getCategoryLabel("responsive-critical")).toBe("Responsive Critical");
     expect(getCategoryLabel("code-quality")).toBe("Code Quality");
     expect(getCategoryLabel("token-management")).toBe("Token Management");
-    expect(getCategoryLabel("minor")).toBe("Minor");
+    expect(getCategoryLabel("semantic")).toBe("Semantic");
   });
 });
 

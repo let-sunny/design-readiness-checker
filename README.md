@@ -32,7 +32,7 @@ CanICode solves this:
 2. **Generates a design-tree** — a curated, CSS-ready representation that AI implements more accurately and efficiently than raw Figma data
 3. **Scores** responsive readiness, so you fix the design before generating code
 
-- **16 rules** across 6 categories: Pixel Critical, Responsive Critical, Code Quality, Token Management, Interaction, Minor
+- **16 rules** across 6 categories: Pixel Critical, Responsive Critical, Code Quality, Token Management, Interaction, Semantic
 - **Deterministic** — no AI tokens consumed per analysis, runs in milliseconds
 - **Validated** — [ablation experiments](https://github.com/let-sunny/canicode/wiki) confirmed design-tree achieves 94% pixel accuracy with 5× fewer tokens than raw JSON
 
@@ -87,7 +87,7 @@ claude mcp add canicode -- npx -y -p canicode canicode-mcp
 | **Code Quality** | 4 | Is the design efficient for AI context? (components, variants, nesting) |
 | **Token Management** | 2 | Can AI reproduce exact values? (raw values, spacing grid) |
 | **Interaction** | 2 | Can AI know what happens? (state variants, prototypes) |
-| **Minor** | 3 | Can AI infer meaning? (semantic names, conventions) |
+| **Semantic** | 3 | Can AI infer meaning? (semantic names, conventions) |
 
 Each issue is classified: **Blocking** > **Risk** > **Missing Info** > **Suggestion**.
 

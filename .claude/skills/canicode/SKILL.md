@@ -58,7 +58,7 @@ npx canicode analyze <input> --json
 
 ## What It Reports
 
-16 rules across 6 categories: Pixel Critical, Responsive Critical, Code Quality, Token Management, Interaction, Minor.
+16 rules across 6 categories: Pixel Critical, Responsive Critical, Code Quality, Token Management, Interaction, Semantic.
 
 Each issue includes:
 - Rule ID and severity (blocking / risk / missing-info / suggestion)

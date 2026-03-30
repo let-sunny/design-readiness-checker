@@ -334,7 +334,7 @@ describe("renderIssueRow", () => {
   });
 
   it("omits guide when absent", () => {
-    const noGuide = makeIssue({ ruleId: "test", category: "minor", severity: "suggestion" });
+    const noGuide = makeIssue({ ruleId: "test", category: "semantic", severity: "suggestion" });
     const html = renderIssueRow(noGuide, "fk");
     expect(html).not.toContain("rpt-issue-guide");
   });
@@ -361,7 +361,7 @@ describe("renderIssueRow", () => {
   });
 
   it("escapes HTML in user-facing strings", () => {
-    const xss = makeIssue({ ruleId: "test", category: "minor", severity: "suggestion" });
+    const xss = makeIssue({ ruleId: "test", category: "semantic", severity: "suggestion" });
     xss.violation.message = '<script>alert(1)</script>';
     xss.violation.suggestion = '<img onerror="x">';
     const html = renderIssueRow(xss, "fk");
@@ -384,10 +384,10 @@ describe("platform-neutral wording", () => {
 // ---- Category order ----
 
 describe("category order", () => {
-  it("renders Minor before Interaction in tabs", () => {
+  it("renders Semantic before Interaction in tabs", () => {
     const html = renderReportBody(makeReportData());
-    const minorPos = html.indexOf('data-tab="minor"');
+    const semanticPos = html.indexOf('data-tab="semantic"');
     const interactionPos = html.indexOf('data-tab="interaction"');
-    expect(minorPos).toBeLessThan(interactionPos);
+    expect(semanticPos).toBeLessThan(interactionPos);
   });
 });

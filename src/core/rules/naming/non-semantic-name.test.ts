@@ -4,7 +4,7 @@ import { nonSemanticName } from "./index.js";
 describe("non-semantic-name", () => {
   it("has correct rule definition metadata", () => {
     expect(nonSemanticName.definition.id).toBe("non-semantic-name");
-    expect(nonSemanticName.definition.category).toBe("minor");
+    expect(nonSemanticName.definition.category).toBe("semantic");
   });
 
   // Default name detection (merged from default-name) — exact subType per node type

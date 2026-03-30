@@ -70,7 +70,7 @@ describe("readDecision", () => {
     writeFileSync(join(runDir, "decision.json"), JSON.stringify({
       decision: "ADJUST",
       ruleId: "my-rule",
-      category: "minor",
+      category: "semantic",
       reason: "Score too high",
     }));
 
