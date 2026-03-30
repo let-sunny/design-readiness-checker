@@ -12,7 +12,7 @@ import "../rules/index.js";
 
 // ─── Fixture-based integration tests ──────────────────────────────────────────
 
-const FIXTURE_DIR = resolve(import.meta.dirname ?? ".", "../../../fixtures/desktop-pricing");
+const FIXTURE_DIR = resolve(import.meta.dirname ?? ".", "../../../fixtures/done/desktop-pricing");
 
 describe("Integration: fixture → analyze → score", () => {
   let file: AnalysisFile;
