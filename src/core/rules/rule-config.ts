@@ -144,7 +144,7 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
     enabled: true,
   },
   "non-semantic-name": {
-    severity: "risk",
+    severity: "risk", // category is "minor" (ΔV < 2%) but severity elevated per interview (#200): non-semantic names block element purpose identification
     score: -4,
     enabled: true,
   },

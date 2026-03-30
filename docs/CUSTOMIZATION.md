@@ -146,7 +146,7 @@ Override score, severity, or enable/disable individual rules:
   "rules": {
     "no-auto-layout": { "score": -15 },
     "raw-value": { "score": -5, "severity": "risk" },
-    "non-semantic-name": { "score": -3, "severity": "risk" }
+    "non-semantic-name": { "score": -6, "severity": "blocking" }
   }
 }
 ```
