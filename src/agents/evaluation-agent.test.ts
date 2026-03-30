@@ -572,6 +572,47 @@ describe("runEvaluationAgent", () => {
     expect(match!.reasoning).toContain("strip-ablation");
   });
 
+  it.each([Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY] as const)(
+    "does not apply strip override for responsive-critical when size-constraints responsiveDelta is non-finite (%p)",
+    (nonFiniteResponsiveDelta) => {
+      const input: EvaluationAgentInput = {
+        nodeIssueSummaries: [
+          { nodeId: "node-1", nodePath: "Page > Frame", flaggedRuleIds: ["missing-size-constraint"] },
+        ],
+        conversionRecords: [
+          {
+            nodeId: "node-1",
+            nodePath: "Page > Frame",
+            difficulty: "easy",
+            ruleRelatedStruggles: [
+              { ruleId: "missing-size-constraint", description: "Fine", actualImpact: "easy" },
+            ],
+            uncoveredStruggles: [],
+          },
+        ],
+        ruleScores: {
+          "missing-size-constraint": { score: -2, severity: "suggestion" },
+        },
+        responsiveDelta: 25,
+        stripDeltas: {
+          "size-constraints": {
+            pixelDelta: 2,
+            responsiveDelta: nonFiniteResponsiveDelta,
+            baselineInputTokens: null,
+            strippedInputTokens: null,
+          },
+        },
+      };
+
+      const result = runEvaluationAgent(input);
+      const match = result.mismatches.find(m => m.ruleId === "missing-size-constraint");
+      expect(match).toBeDefined();
+      expect(match!.actualDifficulty).toBe("hard");
+      expect(match!.reasoning).toContain("responsive");
+      expect(match!.reasoning).not.toContain("strip-ablation");
+    },
+  );
+
   it("merges all nodeIssueSummaries when wholeDesign is true", () => {
     const input: EvaluationAgentInput = {
       nodeIssueSummaries: [
