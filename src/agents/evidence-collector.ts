@@ -130,9 +130,10 @@ function dominantDifficulty(difficulties: string[]): string {
 }
 
 /**
- * Compute a deterministic ratio summary from cross-run evidence for a single rule.
- * This pre-digests contradictory evidence into a clear signal so the Critic
- * doesn't have to do statistics — it just reads the conclusion.
+ * Produce a deterministic summary of direction, expected difficulty, and confidence from aggregated cross-run evidence for a single rule.
+ *
+ * @param group - Aggregated evidence for one rule containing overscored/underscored counts and their associated difficulty samples
+ * @returns An object with sample counts and rates, the dominant direction (`"overscored" | "underscored" | "mixed"`), the dominant rate, an expected difficulty label, a confidence level (`"insufficient" | "low" | "medium" | "high"`), and a short human-readable summary
  */
 export function computeEvidenceRatio(group: CrossRunEvidenceGroup): EvidenceRatioSummary {
   const total = group.overscoredCount + group.underscoredCount;

@@ -9,16 +9,11 @@
 import type { Difficulty } from "../../agents/contracts/conversion-agent.js";
 
 /**
- * Map a strip experiment's similarity delta to a difficulty level.
+ * Map a strip experiment's pixel-similarity delta to a Difficulty level.
  *
- * Delta = baseline similarity - stripped similarity (percentage points).
- * Higher delta means removing that information caused more pixel degradation.
- *
- * Thresholds from issue #191:
- * - ≤ 5%p  → easy    (removing info barely matters)
- * - 6-15%p → moderate (noticeable degradation)
- * - 16-30%p → hard   (significant degradation)
- * - > 30%p → failed  (critical information)
+ * @param delta - Pixel-similarity degradation in percentage points (baseline similarity minus stripped similarity).
+ * @returns `'easy'` if `delta` is less than or equal to 5, `'moderate'` if `delta` is greater than 5 and less than or equal to 15, `'hard'` if `delta` is greater than 15 and less than or equal to 30, `'failed'` if `delta` is greater than 30.
+ * @throws TypeError if `delta` is not a finite number.
  */
 export function stripDeltaToDifficulty(delta: number): Difficulty {
   if (!Number.isFinite(delta)) {

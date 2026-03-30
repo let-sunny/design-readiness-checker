@@ -252,7 +252,13 @@ export async function runCalibrationAnalyze(
 }
 
 /**
- * Run Steps 3+4: evaluation + tuning from pre-computed analysis and conversion data
+ * Evaluate conversion data against precomputed analysis, run tuning, optionally collect evidence, and produce a calibration report.
+ *
+ * @param options - Optional runtime flags. If `options.collectEvidence` is truthy the function attempts to load prior evidence and append new calibration and discovery evidence; `options.fixtureName` overrides the report fixture name when collecting evidence.
+ * @returns An object with:
+ *   - `evaluationOutput`: results of the evaluation including `mismatches` and `validatedRules`.
+ *   - `tuningOutput`: tuning results including `adjustments` and `newRuleProposals`.
+ *   - `report`: the generated calibration report summarizing file metadata, counts, mismatches, validated rules, and tuning proposals.
  */
 export function runCalibrationEvaluate(
   analysisJson: {

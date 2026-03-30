@@ -82,10 +82,14 @@ function buildReasoning(
 }
 
 /**
- * Evaluation Agent - Step 3 of calibration pipeline
+ * Produce deterministic calibration results comparing AI rule scores to observed conversion and ablation evidence.
  *
- * Deterministic comparison of analysis results vs conversion results.
- * No LLM required — pure algorithmic evaluation.
+ * Processes conversion records, node summaries, responsive deltas, and strip-ablation deltas to build:
+ * - `mismatches`: a list of detected mismatch cases and their final classifications after overrides
+ * - `validatedRules`: the set of rule IDs whose final classification is `validated`
+ *
+ * @param input - Evaluation input containing conversionRecords, nodeIssueSummaries, ruleScores, and optional responsive/strip deltas
+ * @returns An object with `mismatches` (finalized MismatchCase entries) and `validatedRules` (array of rule IDs classified as validated)
  */
 export function runEvaluationAgent(
   input: EvaluationAgentInput
@@ -236,8 +240,10 @@ const STRIP_TYPE_RULES: Record<DesignTreeInfoType, RuleId[]> = {
 };
 
 /**
- * Get the objective strip-based difficulty for a rule.
- * If multiple strip types affect the same rule, take the maximum delta (worst case).
+ * Determine the Difficulty implied by strip-ablation deltas for a given rule.
+ *
+ * @param stripDeltas - Mapping from strip type to its numeric delta; used to compute the worst-case delta for the rule
+ * @returns The `Difficulty` corresponding to the largest applicable strip delta, or `null` if no applicable non-negative delta exists
  */
 function getStripDifficultyForRule(
   ruleId: string,

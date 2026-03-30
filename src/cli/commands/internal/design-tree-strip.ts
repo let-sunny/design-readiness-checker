@@ -8,6 +8,13 @@ import type { DesignTreeInfoType } from "../../../core/design-tree/strip.js";
 
 const VALID_TYPES = new Set<string>(DESIGN_TREE_INFO_TYPES);
 
+/**
+ * Register the internal CLI command "design-tree-strip" which generates stripped design-tree variants for ablation.
+ *
+ * The command accepts `--output-dir` (required) and `--types` (comma-separated; defaults to all design-tree info types) and writes one `.txt` file per selected type into the output directory.
+ *
+ * @param cli - CAC command-line parser instance to attach the command to
+ */
 export function registerDesignTreeStrip(cli: CAC): void {
   cli
     .command(
