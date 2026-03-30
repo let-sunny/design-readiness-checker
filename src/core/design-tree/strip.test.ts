@@ -256,9 +256,10 @@ describe("stripDesignTree", () => {
   });
 
   describe("general properties", () => {
-    it("exports the exact 5 strip experiment types in order", () => {
+    it("exports the exact 6 strip experiment types in order", () => {
       expect(DESIGN_TREE_INFO_TYPES).toEqual([
         "layout-direction-spacing",
+        "size-constraints",
         "component-references",
         "node-names-hierarchy",
         "variable-references",

@@ -251,6 +251,7 @@ export function runEvaluationAgent(
  */
 const STRIP_TYPE_RULES: Record<DesignTreeInfoType, RuleId[]> = {
   "layout-direction-spacing": ["no-auto-layout", "absolute-position-in-auto-layout", "non-layout-container", "irregular-spacing"],
+  "size-constraints": ["missing-size-constraint", "fixed-size-in-auto-layout"],
   "component-references": ["missing-component", "detached-instance", "variant-structure-mismatch"],
   "node-names-hierarchy": ["non-standard-naming", "non-semantic-name", "inconsistent-naming-convention"],
   "variable-references": ["raw-value"],
