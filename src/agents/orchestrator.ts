@@ -3,6 +3,7 @@ import { analyzeFile } from "../core/engine/rule-engine.js";
 import { RULE_CONFIGS } from "../core/rules/rule-config.js";
 
 import type { CalibrationConfigInput } from "./contracts/calibration.js";
+import { StripDeltasArraySchema } from "./contracts/conversion-agent.js";
 import { CalibrationConfigSchema } from "./contracts/calibration.js";
 import type { NodeIssueSummary } from "./contracts/analysis-agent.js";
 import type { ScoreReport } from "../core/engine/scoring.js";
@@ -309,6 +310,18 @@ export function runCalibrationEvaluate(
     ? conversionJson["responsiveDelta"] as number
     : null;
 
+  // Extract strip ablation deltas if available (Zod-validated)
+  let stripDeltas: Record<string, number> | undefined;
+  {
+    const parsed = StripDeltasArraySchema.safeParse(conversionJson["stripDeltas"]);
+    if (parsed.success && parsed.data.length > 0) {
+      stripDeltas = {};
+      for (const r of parsed.data) {
+        stripDeltas[r.stripType] = r.delta;
+      }
+    }
+  }
+
   const evaluationOutput = runEvaluationAgent({
     nodeIssueSummaries: analysisJson.nodeIssueSummaries.map((s) => ({
       nodeId: s.nodeId,
@@ -318,6 +331,7 @@ export function runCalibrationEvaluate(
     conversionRecords,
     ruleScores,
     responsiveDelta,
+    stripDeltas,
   });
 
   // Load prior evidence if collecting

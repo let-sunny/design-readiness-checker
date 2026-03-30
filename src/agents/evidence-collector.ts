@@ -104,8 +104,10 @@ export function loadCalibrationEvidence(
 /**
  * Minimum sample size before ratio-based confidence kicks in.
  * Below this threshold, confidence is "insufficient".
+ * Lowered from 3→2: strip ablation deltas provide objective signal,
+ * so fewer fixtures are needed for convergence (#194).
  */
-const MIN_RATIO_SAMPLES = 3;
+const MIN_RATIO_SAMPLES = 2;
 
 /**
  * Difficulty dominance: pick the most frequent difficulty from a list.
@@ -180,7 +182,7 @@ export function computeEvidenceRatio(group: CrossRunEvidenceGroup): EvidenceRati
   let confidence: "high" | "medium" | "low" | "insufficient";
   if (total < MIN_RATIO_SAMPLES) {
     confidence = "insufficient";
-  } else if (dominantRate >= 0.7 && total >= 5) {
+  } else if (dominantRate >= 0.7 && total >= 3) {
     confidence = "high";
   } else if (dominantRate >= 0.6 && total >= MIN_RATIO_SAMPLES) {
     confidence = "medium";

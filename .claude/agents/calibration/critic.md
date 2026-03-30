@@ -26,8 +26,17 @@ You will receive:
 3. **Gap analysis** — actionable pixel gaps between Figma and generated code
 4. **Prior evidence** — cross-run calibration evidence for the proposed rules (accumulated from past runs)
 5. **Evidence ratios** — `evidenceRatios` object with pre-computed statistical summaries per rule
+6. **Strip ablation deltas** — `stripDeltas` showing objective similarity degradation when specific design-tree info is removed. These are **measured, not self-reported** — they override Converter's subjective assessment.
 
 Use ALL inputs to form pro/con arguments. Do not rely on proposals alone.
+
+### Strip Ablation Deltas (objective ground truth)
+
+When `stripDeltas` are present, they provide the **most reliable** difficulty signal:
+- They measure actual pixel degradation when info is removed (not AI self-assessment)
+- Each strip type maps to specific rules (e.g., `layout-direction-spacing` → layout rules, `component-references` → component rules)
+- Higher delta = removing that info caused more degradation = rule is more important
+- **Always weigh strip delta evidence above Converter's `ruleImpactAssessment`** when they conflict
 
 ### Evidence Ratios (critical for contradictory evidence)
 

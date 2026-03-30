@@ -25,4 +25,13 @@ describe("stripDeltaToDifficulty", () => {
     expect(stripDeltaToDifficulty(50)).toBe("failed");
     expect(stripDeltaToDifficulty(100)).toBe("failed");
   });
+
+  it("throws on NaN", () => {
+    expect(() => stripDeltaToDifficulty(NaN)).toThrow(TypeError);
+  });
+
+  it("throws on Infinity", () => {
+    expect(() => stripDeltaToDifficulty(Infinity)).toThrow(TypeError);
+    expect(() => stripDeltaToDifficulty(-Infinity)).toThrow(TypeError);
+  });
 });

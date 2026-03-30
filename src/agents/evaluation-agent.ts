@@ -8,6 +8,8 @@ import type { Difficulty } from "./contracts/conversion-agent.js";
 import type { Severity } from "../core/contracts/severity.js";
 import type { RuleId } from "../core/contracts/rule.js";
 import { RULE_ID_CATEGORY } from "../core/rules/rule-config.js";
+import type { DesignTreeInfoType } from "../core/design-tree/strip.js";
+import { stripDeltaToDifficulty } from "../core/design-tree/delta.js";
 
 /**
  * Difficulty-to-score range mapping.
@@ -193,10 +195,64 @@ export function runEvaluationAgent(
     }
   }
 
+  // Override rule evaluations with objective strip ablation deltas
+  if (input.stripDeltas) {
+    for (const mismatch of mismatches) {
+      if (!mismatch.ruleId) continue;
+      const stripDifficulty = getStripDifficultyForRule(mismatch.ruleId, input.stripDeltas);
+      if (!stripDifficulty) continue;
+
+      const prevType = mismatch.type;
+      const newType = classifyFlaggedRule(mismatch.currentScore ?? 0, stripDifficulty);
+      mismatch.type = newType;
+      mismatch.actualDifficulty = stripDifficulty;
+      mismatch.reasoning = buildReasoning(newType, mismatch.ruleId, mismatch.currentScore, stripDifficulty)
+        + ` (strip-ablation: overrides AI opinion "${prevType}")`;
+
+      if (newType === "validated") {
+        validatedRuleSet.add(mismatch.ruleId);
+      } else {
+        validatedRuleSet.delete(mismatch.ruleId);
+      }
+    }
+  }
+
   return {
     mismatches,
     validatedRules: [...validatedRuleSet],
   };
+}
+
+/**
+ * Map strip type to related rule IDs.
+ * Based on what information each strip type removes and which rules detect those issues.
+ */
+const STRIP_TYPE_RULES: Record<DesignTreeInfoType, RuleId[]> = {
+  "layout-direction-spacing": ["no-auto-layout", "absolute-position-in-auto-layout", "non-layout-container", "irregular-spacing"],
+  "component-references": ["missing-component", "detached-instance", "variant-structure-mismatch"],
+  "node-names-hierarchy": ["non-standard-naming", "non-semantic-name", "inconsistent-naming-convention"],
+  "variable-references": ["raw-value"],
+  "style-references": ["raw-value"],
+};
+
+/**
+ * Get the objective strip-based difficulty for a rule.
+ * If multiple strip types affect the same rule, take the maximum delta (worst case).
+ */
+function getStripDifficultyForRule(
+  ruleId: string,
+  stripDeltas: Record<string, number>,
+): Difficulty | null {
+  let maxDelta = -1;
+  for (const [stripType, ruleIds] of Object.entries(STRIP_TYPE_RULES)) {
+    if (!ruleIds.includes(ruleId as RuleId)) continue;
+    const delta = stripDeltas[stripType];
+    if (delta != null && delta > maxDelta) {
+      maxDelta = delta;
+    }
+  }
+  if (maxDelta < 0) return null;
+  return stripDeltaToDifficulty(maxDelta);
 }
 
 /**

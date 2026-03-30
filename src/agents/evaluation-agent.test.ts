@@ -313,6 +313,183 @@ describe("runEvaluationAgent", () => {
     expect(match!.actualDifficulty).toBe("easy");
   });
 
+  it("overrides layout rule from validated to underscored when strip delta is high", () => {
+    const input: EvaluationAgentInput = {
+      nodeIssueSummaries: [
+        { nodeId: "node-1", nodePath: "Page > Frame", flaggedRuleIds: ["no-auto-layout"] },
+      ],
+      conversionRecords: [
+        {
+          nodeId: "node-1",
+          nodePath: "Page > Frame",
+          difficulty: "easy",
+          ruleRelatedStruggles: [
+            { ruleId: "no-auto-layout", description: "Seemed easy", actualImpact: "easy" },
+          ],
+          uncoveredStruggles: [],
+        },
+      ],
+      ruleScores: {
+        "no-auto-layout": { score: -3, severity: "blocking" },
+      },
+      stripDeltas: {
+        "layout-direction-spacing": 20,
+      },
+    };
+
+    const result = runEvaluationAgent(input);
+
+    const match = result.mismatches.find(m => m.ruleId === "no-auto-layout");
+    expect(match).toBeDefined();
+    // AI said "easy" but strip delta=20 → hard → score -3 is underscored (expected -8 to -12)
+    expect(match!.type).toBe("underscored");
+    expect(match!.actualDifficulty).toBe("hard");
+    expect(match!.reasoning).toContain("strip-ablation");
+    expect(result.validatedRules).not.toContain("no-auto-layout");
+  });
+
+  it("validates a rule when strip delta is low", () => {
+    const input: EvaluationAgentInput = {
+      nodeIssueSummaries: [
+        { nodeId: "node-1", nodePath: "Page > Frame", flaggedRuleIds: ["missing-component"] },
+      ],
+      conversionRecords: [
+        {
+          nodeId: "node-1",
+          nodePath: "Page > Frame",
+          difficulty: "easy",
+          ruleRelatedStruggles: [
+            { ruleId: "missing-component", description: "Fine", actualImpact: "easy" },
+          ],
+          uncoveredStruggles: [],
+        },
+      ],
+      ruleScores: {
+        "missing-component": { score: -3, severity: "risk" },
+      },
+      stripDeltas: {
+        "component-references": 2,
+      },
+    };
+
+    const result = runEvaluationAgent(input);
+
+    const match = result.mismatches.find(m => m.ruleId === "missing-component");
+    expect(match).toBeDefined();
+    expect(match!.type).toBe("validated");
+    expect(match!.actualDifficulty).toBe("easy");
+    expect(result.validatedRules).toContain("missing-component");
+  });
+
+  it("does not override rules unrelated to any strip type", () => {
+    const input: EvaluationAgentInput = {
+      nodeIssueSummaries: [
+        { nodeId: "node-1", nodePath: "Page > Frame", flaggedRuleIds: ["deep-nesting"] },
+      ],
+      conversionRecords: [
+        {
+          nodeId: "node-1",
+          nodePath: "Page > Frame",
+          difficulty: "easy",
+          ruleRelatedStruggles: [
+            { ruleId: "deep-nesting", description: "Easy", actualImpact: "easy" },
+          ],
+          uncoveredStruggles: [],
+        },
+      ],
+      ruleScores: {
+        "deep-nesting": { score: -3, severity: "risk" },
+      },
+      stripDeltas: {
+        "layout-direction-spacing": 25,
+        "component-references": 20,
+      },
+    };
+
+    const result = runEvaluationAgent(input);
+
+    const match = result.mismatches.find(m => m.ruleId === "deep-nesting");
+    expect(match).toBeDefined();
+    // deep-nesting has no strip type mapping — no override
+    expect(match!.type).toBe("validated");
+  });
+
+  it("takes max delta when multiple strip types affect the same rule", () => {
+    const input: EvaluationAgentInput = {
+      nodeIssueSummaries: [
+        { nodeId: "node-1", nodePath: "Page > Frame", flaggedRuleIds: ["raw-value"] },
+      ],
+      conversionRecords: [
+        {
+          nodeId: "node-1",
+          nodePath: "Page > Frame",
+          difficulty: "easy",
+          ruleRelatedStruggles: [
+            { ruleId: "raw-value", description: "Easy", actualImpact: "easy" },
+          ],
+          uncoveredStruggles: [],
+        },
+      ],
+      ruleScores: {
+        "raw-value": { score: -2, severity: "missing-info" },
+      },
+      stripDeltas: {
+        "variable-references": 3,   // easy
+        "style-references": 18,     // hard
+      },
+    };
+
+    const result = runEvaluationAgent(input);
+
+    const match = result.mismatches.find(m => m.ruleId === "raw-value");
+    expect(match).toBeDefined();
+    // max delta is 18 (style-references) → hard → score -2 is underscored
+    expect(match!.type).toBe("underscored");
+    expect(match!.actualDifficulty).toBe("hard");
+  });
+
+  it("strip delta overrides apply after responsive delta overrides", () => {
+    const input: EvaluationAgentInput = {
+      nodeIssueSummaries: [
+        { nodeId: "node-1", nodePath: "Page > Frame", flaggedRuleIds: ["no-auto-layout", "fixed-size-in-auto-layout"] },
+      ],
+      conversionRecords: [
+        {
+          nodeId: "node-1",
+          nodePath: "Page > Frame",
+          difficulty: "easy",
+          ruleRelatedStruggles: [
+            { ruleId: "no-auto-layout", description: "Fine", actualImpact: "easy" },
+            { ruleId: "fixed-size-in-auto-layout", description: "Fine", actualImpact: "easy" },
+          ],
+          uncoveredStruggles: [],
+        },
+      ],
+      ruleScores: {
+        "no-auto-layout": { score: -10, severity: "blocking" },
+        "fixed-size-in-auto-layout": { score: -6, severity: "risk" },
+      },
+      responsiveDelta: 25,
+      stripDeltas: {
+        "layout-direction-spacing": 8,
+      },
+    };
+
+    const result = runEvaluationAgent(input);
+
+    // no-auto-layout: strip delta=8 → moderate → score -10 overscored
+    const layoutMatch = result.mismatches.find(m => m.ruleId === "no-auto-layout");
+    expect(layoutMatch).toBeDefined();
+    expect(layoutMatch!.actualDifficulty).toBe("moderate");
+    expect(layoutMatch!.reasoning).toContain("strip-ablation");
+
+    // fixed-size-in-auto-layout: responsive delta applied first, but no strip mapping for responsive-critical
+    const responsiveMatch = result.mismatches.find(m => m.ruleId === "fixed-size-in-auto-layout");
+    expect(responsiveMatch).toBeDefined();
+    expect(responsiveMatch!.actualDifficulty).toBe("hard");
+    expect(responsiveMatch!.reasoning).toContain("responsive");
+  });
+
   it("returns empty mismatches and validatedRules for empty input", () => {
     const input: EvaluationAgentInput = {
       nodeIssueSummaries: [],

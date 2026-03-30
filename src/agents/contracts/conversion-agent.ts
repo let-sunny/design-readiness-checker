@@ -32,3 +32,23 @@ export const ConversionRecordSchema = z.object({
 
 export type ConversionRecord = z.infer<typeof ConversionRecordSchema>;
 
+export const StripTypeEnum = z.enum([
+  "layout-direction-spacing",
+  "component-references",
+  "node-names-hierarchy",
+  "variable-references",
+  "style-references",
+]);
+
+export const StripDeltaResultSchema = z.object({
+  stripType: StripTypeEnum,
+  baselineSimilarity: z.number(),
+  strippedSimilarity: z.number(),
+  delta: z.number().finite(),
+  deltaDifficulty: DifficultySchema,
+});
+
+export const StripDeltasArraySchema = z.array(StripDeltaResultSchema);
+
+export type StripDeltaResult = z.infer<typeof StripDeltaResultSchema>;
+

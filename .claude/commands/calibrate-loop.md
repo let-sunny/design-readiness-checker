@@ -50,7 +50,7 @@ If tier is `"visual-only"`, append after Converter completes:
 {"step":"Gap Analyzer","timestamp":"<ISO8601>","result":"SKIPPED — tier=visual-only, gap analysis skipped","durationMs":0}
 ```
 
-### Step 2 — Converter
+### Step 2 — Converter (Baseline + Strip Ablation)
 
 Read the analysis JSON to extract `fileKey`. Also determine the root nodeId — if the input was a Figma URL, parse the node-id from it. If it was a fixture, use the document root id.
 
@@ -60,6 +60,30 @@ Read the analysis JSON to extract `fileKey`. Also determine the root nodeId — 
 cp <fixture-dir>/screenshot.png $RUN_DIR/figma.png
 ```
 
+**Prepare stripped design-trees** (deterministic — no LLM):
+
+Generate the baseline design-tree first, then strip it for each ablation type:
+
+```bash
+# Generate baseline design-tree
+npx canicode design-tree <fixture-path> --output $RUN_DIR/design-tree.txt
+
+# Create stripped directory
+mkdir -p $RUN_DIR/stripped
+
+# Generate stripped versions (deterministic text processing)
+npx canicode design-tree-strip $RUN_DIR/design-tree.txt \
+  --types layout-direction-spacing,component-references,node-names-hierarchy,variable-references,style-references \
+  --output-dir $RUN_DIR/stripped
+```
+
+This produces 5 files in `$RUN_DIR/stripped/`:
+- `layout-direction-spacing.txt`
+- `component-references.txt`
+- `node-names-hierarchy.txt`
+- `variable-references.txt`
+- `style-references.txt`
+
 Spawn a `general-purpose` subagent. In the prompt, include the full converter instructions from `.claude/agents/calibration/converter.md` and add:
 
 ```
@@ -68,9 +92,13 @@ fileKey: <extracted fileKey>
 Root nodeId: <extracted nodeId>
 Run directory: <paste RUN_DIR here>
 figma.png is already in the run directory (copied from fixture screenshot). visual-compare will reuse it.
+
+Stripped design-trees are pre-generated in $RUN_DIR/stripped/.
+After completing the baseline conversion (steps 1-10), proceed with step 11 (Strip Ablation)
+to convert each stripped design-tree and measure similarity deltas.
 ```
 
-The Converter writes `output.html`, `conversion.json`, `design-tree.txt` to $RUN_DIR and runs `visual-compare --output $RUN_DIR` which creates `figma.png` (or reuses cached), `code.png`, `diff.png`.
+The Converter writes `output.html`, `conversion.json`, `design-tree.txt` to $RUN_DIR and runs `visual-compare --output $RUN_DIR` which creates `figma.png` (or reuses cached), `code.png`, `diff.png`. It also writes stripped HTML files and their comparison results.
 
 After the Converter returns, **verify** these files exist in $RUN_DIR:
 ```bash
@@ -79,6 +107,8 @@ ls $RUN_DIR/conversion.json $RUN_DIR/output.html
 
 If `conversion.json` is missing, write it yourself from the Converter's returned summary.
 
+**Verify strip deltas**: Read `conversion.json` and check that `stripDeltas` array is present and non-empty. If missing (Converter didn't complete strip ablation), log a warning but continue — the evaluation will fall back to Converter self-assessment.
+
 **Record token usage**: The subagent result includes `total_tokens`, `tool_uses`, `duration_ms` in usage metadata. Read `conversion.json`, add these fields, and write back:
 - `converterTokens`: total tokens consumed by the Converter subagent
 - `converterToolUses`: number of tool calls
@@ -86,7 +116,7 @@ If `conversion.json` is missing, write it yourself from the Converter's returned
 
 Append to `$RUN_DIR/activity.jsonl`:
 ```json
-{"step":"Converter","timestamp":"<ISO8601>","result":"similarity=<N>% difficulty=<level> tokens=<N>","durationMs":<ms>}
+{"step":"Converter","timestamp":"<ISO8601>","result":"similarity=<N>% difficulty=<level> strips=<N>/5 tokens=<N>","durationMs":<ms>}
 ```
 
 ### Step 3 — Gap Analysis

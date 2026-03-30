@@ -35,6 +35,7 @@ import { registerCalibrateRun } from "./commands/internal/calibrate-run.js";
 import { registerGatherEvidence, registerFinalizeDebate } from "./commands/internal/calibrate-debate.js";
 import { registerFilterDiscoveryEvidence, registerApplyDecision, registerCollectGapEvidence } from "./commands/internal/rule-discovery.js";
 import { registerFixtureManagement, registerEvidenceEnrich, registerEvidencePrune } from "./commands/internal/fixture-management.js";
+import { registerDesignTreeStrip } from "./commands/internal/design-tree-strip.js";
 
 const require = createRequire(import.meta.url);
 const pkg = require("../../package.json") as { version: string };
@@ -88,6 +89,7 @@ registerEvidencePrune(cli);
 registerFilterDiscoveryEvidence(cli);
 registerApplyDecision(cli);
 registerCollectGapEvidence(cli);
+registerDesignTreeStrip(cli);
 
 // ============================================
 // Documentation command

@@ -104,6 +104,32 @@ Read and follow `.claude/skills/design-to-code/PROMPT.md` for all code generatio
 10. Note any difficulties NOT covered by existing rules as `uncoveredStruggles`
     - **Only include design-related issues** — problems in the Figma file structure, missing tokens, ambiguous layout, etc.
     - **Exclude environment/tooling issues** — font CDN availability, screenshot DPI/retina scaling, browser rendering quirks, network issues, CI limitations. These are not design problems and create noise in rule discovery.
+11. **Strip Ablation** (objective difficulty measurement): For each of the 5 strip types, generate a stripped design-tree, convert it to HTML, and measure similarity delta vs baseline.
+
+    The orchestrator provides the stripped design-tree files in `$RUN_DIR/stripped/`. For each strip type:
+
+    a. Read `$RUN_DIR/stripped/<strip-type>.txt` (the stripped design-tree)
+    b. Convert it to HTML using the same code generation rules (follow PROMPT.md)
+    c. Save to `$RUN_DIR/stripped/<strip-type>.html`
+    d. Run visual comparison:
+       ```bash
+       npx canicode visual-compare $RUN_DIR/stripped/<strip-type>.html \
+         --figma-screenshot $RUN_DIR/figma.png \
+         --output $RUN_DIR/stripped/<strip-type>
+       ```
+    e. Record the similarity score
+
+    Strip types: `layout-direction-spacing`, `component-references`, `node-names-hierarchy`, `variable-references`, `style-references`
+
+    Calculate delta for each: `delta = baselineSimilarity - strippedSimilarity`
+
+    Map delta to difficulty (thresholds from `src/core/design-tree/delta.ts`):
+    | Delta | Difficulty |
+    |-------|-----------|
+    | ≤ 5%p | easy |
+    | 6-15%p | moderate |
+    | 16-30%p | hard |
+    | > 30%p | failed |
 
 ## Output
 
@@ -137,6 +163,22 @@ Write results to `$RUN_DIR/conversion.json`.
       "issueCount": 2,
       "actualImpact": "easy",
       "description": "Detached instances rendered identically to attached ones"
+    }
+  ],
+  "stripDeltas": [
+    {
+      "stripType": "layout-direction-spacing",
+      "baselineSimilarity": 87,
+      "strippedSimilarity": 75,
+      "delta": 12,
+      "deltaDifficulty": "moderate"
+    },
+    {
+      "stripType": "component-references",
+      "baselineSimilarity": 87,
+      "strippedSimilarity": 84,
+      "delta": 3,
+      "deltaDifficulty": "easy"
     }
   ],
   "interpretations": [

@@ -53,6 +53,13 @@ export interface EvaluationAgentInput {
    * null/undefined = no responsive comparison available.
    */
   responsiveDelta?: number | null | undefined;
+  /**
+   * Strip ablation deltas keyed by strip type.
+   * Each value = baseline similarity - stripped similarity (percentage points).
+   * Positive = removing that info caused degradation. Used to objectively override AI self-assessment.
+   * undefined = no strip ablation data available.
+   */
+  stripDeltas?: Record<string, number> | undefined;
 }
 
 export interface EvaluationAgentOutput {

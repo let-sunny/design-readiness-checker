@@ -107,8 +107,9 @@ Calibration commands are NOT exposed as CLI commands. They run exclusively insid
 **`/calibrate-loop` (Claude Code command)**
 - Role: Autonomous rule-config.ts improvement via fixture-based calibration
 - Input: fixture directory path (e.g. `fixtures/material3-kit`)
-- Flow: Analysis → Converter (entire design → HTML + visual-compare) → Gap Analyzer → Evaluation → Critic → Arbitrator → Prune Evidence
+- Flow: Analysis → Converter (baseline + strip ablation → HTML + visual-compare) → Gap Analyzer → Evaluation → Critic → Arbitrator → Prune Evidence
 - Converter implements the full scoped design as one HTML page, runs `visual-compare` for pixel-level similarity
+- **Strip ablation**: Converter also converts 5 stripped design-trees (layout, component, naming, variable, style info removed) → measures similarity delta vs baseline → objective difficulty per rule category
 - Gap Analyzer examines the diff image, categorizes pixel differences, saves to run directory
 - Cross-run evidence: Evaluation appends overscored/underscored findings to `data/calibration-evidence.json`; Gap Analyzer appends uncovered gaps to `data/discovery-evidence.json` (environment/tooling noise is auto-filtered)
 - After Arbitrator applies changes, evidence for applied rules is pruned (`calibrate-prune-evidence`)
@@ -141,6 +142,7 @@ Two scripts, shared helpers:
 ANTHROPIC_API_KEY=sk-... npx tsx src/experiments/ablation/run-phase1.ts
 ABLATION_FIXTURES=desktop-product-detail ABLATION_TYPES=component-references npx tsx ...
 ```
+
 - Strips info from design-tree → implements via Claude API → renders → compares vs Figma screenshot
 - 5 strip types: layout-direction-spacing, component-references, node-names-hierarchy, variable-references, style-references
 - Output: `data/ablation/phase1/{config-version}/{fixture}/{type}/run-{n}/`
@@ -180,7 +182,10 @@ reports/                                    # HTML reports (canicode analyze)
 logs/calibration/                           # Calibration runs (internal)
 logs/calibration/<name>--<timestamp>/       # One calibration run = one folder
   ├── analysis.json                         #   Rule analysis result
-  ├── conversion.json                       #   HTML conversion + similarity
+  ├── conversion.json                       #   HTML conversion + similarity + stripDeltas
+  ├── stripped/                             #   Strip ablation outputs (5 types)
+  │   ├── <type>.txt                        #   Stripped design-tree
+  │   └── <type>.html                       #   HTML from stripped design-tree
   ├── gaps.json                             #   Pixel gap analysis
   ├── debate.json                           #   Critic + Arbitrator decisions
   ├── activity.jsonl                        #   Agent step-by-step timeline
@@ -325,10 +330,11 @@ Rule scores started as intuition-based estimates. The calibration pipeline valid
 Process:
 1. Run analysis on real Figma files (`canicode calibrate-analyze`)
 2. Implement the entire scoped design as one HTML page (`Converter`)
-3. Run `canicode visual-compare` — pixel-level comparison against Figma screenshot
-4. Analyze the diff image to categorize pixel gaps (`Gap Analyzer`)
-5. Compare conversion difficulty vs rule scores (`canicode calibrate-evaluate`)
-6. Debate loop (`/calibrate-loop`): Analysis → Converter → Gap Analyzer → Evaluation → Critic → Arbitrator
+3. **Strip ablation** (#194): For each of 5 info types, strip from design-tree → convert → measure similarity delta vs baseline → objective difficulty per rule category
+4. Run `canicode visual-compare` — pixel-level comparison against Figma screenshot
+5. Analyze the diff image to categorize pixel gaps (`Gap Analyzer`)
+6. Compare conversion difficulty vs rule scores (`canicode calibrate-evaluate`) — strip deltas override Converter self-assessment
+7. Debate loop (`/calibrate-loop`): Analysis → Converter (baseline + strips) → Gap Analyzer → Evaluation → Critic → Arbitrator
 
 **Critic receives structured evidence** (#144):
 - Proposals from evaluation

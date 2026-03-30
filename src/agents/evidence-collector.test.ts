@@ -309,7 +309,21 @@ describe("evidence-collector", () => {
       expect(ratio.summary).toContain("Mixed signals");
     });
 
-    it("returns insufficient confidence for < 3 samples", () => {
+    it("returns insufficient confidence for < 2 samples", () => {
+      const group: CrossRunEvidenceGroup = {
+        overscoredCount: 1,
+        underscoredCount: 0,
+        overscoredDifficulties: ["easy"],
+        underscoredDifficulties: [],
+        allPro: [],
+        allCon: [],
+      };
+      const ratio = computeEvidenceRatio(group);
+      expect(ratio.dominantDirection).toBe("overscored");
+      expect(ratio.confidence).toBe("insufficient");
+    });
+
+    it("returns medium confidence for 2 samples with 100% dominance", () => {
       const group: CrossRunEvidenceGroup = {
         overscoredCount: 2,
         underscoredCount: 0,
@@ -320,7 +334,7 @@ describe("evidence-collector", () => {
       };
       const ratio = computeEvidenceRatio(group);
       expect(ratio.dominantDirection).toBe("overscored");
-      expect(ratio.confidence).toBe("insufficient");
+      expect(ratio.confidence).toBe("medium");
     });
 
     it("returns medium confidence for 60%+ with 3-4 samples", () => {
@@ -336,6 +350,21 @@ describe("evidence-collector", () => {
       expect(ratio.dominantDirection).toBe("overscored");
       expect(ratio.confidence).toBe("medium");
       expect(ratio.dominantRate).toBeCloseTo(0.667, 2);
+    });
+
+    it("returns high confidence for 3 samples with 100% dominance", () => {
+      const group: CrossRunEvidenceGroup = {
+        overscoredCount: 3,
+        underscoredCount: 0,
+        overscoredDifficulties: ["easy", "easy", "moderate"],
+        underscoredDifficulties: [],
+        allPro: [],
+        allCon: [],
+      };
+      const ratio = computeEvidenceRatio(group);
+      expect(ratio.dominantDirection).toBe("overscored");
+      expect(ratio.dominantRate).toBe(1);
+      expect(ratio.confidence).toBe("high");
     });
 
     it("handles all-one-direction case", () => {

@@ -21,6 +21,9 @@ import type { Difficulty } from "../../agents/contracts/conversion-agent.js";
  * - > 30%p → failed  (critical information)
  */
 export function stripDeltaToDifficulty(delta: number): Difficulty {
+  if (!Number.isFinite(delta)) {
+    throw new TypeError(`Invalid strip delta: ${delta}`);
+  }
   if (delta <= 5) return "easy";
   if (delta <= 15) return "moderate";
   if (delta <= 30) return "hard";
