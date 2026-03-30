@@ -104,32 +104,54 @@ Read and follow `.claude/skills/design-to-code/PROMPT.md` for all code generatio
 10. Note any difficulties NOT covered by existing rules as `uncoveredStruggles`
     - **Only include design-related issues** — problems in the Figma file structure, missing tokens, ambiguous layout, etc.
     - **Exclude environment/tooling issues** — font CDN availability, screenshot DPI/retina scaling, browser rendering quirks, network issues, CI limitations. These are not design problems and create noise in rule discovery.
-11. **Strip Ablation** (objective difficulty measurement): For each of the 5 strip types, generate a stripped design-tree, convert it to HTML, and measure similarity delta vs baseline.
+11. **Strip Ablation** (objective difficulty measurement): For each of the **6** strip types, the orchestrator places stripped design-trees in `$RUN_DIR/stripped/`. Convert each to HTML, then collect the **same categories of metrics as the baseline** (pixel similarity, optional responsive similarity, design-tree token estimate, HTML size, CSS counts). Strip rows in `conversion.json` must populate `StripDeltaResultSchema` (`src/agents/contracts/conversion-agent.ts`).
 
-    The orchestrator provides the stripped design-tree files in `$RUN_DIR/stripped/`. For each strip type:
+    **Strip types** (process every one): `layout-direction-spacing`, `size-constraints`, `component-references`, `node-names-hierarchy`, `variable-references`, `style-references`
 
-    a. Read `$RUN_DIR/stripped/<strip-type>.txt` (the stripped design-tree)
-    b. Convert it to HTML using the same code generation rules (follow PROMPT.md)
-    c. Save to `$RUN_DIR/stripped/<strip-type>.html`
-    d. Run visual comparison:
+    For each `<strip-type>`:
+
+    a. Read `$RUN_DIR/stripped/<strip-type>.txt`
+    b. Convert to HTML with the same rules as baseline (PROMPT.md); save `$RUN_DIR/stripped/<strip-type>.html`
+    c. **Pixel similarity** (design viewport — same framing as baseline):
        ```bash
        npx canicode visual-compare $RUN_DIR/stripped/<strip-type>.html \
          --figma-screenshot $RUN_DIR/figma.png \
          --output $RUN_DIR/stripped/<strip-type>
        ```
-    e. Record the similarity score
+       Record `strippedSimilarity` from the command JSON stdout. Use the baseline run’s `similarity` as `baselineSimilarity` (same value for every strip row).
+    d. **Input tokens (design-tree text):** Match `generateDesignTreeWithStats` in `src/core/design-tree/design-tree.ts`:  
+       `inputTokens = ceil(utf8Text.length / 4)` where `utf8Text` is the full file contents as a JavaScript string (use the same string length as if the file were read with UTF-8 decoding).  
+       - `baselineInputTokens` = from `$RUN_DIR/design-tree.txt`  
+       - `strippedInputTokens` = from `$RUN_DIR/stripped/<strip-type>.txt`  
+       - `tokenDelta` = `baselineInputTokens - strippedInputTokens`  
+       Example (Node): `node -e "const fs=require('fs'); const n=Math.ceil(fs.readFileSync(process.argv[1],'utf8').length/4); console.log(n)" "$RUN_DIR/design-tree.txt"`
+    e. **HTML output size (strip HTML vs baseline HTML):**  
+       - `baselineHtmlBytes` = byte size of `$RUN_DIR/output.html`  
+       - `strippedHtmlBytes` = byte size of `$RUN_DIR/stripped/<strip-type>.html`  
+       - `htmlBytesDelta` = `baselineHtmlBytes - strippedHtmlBytes`
+    f. **CSS metrics** (same rules as step 9 — count only inside `<style>`):  
+       - `baselineCssClassCount` / `baselineCssVariableCount` from `$RUN_DIR/output.html`  
+       - `strippedCssClassCount` / `strippedCssVariableCount` from `$RUN_DIR/stripped/<strip-type>.html`
+    g. **Responsive similarity (optional, primarily for `size-constraints`):** If step 6 ran a responsive comparison (two+ fixture screenshots), run the same comparison for this strip HTML: same `--figma-screenshot`, `--width`, and `--output` pattern as baseline responsive, against `$RUN_DIR/stripped/<strip-type>.html`. Record `baselineResponsiveSimilarity` / `strippedResponsiveSimilarity` / `responsiveViewport` from baseline vs strip outputs; `responsiveDelta` = `baselineResponsiveSimilarity - strippedResponsiveSimilarity` (percentage points). If step 6 skipped responsive, set `baselineResponsiveSimilarity`, `strippedResponsiveSimilarity`, `responsiveDelta`, and `responsiveViewport` to `null`.
 
-    Strip types: `layout-direction-spacing`, `component-references`, `node-names-hierarchy`, `variable-references`, `style-references`
+    **Derived fields (every strip row):**
 
-    Calculate delta for each: `delta = baselineSimilarity - strippedSimilarity`
+    - `delta` = `baselineSimilarity - strippedSimilarity` (percentage points)
+    - `deltaDifficulty`: use the metric the evaluator uses for that strip family (`src/agents/evaluation-agent.ts` — `getStripDifficultyForRule`):
+      - `layout-direction-spacing` → map `delta` with `stripDeltaToDifficulty` (`src/core/design-tree/delta.ts` pixel table below)
+      - `size-constraints` → if `responsiveDelta` is a finite number, map `responsiveDelta` with `stripDeltaToDifficulty`; else map `delta`
+      - `component-references`, `node-names-hierarchy`, `variable-references`, `style-references` → if both input token counts are present, map with `tokenDeltaToDifficulty(baselineInputTokens, strippedInputTokens)`; else map `delta` with `stripDeltaToDifficulty`
 
-    Map delta to difficulty (thresholds from `src/core/design-tree/delta.ts`):
-    | Delta | Difficulty |
-    |-------|-----------|
-    | ≤ 5%p | easy |
-    | 6-15%p | moderate |
-    | 16-30%p | hard |
-    | > 30%p | failed |
+    Pixel / responsive threshold table (`stripDeltaToDifficulty`):
+
+    | Delta (%p) | Difficulty |
+    |-----------|------------|
+    | ≤ 5 | easy |
+    | 6–15 | moderate |
+    | 16–30 | hard |
+    | > 30 | failed |
+
+    Token threshold table (`tokenDeltaToDifficulty`): percentage = `(baselineInputTokens - strippedInputTokens) / baselineInputTokens * 100` — ≤5% easy, 6–20% moderate, 21–40% hard, >40% failed (baseline 0 → treat as easy).
 
 ## Output
 
@@ -171,14 +193,63 @@ Write results to `$RUN_DIR/conversion.json`.
       "baselineSimilarity": 87,
       "strippedSimilarity": 75,
       "delta": 12,
-      "deltaDifficulty": "moderate"
+      "deltaDifficulty": "moderate",
+      "baselineResponsiveSimilarity": null,
+      "strippedResponsiveSimilarity": null,
+      "responsiveDelta": null,
+      "responsiveViewport": null,
+      "baselineInputTokens": 2400,
+      "strippedInputTokens": 2380,
+      "tokenDelta": 20,
+      "baselineHtmlBytes": 42000,
+      "strippedHtmlBytes": 41500,
+      "htmlBytesDelta": 500,
+      "baselineCssClassCount": 45,
+      "strippedCssClassCount": 44,
+      "baselineCssVariableCount": 12,
+      "strippedCssVariableCount": 12
+    },
+    {
+      "stripType": "size-constraints",
+      "baselineSimilarity": 87,
+      "strippedSimilarity": 86,
+      "delta": 1,
+      "deltaDifficulty": "easy",
+      "baselineResponsiveSimilarity": 72,
+      "strippedResponsiveSimilarity": 58,
+      "responsiveDelta": 14,
+      "responsiveViewport": 1920,
+      "baselineInputTokens": 2400,
+      "strippedInputTokens": 2200,
+      "tokenDelta": 200,
+      "baselineHtmlBytes": 42000,
+      "strippedHtmlBytes": 41800,
+      "htmlBytesDelta": 200,
+      "baselineCssClassCount": 45,
+      "strippedCssClassCount": 45,
+      "baselineCssVariableCount": 12,
+      "strippedCssVariableCount": 12
     },
     {
       "stripType": "component-references",
       "baselineSimilarity": 87,
       "strippedSimilarity": 84,
       "delta": 3,
-      "deltaDifficulty": "easy"
+      "deltaDifficulty": "hard",
+      "baselineResponsiveSimilarity": null,
+      "strippedResponsiveSimilarity": null,
+      "responsiveDelta": null,
+      "responsiveViewport": null,
+      "baselineInputTokens": 2400,
+      "strippedInputTokens": 1800,
+      "tokenDelta": 600,
+      "baselineHtmlBytes": 42000,
+      "strippedHtmlBytes": 39000,
+      "htmlBytesDelta": 3000,
+      "baselineCssClassCount": 45,
+      "strippedCssClassCount": 38,
+      "baselineCssVariableCount": 12,
+      "strippedCssVariableCount": 10
     }
   ],
   "interpretations": [
