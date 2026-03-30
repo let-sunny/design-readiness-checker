@@ -222,12 +222,17 @@ export function runEvaluationAgent(
   if (input.stripDeltas) {
     for (const mismatch of mismatches) {
       if (!mismatch.ruleId) continue;
-      // Baseline responsiveDelta already classified responsive-critical rules. Do not override
-      // with strip metrics: size-constraints strip may fall back to design-viewport pixel delta
-      // when per-strip responsive compare is not wired (#205).
+      // Responsive-critical: only apply strip override when size-constraints has a measured
+      // responsive delta (#205). Otherwise skip so design-viewport pixel fallback cannot replace
+      // baseline page responsiveDelta classification.
       if (mismatch.ruleId in RULE_ID_CATEGORY) {
         const category = RULE_ID_CATEGORY[mismatch.ruleId as RuleId];
-        if (category === "responsive-critical") continue;
+        if (
+          category === "responsive-critical" &&
+          !sizeConstraintsStripHasResponsiveMetric(input.stripDeltas)
+        ) {
+          continue;
+        }
       }
       const stripDifficulty = getStripDifficultyForRule(mismatch.ruleId, input.stripDeltas);
       if (!stripDifficulty) continue;
@@ -257,6 +262,13 @@ export function runEvaluationAgent(
  * Map strip type to related rule IDs.
  * Based on what information each strip type removes and which rules detect those issues.
  */
+function sizeConstraintsStripHasResponsiveMetric(
+  stripDeltas: Record<string, StripDeltaForEval>,
+): boolean {
+  const rd = stripDeltas["size-constraints"]?.responsiveDelta;
+  return rd != null && Number.isFinite(rd);
+}
+
 const STRIP_TYPE_RULES: Record<DesignTreeInfoType, RuleId[]> = {
   "layout-direction-spacing": ["no-auto-layout", "absolute-position-in-auto-layout", "non-layout-container", "irregular-spacing"],
   "size-constraints": ["missing-size-constraint", "fixed-size-in-auto-layout"],
