@@ -1,9 +1,12 @@
 import { existsSync, mkdirSync, readFileSync } from "node:fs";
+import { writeFile } from "node:fs/promises";
 import { resolve, join } from "node:path";
 import type { CAC } from "cac";
 
 import { stripDesignTree, DESIGN_TREE_INFO_TYPES } from "../../../core/design-tree/strip.js";
 import type { DesignTreeInfoType } from "../../../core/design-tree/strip.js";
+
+const VALID_TYPES = new Set<string>(DESIGN_TREE_INFO_TYPES);
 
 export function registerDesignTreeStrip(cli: CAC): void {
   cli
@@ -30,19 +33,28 @@ export function registerDesignTreeStrip(cli: CAC): void {
 
         const designTree = readFileSync(inputPath, "utf-8");
 
-        const types: DesignTreeInfoType[] = options.types
-          ? options.types.split(",").map(t => t.trim()) as DesignTreeInfoType[]
-          : [...DESIGN_TREE_INFO_TYPES];
+        let types: DesignTreeInfoType[];
+        if (options.types) {
+          const tokens = options.types.split(",").map(t => t.trim());
+          const invalid = tokens.filter(t => !VALID_TYPES.has(t));
+          if (invalid.length > 0) {
+            console.error(`Error: Unknown strip type(s): ${invalid.join(", ")}`);
+            console.error(`Valid types: ${DESIGN_TREE_INFO_TYPES.join(", ")}`);
+            process.exitCode = 1;
+            return;
+          }
+          types = tokens as DesignTreeInfoType[];
+        } else {
+          types = [...DESIGN_TREE_INFO_TYPES];
+        }
 
         const outputDir = resolve(options.outputDir);
         mkdirSync(outputDir, { recursive: true });
 
-        const { writeFile: writeFileAsync } = await import("node:fs/promises");
-
         for (const type of types) {
           const stripped = stripDesignTree(designTree, type);
           const outputPath = join(outputDir, `${type}.txt`);
-          await writeFileAsync(outputPath, stripped, "utf-8");
+          await writeFile(outputPath, stripped, "utf-8");
           console.log(`  ${type}.txt (${Math.round(Buffer.byteLength(stripped) / 1024)}KB)`);
         }
 
