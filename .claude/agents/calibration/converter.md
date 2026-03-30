@@ -132,7 +132,24 @@ Read and follow `.claude/skills/design-to-code/PROMPT.md` for all code generatio
     f. **CSS metrics** (same rules as step 9 — count only inside `<style>`):  
        - `baselineCssClassCount` / `baselineCssVariableCount` from `$RUN_DIR/output.html`  
        - `strippedCssClassCount` / `strippedCssVariableCount` from `$RUN_DIR/stripped/<strip-type>.html`
-    g. **Responsive similarity (optional, primarily for `size-constraints`):** If step 6 ran a responsive comparison (two+ fixture screenshots), run the same comparison for this strip HTML: same `--figma-screenshot`, `--width`, and `--output` pattern as baseline responsive, against `$RUN_DIR/stripped/<strip-type>.html`. Record `baselineResponsiveSimilarity` / `strippedResponsiveSimilarity` / `responsiveViewport` from baseline vs strip outputs; `responsiveDelta` = `baselineResponsiveSimilarity - strippedResponsiveSimilarity` (percentage points). If step 6 skipped responsive, set `baselineResponsiveSimilarity`, `strippedResponsiveSimilarity`, `responsiveDelta`, and `responsiveViewport` to `null`.
+    g. **Responsive similarity at the expanded viewport** (same screenshot + width as step 6):
+
+       If step 6 **skipped** (only one fixture screenshot): set `baselineResponsiveSimilarity`, `strippedResponsiveSimilarity`, `responsiveDelta`, and `responsiveViewport` to `null` on **every** strip row.
+
+       If step 6 **ran**: reuse the same `LARGEST` screenshot path and `LARGEST_WIDTH` variables from step 6.
+
+       - **`size-constraints` (required):** Run visual-compare on the stripped HTML at the expanded viewport so missing size info shows up where it actually breaks (not only at design width):
+
+         ```bash
+         npx canicode visual-compare $RUN_DIR/stripped/size-constraints.html \
+           --figma-screenshot "$LARGEST" \
+           --width "$LARGEST_WIDTH" \
+           --output $RUN_DIR/stripped/size-constraints-responsive
+         ```
+
+         Record JSON stdout `similarity` as **`strippedResponsiveSimilarity`**. Set **`baselineResponsiveSimilarity`** to the root conversion field **`responsiveSimilarity`** from step 6 (baseline `output.html` at the same viewport — already measured). Set **`responsiveViewport`** to `LARGEST_WIDTH` (number). Set **`responsiveDelta`** = `baselineResponsiveSimilarity - strippedResponsiveSimilarity` (percentage points).
+
+       - **Other strip types:** Optional — same command pattern with `$RUN_DIR/stripped/<strip-type>.html` and a distinct `--output` directory if you want responsive rows for reporting; otherwise set the four responsive fields to `null`.
 
     **Derived fields (every strip row):**
 

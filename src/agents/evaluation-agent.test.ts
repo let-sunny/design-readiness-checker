@@ -485,14 +485,14 @@ describe("runEvaluationAgent", () => {
     expect(layoutMatch!.actualDifficulty).toBe("moderate");
     expect(layoutMatch!.reasoning).toContain("strip-ablation");
 
-    // fixed-size-in-auto-layout: responsive delta applied; strip pass skips responsive-critical (#208 review)
+    // fixed-size-in-auto-layout: responsive delta applied; strip pass skips (no finite size-constraints responsiveDelta)
     const responsiveMatch = result.mismatches.find(m => m.ruleId === "fixed-size-in-auto-layout");
     expect(responsiveMatch).toBeDefined();
     expect(responsiveMatch!.actualDifficulty).toBe("hard");
     expect(responsiveMatch!.reasoning).toContain("responsive");
   });
 
-  it("does not let strip ablation override responsive-critical rules (avoids pixel fallback on size-constraints)", () => {
+  it("does not let strip ablation override responsive-critical when size-constraints responsiveDelta is missing", () => {
     const input: EvaluationAgentInput = {
       nodeIssueSummaries: [
         { nodeId: "node-1", nodePath: "Page > Frame", flaggedRuleIds: ["missing-size-constraint"] },
@@ -531,6 +531,45 @@ describe("runEvaluationAgent", () => {
     expect(match!.actualDifficulty).toBe("hard");
     expect(match!.reasoning).toContain("responsive");
     expect(match!.reasoning).not.toContain("strip-ablation");
+  });
+
+  it("applies strip ablation to responsive-critical when size-constraints has finite responsiveDelta (#205)", () => {
+    const input: EvaluationAgentInput = {
+      nodeIssueSummaries: [
+        { nodeId: "node-1", nodePath: "Page > Frame", flaggedRuleIds: ["missing-size-constraint"] },
+      ],
+      conversionRecords: [
+        {
+          nodeId: "node-1",
+          nodePath: "Page > Frame",
+          difficulty: "easy",
+          ruleRelatedStruggles: [
+            { ruleId: "missing-size-constraint", description: "Fine", actualImpact: "easy" },
+          ],
+          uncoveredStruggles: [],
+        },
+      ],
+      ruleScores: {
+        "missing-size-constraint": { score: -2, severity: "suggestion" },
+      },
+      responsiveDelta: 25,
+      stripDeltas: {
+        "size-constraints": {
+          pixelDelta: 2,
+          responsiveDelta: 14,
+          baselineInputTokens: null,
+          strippedInputTokens: null,
+        },
+      },
+    };
+
+    const result = runEvaluationAgent(input);
+
+    const match = result.mismatches.find(m => m.ruleId === "missing-size-constraint");
+    expect(match).toBeDefined();
+    // Baseline responsive → hard; strip responsive delta 14%p → moderate (stripDeltaToDifficulty)
+    expect(match!.actualDifficulty).toBe("moderate");
+    expect(match!.reasoning).toContain("strip-ablation");
   });
 
   it("merges all nodeIssueSummaries when wholeDesign is true", () => {
