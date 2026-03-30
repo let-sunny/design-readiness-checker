@@ -215,6 +215,11 @@ export function computeEvidenceRatio(group: CrossRunEvidenceGroup): EvidenceRati
 
 /**
  * Append new calibration evidence entries (overscored/underscored mismatches).
+ *
+ * Dedup policy: one entry per (ruleId, fixture) — last-write-wins within and across calls.
+ * This is intentional: with strip-ablation (#194) each rule gets one objective delta per fixture,
+ * so multiple entries for the same (ruleId, fixture) would be redundant.
+ * Cross-run confidence in `computeEvidenceRatio` counts entries (=fixtures), not occurrences.
  */
 export function appendCalibrationEvidence(
   entries: CalibrationEvidenceEntry[],
@@ -241,15 +246,26 @@ export function appendCalibrationEvidence(
 
 /**
  * Remove entries for rules whose scores were applied/revised by the Arbitrator.
+ *
+ * When `fixture` is provided, only entries matching both (ruleId, fixture) are removed,
+ * preserving evidence from other fixtures that may still be relevant.
+ * When `fixture` is omitted (legacy behavior), all entries for the given ruleIds are removed.
  */
 export function pruneCalibrationEvidence(
   appliedRuleIds: string[],
-  evidencePath: string = DEFAULT_CALIBRATION_PATH
+  evidencePath: string = DEFAULT_CALIBRATION_PATH,
+  fixture?: string,
 ): void {
   if (appliedRuleIds.length === 0) return;
   const ruleSet = new Set(appliedRuleIds.map((id) => id.trim()).filter((id) => id.length > 0));
   const existing = readValidatedArray(evidencePath, CalibrationEvidenceEntrySchema);
-  const pruned = existing.filter((e) => !ruleSet.has(e.ruleId.trim()));
+  const fixtureTrimmed = fixture?.trim();
+  const pruned = existing.filter((e) => {
+    if (!ruleSet.has(e.ruleId.trim())) return true;
+    // When fixture is specified, only prune matching fixture
+    if (fixtureTrimmed) return e.fixture.trim() !== fixtureTrimmed;
+    return false;
+  });
   writeJsonArray(evidencePath, pruned);
 }
 

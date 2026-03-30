@@ -161,13 +161,15 @@ export function collectGapEvidence(runDir: string, fixture: string): DiscoveryEv
   for (const gap of parsed.data.gaps) {
     // Only actionable gaps not covered by existing rules
     if (!gap.actionable) continue;
-    // Skip when coveredByRule is present (non-nullish); empty string counts as "marked covered"
+    // Skip when coveredByRule is present (non-nullish).
+    // Empty string is intentionally treated as "marked covered" — the Gap Analyzer sets
+    // coveredByRule to "" when a gap is partially covered but the exact rule ID is unknown.
     if (gap.coveredByRule != null) continue;
 
     entries.push({
       description: gap.description,
       category: gap.category,
-      impact: "medium",
+      impact: "moderate",
       fixture,
       timestamp,
       source: "gap-analysis",

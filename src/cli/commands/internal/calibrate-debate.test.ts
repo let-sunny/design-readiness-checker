@@ -85,6 +85,15 @@ describe("loadProposedRuleIds", () => {
     expect(ids).toContain("raw-value");
   });
 
+  it("filters summary.md fallback to known RULE_CONFIGS keys only", () => {
+    writeFileSync(join(runDir, "summary.md"), "Results: `no-auto-layout`, `fake-rule-id`, `moderate`, `raw-value`");
+    const ids = loadProposedRuleIds(runDir);
+    expect(ids).toContain("no-auto-layout");
+    expect(ids).toContain("raw-value");
+    expect(ids).not.toContain("fake-rule-id");
+    expect(ids).not.toContain("moderate");
+  });
+
   it("returns empty for missing files", () => {
     const ids = loadProposedRuleIds(runDir);
     expect(ids).toEqual([]);

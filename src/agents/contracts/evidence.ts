@@ -57,7 +57,8 @@ export const DISCOVERY_EVIDENCE_SCHEMA_VERSION = 1;
 export const DiscoveryEvidenceEntrySchema = z.object({
   description: z.string(),
   category: z.string(),
-  impact: z.string(),
+  /** Canonical difficulty: easy | moderate | hard | failed. Legacy "medium" accepted as "moderate". */
+  impact: z.string().transform((v) => (v === "medium" ? "moderate" : v)),
   fixture: z.string(),
   timestamp: z.string(),
   source: z.enum(["evaluation", "gap-analysis"]),

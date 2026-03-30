@@ -490,6 +490,83 @@ describe("runEvaluationAgent", () => {
     expect(responsiveMatch!.reasoning).toContain("responsive");
   });
 
+  it("merges all nodeIssueSummaries when single conversion record (whole-design format)", () => {
+    const input: EvaluationAgentInput = {
+      nodeIssueSummaries: [
+        { nodeId: "root", nodePath: "Page", flaggedRuleIds: ["rule-a"] },
+        { nodeId: "child-1", nodePath: "Page > Card", flaggedRuleIds: ["rule-b"] },
+        { nodeId: "child-2", nodePath: "Page > Header", flaggedRuleIds: ["rule-c"] },
+      ],
+      conversionRecords: [
+        {
+          nodeId: "root",
+          nodePath: "Page",
+          difficulty: "moderate",
+          ruleRelatedStruggles: [
+            { ruleId: "rule-a", description: "Struggled", actualImpact: "hard" },
+          ],
+          uncoveredStruggles: [],
+        },
+      ],
+      ruleScores: {
+        "rule-a": { score: -10, severity: "blocking" },
+        "rule-b": { score: -5, severity: "risk" },
+        "rule-c": { score: -3, severity: "suggestion" },
+      },
+    };
+
+    const result = runEvaluationAgent(input);
+
+    // rule-b and rule-c from child nodes should appear as validated (not silently dropped)
+    const ruleB = result.mismatches.find(m => m.ruleId === "rule-b");
+    const ruleC = result.mismatches.find(m => m.ruleId === "rule-c");
+    expect(ruleB).toBeDefined();
+    expect(ruleB!.type).toBe("validated");
+    expect(ruleC).toBeDefined();
+    expect(ruleC!.type).toBe("validated");
+    expect(result.validatedRules).toContain("rule-b");
+    expect(result.validatedRules).toContain("rule-c");
+  });
+
+  it("does not merge summaries when multiple conversion records exist", () => {
+    const input: EvaluationAgentInput = {
+      nodeIssueSummaries: [
+        { nodeId: "node-1", nodePath: "Page > Card", flaggedRuleIds: ["rule-a"] },
+        { nodeId: "node-2", nodePath: "Page > Header", flaggedRuleIds: ["rule-b"] },
+      ],
+      conversionRecords: [
+        {
+          nodeId: "node-1",
+          nodePath: "Page > Card",
+          difficulty: "easy",
+          ruleRelatedStruggles: [],
+          uncoveredStruggles: [],
+        },
+        {
+          nodeId: "node-2",
+          nodePath: "Page > Header",
+          difficulty: "easy",
+          ruleRelatedStruggles: [],
+          uncoveredStruggles: [],
+        },
+      ],
+      ruleScores: {
+        "rule-a": { score: -3, severity: "risk" },
+        "rule-b": { score: -3, severity: "risk" },
+      },
+    };
+
+    const result = runEvaluationAgent(input);
+
+    // Each record should only see its own summary's rules (no cross-contamination)
+    const ruleAMatches = result.mismatches.filter(m => m.ruleId === "rule-a");
+    const ruleBMatches = result.mismatches.filter(m => m.ruleId === "rule-b");
+    expect(ruleAMatches).toHaveLength(1);
+    expect(ruleAMatches[0]!.nodeId).toBe("node-1");
+    expect(ruleBMatches).toHaveLength(1);
+    expect(ruleBMatches[0]!.nodeId).toBe("node-2");
+  });
+
   it("returns empty mismatches and validatedRules for empty input", () => {
     const input: EvaluationAgentInput = {
       nodeIssueSummaries: [],
