@@ -268,7 +268,7 @@ npm publishing is handled by GitHub CI — **do not run `npm publish` manually**
 
 ### Language
 
-- All code, comments, and documentation must be written in English
+- All code, comments, documentation, and **GitHub Wiki** must be written in English
 - This is a global project targeting international users
 
 ### Code Style
