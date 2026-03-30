@@ -77,14 +77,12 @@ function buildFingerprint(node: AnalysisNode, depth: number): string {
 
 /**
  * Check if the node is inside an INSTANCE subtree.
- * Currently checks immediate parent only — RuleContext does not expose the full
- * ancestor type chain (context.path contains names, not types).
- * TODO: When the engine exposes ancestor types, extend to full chain check.
+ * Walks the full ancestor type chain to detect INSTANCE at any level.
  */
 function isInsideInstance(context: {
-  parent?: AnalysisNode | undefined;
+  ancestorTypes: string[];
 }): boolean {
-  return context.parent?.type === "INSTANCE";
+  return context.ancestorTypes.includes("INSTANCE");
 }
 
 

@@ -42,6 +42,7 @@ function makeContext(overrides?: Partial<RuleContext>): RuleContext {
     componentDepth: 0,
     maxDepth: 10,
     path: ["Page", "Section"],
+    ancestorTypes: [],
     analysisState,
     ...overrides,
   };
@@ -321,15 +322,16 @@ describe("missing-component — Stage 3: Structure-based repetition", () => {
     const frameB = makeNode({ id: "f:2", children: [childB] });
     const frameC = makeNode({ id: "f:3", children: [childC] });
 
-    const instanceParent: AnalysisNode = {
-      id: "inst:1",
-      name: "MyInstance",
-      type: "INSTANCE",
+    const nestedFrameParent: AnalysisNode = {
+      id: "frame:1",
+      name: "NestedFrame",
+      type: "FRAME",
       visible: true,
     };
 
     const ctx = makeContext({
-      parent: instanceParent,
+      parent: nestedFrameParent,
+      ancestorTypes: ["DOCUMENT", "INSTANCE", "FRAME"],
       siblings: [frameA, frameB, frameC],
     });
 

@@ -187,6 +187,7 @@ export class RuleEngine {
       failedRules,
       0,
       [],
+      [],
       0,
       analysisState,
       undefined,
@@ -234,6 +235,7 @@ export class RuleEngine {
     failedRules: RuleFailure[],
     depth: number,
     path: string[],
+    ancestorTypes: string[],
     componentDepth: number,
     analysisState: Map<string, unknown>,
     parent?: AnalysisNode,
@@ -261,6 +263,7 @@ export class RuleEngine {
       componentDepth: currentComponentDepth,
       maxDepth,
       path: nodePath,
+      ancestorTypes,
       siblings,
       analysisState,
     };
@@ -308,6 +311,7 @@ export class RuleEngine {
 
     // Recurse into children
     if (node.children && node.children.length > 0) {
+      const childAncestorTypes = [...ancestorTypes, node.type];
       for (const child of node.children) {
         this.traverseAndCheck(
           child,
@@ -318,6 +322,7 @@ export class RuleEngine {
           failedRules,
           depth + 1,
           nodePath,
+          childAncestorTypes,
           currentComponentDepth + 1,
           analysisState,
           node,

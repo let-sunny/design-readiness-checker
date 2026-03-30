@@ -41,6 +41,8 @@ export interface RuleContext {
   componentDepth: number;
   maxDepth: number;
   path: string[];
+  /** Ancestor node types from root to parent (excludes current node). */
+  ancestorTypes: string[];
   siblings?: AnalysisNode[] | undefined;
   /** Per-analysis shared state. Created fresh for each analysis run, eliminating module-level mutable state. */
   analysisState: Map<string, unknown>;
