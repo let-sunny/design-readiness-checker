@@ -8,7 +8,7 @@ import type { RuleConfig, RuleId } from "../contracts/rule.js";
  * - responsive-critical: ΔV ≥ 15% at expanded viewport — size info critical for responsive
  * - code-quality: ΔV ≈ 0% but CSS classes -8~15 — affects code structure, not pixels
  * - token-management: raw values without design tokens — wrong input = wrong output
- * - semantic: ΔV < 2%, negligible code difference — naming and minor issues
+ * - semantic: ΔV < 2%, negligible code difference — naming and semantic issues
  */
 export const RULE_ID_CATEGORY: Record<RuleId, Category> = {
   // Pixel Critical

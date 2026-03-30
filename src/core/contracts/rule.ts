@@ -113,7 +113,7 @@ export type RuleId =
   // Interaction — missing state variants and prototype links for interactive components
   | "missing-interaction-state"
   | "missing-prototype"
-  // Minor — naming issues with negligible impact (ΔV < 2%)
+  // Semantic — naming issues with negligible pixel impact (ΔV < 2%)
   | "non-standard-naming"
   | "non-semantic-name"
   | "inconsistent-naming-convention";
