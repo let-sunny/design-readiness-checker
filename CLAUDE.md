@@ -109,7 +109,7 @@ Calibration commands are NOT exposed as CLI commands. They run exclusively insid
 - Input: fixture directory path (e.g. `fixtures/material3-kit`)
 - Flow: Analysis → Converter (baseline + strip ablation → HTML + visual-compare) → Gap Analyzer → Evaluation → Critic → Arbitrator → Prune Evidence
 - Converter implements the full scoped design as one HTML page, runs `visual-compare` for pixel-level similarity
-- **Strip ablation**: Converter also converts 5 stripped design-trees (layout, component, naming, variable, style info removed) → measures similarity delta vs baseline → objective difficulty per rule category
+- **Strip ablation**: Converter also converts 6 stripped design-trees (`DESIGN_TREE_INFO_TYPES` in `src/core/design-tree/strip.ts`: layout-direction-spacing, size-constraints, component-references, node-names-hierarchy, variable-references, style-references) → measures similarity delta vs baseline (plus tokens/HTML/CSS/responsive where recorded) → objective difficulty per rule category
 - Gap Analyzer examines the diff image, categorizes pixel differences, saves to run directory
 - Cross-run evidence: Evaluation appends overscored/underscored findings to `data/calibration-evidence.json`; Gap Analyzer appends uncovered gaps to `data/discovery-evidence.json` (environment/tooling noise is auto-filtered)
 - After Arbitrator applies changes, evidence for applied rules is pruned (`calibrate-prune-evidence`)
@@ -144,7 +144,7 @@ ABLATION_FIXTURES=desktop-product-detail ABLATION_TYPES=component-references npx
 ```
 
 - Strips info from design-tree → implements via Claude API → renders → compares vs Figma screenshot
-- 5 strip types: layout-direction-spacing, component-references, node-names-hierarchy, variable-references, style-references
+- Strip types follow `DESIGN_TREE_INFO_TYPES`: layout-direction-spacing, size-constraints, component-references, node-names-hierarchy, variable-references, style-references
 - Output: `data/ablation/phase1/{config-version}/{fixture}/{type}/run-{n}/`
 - Metrics recorded: pixel similarity, input/output tokens, HTML bytes/lines, CSS class count, CSS variable count
 - Cache: versioned by config hash. Never delete — previous versions preserved automatically.
@@ -183,7 +183,7 @@ logs/calibration/                           # Calibration runs (internal)
 logs/calibration/<name>--<timestamp>/       # One calibration run = one folder
   ├── analysis.json                         #   Rule analysis result
   ├── conversion.json                       #   HTML conversion + similarity + stripDeltas
-  ├── stripped/                             #   Strip ablation outputs (5 types)
+  ├── stripped/                             #   Strip ablation outputs (6 types, see DESIGN_TREE_INFO_TYPES)
   │   ├── <type>.txt                        #   Stripped design-tree
   │   └── <type>.html                       #   HTML from stripped design-tree
   ├── gaps.json                             #   Pixel gap analysis
@@ -330,7 +330,7 @@ Rule scores started as intuition-based estimates. The calibration pipeline valid
 Process:
 1. Run analysis on real Figma files (`canicode calibrate-analyze`)
 2. Implement the entire scoped design as one HTML page (`Converter`)
-3. **Strip ablation** (#194): For each of 5 info types, strip from design-tree → convert → measure similarity delta vs baseline → objective difficulty per rule category
+3. **Strip ablation** (#194): For each of 6 info types in `DESIGN_TREE_INFO_TYPES`, strip from design-tree → convert → measure similarity delta vs baseline → objective difficulty per rule category
 4. Run `canicode visual-compare` — pixel-level comparison against Figma screenshot
 5. Analyze the diff image to categorize pixel gaps (`Gap Analyzer`)
 6. Compare conversion difficulty vs rule scores (`canicode calibrate-evaluate`) — strip deltas override Converter self-assessment

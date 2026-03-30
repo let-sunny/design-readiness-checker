@@ -485,11 +485,52 @@ describe("runEvaluationAgent", () => {
     expect(layoutMatch!.actualDifficulty).toBe("moderate");
     expect(layoutMatch!.reasoning).toContain("strip-ablation");
 
-    // fixed-size-in-auto-layout: responsive delta applied first, but no strip mapping for responsive-critical
+    // fixed-size-in-auto-layout: responsive delta applied; strip pass skips responsive-critical (#208 review)
     const responsiveMatch = result.mismatches.find(m => m.ruleId === "fixed-size-in-auto-layout");
     expect(responsiveMatch).toBeDefined();
     expect(responsiveMatch!.actualDifficulty).toBe("hard");
     expect(responsiveMatch!.reasoning).toContain("responsive");
+  });
+
+  it("does not let strip ablation override responsive-critical rules (avoids pixel fallback on size-constraints)", () => {
+    const input: EvaluationAgentInput = {
+      nodeIssueSummaries: [
+        { nodeId: "node-1", nodePath: "Page > Frame", flaggedRuleIds: ["missing-size-constraint"] },
+      ],
+      conversionRecords: [
+        {
+          nodeId: "node-1",
+          nodePath: "Page > Frame",
+          difficulty: "easy",
+          ruleRelatedStruggles: [
+            { ruleId: "missing-size-constraint", description: "Fine", actualImpact: "easy" },
+          ],
+          uncoveredStruggles: [],
+        },
+      ],
+      ruleScores: {
+        "missing-size-constraint": { score: -2, severity: "suggestion" },
+      },
+      responsiveDelta: 25,
+      stripDeltas: {
+        "size-constraints": {
+          pixelDelta: 2,
+          responsiveDelta: null,
+          baselineInputTokens: null,
+          strippedInputTokens: null,
+        },
+      },
+    };
+
+    const result = runEvaluationAgent(input);
+
+    const match = result.mismatches.find(m => m.ruleId === "missing-size-constraint");
+    expect(match).toBeDefined();
+    // Would be "validated" if strip used pixelDelta=2 (easy); must keep responsive-based hard
+    expect(match!.type).toBe("underscored");
+    expect(match!.actualDifficulty).toBe("hard");
+    expect(match!.reasoning).toContain("responsive");
+    expect(match!.reasoning).not.toContain("strip-ablation");
   });
 
   it("merges all nodeIssueSummaries when wholeDesign is true", () => {

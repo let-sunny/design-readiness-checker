@@ -222,6 +222,13 @@ export function runEvaluationAgent(
   if (input.stripDeltas) {
     for (const mismatch of mismatches) {
       if (!mismatch.ruleId) continue;
+      // Baseline responsiveDelta already classified responsive-critical rules. Do not override
+      // with strip metrics: size-constraints strip may fall back to design-viewport pixel delta
+      // when per-strip responsive compare is not wired (#205).
+      if (mismatch.ruleId in RULE_ID_CATEGORY) {
+        const category = RULE_ID_CATEGORY[mismatch.ruleId as RuleId];
+        if (category === "responsive-critical") continue;
+      }
       const stripDifficulty = getStripDifficultyForRule(mismatch.ruleId, input.stripDeltas);
       if (!stripDifficulty) continue;
 
