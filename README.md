@@ -43,7 +43,7 @@ Rule scores aren't guesswork. A 6-agent calibration pipeline converts real Figma
 - Design that's hard to implement accurately → rule score goes **up**
 - Design that's easy despite the flag → rule score goes **down**
 
-The pipeline runs on community fixtures, not on every analysis. See the [Calibration wiki](https://github.com/let-sunny/canicode/wiki/Calibration).
+The pipeline runs on community fixtures, not on every analysis. Strip ablation uses six `DESIGN_TREE_INFO_TYPES` passes (including `size-constraints` for responsive sizing rules — see [`CLAUDE.md`](CLAUDE.md)). See the [Calibration wiki](https://github.com/let-sunny/canicode/wiki/Calibration).
 
 ---
 

@@ -45,6 +45,9 @@ export function stripDeltaToDifficulty(delta: number): Difficulty {
  * - > 40% → failed  (critical for token budget)
  */
 export function tokenDeltaToDifficulty(baselineTokens: number, strippedTokens: number): Difficulty {
+  if (!Number.isFinite(baselineTokens) || !Number.isFinite(strippedTokens)) {
+    throw new TypeError(`Invalid token counts: baseline=${baselineTokens}, stripped=${strippedTokens}`);
+  }
   if (baselineTokens <= 0) return "easy";
   const deltaPercent = ((baselineTokens - strippedTokens) / baselineTokens) * 100;
   if (deltaPercent <= 5) return "easy";

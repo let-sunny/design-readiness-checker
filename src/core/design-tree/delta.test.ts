@@ -1,4 +1,4 @@
-import { stripDeltaToDifficulty } from "./delta.js";
+import { stripDeltaToDifficulty, tokenDeltaToDifficulty } from "./delta.js";
 
 describe("stripDeltaToDifficulty", () => {
   it("maps delta ≤ 5 to easy", () => {
@@ -33,5 +33,26 @@ describe("stripDeltaToDifficulty", () => {
   it("throws on Infinity", () => {
     expect(() => stripDeltaToDifficulty(Infinity)).toThrow(TypeError);
     expect(() => stripDeltaToDifficulty(-Infinity)).toThrow(TypeError);
+  });
+});
+
+describe("tokenDeltaToDifficulty", () => {
+  it("returns easy when baseline token count is non-positive", () => {
+    expect(tokenDeltaToDifficulty(0, 0)).toBe("easy");
+    expect(tokenDeltaToDifficulty(-1, 10)).toBe("easy");
+  });
+
+  it("maps token savings percent to difficulty", () => {
+    expect(tokenDeltaToDifficulty(1000, 980)).toBe("easy"); // 2%
+    expect(tokenDeltaToDifficulty(1000, 850)).toBe("moderate"); // 15%
+    expect(tokenDeltaToDifficulty(1000, 700)).toBe("hard"); // 30%
+    expect(tokenDeltaToDifficulty(1000, 500)).toBe("failed"); // 50%
+  });
+
+  it("throws on non-finite baseline or stripped counts", () => {
+    expect(() => tokenDeltaToDifficulty(NaN, 100)).toThrow(TypeError);
+    expect(() => tokenDeltaToDifficulty(100, NaN)).toThrow(TypeError);
+    expect(() => tokenDeltaToDifficulty(Infinity, 100)).toThrow(TypeError);
+    expect(() => tokenDeltaToDifficulty(100, Infinity)).toThrow(TypeError);
   });
 });

@@ -42,7 +42,11 @@ export const ALL_STRIP_TYPES: readonly DesignTreeStripType[] = [
   "hover-interaction-states", "variable-references", "style-references",
 ] as const;
 
-/** Strip experiment types used in calibration ablation. */
+/**
+ * Strip experiment types used in calibration ablation (six types).
+ * Keep in sync with `StripTypeEnum` / `STRIP_TYPE_RULES` in the agents layer.
+ * `size-constraints` pairs with responsive rules `missing-size-constraint`, `fixed-size-in-auto-layout`.
+ */
 export const DESIGN_TREE_INFO_TYPES: readonly DesignTreeInfoType[] = [
   "layout-direction-spacing",
   "size-constraints",
