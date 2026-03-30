@@ -6,14 +6,15 @@
  * → renders at 1920px (desktop) or 768px (mobile) → compares vs expanded screenshot.
  *
  * Usage:
- *   npx tsx src/agents/ablation/run-responsive.ts
- *   ABLATION_FIXTURES=mobile-product-detail npx tsx src/agents/ablation/run-responsive.ts
+ *   npx tsx src/experiments/ablation/run-responsive.ts
+ *   ABLATION_FIXTURES=mobile-product-detail npx tsx src/experiments/ablation/run-responsive.ts
  */
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync } from "node:fs";
 import { resolve, join } from "node:path";
 
-import { renderAndCompare, getFixtureScreenshotPath, copyFixtureImages, DEFAULT_FIXTURES } from "./helpers.js";
+import { renderAndCompare } from "../../core/engine/visual-compare.js";
+import { getFixtureScreenshotPath, copyFixtureImages, DEFAULT_FIXTURES } from "./helpers.js";
 
 const PHASE1_DIR = resolve("data/ablation/phase1");
 const OUTPUT_DIR = resolve("data/ablation/conditions/size-constraints");
@@ -74,7 +75,7 @@ async function main(): Promise<void> {
     console.log(`  [baseline] Rendering at ${expandedWidth}px...`);
     const baseResult = await renderAndCompare(
       join(runDir, "output-baseline-expanded.html"),
-      expandedScreenshot, runDir, `baseline-${expandedWidth}`,
+      expandedScreenshot, runDir, { suffix: `baseline-${expandedWidth}`, sizeMismatch: "crop" },
     );
 
     // Size-constraints stripped HTML → expanded viewport
@@ -89,7 +90,7 @@ async function main(): Promise<void> {
       console.log(`  [stripped] Rendering at ${expandedWidth}px...`);
       stripResult = await renderAndCompare(
         join(runDir, "output-stripped-expanded.html"),
-        expandedScreenshot, runDir, `stripped-${expandedWidth}`,
+        expandedScreenshot, runDir, { suffix: `stripped-${expandedWidth}`, sizeMismatch: "crop" },
       );
     } else {
       console.log(`  SKIP: no size-constraints stripped HTML found`);

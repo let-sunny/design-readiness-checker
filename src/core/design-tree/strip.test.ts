@@ -1,4 +1,4 @@
-import { stripDesignTree, DESIGN_TREE_INFO_TYPES, ALL_STRIP_TYPES } from "./design-tree-strip.js";
+import { stripDesignTree, DESIGN_TREE_INFO_TYPES, ALL_STRIP_TYPES } from "./strip.js";
 
 /** Shared test fixture containing all information types. */
 const FIXTURE = [

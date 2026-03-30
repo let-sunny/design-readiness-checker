@@ -36,7 +36,7 @@ export function registerDesignTree(cli: CAC): void {
           if (existsSync(autoDir)) imageDir = autoDir;
         }
 
-        const { generateDesignTreeWithStats } = await import("../../core/engine/design-tree.js");
+        const { generateDesignTreeWithStats } = await import("../../core/design-tree/design-tree.js");
         const treeOptions = {
           ...(vectorDir ? { vectorDir } : {}),
           ...(imageDir ? { imageDir } : {}),

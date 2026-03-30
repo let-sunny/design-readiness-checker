@@ -3,14 +3,15 @@
  * No API calls — only local rendering and pixel comparison.
  *
  * Usage:
- *   npx tsx src/agents/ablation/recompare.ts
- *   ABLATION_FIXTURES=desktop-product-detail npx tsx src/agents/ablation/recompare.ts
+ *   npx tsx src/experiments/ablation/recompare.ts
+ *   ABLATION_FIXTURES=desktop-product-detail npx tsx src/experiments/ablation/recompare.ts
  */
 
 import { existsSync, readFileSync, writeFileSync, readdirSync } from "node:fs";
 import { resolve, join } from "node:path";
 
-import { renderAndCompare, getFixtureScreenshotPath, DEFAULT_FIXTURES } from "./helpers.js";
+import { renderAndCompare } from "../../core/engine/visual-compare.js";
+import { getFixtureScreenshotPath, DEFAULT_FIXTURES } from "./helpers.js";
 
 const BASE_OUTPUT_DIR = resolve("data/ablation/phase1");
 
@@ -49,7 +50,7 @@ async function main(): Promise<void> {
         if (!existsSync(htmlPath)) continue;
 
         console.log(`  ${fixture}/${type}...`);
-        const result = await renderAndCompare(htmlPath, figmaPath, runDir, "base");
+        const result = await renderAndCompare(htmlPath, figmaPath, runDir, { suffix: "base", sizeMismatch: "crop" });
 
         // Update result.json
         const resultPath = join(runDir, "result.json");

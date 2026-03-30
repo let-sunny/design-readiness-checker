@@ -220,7 +220,7 @@ export function registerImplement(cli: CAC): void {
         }
 
         // 4. Design tree (after assets so image paths are available)
-        const { generateDesignTreeWithStats } = await import("../../core/engine/design-tree.js");
+        const { generateDesignTreeWithStats } = await import("../../core/design-tree/design-tree.js");
         const treeOptions = {
           ...(vectorDir && existsSync(vectorDir) ? { vectorDir } : {}),
           ...(imageDir && existsSync(imageDir) ? { imageDir } : {}),

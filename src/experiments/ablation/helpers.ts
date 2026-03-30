@@ -1,13 +1,13 @@
 /**
  * Shared utilities for ablation experiment scripts.
+ *
+ * Comparison/rendering logic lives in core/engine/visual-compare.ts.
+ * This module provides API calls, HTML processing, and experiment configuration.
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync, copyFileSync, readdirSync } from "node:fs";
+import { existsSync, mkdirSync, copyFileSync, readdirSync } from "node:fs";
 import { resolve, join } from "node:path";
 import Anthropic from "@anthropic-ai/sdk";
-
-import { renderCodeScreenshot } from "../../core/engine/visual-compare.js";
-import { compareScreenshots, inferExportScale } from "../../core/engine/visual-compare-helpers.js";
 
 // --- Configuration ---
 
@@ -94,10 +94,6 @@ export function getResponseText(response: Anthropic.Message): string {
     .join("\n");
 }
 
-// --- CSS metrics (re-export from core) ---
-
-export { countCssClasses, countCssVariables } from "../../core/engine/visual-compare-helpers.js";
-
 // --- File operations ---
 
 export function copyFixtureImages(fixture: string, runDir: string): void {
@@ -137,51 +133,6 @@ export async function callApi(client: Anthropic, prompt: string, designTree: str
     }
   }
   throw new Error("API call failed after retries");
-}
-
-// --- Render + compare ---
-
-export async function renderAndCompare(
-  htmlPath: string,
-  figmaScreenshotPath: string,
-  runDir: string,
-  suffix: string,
-): Promise<{ similarity: number }> {
-  const { PNG } = await import("pngjs");
-  const figmaImage = PNG.sync.read(readFileSync(figmaScreenshotPath));
-  const figmaWidth = figmaImage.width;
-  const exportScale = inferExportScale(figmaWidth);
-  const logicalW = Math.max(1, Math.round(figmaWidth / exportScale));
-  const logicalH = Math.max(1, Math.round(figmaImage.height / exportScale));
-
-  const codePngPath = join(runDir, `code-${suffix}.png`);
-  await renderCodeScreenshot(htmlPath, codePngPath, { width: logicalW, height: logicalH }, exportScale);
-
-  const figmaCopyPath = join(runDir, `figma-${suffix}.png`);
-  copyFileSync(figmaScreenshotPath, figmaCopyPath);
-
-  // Crop to matching dimensions
-  const codeImage = PNG.sync.read(readFileSync(codePngPath));
-  const figmaCopy = PNG.sync.read(readFileSync(figmaCopyPath));
-  const cropW = Math.min(codeImage.width, figmaCopy.width);
-  const cropH = Math.min(codeImage.height, figmaCopy.height);
-  if (codeImage.width !== cropW || codeImage.height !== cropH) {
-    const cropped = new PNG({ width: cropW, height: cropH });
-    for (let y = 0; y < cropH; y++) {
-      codeImage.data.copy(cropped.data, y * cropW * 4, y * codeImage.width * 4, y * codeImage.width * 4 + cropW * 4);
-    }
-    writeFileSync(codePngPath, PNG.sync.write(cropped));
-  }
-  if (figmaCopy.width !== cropW || figmaCopy.height !== cropH) {
-    const cropped = new PNG({ width: cropW, height: cropH });
-    for (let y = 0; y < cropH; y++) {
-      figmaCopy.data.copy(cropped.data, y * cropW * 4, y * figmaCopy.width * 4, y * figmaCopy.width * 4 + cropW * 4);
-    }
-    writeFileSync(figmaCopyPath, PNG.sync.write(cropped));
-  }
-
-  const diffPath = join(runDir, `diff-${suffix}.png`);
-  return compareScreenshots(figmaCopyPath, codePngPath, diffPath);
 }
 
 // --- Input validation ---

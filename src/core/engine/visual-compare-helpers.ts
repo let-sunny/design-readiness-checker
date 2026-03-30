@@ -115,6 +115,25 @@ export function padPng(png: PNG, targetWidth: number, targetHeight: number): PNG
   return padded;
 }
 
+/** Options for screenshot comparison. */
+export interface CompareOptions {
+  /** How to handle size mismatches: "pad" (magenta fill) or "crop" (min dimensions). Default: "pad". */
+  sizeMismatch?: "pad" | "crop";
+  /** pixelmatch threshold (0-1). Default: 0.1. */
+  threshold?: number;
+}
+
+/**
+ * Crop a PNG to target dimensions (top-left corner preserved).
+ */
+export function cropPng(png: PNG, targetWidth: number, targetHeight: number): PNG {
+  const cropped = new PNG({ width: targetWidth, height: targetHeight });
+  for (let y = 0; y < targetHeight; y++) {
+    png.data.copy(cropped.data, y * targetWidth * 4, y * png.width * 4, y * png.width * 4 + targetWidth * 4);
+  }
+  return cropped;
+}
+
 /**
  * Compare two PNG files using pixelmatch.
  */
@@ -122,32 +141,34 @@ export function compareScreenshots(
   path1: string,
   path2: string,
   diffOutputPath: string,
+  options?: CompareOptions,
 ): { similarity: number; diffPixels: number; totalPixels: number; width: number; height: number } {
+  const sizeMismatch = options?.sizeMismatch ?? "pad";
+  const threshold = options?.threshold ?? 0.1;
   const raw1 = PNG.sync.read(readFileSync(path1));
   const raw2 = PNG.sync.read(readFileSync(path2));
 
-  // Size mismatch — pad smaller image with magenta so extra area counts as diff pixels
+  let img1: PNG = raw1;
+  let img2: PNG = raw2;
+
+  // Size mismatch — normalize to same dimensions
   if (raw1.width !== raw2.width || raw1.height !== raw2.height) {
-    const width = Math.max(raw1.width, raw2.width);
-    const height = Math.max(raw1.height, raw2.height);
-    const img1 = padPng(raw1, width, height);
-    const img2 = padPng(raw2, width, height);
-    const diff = new PNG({ width, height });
-    const diffPixels = pixelmatch(img1.data, img2.data, diff.data, width, height, { threshold: 0.1 });
-    mkdirSync(dirname(diffOutputPath), { recursive: true });
-    writeFileSync(diffOutputPath, PNG.sync.write(diff));
-
-    const totalPixels = width * height;
-    const similarity = diffPixels === 0 ? 100 : Math.floor((1 - diffPixels / totalPixels) * 100);
-
-    return { similarity, diffPixels, totalPixels, width, height };
+    if (sizeMismatch === "crop") {
+      const width = Math.min(raw1.width, raw2.width);
+      const height = Math.min(raw1.height, raw2.height);
+      img1 = cropPng(raw1, width, height);
+      img2 = cropPng(raw2, width, height);
+    } else {
+      const width = Math.max(raw1.width, raw2.width);
+      const height = Math.max(raw1.height, raw2.height);
+      img1 = padPng(raw1, width, height);
+      img2 = padPng(raw2, width, height);
+    }
   }
 
-  const { width, height } = raw1;
+  const { width, height } = img1;
   const diff = new PNG({ width, height });
-  const diffPixels = pixelmatch(raw1.data, raw2.data, diff.data, width, height, {
-    threshold: 0.1,
-  });
+  const diffPixels = pixelmatch(img1.data, img2.data, diff.data, width, height, { threshold });
 
   mkdirSync(dirname(diffOutputPath), { recursive: true });
   writeFileSync(diffOutputPath, PNG.sync.write(diff));

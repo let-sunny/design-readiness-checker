@@ -39,7 +39,8 @@ This means:
 ```
 src/                          # Node.js runtime (tsup build)
 ├── core/                     # Shared analysis engine
-│   ├── engine/               # rule-engine, scoring, loader, config-store
+│   ├── design-tree/          # Design tree generation, stripping, delta mapping
+│   ├── engine/               # rule-engine, scoring, loader, visual-compare
 │   ├── rules/                # Rule definitions + config
 │   ├── contracts/            # Type definitions + Zod schemas
 │   ├── adapters/             # Figma API integrations
@@ -47,7 +48,9 @@ src/                          # Node.js runtime (tsup build)
 │   └── monitoring/           # Telemetry
 ├── cli/                      # Entrypoint: CLI
 ├── mcp/                      # Entrypoint: MCP server
-└── agents/                   # Internal: Calibration pipeline
+├── agents/                   # Internal: Calibration pipeline (deterministic)
+└── experiments/              # Independent experiment scripts (API calls, manual run)
+    └── ablation/             # Strip experiments, condition experiments
 
 app/                          # Browser runtime
 ├── shared/                   # Common UI (gauge, issue list, styles, constants)
@@ -126,13 +129,13 @@ Calibration commands are NOT exposed as CLI commands. They run exclusively insid
 - A/B Validation: implements entire design with/without the rule's data, compares similarity
 - Critic decides KEEP / ADJUST / DROP
 
-**Ablation experiments (`src/agents/ablation/`)**
+**Ablation experiments (`src/experiments/ablation/`)**
 
 Two scripts, shared helpers:
 
 **`run-phase1.ts` — Strip experiments**
 ```bash
-ANTHROPIC_API_KEY=sk-... npx tsx src/agents/ablation/run-phase1.ts
+ANTHROPIC_API_KEY=sk-... npx tsx src/experiments/ablation/run-phase1.ts
 ABLATION_FIXTURES=desktop-product-detail ABLATION_TYPES=component-references npx tsx ...
 ```
 - Strips info from design-tree → implements via Claude API → renders → compares vs Figma screenshot
@@ -143,8 +146,8 @@ ABLATION_FIXTURES=desktop-product-detail ABLATION_TYPES=component-references npx
 
 **`run-condition.ts` — Condition experiments**
 ```bash
-ANTHROPIC_API_KEY=sk-... npx tsx src/agents/ablation/run-condition.ts --type size-constraints
-ANTHROPIC_API_KEY=sk-... npx tsx src/agents/ablation/run-condition.ts --type hover-interaction
+ANTHROPIC_API_KEY=sk-... npx tsx src/experiments/ablation/run-condition.ts --type size-constraints
+ANTHROPIC_API_KEY=sk-... npx tsx src/experiments/ablation/run-condition.ts --type hover-interaction
 ```
 - **size-constraints**: strip size info → implement via API → `removeRootFixedWidth` (1200px→100%, min-width→0) → render at 1920px (desktop) or 768px (mobile) → compare vs screenshot-1920/768.png. Both baseline and stripped get same treatment.
 - **hover-interaction**: implement with vs without `[hover]:` data → compare :hover CSS rules and values

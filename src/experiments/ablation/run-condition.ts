@@ -5,22 +5,23 @@
  * hover-interaction: strip [hover]: → implement → compare hover CSS values with baseline
  *
  * Usage:
- *   ANTHROPIC_API_KEY=sk-... npx tsx src/agents/ablation/run-condition.ts --type size-constraints
- *   ANTHROPIC_API_KEY=sk-... npx tsx src/agents/ablation/run-condition.ts --type hover-interaction
+ *   ANTHROPIC_API_KEY=sk-... npx tsx src/experiments/ablation/run-condition.ts --type size-constraints
+ *   ANTHROPIC_API_KEY=sk-... npx tsx src/experiments/ablation/run-condition.ts --type hover-interaction
  */
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync } from "node:fs";
 import { resolve, join } from "node:path";
 import Anthropic from "@anthropic-ai/sdk";
 
-import { generateDesignTree } from "../../core/engine/design-tree.js";
-import { stripDesignTree } from "../../core/engine/design-tree-strip.js";
+import { generateDesignTree } from "../../core/design-tree/design-tree.js";
+import { stripDesignTree } from "../../core/design-tree/strip.js";
 import { loadFigmaFileFromJson } from "../../core/adapters/figma-file-loader.js";
+import { renderAndCompare } from "../../core/engine/visual-compare.js";
 
 import {
   PROMPT_PATH, callApi, processHtml, getResponseText,
   getDesignTreeOptions, getFixtureScreenshotPath, copyFixtureImages,
-  renderAndCompare, parseFixtures, requireApiKey,
+  parseFixtures, requireApiKey,
 } from "./helpers.js";
 
 const OUTPUT_DIR = resolve("data/ablation/conditions");
@@ -82,7 +83,7 @@ async function runSizeConstraints(fixture: string, client: Anthropic, prompt: st
   writeFileSync(join(runDir, "output-baseline-expanded.html"), baseExpanded);
 
   console.log(`  [baseline] Rendering at ${expandedWidth}px...`);
-  const baseResult = await renderAndCompare(join(runDir, "output-baseline-expanded.html"), expandedScreenshot, runDir, `baseline-${expandedWidth}`);
+  const baseResult = await renderAndCompare(join(runDir, "output-baseline-expanded.html"), expandedScreenshot, runDir, { suffix: `baseline-${expandedWidth}`, sizeMismatch: "crop" });
 
   // Stripped: no size info → implement → remove root width → render at expanded
   console.log(`  [stripped] API call...`);
@@ -93,7 +94,7 @@ async function runSizeConstraints(fixture: string, client: Anthropic, prompt: st
   writeFileSync(join(runDir, "output-stripped-expanded.html"), stripExpanded);
 
   console.log(`  [stripped] Rendering at ${expandedWidth}px...`);
-  const stripResult = await renderAndCompare(join(runDir, "output-stripped-expanded.html"), expandedScreenshot, runDir, `stripped-${expandedWidth}`);
+  const stripResult = await renderAndCompare(join(runDir, "output-stripped-expanded.html"), expandedScreenshot, runDir, { suffix: `stripped-${expandedWidth}`, sizeMismatch: "crop" });
 
   const deltaV = baseResult.similarity - stripResult.similarity;
   const result = {

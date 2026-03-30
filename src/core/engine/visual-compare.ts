@@ -13,6 +13,7 @@ import {
   inferDeviceScaleFactor,
   inferExportScale,
   compareScreenshots,
+  type CompareOptions,
 } from "./visual-compare-helpers.js";
 
 /** Result of a visual comparison between Figma design and rendered code. */
@@ -215,4 +216,48 @@ export async function visualCompare(options: VisualCompareOptions): Promise<Visu
     codeScreenshotPath,
     diffPath,
   };
+}
+
+/** Options for renderAndCompare. */
+export interface RenderAndCompareOptions {
+  /** How to handle size mismatches. Default: "pad". */
+  sizeMismatch?: CompareOptions["sizeMismatch"];
+  /** Output file suffix (e.g. "baseline", "stripped-layout"). */
+  suffix?: string;
+  /** pixelmatch threshold. Default: 0.1. */
+  threshold?: number;
+}
+
+/**
+ * Render HTML → screenshot, then compare against a Figma screenshot.
+ * Handles export scale inference and size normalization.
+ *
+ * Extracted from ablation helpers to be shared by calibration + experiments.
+ */
+export async function renderAndCompare(
+  htmlPath: string,
+  figmaScreenshotPath: string,
+  outputDir: string,
+  options?: RenderAndCompareOptions,
+): Promise<{ similarity: number }> {
+  const suffix = options?.suffix ?? "output";
+  const sizeMismatch = options?.sizeMismatch ?? "pad";
+  const threshold = options?.threshold;
+
+  const figmaImage = PNG.sync.read(readFileSync(figmaScreenshotPath));
+  const figmaWidth = figmaImage.width;
+  const exportScale = inferExportScale(figmaWidth);
+  const logicalW = Math.max(1, Math.round(figmaWidth / exportScale));
+  const logicalH = Math.max(1, Math.round(figmaImage.height / exportScale));
+
+  const codePngPath = resolve(outputDir, `code-${suffix}.png`);
+  await renderCodeScreenshot(htmlPath, codePngPath, { width: logicalW, height: logicalH }, exportScale);
+
+  const figmaCopyPath = resolve(outputDir, `figma-${suffix}.png`);
+  copyFileSync(figmaScreenshotPath, figmaCopyPath);
+
+  const diffPath = resolve(outputDir, `diff-${suffix}.png`);
+  const compareOpts: CompareOptions = { sizeMismatch };
+  if (threshold !== undefined) compareOpts.threshold = threshold;
+  return compareScreenshots(figmaCopyPath, codePngPath, diffPath, compareOpts);
 }

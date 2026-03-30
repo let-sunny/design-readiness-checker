@@ -5,7 +5,7 @@
  *   Strip info from design-tree → implement via API → render → compare → record metrics
  *
  * Usage:
- *   ANTHROPIC_API_KEY=sk-... npx tsx src/agents/ablation/run-phase1.ts
+ *   ANTHROPIC_API_KEY=sk-... npx tsx src/experiments/ablation/run-phase1.ts
  *
  * Environment variables:
  *   ANTHROPIC_API_KEY, ABLATION_FIXTURES, ABLATION_TYPES, ABLATION_RUNS, ABLATION_BASELINE_ONLY
@@ -18,15 +18,16 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve, join } from "node:path";
 import Anthropic from "@anthropic-ai/sdk";
 
-import { generateDesignTree } from "../../core/engine/design-tree.js";
-import { stripDesignTree, DESIGN_TREE_INFO_TYPES } from "../../core/engine/design-tree-strip.js";
-import type { DesignTreeInfoType } from "../../core/engine/design-tree-strip.js";
+import { generateDesignTree } from "../../core/design-tree/design-tree.js";
+import { stripDesignTree, DESIGN_TREE_INFO_TYPES } from "../../core/design-tree/strip.js";
+import type { DesignTreeInfoType } from "../../core/design-tree/strip.js";
 import { loadFigmaFileFromJson } from "../../core/adapters/figma-file-loader.js";
+import { renderAndCompare } from "../../core/engine/visual-compare.js";
+import { countCssClasses, countCssVariables } from "../../core/engine/visual-compare-helpers.js";
 
 import {
   PROMPT_PATH, callApi, processHtml, getResponseText,
   getDesignTreeOptions, getFixtureScreenshotPath, copyFixtureImages,
-  renderAndCompare, countCssClasses, countCssVariables,
   parseFixtures, requireApiKey,
 } from "./helpers.js";
 
@@ -34,12 +35,12 @@ import {
 
 function computeConfigVersion(): string {
   const coreFiles = [
-    resolve("src/core/engine/design-tree-strip.ts"),
-    resolve("src/core/engine/design-tree.ts"),
+    resolve("src/core/design-tree/strip.ts"),
+    resolve("src/core/design-tree/design-tree.ts"),
     resolve("src/core/engine/visual-compare.ts"),
     resolve("src/core/engine/visual-compare-helpers.ts"),
     resolve("src/core/adapters/figma-file-loader.ts"),
-    resolve("src/agents/ablation/helpers.ts"),
+    resolve("src/experiments/ablation/helpers.ts"),
     PROMPT_PATH,
   ];
   const hash = createHash("sha256");
@@ -130,7 +131,7 @@ async function runSingle(
 
   console.log(`    Rendering + comparing...`);
   const figmaPath = getFixtureScreenshotPath(fixture);
-  const comparison = await renderAndCompare(join(runDir, "output.html"), figmaPath, runDir, "base");
+  const comparison = await renderAndCompare(join(runDir, "output.html"), figmaPath, runDir, { suffix: "base", sizeMismatch: "crop" });
 
   const result: RunResult = {
     fixture, type, runIndex,
