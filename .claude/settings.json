@@ -3,8 +3,18 @@
     "PostToolUse": [
       {
         "matcher": "Edit|Write",
-        "filePattern": "src/core/rules/**",
-        "command": "npx tsx scripts/sync-rule-docs.ts"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx tsx scripts/sync-rule-docs.ts",
+            "if": "Edit(**/src/core/rules/**)"
+          },
+          {
+            "type": "command",
+            "command": "npx tsx scripts/sync-rule-docs.ts",
+            "if": "Write(**/src/core/rules/**)"
+          }
+        ]
       }
     ]
   }
