@@ -57,8 +57,8 @@ export function toCommentableNodeId(nodeId: string): string {
 }
 
 export function buildFigmaDeepLink(fileKey: string, nodeId: string): string {
-  // Figma URLs use hyphens instead of colons: "3010:7457" → "3010-7457"
-  // Semicolons (instance path separators) are kept as-is — Figma expects them unencoded
+  // Figma URLs: colons → hyphens, semicolons kept as-is (not encoded)
+  // e.g. "I175:7425;18:9402" → "node-id=I175-7425;18-9402"
   const urlNodeId = nodeId.replace(/:/g, "-");
   return `https://www.figma.com/design/${fileKey}?node-id=${urlNodeId}`;
 }
