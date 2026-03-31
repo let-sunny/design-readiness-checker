@@ -31,15 +31,6 @@
     <!-- Results — rendered by CanICode.renderReportBody() -->
     <div id="results"></div>
 
-    <!-- Footer links -->
-    <div class="footer" id="footer" style="display:none">
-      <div><strong>CanICode</strong> <span style="opacity:0.5">v/* __VERSION__ */</span></div>
-      <div class="footer-links">
-        <a href="https://github.com/let-sunny/canicode/issues" target="_blank">Feedback</a>
-        <span style="opacity:0.3">&middot;</span>
-        <a href="https://github.com/let-sunny/canicode/discussions/new?category=share-your-figma" target="_blank">Share your Figma</a>
-      </div>
-    </div>
   </div>
 
   <!-- Monitoring: lightweight inline PostHog + Sentry via fetch -->
@@ -130,7 +121,6 @@
       });
       el.className = 'visible';
       CanICode.initReportInteractions(el);
-      document.getElementById('footer').style.display = '';
     }
 
     // ---- Focus node in Figma — intercept all [data-node-id] clicks ----
