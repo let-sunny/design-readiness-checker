@@ -125,7 +125,7 @@ function renderFigmaCommentScript(figmaToken: string): string {
           const errMsg = res.status === 400 ? 'Bad request' : res.status === 403 ? 'Token lacks file access' : res.status === 404 ? 'File not found' : res.status === 429 ? 'Rate limited' : 'HTTP ' + res.status;
           throw new Error(errMsg + (errBody ? ': ' + errBody.slice(0, 100) : ''));
         }
-        btn.textContent = 'Sent \\u2713';
+        btn.textContent = 'Sent';
         btn.classList.remove('rpt-btn-fail');
         btn.classList.add('rpt-btn-ok');
       } catch (e) {

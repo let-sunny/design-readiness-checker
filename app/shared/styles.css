@@ -277,19 +277,6 @@ body {
   margin-bottom: 24px;
   position: relative;
 }
-@media (max-width: 600px) {
-  .rpt-tab-list::after {
-    content: "";
-    position: sticky;
-    right: 0;
-    width: 40px;
-    min-height: 100%;
-    background: linear-gradient(to right, transparent, var(--bg));
-    pointer-events: none;
-    flex-shrink: 0;
-    margin-left: -40px;
-  }
-}
 .rpt-tab-list {
   display: flex;
   gap: 4px;
@@ -541,6 +528,18 @@ body {
   font-size: 12px;
   color: rgba(113,113,122,0.6);
   margin-top: 4px;
+}
+.rpt-footer-links {
+  margin-top: 4px;
+  font-size: 12px;
+}
+.rpt-footer-links a {
+  color: var(--fg-muted);
+  text-decoration: none;
+}
+.rpt-footer-links a:hover {
+  color: var(--fg);
+  text-decoration: underline;
 }
 
 /* ================================================================
