@@ -7,6 +7,7 @@ import type { ScoreReport, CategoryScoreResult } from "../engine/scoring.js";
 import {
   renderReportBody,
   renderSummaryDot,
+  renderCategoryGroup,
   renderOpportunities,
   renderRuleSection,
   renderIssueRow,
@@ -128,11 +129,15 @@ describe("renderReportBody", () => {
     expect(html).toContain(">80<");
   });
 
-  it("renders category gauge buttons", () => {
+  it("renders category group cards with bar charts (#215)", () => {
     const html = renderReportBody(makeReportData());
-    expect(html).toContain('class="rpt-gauges-grid"');
+    expect(html).toContain('class="rpt-groups"');
+    expect(html).toContain('data-group="pixel-accuracy"');
+    expect(html).toContain('data-group="token-efficiency"');
+    expect(html).toContain("Pixel Accuracy");
+    expect(html).toContain("Token Efficiency");
+    expect(html).toContain('class="rpt-group-bar-item"');
     expect(html).toContain('data-tab="pixel-critical"');
-    expect(html).toContain('class="rpt-gauge-label"');
   });
 
   it("renders issue summary", () => {
@@ -204,6 +209,43 @@ describe("renderSummaryDot", () => {
   it("renders zero count", () => {
     const html = renderSummaryDot("sev-suggestion", 0, "Suggestion");
     expect(html).toContain(">0<");
+  });
+});
+
+// ---- renderCategoryGroup ----
+
+describe("renderCategoryGroup", () => {
+  it("renders group card with average score and category bars", () => {
+    const scores = makeScores();
+    const group = {
+      id: "pixel-accuracy",
+      label: "Pixel Accuracy",
+      description: "How much AI can implement without guessing.",
+      categories: ["pixel-critical", "responsive-critical"] as Category[],
+    };
+    const html = renderCategoryGroup(group, scores);
+    expect(html).toContain('data-group="pixel-accuracy"');
+    expect(html).toContain("Pixel Accuracy");
+    expect(html).toContain("How much AI can implement without guessing.");
+    expect(html).toContain("80%"); // average of both categories at 80%
+    expect(html).toContain('data-tab="pixel-critical"');
+    expect(html).toContain('data-tab="responsive-critical"');
+    expect(html).toContain('class="rpt-group-bar-track"');
+  });
+
+  it("renders group description for context", () => {
+    const scores = makeScores();
+    const group = {
+      id: "token-efficiency",
+      label: "Token Efficiency",
+      description: "How efficiently AI can work with the design.",
+      categories: ["code-quality", "token-management", "semantic", "interaction"] as Category[],
+    };
+    const html = renderCategoryGroup(group, scores);
+    expect(html).toContain("Token Efficiency");
+    expect(html).toContain("How efficiently AI can work with the design.");
+    // 4 bar items
+    expect(html.match(/rpt-group-bar-item/g)?.length).toBe(4);
   });
 });
 

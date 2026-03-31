@@ -11,6 +11,34 @@ export { SEVERITY_LABELS } from "./contracts/severity.js";
 export const GAUGE_R = 54;
 export const GAUGE_C = Math.round(2 * Math.PI * GAUGE_R); // ~339
 
+/**
+ * Category groups for report display (#215).
+ * Groups 6 categories into two dimensions so users can see
+ * "pixel accuracy is fine, token efficiency is dragging the grade."
+ * Display-only — does not affect score calculation.
+ */
+export interface CategoryGroup {
+  id: string;
+  label: string;
+  description: string;
+  categories: Category[];
+}
+
+export const CATEGORY_GROUPS: CategoryGroup[] = [
+  {
+    id: "pixel-accuracy",
+    label: "Pixel Accuracy",
+    description: "How much AI can implement without guessing — layout and size information is clear enough for deterministic results.",
+    categories: ["pixel-critical", "responsive-critical"],
+  },
+  {
+    id: "token-efficiency",
+    label: "Token Efficiency",
+    description: "How efficiently AI can work with the design — tokens and components are organized to minimize waste.",
+    categories: ["code-quality", "token-management", "semantic", "interaction"],
+  },
+];
+
 export const CATEGORY_DESCRIPTIONS: Record<Category, string> = {
   "pixel-critical":
     "Auto Layout, absolute positioning, group usage — layout issues that directly affect pixel accuracy",

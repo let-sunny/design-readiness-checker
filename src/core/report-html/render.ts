@@ -18,12 +18,16 @@ import { buildFigmaDeepLink } from "../adapters/figma-url-parser.js";
 import {
   CATEGORIES,
   CATEGORY_LABELS,
+  CATEGORY_GROUPS,
 } from "../ui-constants.js";
+import type { CategoryGroup } from "../ui-constants.js";
 import {
   escapeHtml,
   severityDot,
   severityBadge,
   renderGaugeSvg,
+  gaugeColor,
+  scoreClass,
 } from "../ui-helpers.js";
 
 // ---- Data interface ----
@@ -73,19 +77,10 @@ export function renderReportBody(data: ReportData): string {
       <p class="rpt-score-label">Overall Score</p>
     </section>
 
-    <!-- Category Gauges -->
-    <section class="card rpt-gauges">
-      <div class="rpt-gauges-grid">
-${CATEGORIES.map((cat) => {
-    const cs = scores.byCategory[cat];
-    return `        <button type="button" class="rpt-gauge-item" data-tab="${cat}">
-          ${renderGaugeSvg(cs.percentage, 100, 7)}
-          <span class="rpt-gauge-label">${CATEGORY_LABELS[cat]}</span>
-          <span class="rpt-gauge-count">${cs.issueCount} issues</span>
-        </button>`;
-  }).join("\n")}
-      </div>
-    </section>
+    <!-- Category Groups (#215) -->
+    <div class="rpt-groups">
+${CATEGORY_GROUPS.map(group => renderCategoryGroup(group, scores)).join("\n")}
+    </div>
 
     <!-- Issue Summary -->
     <section class="card rpt-summary">
@@ -139,6 +134,37 @@ export function renderSummaryDot(sevClass: string, count: number, label: string)
           <span class="rpt-summary-count">${count}</span>
           <span class="rpt-summary-label">${label}</span>
         </div>`;
+}
+
+export function renderCategoryGroup(
+  group: CategoryGroup,
+  scores: ScoreReport,
+): string {
+  const catScores = group.categories.map(cat => scores.byCategory[cat]);
+  const avgPct = Math.round(
+    catScores.reduce((sum, cs) => sum + cs.percentage, 0) / catScores.length,
+  );
+  const colorClass = scoreClass(avgPct);
+
+  return `      <section class="card rpt-group" data-group="${group.id}">
+        <div class="rpt-group-header">
+          <div class="rpt-group-title-row">
+            <span class="rpt-group-pct score-${colorClass}">${avgPct}%</span>
+            <h2 class="rpt-group-title">${esc(group.label)}</h2>
+          </div>
+          <p class="rpt-group-desc">${esc(group.description)}</p>
+        </div>
+        <div class="rpt-group-bars">
+${catScores.map(cs => `          <button type="button" class="rpt-group-bar-item" data-tab="${cs.category}">
+            <span class="rpt-group-bar-label">${CATEGORY_LABELS[cs.category]}</span>
+            <div class="rpt-group-bar-track">
+              <div class="rpt-group-bar-fill" style="width:${cs.percentage}%;background:${gaugeColor(cs.percentage)}"></div>
+            </div>
+            <span class="rpt-group-bar-pct">${cs.percentage}%</span>
+            <span class="rpt-group-bar-count">${cs.issueCount}</span>
+          </button>`).join("\n")}
+        </div>
+      </section>`;
 }
 
 export function renderOpportunities(ruleGroups: RuleGroup[]): string {
