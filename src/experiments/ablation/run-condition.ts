@@ -9,28 +9,30 @@
  *   ANTHROPIC_API_KEY=sk-... npx tsx src/experiments/ablation/run-condition.ts --type hover-interaction
  */
 
+import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync } from "node:fs";
 import { resolve, join } from "node:path";
 import Anthropic from "@anthropic-ai/sdk";
 
-import { generateDesignTree } from "../../core/design-tree/design-tree.js";
-import { stripDesignTree } from "../../core/design-tree/strip.js";
-import { loadFigmaFileFromJson } from "../../core/adapters/figma-file-loader.js";
-import { renderAndCompare } from "../../core/comparison/visual-compare.js";
-import { expandRootWidth } from "../../core/comparison/visual-compare-helpers.js";
+import { extractHtml } from "../../core/comparison/html-utils.js";
 
 import {
-  PROMPT_PATH, callApi, processHtml, getResponseText,
-  getDesignTreeOptions, getFixtureScreenshotPath, copyFixtureImages,
+  PROMPT_PATH, callApi, getResponseText,
+  getFixtureScreenshotPath, copyFixtureImages,
   parseFixtures, requireApiKey,
 } from "./helpers.js";
 
 const OUTPUT_DIR = resolve("data/ablation/conditions");
+const CLI_PATH = resolve("dist/cli/index.js");
 
 type ConditionType = "size-constraints" | "hover-interaction";
 
-/** @deprecated Use expandRootWidth from visual-compare-helpers.ts instead. */
-const removeRootFixedWidth = expandRootWidth;
+function execCli(command: string, args: string[]): string {
+  return execFileSync(process.execPath, [CLI_PATH, command, ...args], {
+    encoding: "utf-8",
+    stdio: ["pipe", "pipe", "inherit"],
+  });
+}
 
 // --- Size-constraints ---
 
@@ -48,10 +50,16 @@ async function runSizeConstraints(fixture: string, client: Anthropic, prompt: st
     return;
   }
 
-  const file = await loadFigmaFileFromJson(resolve(`fixtures/${fixture}/data.json`));
-  const options = getDesignTreeOptions(fixture);
-  const baselineTree = generateDesignTree(file, options);
-  const strippedTree = stripDesignTree(baselineTree, "size-constraints");
+  // Step 1: Generate design tree (shared CLI)
+  const fixturePath = resolve(`fixtures/${fixture}`);
+  const baselineTreePath = join(runDir, "design-tree.txt");
+  execCli("design-tree", [fixturePath, "--output", baselineTreePath]);
+  const baselineTree = readFileSync(baselineTreePath, "utf-8");
+
+  // Step 2: Strip design tree (shared CLI)
+  const strippedDir = join(runDir, "stripped");
+  execCli("design-tree-strip", [baselineTreePath, "--output-dir", strippedDir, "--types", "size-constraints"]);
+  const strippedTree = readFileSync(join(strippedDir, "size-constraints.txt"), "utf-8");
 
   copyFixtureImages(fixture, runDir);
 
@@ -71,25 +79,43 @@ async function runSizeConstraints(fixture: string, client: Anthropic, prompt: st
   if (!baseHtml) {
     console.log(`  [baseline] No cache — calling API...`);
     const baseResponse = await callApi(client, prompt, baselineTree);
-    baseHtml = processHtml(getResponseText(baseResponse)).html;
+    baseHtml = extractHtml(getResponseText(baseResponse)).html;
+    writeFileSync(join(runDir, "output-baseline.html"), baseHtml);
+    execCli("html-postprocess", [join(runDir, "output-baseline.html")]);
+    baseHtml = readFileSync(join(runDir, "output-baseline.html"), "utf-8");
+  } else {
+    writeFileSync(join(runDir, "output-baseline.html"), baseHtml);
   }
-  const baseExpanded = removeRootFixedWidth(baseHtml);
-  writeFileSync(join(runDir, "output-baseline.html"), baseHtml);
-  writeFileSync(join(runDir, "output-baseline-expanded.html"), baseExpanded);
 
+  // Render baseline at expanded viewport
+  const baseExpandedDir = join(runDir, "baseline-expanded");
+  mkdirSync(baseExpandedDir, { recursive: true });
+  writeFileSync(join(baseExpandedDir, "output.html"), baseHtml);
+  copyFixtureImages(fixture, baseExpandedDir);
   console.log(`  [baseline] Rendering at ${expandedWidth}px...`);
-  const baseResult = await renderAndCompare(join(runDir, "output-baseline-expanded.html"), expandedScreenshot, runDir, { suffix: `baseline-${expandedWidth}`, sizeMismatch: "crop" });
+  const baseResultJson = execCli("visual-compare", [
+    join(baseExpandedDir, "output.html"), "--figma-screenshot", expandedScreenshot,
+    "--width", String(expandedWidth), "--expand-root", "--output", baseExpandedDir,
+  ]);
+  const baseResult = JSON.parse(baseResultJson) as { similarity: number };
 
-  // Stripped: no size info → implement → remove root width → render at expanded
+  // Stripped: no size info → implement → render at expanded
   console.log(`  [stripped] API call...`);
   const stripResponse = await callApi(client, prompt, strippedTree);
-  const stripHtml = processHtml(getResponseText(stripResponse)).html;
-  const stripExpanded = removeRootFixedWidth(stripHtml);
-  writeFileSync(join(runDir, "output-stripped.html"), stripHtml);
-  writeFileSync(join(runDir, "output-stripped-expanded.html"), stripExpanded);
+  const stripHtml = extractHtml(getResponseText(stripResponse)).html;
+  const stripExpandedDir = join(runDir, "stripped-expanded");
+  mkdirSync(stripExpandedDir, { recursive: true });
+  writeFileSync(join(stripExpandedDir, "output.html"), stripHtml);
+  execCli("html-postprocess", [join(stripExpandedDir, "output.html")]);
+  copyFixtureImages(fixture, stripExpandedDir);
+  writeFileSync(join(runDir, "output-stripped.html"), readFileSync(join(stripExpandedDir, "output.html")));
 
   console.log(`  [stripped] Rendering at ${expandedWidth}px...`);
-  const stripResult = await renderAndCompare(join(runDir, "output-stripped-expanded.html"), expandedScreenshot, runDir, { suffix: `stripped-${expandedWidth}`, sizeMismatch: "crop" });
+  const stripResultJson = execCli("visual-compare", [
+    join(stripExpandedDir, "output.html"), "--figma-screenshot", expandedScreenshot,
+    "--width", String(expandedWidth), "--expand-root", "--output", stripExpandedDir,
+  ]);
+  const stripResult = JSON.parse(stripResultJson) as { similarity: number };
 
   const deltaV = baseResult.similarity - stripResult.similarity;
   const result = {
@@ -111,10 +137,16 @@ async function runHoverInteraction(fixture: string, client: Anthropic, prompt: s
   const runDir = resolve(OUTPUT_DIR, "hover-interaction", fixture);
   mkdirSync(runDir, { recursive: true });
 
-  const file = await loadFigmaFileFromJson(resolve(`fixtures/${fixture}/data.json`));
-  const options = getDesignTreeOptions(fixture);
-  const fullTree = generateDesignTree(file, options);
-  const strippedTree = stripDesignTree(fullTree, "hover-interaction-states");
+  // Step 1: Generate design tree (shared CLI)
+  const fixturePath = resolve(`fixtures/${fixture}`);
+  const fullTreePath = join(runDir, "design-tree.txt");
+  execCli("design-tree", [fixturePath, "--output", fullTreePath]);
+  const fullTree = readFileSync(fullTreePath, "utf-8");
+
+  // Step 2: Strip hover data (shared CLI)
+  const strippedDir = join(runDir, "stripped");
+  execCli("design-tree-strip", [fullTreePath, "--output-dir", strippedDir, "--types", "hover-interaction-states"]);
+  const strippedTree = readFileSync(join(strippedDir, "hover-interaction-states.txt"), "utf-8");
 
   const hoverCount = (fullTree.match(/\[hover\]:/g) ?? []).length;
   if (hoverCount === 0) { console.log(`  No [hover]: data — skipping`); return; }
@@ -125,14 +157,18 @@ async function runHoverInteraction(fixture: string, client: Anthropic, prompt: s
   // With hover data
   console.log(`  [with hover] API call...`);
   const baseResponse = await callApi(client, prompt, fullTree);
-  const baseHtml = processHtml(getResponseText(baseResponse)).html;
-  writeFileSync(join(runDir, "output-with-hover.html"), baseHtml);
+  const baseRawHtml = extractHtml(getResponseText(baseResponse)).html;
+  writeFileSync(join(runDir, "output-with-hover.html"), baseRawHtml);
+  execCli("html-postprocess", [join(runDir, "output-with-hover.html")]);
+  const baseHtml = readFileSync(join(runDir, "output-with-hover.html"), "utf-8");
 
   // Without hover data
   console.log(`  [without hover] API call...`);
   const stripResponse = await callApi(client, prompt, strippedTree);
-  const stripHtml = processHtml(getResponseText(stripResponse)).html;
-  writeFileSync(join(runDir, "output-without-hover.html"), stripHtml);
+  const stripRawHtml = extractHtml(getResponseText(stripResponse)).html;
+  writeFileSync(join(runDir, "output-without-hover.html"), stripRawHtml);
+  execCli("html-postprocess", [join(runDir, "output-without-hover.html")]);
+  const stripHtml = readFileSync(join(runDir, "output-without-hover.html"), "utf-8");
 
   // Extract :hover rules
   const baseHoverRules = baseHtml.match(/[^}]*:hover\s*\{[^}]*\}/g) ?? [];

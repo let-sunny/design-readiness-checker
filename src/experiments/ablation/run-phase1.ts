@@ -14,22 +14,31 @@
  */
 
 import { createHash } from "node:crypto";
+import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve, join } from "node:path";
 import Anthropic from "@anthropic-ai/sdk";
 
-import { generateDesignTree } from "../../core/design-tree/design-tree.js";
-import { stripDesignTree, DESIGN_TREE_INFO_TYPES } from "../../core/design-tree/strip.js";
+import { DESIGN_TREE_INFO_TYPES } from "../../core/design-tree/strip.js";
 import type { DesignTreeInfoType } from "../../core/design-tree/strip.js";
-import { loadFigmaFileFromJson } from "../../core/adapters/figma-file-loader.js";
-import { renderAndCompare } from "../../core/comparison/visual-compare.js";
-import { countCssClasses, countCssVariables } from "../../core/comparison/visual-compare-helpers.js";
+import { extractHtml } from "../../core/comparison/html-utils.js";
 
 import {
-  PROMPT_PATH, callApi, processHtml, getResponseText,
-  getDesignTreeOptions, getFixtureScreenshotPath, copyFixtureImages,
+  PROMPT_PATH, callApi, getResponseText,
+  getFixtureScreenshotPath, copyFixtureImages,
   parseFixtures, requireApiKey,
 } from "./helpers.js";
+
+// --- CLI helper ---
+
+const CLI_PATH = resolve("dist/cli/index.js");
+
+function execCli(command: string, args: string[]): string {
+  return execFileSync(process.execPath, [CLI_PATH, command, ...args], {
+    encoding: "utf-8",
+    stdio: ["pipe", "pipe", "inherit"],
+  });
+}
 
 // --- Config version ---
 
@@ -39,6 +48,9 @@ function computeConfigVersion(): string {
     resolve("src/core/design-tree/design-tree.ts"),
     resolve("src/core/comparison/visual-compare.ts"),
     resolve("src/core/comparison/visual-compare-helpers.ts"),
+    resolve("src/core/comparison/html-utils.ts"),
+    resolve("src/cli/commands/internal/html-postprocess.ts"),
+    resolve("src/cli/commands/internal/code-metrics.ts"),
     resolve("src/core/adapters/figma-file-loader.ts"),
     resolve("src/experiments/ablation/helpers.ts"),
     PROMPT_PATH,
@@ -91,7 +103,7 @@ function getRunDir(fixture: string, type: string, runIndex: number): string {
   return join(BASE_OUTPUT_DIR, CONFIG_VERSION, fixture, type, `run-${runIndex}`);
 }
 
-const REQUIRED_ARTIFACTS = ["result.json", "output.html", "code-base.png", "figma-base.png", "diff-base.png"];
+const REQUIRED_ARTIFACTS = ["result.json", "output.html", "code.png", "figma.png", "diff.png"];
 
 function isCacheValid(fixture: string, type: string, runIndex: number): boolean {
   const runDir = getRunDir(fixture, type, runIndex);
@@ -123,15 +135,25 @@ async function runSingle(
   const responseText = getResponseText(response);
   writeFileSync(join(runDir, "response.txt"), responseText);
 
-  const { html } = processHtml(responseText);
-  if (!html) console.warn("    WARNING: No HTML found in response");
-
-  writeFileSync(join(runDir, "output.html"), html);
+  // Step 3: Extract HTML from API response (Ablation-specific)
+  const { html: rawHtml } = extractHtml(responseText);
+  if (!rawHtml) console.warn("    WARNING: No HTML found in response");
+  const htmlPath = join(runDir, "output.html");
+  writeFileSync(htmlPath, rawHtml);
   copyFixtureImages(fixture, runDir);
 
+  // Step 4: HTML post-processing (shared CLI)
+  execCli("html-postprocess", [htmlPath]);
+
+  // Step 5: Render + compare (shared CLI)
   console.log(`    Rendering + comparing...`);
   const figmaPath = getFixtureScreenshotPath(fixture);
-  const comparison = await renderAndCompare(join(runDir, "output.html"), figmaPath, runDir, { suffix: "base", sizeMismatch: "crop" });
+  const compareJson = execCli("visual-compare", [htmlPath, "--figma-screenshot", figmaPath, "--output", runDir]);
+  const comparison = JSON.parse(compareJson) as { similarity: number };
+
+  // Step 6: Code metrics (shared CLI)
+  const metricsJson = execCli("code-metrics", [htmlPath]);
+  const metrics = JSON.parse(metricsJson) as { htmlBytes: number; htmlLines: number; cssClassCount: number; cssVariableCount: number };
 
   const result: RunResult = {
     fixture, type, runIndex,
@@ -139,10 +161,10 @@ async function runSingle(
     inputTokens: response.usage.input_tokens,
     outputTokens: response.usage.output_tokens,
     totalTokens: response.usage.input_tokens + response.usage.output_tokens,
-    htmlBytes: Buffer.byteLength(html, "utf-8"),
-    htmlLines: html.split("\n").length,
-    cssClassCount: countCssClasses(html),
-    cssVariableCount: countCssVariables(html),
+    htmlBytes: metrics.htmlBytes,
+    htmlLines: metrics.htmlLines,
+    cssClassCount: metrics.cssClassCount,
+    cssVariableCount: metrics.cssVariableCount,
     timestamp: new Date().toISOString(),
     configVersion: CONFIG_VERSION,
   };
@@ -261,15 +283,34 @@ async function main(): Promise<void> {
 
   for (const fixture of fixtures) {
     console.log(`\n=== ${fixture} ===\n`);
-    const fixturePath = resolve(`fixtures/${fixture}/data.json`);
-    if (!existsSync(fixturePath)) { console.error(`  SKIP: ${fixturePath} not found`); continue; }
+    const fixturePath = resolve(`fixtures/${fixture}`);
+    if (!existsSync(join(fixturePath, "data.json"))) { console.error(`  SKIP: ${fixturePath}/data.json not found`); continue; }
     if (!existsSync(getFixtureScreenshotPath(fixture))) { console.error(`  SKIP: screenshot not found`); continue; }
 
-    const file = await loadFigmaFileFromJson(fixturePath);
-    const baselineTree = generateDesignTree(file, getDesignTreeOptions(fixture));
-
     const typesToRun = requestedTypes ?? [...DESIGN_TREE_INFO_TYPES];
-    const skipTypes = new Set(typesToRun.filter((t) => stripDesignTree(baselineTree, t) === baselineTree));
+    let baselineTree = "";
+    let strippedDir = "";
+    try {
+      // Step 1: Generate design tree (shared CLI)
+      const fixtureOutputDir = join(BASE_OUTPUT_DIR, CONFIG_VERSION, fixture);
+      mkdirSync(fixtureOutputDir, { recursive: true });
+      const baselineTreePath = join(fixtureOutputDir, "design-tree.txt");
+      execCli("design-tree", [fixturePath, "--output", baselineTreePath]);
+      baselineTree = readFileSync(baselineTreePath, "utf-8");
+
+      // Step 2: Strip design tree (shared CLI)
+      strippedDir = join(fixtureOutputDir, "stripped");
+      execCli("design-tree-strip", [baselineTreePath, "--output-dir", strippedDir, "--types", typesToRun.join(",")]);
+    } catch (err) {
+      console.error(`  SKIP [${fixture}]: ${err instanceof Error ? err.message : String(err)}`);
+      continue;
+    }
+
+    // Detect no-op strips by comparing file content
+    const skipTypes = new Set(typesToRun.filter((t) => {
+      const strippedPath = join(strippedDir, `${t}.txt`);
+      return existsSync(strippedPath) && readFileSync(strippedPath, "utf-8") === baselineTree;
+    }));
     if (skipTypes.size > 0) console.log(`  Skipping no-op: ${[...skipTypes].join(", ")}`);
 
     const conditions: Array<"baseline" | DesignTreeInfoType> = baselineOnly
@@ -287,7 +328,7 @@ async function main(): Promise<void> {
             continue;
           }
           console.log(`  [${type}] run ${run + 1}/${runsPerCondition}`);
-          const tree = type === "baseline" ? baselineTree : stripDesignTree(baselineTree, type);
+          const tree = type === "baseline" ? baselineTree : readFileSync(join(strippedDir, `${type}.txt`), "utf-8");
           const result = await runSingle(client, prompt, fixture, type, tree, run);
           allResults.push(result);
           newResults.push(result);

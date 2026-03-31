@@ -35,6 +35,8 @@ import { registerCalibrateRun } from "./commands/internal/calibrate-run.js";
 import { registerGatherEvidence, registerFinalizeDebate } from "./commands/internal/calibrate-debate.js";
 import { registerFixtureManagement, registerEvidenceEnrich, registerEvidencePrune } from "./commands/internal/fixture-management.js";
 import { registerDesignTreeStrip } from "./commands/internal/design-tree-strip.js";
+import { registerHtmlPostprocess } from "./commands/internal/html-postprocess.js";
+import { registerCodeMetrics } from "./commands/internal/code-metrics.js";
 
 const require = createRequire(import.meta.url);
 const pkg = require("../../package.json") as { version: string };
@@ -86,6 +88,8 @@ registerFixtureManagement(cli);
 registerEvidenceEnrich(cli);
 registerEvidencePrune(cli);
 registerDesignTreeStrip(cli);
+registerHtmlPostprocess(cli);
+registerCodeMetrics(cli);
 
 // ============================================
 // Documentation command

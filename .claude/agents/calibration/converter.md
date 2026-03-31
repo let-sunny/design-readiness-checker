@@ -54,7 +54,13 @@ Read and follow `.claude/skills/design-to-code/PROMPT.md` for all code generatio
    - Copy style values directly — they are already CSS-ready
    - Follow all rules from DESIGN-TO-CODE-PROMPT.md
 4. Save to `$RUN_DIR/output.html`
-5. Run visual comparison:
+5. Post-process HTML (sanitize + inject local fonts):
+
+   ```bash
+   npx canicode html-postprocess $RUN_DIR/output.html
+   ```
+
+6. Run visual comparison:
 
    ```bash
    npx canicode visual-compare $RUN_DIR/output.html \
@@ -64,7 +70,7 @@ Read and follow `.claude/skills/design-to-code/PROMPT.md` for all code generatio
 
    This saves `figma.png`, `code.png`, and `diff.png` into the run directory.
    Replace `:` with `-` in the nodeId for the URL.
-6. **Responsive comparison** (if expanded screenshot exists):
+7. **Responsive comparison** (if expanded screenshot exists):
 
    List `screenshot-*.png` in the fixture directory. Extract the width number from each filename, sort numerically. If 2+ screenshots exist, the smallest width is the original and the largest is the expanded viewport.
 
@@ -84,7 +90,7 @@ Read and follow `.claude/skills/design-to-code/PROMPT.md` for all code generatio
 
    The command outputs JSON to stdout with a `similarity` field. Record it as `responsiveSimilarity` and calculate `responsiveDelta = similarity - responsiveSimilarity`.
    If only 1 screenshot exists, skip responsive comparison and set `responsiveSimilarity`, `responsiveDelta`, and `responsiveViewport` to `null`.
-7. Use similarity to determine overall difficulty (thresholds defined in `src/agents/orchestrator.ts` → `SIMILARITY_DIFFICULTY_THRESHOLDS`):
+8. Use similarity to determine overall difficulty (thresholds defined in `src/agents/orchestrator.ts` → `SIMILARITY_DIFFICULTY_THRESHOLDS`):
 
    | Similarity | Difficulty |
    |-----------|-----------|
@@ -93,26 +99,31 @@ Read and follow `.claude/skills/design-to-code/PROMPT.md` for all code generatio
    | 50-69% | hard |
    | <50% | failed |
 
-8. **MANDATORY — Rule Impact Assessment**: For EVERY rule ID in `nodeIssueSummaries[].flaggedRuleIds`, assess its actual impact on conversion. Read the analysis JSON, collect all unique `flaggedRuleIds`, and for each one write an entry in `ruleImpactAssessment`. This array MUST NOT be empty if there are flagged rules.
+9. **MANDATORY — Rule Impact Assessment**: For EVERY rule ID in `nodeIssueSummaries[].flaggedRuleIds`, assess its actual impact on conversion. Read the analysis JSON, collect all unique `flaggedRuleIds`, and for each one write an entry in `ruleImpactAssessment`. This array MUST NOT be empty if there are flagged rules.
    - Did this rule's issue actually make the conversion harder?
    - What was its real impact on the final similarity score?
    - Rate as: `easy` (no real difficulty), `moderate` (some guessing needed), `hard` (significant pixel loss), `failed` (could not reproduce)
-9. **Code metrics** (recorded for analysis/reporting — not consumed by evaluation):
-   - `htmlBytes`: file size in bytes
-   - `htmlLines`: line count
-   - `cssClassCount`: unique CSS class selectors in `<style>` block
-   - `cssVariableCount`: unique CSS custom properties (e.g., `--primary-color:`, `--spacing-md:`) in `<style>` block
-10. Note any difficulties NOT covered by existing rules as `uncoveredStruggles`
+10. **Code metrics** (shared CLI — recorded for analysis/reporting):
+
+   ```bash
+   npx canicode code-metrics $RUN_DIR/output.html
+   ```
+
+   Returns JSON with `htmlBytes`, `htmlLines`, `cssClassCount`, `cssVariableCount`.
+11. Note any difficulties NOT covered by existing rules as `uncoveredStruggles`
     - **Only include design-related issues** — problems in the Figma file structure, missing tokens, ambiguous layout, etc.
     - **Exclude environment/tooling issues** — font CDN availability, screenshot DPI/retina scaling, browser rendering quirks, network issues, CI limitations. These are not design problems.
-11. **Strip Ablation** (objective difficulty measurement): For each of the **6** strip types, the orchestrator places stripped design-trees in `$RUN_DIR/stripped/`. Convert each to HTML, then collect the **same categories of metrics as the baseline** (pixel similarity, optional responsive similarity, design-tree token estimate, HTML size, CSS counts). Strip rows in `conversion.json` must populate `StripDeltaResultSchema` (`src/agents/contracts/conversion-agent.ts`).
+12. **Strip Ablation** (objective difficulty measurement): For each of the **6** strip types, the orchestrator places stripped design-trees in `$RUN_DIR/stripped/`. Convert each to HTML, then collect the **same categories of metrics as the baseline** (pixel similarity, optional responsive similarity, design-tree token estimate, HTML size, CSS counts). Strip rows in `conversion.json` must populate `StripDeltaResultSchema` (`src/agents/contracts/conversion-agent.ts`).
 
     **Strip types** (process every one): `layout-direction-spacing`, `size-constraints`, `component-references`, `node-names-hierarchy`, `variable-references`, `style-references`
 
     For each `<strip-type>`:
 
     a. Read `$RUN_DIR/stripped/<strip-type>.txt`
-    b. Convert to HTML with the same rules as baseline (PROMPT.md); save `$RUN_DIR/stripped/<strip-type>.html`
+    b. Convert to HTML with the same rules as baseline (PROMPT.md); save `$RUN_DIR/stripped/<strip-type>.html`, then post-process:
+       ```bash
+       npx canicode html-postprocess $RUN_DIR/stripped/<strip-type>.html
+       ```
     c. **Pixel similarity** (design viewport — same framing as baseline):
        ```bash
        npx canicode visual-compare $RUN_DIR/stripped/<strip-type>.html \
@@ -126,18 +137,17 @@ Read and follow `.claude/skills/design-to-code/PROMPT.md` for all code generatio
        - `strippedInputTokens` = from `$RUN_DIR/stripped/<strip-type>.txt`  
        - `tokenDelta` = `baselineInputTokens - strippedInputTokens`  
        Example (Node): `node -e "const fs=require('fs'); const n=Math.ceil(fs.readFileSync(process.argv[1],'utf8').length/4); console.log(n)" "$RUN_DIR/design-tree.txt"`
-    e. **HTML output size (strip HTML vs baseline HTML):**  
-       - `baselineHtmlBytes` = byte size of `$RUN_DIR/output.html`  
-       - `strippedHtmlBytes` = byte size of `$RUN_DIR/stripped/<strip-type>.html`  
-       - `htmlBytesDelta` = `baselineHtmlBytes - strippedHtmlBytes`
-    f. **CSS metrics** (same rules as step 9 — count only inside `<style>`):  
-       - `baselineCssClassCount` / `baselineCssVariableCount` from `$RUN_DIR/output.html`  
-       - `strippedCssClassCount` / `strippedCssVariableCount` from `$RUN_DIR/stripped/<strip-type>.html`
-    g. **Responsive similarity at the expanded viewport** (same screenshot + width as step 6):
+    e. **Code metrics** (shared CLI — covers HTML size + CSS metrics):
+       ```bash
+       npx canicode code-metrics $RUN_DIR/output.html           # baseline
+       npx canicode code-metrics $RUN_DIR/stripped/<strip-type>.html  # stripped
+       ```
+       From JSON output: `baselineHtmlBytes` / `strippedHtmlBytes`, `baselineCssClassCount` / `strippedCssClassCount`, `baselineCssVariableCount` / `strippedCssVariableCount`. Compute `htmlBytesDelta` = `baselineHtmlBytes - strippedHtmlBytes`.
+    f. **Responsive similarity at the expanded viewport** (same screenshot + width as step 7):
 
-       If step 6 **skipped** (only one fixture screenshot): set `baselineResponsiveSimilarity`, `strippedResponsiveSimilarity`, `responsiveDelta`, and `responsiveViewport` to `null` on **every** strip row.
+       If step 7 **skipped** (only one fixture screenshot): set `baselineResponsiveSimilarity`, `strippedResponsiveSimilarity`, `responsiveDelta`, and `responsiveViewport` to `null` on **every** strip row.
 
-       If step 6 **ran**: reuse the same `LARGEST` screenshot path and `LARGEST_WIDTH` variables from step 6.
+       If step 7 **ran**: reuse the same `LARGEST` screenshot path and `LARGEST_WIDTH` variables from step 7.
 
        - **`size-constraints` (required):** Run visual-compare on the stripped HTML at the expanded viewport so missing size info shows up where it actually breaks (not only at design width):
 
@@ -149,7 +159,7 @@ Read and follow `.claude/skills/design-to-code/PROMPT.md` for all code generatio
            --output $RUN_DIR/stripped/size-constraints-responsive
          ```
 
-         Record JSON stdout `similarity` as **`strippedResponsiveSimilarity`**. Set **`baselineResponsiveSimilarity`** to the root conversion field **`responsiveSimilarity`** from step 6 (baseline `output.html` at the same viewport — already measured). Set **`responsiveViewport`** to `LARGEST_WIDTH` (number). Set **`responsiveDelta`** = `baselineResponsiveSimilarity - strippedResponsiveSimilarity` (percentage points).
+         Record JSON stdout `similarity` as **`strippedResponsiveSimilarity`**. Set **`baselineResponsiveSimilarity`** to the root conversion field **`responsiveSimilarity`** from step 7 (baseline `output.html` at the same viewport — already measured). Set **`responsiveViewport`** to `LARGEST_WIDTH` (number). Set **`responsiveDelta`** = `baselineResponsiveSimilarity - strippedResponsiveSimilarity` (percentage points).
 
        - **Other strip types:** Optional — same command pattern with `$RUN_DIR/stripped/<strip-type>.html` and a distinct `--output` directory if you want responsive rows for reporting; otherwise set the four responsive fields to `null`.
 

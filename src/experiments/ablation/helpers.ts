@@ -13,9 +13,8 @@
 import { resolve } from "node:path";
 import Anthropic from "@anthropic-ai/sdk";
 
-// Re-export shared utilities so existing experiment scripts don't break
-export { extractHtml, sanitizeHtml, injectLocalFont, processHtml } from "../../core/comparison/html-utils.js";
-export { getDesignTreeOptions, getFixtureScreenshotPath, copyFixtureImages } from "../../core/utils/fixture-helpers.js";
+// Re-export shared utilities for experiment scripts
+export { getFixtureScreenshotPath, copyFixtureImages } from "../../core/utils/fixture-helpers.js";
 
 // --- Configuration ---
 

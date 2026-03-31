@@ -3,10 +3,10 @@ import { writeFile } from "node:fs/promises";
 import { resolve, join } from "node:path";
 import type { CAC } from "cac";
 
-import { stripDesignTree, DESIGN_TREE_INFO_TYPES } from "../../../core/design-tree/strip.js";
-import type { DesignTreeInfoType } from "../../../core/design-tree/strip.js";
+import { stripDesignTree, DESIGN_TREE_INFO_TYPES, ALL_STRIP_TYPES } from "../../../core/design-tree/strip.js";
+import type { DesignTreeStripType } from "../../../core/design-tree/strip.js";
 
-const VALID_TYPES = new Set<string>(DESIGN_TREE_INFO_TYPES);
+const VALID_TYPES = new Set<string>(ALL_STRIP_TYPES);
 
 export function registerDesignTreeStrip(cli: CAC): void {
   cli
@@ -33,17 +33,17 @@ export function registerDesignTreeStrip(cli: CAC): void {
 
         const designTree = readFileSync(inputPath, "utf-8");
 
-        let types: DesignTreeInfoType[];
+        let types: DesignTreeStripType[];
         if (options.types) {
           const tokens = options.types.split(",").map(t => t.trim());
           const invalid = tokens.filter(t => !VALID_TYPES.has(t));
           if (invalid.length > 0) {
             console.error(`Error: Unknown strip type(s): ${invalid.join(", ")}`);
-            console.error(`Valid types: ${DESIGN_TREE_INFO_TYPES.join(", ")}`);
+            console.error(`Valid types: ${ALL_STRIP_TYPES.join(", ")}`);
             process.exitCode = 1;
             return;
           }
-          types = tokens as DesignTreeInfoType[];
+          types = tokens as DesignTreeStripType[];
         } else {
           types = [...DESIGN_TREE_INFO_TYPES];
         }
