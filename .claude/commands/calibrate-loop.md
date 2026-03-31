@@ -143,14 +143,6 @@ Proceed to Step 4.
 
 After the Gap Analyzer returns, **you** write the JSON to `$RUN_DIR/gaps.json`.
 
-Then collect uncovered actionable gaps into discovery evidence (deterministic CLI — no LLM):
-
-```bash
-npx canicode calibrate-collect-gap-evidence $RUN_DIR
-```
-
-This reads `gaps.json`, extracts gaps where `actionable: true` and `coveredByRule: null`, and appends them to `data/discovery-evidence.json` as `source: "gap-analysis"` entries.
-
 Append to `$RUN_DIR/activity.jsonl`:
 ```json
 {"step":"Gap Analyzer","timestamp":"<ISO8601>","result":"gaps=<N> actionable=<N>","durationMs":<ms>}

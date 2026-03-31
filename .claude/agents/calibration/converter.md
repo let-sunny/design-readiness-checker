@@ -104,7 +104,7 @@ Read and follow `.claude/skills/design-to-code/PROMPT.md` for all code generatio
    - `cssVariableCount`: unique CSS custom properties (e.g., `--primary-color:`, `--spacing-md:`) in `<style>` block
 10. Note any difficulties NOT covered by existing rules as `uncoveredStruggles`
     - **Only include design-related issues** — problems in the Figma file structure, missing tokens, ambiguous layout, etc.
-    - **Exclude environment/tooling issues** — font CDN availability, screenshot DPI/retina scaling, browser rendering quirks, network issues, CI limitations. These are not design problems and create noise in rule discovery.
+    - **Exclude environment/tooling issues** — font CDN availability, screenshot DPI/retina scaling, browser rendering quirks, network issues, CI limitations. These are not design problems.
 11. **Strip Ablation** (objective difficulty measurement): For each of the **6** strip types, the orchestrator places stripped design-trees in `$RUN_DIR/stripped/`. Convert each to HTML, then collect the **same categories of metrics as the baseline** (pixel similarity, optional responsive similarity, design-tree token estimate, HTML size, CSS counts). Strip rows in `conversion.json` must populate `StripDeltaResultSchema` (`src/agents/contracts/conversion-agent.ts`).
 
     **Strip types** (process every one): `layout-direction-spacing`, `size-constraints`, `component-references`, `node-names-hierarchy`, `variable-references`, `style-references`

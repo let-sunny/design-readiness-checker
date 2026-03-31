@@ -81,7 +81,7 @@ Report:
 - Which fixtures were moved to `done/`
 - Which fixtures remain active
 - Where the aggregate report is: `logs/calibration/REPORT.md`
-- Remind: "Review the report, then run `/add-rule` when you want to implement a new rule."
+- Remind: "Review the report. To add a new rule, implement it manually and re-run calibration for verification."
 
 ## Rules
 

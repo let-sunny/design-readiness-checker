@@ -1,6 +1,6 @@
 ---
 name: calibration-gap-analyzer
-description: Analyzes visual diff between Figma screenshot and AI-generated code to identify specific causes of pixel differences. Accumulates gap data for rule discovery.
+description: Analyzes visual diff between Figma screenshot and AI-generated code to identify specific causes of pixel differences.
 tools: Bash, Read
 model: claude-sonnet-4-6
 ---
@@ -86,7 +86,5 @@ Return this JSON structure:
 ## Rules
 
 - **Do NOT write any files.** The orchestrator handles all file I/O.
-- The orchestrator auto-filters environment/tooling noise (font CDN, retina/DPI, network, CI issues) before appending to discovery evidence. You may still report them — they will be filtered downstream.
 - Be specific about pixel values — "4px off" not "slightly off".
 - Distinguish actionable gaps from rendering artifacts clearly.
-- This data accumulates over time — future rule discovery agents will read it.

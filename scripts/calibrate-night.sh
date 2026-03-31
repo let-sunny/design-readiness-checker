@@ -8,7 +8,7 @@ set -euo pipefail
 # Phase 1 — For each active fixture (fixtures/*/data.json): run calibration.
 #           If applied=0 (converged), move fixture to fixtures/done/.
 # Phase 2 — canicode calibrate-gap-report → logs/calibration/REPORT.md
-# Phase 3 — Manual: review the report, then run /add-rule in Claude Code.
+# Phase 3 — Manual: review the report, implement new rules manually, re-run calibration.
 #
 # Usage:
 #   ./scripts/calibrate-night.sh                        # scan fixtures/ dir
@@ -185,7 +185,7 @@ if [ -z "${CALIBRATE_SKIP_PHASE2:-}" ]; then
   echo "Phase 2 done."
   echo "  Report: ${GAP_REPORT_PATH}"
   echo ""
-  echo "Phase 3 (manual): read the report, then run /add-rule in Claude Code when you add a rule."
+  echo "Phase 3 (manual): read the report, implement new rules manually, re-run calibration for verification."
 else
   echo "Phase 2 skipped (CALIBRATE_SKIP_PHASE2=1)."
 fi

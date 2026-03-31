@@ -15,7 +15,6 @@ import {
 } from "../../../agents/run-directory.js";
 import {
   pruneCalibrationEvidence,
-  pruneDiscoveryEvidence,
   enrichCalibrationEvidence,
 } from "../../../agents/evidence-collector.js";
 
@@ -176,20 +175,4 @@ export function registerEvidencePrune(cli: CAC): void {
       console.log(`Pruned calibration evidence for ${appliedIds.length} rule(s): ${appliedIds.join(", ")}`);
     });
 
-  cli
-    .command(
-      "discovery-prune-evidence <category>",
-      "Prune discovery evidence for a category addressed by /add-rule"
-    )
-    .action((category: string | string[]) => {
-      const categories = Array.isArray(category) ? category : [category];
-      try {
-        pruneDiscoveryEvidence(categories);
-        console.log(`Pruned discovery evidence for categories: ${categories.join(", ")}`);
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        console.error(`[evidence] Failed to prune discovery evidence: ${msg}`);
-        process.exitCode = 1;
-      }
-    });
 }

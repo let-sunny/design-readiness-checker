@@ -2,21 +2,15 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import {
   CalibrationEvidenceEntrySchema,
-  DiscoveryEvidenceEntrySchema,
-  DiscoveryEvidenceFileSchema,
-  DISCOVERY_EVIDENCE_SCHEMA_VERSION,
 } from "./contracts/evidence.js";
-import { CategorySchema } from "../core/contracts/category.js";
 import type {
   CalibrationEvidenceEntry,
   CrossRunEvidence,
   CrossRunEvidenceGroup,
-  DiscoveryEvidenceEntry,
   EvidenceRatioSummary,
 } from "./contracts/evidence.js";
 
-export type { CalibrationEvidenceEntry, CrossRunEvidence, CrossRunEvidenceGroup, DiscoveryEvidenceEntry, EvidenceRatioSummary };
-export { DISCOVERY_EVIDENCE_SCHEMA_VERSION };
+export type { CalibrationEvidenceEntry, CrossRunEvidence, CrossRunEvidenceGroup, EvidenceRatioSummary };
 
 const DEFAULT_CALIBRATION_PATH = resolve("data/calibration-evidence.json");
 
@@ -304,153 +298,3 @@ export function enrichCalibrationEvidence(
   writeJsonArray(evidencePath, enriched);
 }
 
-// --- Discovery evidence ---
-
-const DEFAULT_DISCOVERY_PATH = resolve("data/discovery-evidence.json");
-
-/**
- * Build a dedupe key for a discovery evidence entry.
- * Key: category (lowered) + normalized description + fixture (trimmed, lowered).
- */
-function discoveryDedupeKey(e: DiscoveryEvidenceEntry): string {
-  const cat = e.category.toLowerCase().trim();
-  const desc = e.description.toLowerCase().trim().replace(/\s+/g, " ");
-  const fix = e.fixture.toLowerCase().trim();
-  return `${cat}\0${desc}\0${fix}`;
-}
-
-/**
- * Read discovery evidence from file, supporting both legacy (plain array)
- * and versioned ({ schemaVersion, entries }) formats.
- * Throws if the file contains a versioned object with an unsupported schemaVersion
- * to prevent silent data loss on subsequent writes.
- */
-function readDiscoveryEvidence(filePath: string): DiscoveryEvidenceEntry[] {
-  if (!existsSync(filePath)) return [];
-  try {
-    const raw = JSON.parse(readFileSync(filePath, "utf-8")) as unknown;
-
-    // Versioned format: { schemaVersion, entries }
-    const versionedParse = DiscoveryEvidenceFileSchema.safeParse(raw);
-    if (versionedParse.success) {
-      // Validate entries individually so one bad row doesn't discard all
-      const result: DiscoveryEvidenceEntry[] = [];
-      for (const item of versionedParse.data.entries) {
-        const parsed = DiscoveryEvidenceEntrySchema.safeParse(item);
-        if (parsed.success && parsed.data !== undefined) {
-          result.push(parsed.data);
-        }
-      }
-      return result;
-    }
-
-    // Detect unsupported versioned format — refuse to load to prevent silent overwrite
-    if (
-      typeof raw === "object" &&
-      raw !== null &&
-      !Array.isArray(raw) &&
-      "schemaVersion" in raw
-    ) {
-      const version = (raw as { schemaVersion: unknown }).schemaVersion;
-      throw new Error(
-        `Unsupported discovery-evidence schemaVersion: ${String(version)} (expected ${DISCOVERY_EVIDENCE_SCHEMA_VERSION}). ` +
-        `Upgrade canicode to read this file, or delete it to start fresh.`
-      );
-    }
-
-    // Legacy format: plain array (v0, before schemaVersion was introduced)
-    if (Array.isArray(raw)) {
-      const result: DiscoveryEvidenceEntry[] = [];
-      for (const item of raw) {
-        const parsed = DiscoveryEvidenceEntrySchema.safeParse(item);
-        if (parsed.success && parsed.data !== undefined) {
-          result.push(parsed.data);
-        }
-      }
-      return result;
-    }
-
-    return [];
-  } catch (err) {
-    // Re-throw unsupported version errors; swallow everything else (malformed JSON, etc.)
-    if (err instanceof Error && err.message.startsWith("Unsupported discovery-evidence")) {
-      throw err;
-    }
-    return [];
-  }
-}
-
-/**
- * Write discovery evidence in the versioned format.
- */
-function writeDiscoveryEvidence(filePath: string, entries: DiscoveryEvidenceEntry[]): void {
-  const dir = dirname(filePath);
-  if (!existsSync(dir)) {
-    mkdirSync(dir, { recursive: true });
-  }
-  const data = {
-    schemaVersion: DISCOVERY_EVIDENCE_SCHEMA_VERSION,
-    entries,
-  };
-  writeFileSync(filePath, JSON.stringify(data, null, 2) + "\n", "utf-8");
-}
-
-/**
- * Load all discovery evidence entries.
- */
-export function loadDiscoveryEvidence(
-  evidencePath: string = DEFAULT_DISCOVERY_PATH
-): DiscoveryEvidenceEntry[] {
-  return readDiscoveryEvidence(evidencePath);
-}
-
-/**
- * Append new discovery evidence entries with deduplication.
- * Dedupe key: (category + normalized description + fixture).
- * Last-write-wins for duplicate keys.
- */
-export function appendDiscoveryEvidence(
-  entries: DiscoveryEvidenceEntry[],
-  evidencePath: string = DEFAULT_DISCOVERY_PATH
-): void {
-  if (entries.length === 0) return;
-
-  // Warn on non-standard categories (safety net for converter typos/old labels)
-  for (const e of entries) {
-    const parsed = CategorySchema.safeParse(e.category);
-    if (!parsed.success) {
-      console.warn(`[evidence] Non-standard category "${e.category}" in discovery evidence (expected: ${CategorySchema.options.join(", ")})`);
-    }
-  }
-
-  const existing = readDiscoveryEvidence(evidencePath);
-
-  // Build map of existing entries keyed by dedupe key
-  const byKey = new Map<string, DiscoveryEvidenceEntry>();
-  for (const e of existing) {
-    byKey.set(discoveryDedupeKey(e), e);
-  }
-
-  // Incoming entries override existing duplicates (last-write-wins)
-  for (const e of entries) {
-    byKey.set(discoveryDedupeKey(e), e);
-  }
-
-  writeDiscoveryEvidence(evidencePath, [...byKey.values()]);
-}
-
-/**
- * Remove entries for categories that were addressed by rule discovery.
- */
-export function pruneDiscoveryEvidence(
-  categories: string[],
-  evidencePath: string = DEFAULT_DISCOVERY_PATH
-): void {
-  if (categories.length === 0) return;
-  const catSet = new Set(
-    categories.map((c) => c.toLowerCase().trim()).filter((c) => c.length > 0),
-  );
-  const existing = readDiscoveryEvidence(evidencePath);
-  const pruned = existing.filter((e) => !catSet.has(e.category.toLowerCase().trim()));
-  writeDiscoveryEvidence(evidencePath, pruned);
-}

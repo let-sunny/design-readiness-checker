@@ -6,7 +6,6 @@ import {
   extractFixtureName,
   parseRunDirName,
   createCalibrationRunDir,
-  createRuleDiscoveryRunDir,
   listCalibrationRuns,
   extractAppliedRuleIds,
   isConverged,
@@ -77,29 +76,6 @@ describe("createCalibrationRunDir", () => {
   it("creates directory under logs/calibration/", () => {
     const runDir = createCalibrationRunDir("test-fixture");
     expect(runDir).toContain("logs/calibration/");
-  });
-});
-
-describe("createRuleDiscoveryRunDir", () => {
-  const origCwd = process.cwd();
-  let tempDir: string;
-
-  beforeEach(() => {
-    tempDir = mkdtempSync(join(tmpdir(), "run-dir-test-"));
-    process.chdir(tempDir);
-  });
-
-  afterEach(async () => {
-    process.chdir(origCwd);
-    await rm(tempDir, { recursive: true, force: true });
-  });
-
-  it("creates directory with date-only timestamp", () => {
-    const runDir = createRuleDiscoveryRunDir("text-alignment");
-    expect(existsSync(runDir)).toBe(true);
-
-    const dirName = basename(runDir);
-    expect(dirName).toMatch(/^text-alignment--\d{4}-\d{2}-\d{2}$/);
   });
 });
 

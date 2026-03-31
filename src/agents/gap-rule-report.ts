@@ -4,8 +4,7 @@ import { RULE_CONFIGS } from "../core/rules/rule-config.js";
 import type { RuleId } from "../core/contracts/rule.js";
 import { runCalibrationEvaluate } from "./orchestrator.js";
 import { GapAnalyzerOutputSchema } from "./contracts/gap-analyzer.js";
-import { loadCalibrationEvidence, loadDiscoveryEvidence } from "./evidence-collector.js";
-import type { DiscoveryEvidenceEntry } from "./evidence-collector.js";
+import { loadCalibrationEvidence } from "./evidence-collector.js";
 
 type CalibrationAnalysisJson = Parameters<typeof runCalibrationEvaluate>[0] & {
   ruleScores: Record<string, { score: number; severity: string }>;
@@ -509,42 +508,10 @@ export function generateGapRuleReport(options: GapRuleReportOptions): GapRuleRep
   }
   lines.push("");
 
-  let discoveryEvidence: DiscoveryEvidenceEntry[] = [];
-  try {
-    discoveryEvidence = loadDiscoveryEvidence();
-  } catch (err) {
-    console.warn("[evidence] Failed to load discovery evidence (non-fatal):", err);
-  }
-  lines.push("## Cross-run discovery evidence (git-tracked)");
-  lines.push("");
-  if (discoveryEvidence.length === 0) {
-    lines.push("_No accumulated discovery evidence. Evidence is collected from missing-rule mismatches and gap analysis._");
-  } else {
-    const byCat = new Map<string, { count: number; fixtures: Set<string> }>();
-    for (const e of discoveryEvidence) {
-      const cur = byCat.get(e.category);
-      if (cur) {
-        cur.count++;
-        cur.fixtures.add(e.fixture);
-      } else {
-        byCat.set(e.category, { count: 1, fixtures: new Set([e.fixture]) });
-      }
-    }
-    lines.push("_Evidence persisted in `data/discovery-evidence.json` across sessions. Pruned when `/add-rule` implements a rule._");
-    lines.push("");
-    lines.push("| Category | Entries | Fixtures |");
-    lines.push("| --- | --- | --- |");
-    for (const [cat, info] of [...byCat.entries()].sort((a, b) => b[1].count - a[1].count)) {
-      const fx = [...info.fixtures].sort().join(", ");
-      lines.push(`| ${cat} | ${info.count} | ${fx} |`);
-    }
-  }
-  lines.push("");
-
   lines.push("## Next step (manual)");
   lines.push("");
   lines.push(
-    "Review this report, then run **`/add-rule`** in Claude Code with a concrete concept and fixture path when you want to implement a new rule."
+    "Review this report. To add a new rule, implement it manually and re-run calibration for verification."
   );
   lines.push("");
 

@@ -15,9 +15,8 @@ import { generateCalibrationReport } from "./report-generator.js";
 import {
   loadCalibrationEvidence,
   appendCalibrationEvidence,
-  appendDiscoveryEvidence,
 } from "./evidence-collector.js";
-import type { CalibrationEvidenceEntry, DiscoveryEvidenceEntry } from "./evidence-collector.js";
+import type { CalibrationEvidenceEntry } from "./evidence-collector.js";
 
 /**
  * Normalize Converter's actualImpact (none/low/medium/high) to Difficulty enum (easy/moderate/hard/failed).
@@ -75,22 +74,6 @@ export function similarityToDifficulty(similarity: number): ConversionDifficulty
   if (similarity >= SIMILARITY_DIFFICULTY_THRESHOLDS.hard) return "hard";
   return "failed";
 }
-
-/**
- * Patterns that indicate environment/tooling noise rather than design issues.
- * Used to filter out non-actionable entries from discovery evidence.
- */
-export const ENVIRONMENT_NOISE_PATTERNS = [
-  /\bfont\s*(cdn|availability|fallback|loading|download)\b/i,
-  /\bgoogle\s*fonts?\b/i,
-  /\bretina\b/i,
-  /\bdevicescalefactor\b/i,
-  /\bDPI\b/,
-  /\bscreenshot\s*(resolution|dimension|size|scale)\b/i,
-  /\bnetwork\b/i,
-  /\bCDN\s*(block|unavailabl\w*|fail)/i,
-  /\bCI\s*(environment|limitation|constraint)\b/i,
-];
 
 /**
  * Node types that are pure graphics — not useful for code conversion
@@ -378,26 +361,6 @@ export function runCalibrationEvaluate(
       }
       appendCalibrationEvidence(calibrationEntries);
 
-      // Append discovery evidence (missing-rule), filtering out environment/tooling noise
-      const discoveryEntries: DiscoveryEvidenceEntry[] = [];
-      for (const m of evaluationOutput.mismatches) {
-        if (m.type === "missing-rule") {
-          const isNoise = ENVIRONMENT_NOISE_PATTERNS.some(p => p.test(m.reasoning));
-          if (isNoise) continue;
-
-          const category = m.category ?? "unknown";
-          const description = m.description ?? m.reasoning;
-          discoveryEntries.push({
-            description,
-            category,
-            impact: m.actualDifficulty,
-            fixture,
-            timestamp,
-            source: "evaluation",
-          });
-        }
-      }
-      appendDiscoveryEvidence(discoveryEntries);
     } catch (err) {
       console.warn("[evidence] Failed to collect evidence (non-fatal):", err);
     }

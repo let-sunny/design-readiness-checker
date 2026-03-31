@@ -33,7 +33,6 @@ import { registerCalibrateEvaluate } from "./commands/internal/calibrate-evaluat
 import { registerCalibrateGapReport } from "./commands/internal/calibrate-gap-report.js";
 import { registerCalibrateRun } from "./commands/internal/calibrate-run.js";
 import { registerGatherEvidence, registerFinalizeDebate } from "./commands/internal/calibrate-debate.js";
-import { registerFilterDiscoveryEvidence, registerApplyDecision, registerCollectGapEvidence } from "./commands/internal/rule-discovery.js";
 import { registerFixtureManagement, registerEvidenceEnrich, registerEvidencePrune } from "./commands/internal/fixture-management.js";
 import { registerDesignTreeStrip } from "./commands/internal/design-tree-strip.js";
 
@@ -86,9 +85,6 @@ registerFinalizeDebate(cli);
 registerFixtureManagement(cli);
 registerEvidenceEnrich(cli);
 registerEvidencePrune(cli);
-registerFilterDiscoveryEvidence(cli);
-registerApplyDecision(cli);
-registerCollectGapEvidence(cli);
 registerDesignTreeStrip(cli);
 
 // ============================================

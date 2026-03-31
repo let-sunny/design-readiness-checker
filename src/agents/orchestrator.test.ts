@@ -1,5 +1,5 @@
 import type { AnalysisFile } from "../core/contracts/figma-node.js";
-import { runCalibrationEvaluate, ENVIRONMENT_NOISE_PATTERNS } from "./orchestrator.js";
+import { runCalibrationEvaluate } from "./orchestrator.js";
 
 // Register rules so RULE_CONFIGS is populated
 import "../core/rules/index.js";
@@ -236,38 +236,3 @@ describe("runCalibrationEvaluate", () => {
   });
 });
 
-describe("ENVIRONMENT_NOISE_PATTERNS", () => {
-  const isNoise = (text: string) =>
-    ENVIRONMENT_NOISE_PATTERNS.some(p => p.test(text));
-
-  it("filters font CDN / availability issues", () => {
-    expect(isNoise("Google Fonts CDN blocked, causing system font fallback")).toBe(true);
-    expect(isNoise("font availability issue in rendering environment")).toBe(true);
-    expect(isNoise("font fallback to system sans-serif")).toBe(true);
-    expect(isNoise("font loading failed in CI")).toBe(true);
-  });
-
-  it("filters retina / DPI / screenshot scaling issues", () => {
-    expect(isNoise("Figma screenshot is at 2x retina resolution")).toBe(true);
-    expect(isNoise("deviceScaleFactor mismatch between expected and actual")).toBe(true);
-    expect(isNoise("screenshot resolution does not match viewport")).toBe(true);
-    expect(isNoise("rendering at 72 DPI instead of 144")).toBe(true);
-  });
-
-  it("filters network and CI environment issues", () => {
-    expect(isNoise("network timeout when fetching external assets")).toBe(true);
-    expect(isNoise("CDN blocked in sandbox environment")).toBe(true);
-    expect(isNoise("CDN unavailable due to firewall")).toBe(true);
-    expect(isNoise("CDN failure during asset fetch")).toBe(true);
-    expect(isNoise("CI environment has no display server")).toBe(true);
-    expect(isNoise("CI limitation prevents GPU rendering")).toBe(true);
-  });
-
-  it("does NOT filter legitimate design issues", () => {
-    expect(isNoise("Complex gradient pattern not covered by rules")).toBe(false);
-    expect(isNoise("Shadow rendering differs from Figma")).toBe(false);
-    expect(isNoise("Border radius inconsistent across components")).toBe(false);
-    expect(isNoise("Missing spacing tokens for 12px gap")).toBe(false);
-    expect(isNoise("Auto-layout direction ambiguous")).toBe(false);
-  });
-});

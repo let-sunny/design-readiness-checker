@@ -3,7 +3,6 @@ import { resolve, join, basename } from "node:path";
 import { z } from "zod";
 
 const CALIBRATION_DIR = "logs/calibration";
-const RULE_DISCOVERY_DIR = "logs/rule-discovery";
 
 function getDateTimeString(): string {
   const now = new Date();
@@ -13,14 +12,6 @@ function getDateTimeString(): string {
   const hours = String(now.getHours()).padStart(2, "0");
   const minutes = String(now.getMinutes()).padStart(2, "0");
   return `${year}-${month}-${day}-${hours}${minutes}`;
-}
-
-function getDateString(): string {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
 }
 
 /**
@@ -76,34 +67,10 @@ export function createCalibrationRunDir(fixtureName: string): string {
 }
 
 /**
- * Create a rule discovery run directory and return its absolute path.
- * Format: `logs/rule-discovery/<concept-slug>--<YYYY-MM-DD>/`
- */
-export function createRuleDiscoveryRunDir(conceptSlug: string): string {
-  const timestamp = getDateString();
-  const dirName = buildRunDirName(conceptSlug, timestamp);
-  const dirPath = resolve(RULE_DISCOVERY_DIR, dirName);
-  mkdirSync(dirPath, { recursive: true });
-  return dirPath;
-}
-
-/**
  * List all calibration run directories, sorted by name (oldest first).
  */
 export function listCalibrationRuns(): string[] {
   const dir = resolve(CALIBRATION_DIR);
-  if (!existsSync(dir)) return [];
-  return readdirSync(dir, { withFileTypes: true })
-    .filter((e) => e.isDirectory() && e.name.includes("--"))
-    .map((e) => join(dir, e.name))
-    .sort();
-}
-
-/**
- * List all rule discovery run directories, sorted by name (oldest first).
- */
-export function listRuleDiscoveryRuns(): string[] {
-  const dir = resolve(RULE_DISCOVERY_DIR);
   if (!existsSync(dir)) return [];
   return readdirSync(dir, { withFileTypes: true })
     .filter((e) => e.isDirectory() && e.name.includes("--"))
