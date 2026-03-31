@@ -126,10 +126,10 @@ Calibration commands are NOT exposed as CLI commands. They run exclusively insid
 
 Two scripts, shared helpers:
 
-**`run-phase1.ts` — Strip experiments**
+**`run-strip.ts` — Strip experiments**
 
 ```bash
-ANTHROPIC_API_KEY=sk-... npx tsx src/experiments/ablation/run-phase1.ts
+ANTHROPIC_API_KEY=sk-... npx tsx src/experiments/ablation/run-strip.ts
 ABLATION_FIXTURES=desktop-product-detail ABLATION_TYPES=component-references npx tsx ...
 ```
 

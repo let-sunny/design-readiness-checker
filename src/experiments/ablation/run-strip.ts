@@ -1,11 +1,11 @@
 /**
- * Ablation Phase 1: Strip experiments.
+ * Ablation: Strip experiments.
  *
  * For each selected strip type × N fixtures × M runs:
  *   Strip info from design-tree → implement via API → render → compare → record metrics
  *
  * Usage:
- *   ANTHROPIC_API_KEY=sk-... npx tsx src/experiments/ablation/run-phase1.ts
+ *   ANTHROPIC_API_KEY=sk-... npx tsx src/experiments/ablation/run-strip.ts
  *
  * Environment variables:
  *   ANTHROPIC_API_KEY, ABLATION_FIXTURES, ABLATION_TYPES, ABLATION_RUNS, ABLATION_BASELINE_ONLY

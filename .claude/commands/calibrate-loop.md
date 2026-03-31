@@ -50,7 +50,7 @@ If tier is `"visual-only"`, append after Converter completes:
 {"step":"Gap Analyzer","timestamp":"<ISO8601>","result":"SKIPPED — tier=visual-only, gap analysis skipped","durationMs":0}
 ```
 
-### Step 2 — Converter (Baseline + Strip Ablation)
+### Step 2 — Converter (HTML Generation)
 
 Read the analysis JSON to extract `fileKey`. Also determine the root nodeId — if the input was a Figma URL, parse the node-id from it. If it was a fixture, use the document root id.
 
@@ -91,32 +91,153 @@ Fixture directory: <paste input path here>
 fileKey: <extracted fileKey>
 Root nodeId: <extracted nodeId>
 Run directory: <paste RUN_DIR here>
-figma.png is already in the run directory (copied from fixture screenshot). visual-compare will reuse it.
 
+design-tree.txt is already in the run directory.
 Stripped design-trees are pre-generated in $RUN_DIR/stripped/.
-After completing the baseline conversion (steps 1-10), proceed with step 11 (Strip Ablation)
-to convert each stripped design-tree and measure similarity deltas.
-```
 
-The Converter writes `output.html`, `conversion.json`, `design-tree.txt` to $RUN_DIR and runs `visual-compare --output $RUN_DIR` which creates `figma.png` (or reuses cached), `code.png`, `diff.png`. It also writes stripped HTML files and their comparison results.
+Your job: implement baseline HTML (output.html) + 6 strip HTMLs (stripped/<type>.html),
+then write converter-assessment.json with ruleImpactAssessment + uncoveredStruggles.
+Do NOT run visual-compare, html-postprocess, or code-metrics — the orchestrator handles measurements.
+```
 
 After the Converter returns, **verify** these files exist in $RUN_DIR:
 ```bash
-ls $RUN_DIR/conversion.json $RUN_DIR/output.html
+ls $RUN_DIR/output.html $RUN_DIR/converter-assessment.json
+ls $RUN_DIR/stripped/layout-direction-spacing.html \
+   $RUN_DIR/stripped/size-constraints.html \
+   $RUN_DIR/stripped/component-references.html \
+   $RUN_DIR/stripped/node-names-hierarchy.html \
+   $RUN_DIR/stripped/variable-references.html \
+   $RUN_DIR/stripped/style-references.html
 ```
 
-If `conversion.json` is missing, write it yourself from the Converter's returned summary.
+If any file is missing, log a warning naming the missing files but continue.
 
-**Verify strip deltas**: Read `conversion.json` and check that `stripDeltas` array is present and non-empty. If missing (Converter didn't complete strip ablation), log a warning but continue — the evaluation will fall back to Converter self-assessment.
-
-**Record token usage**: The subagent result includes `total_tokens`, `tool_uses`, `duration_ms` in usage metadata. Read `conversion.json`, add these fields, and write back:
-- `converterTokens`: total tokens consumed by the Converter subagent
-- `converterToolUses`: number of tool calls
-- `converterDurationMs`: execution time in milliseconds
+**Record token usage**: The subagent result includes `total_tokens`, `tool_uses`, `duration_ms` in usage metadata. Store these for later inclusion in conversion.json.
 
 Append to `$RUN_DIR/activity.jsonl`:
 ```json
-{"step":"Converter","timestamp":"<ISO8601>","result":"similarity=<N>% difficulty=<level> strips=<N>/5 tokens=<N>","durationMs":<ms>}
+{"step":"Converter","timestamp":"<ISO8601>","result":"baseline + 6 strips written, tokens=<N>","durationMs":<ms>}
+```
+
+### Step 2.5 — Measurements (CLI — no LLM)
+
+Run all measurements on the Converter's HTML outputs. This is deterministic — no subagent needed.
+
+**Baseline measurements:**
+
+```bash
+# Post-process HTML (sanitize + inject local fonts)
+npx canicode html-postprocess $RUN_DIR/output.html
+
+# Visual comparison (baseline)
+npx canicode visual-compare $RUN_DIR/output.html \
+  --figma-screenshot $RUN_DIR/figma.png \
+  --output $RUN_DIR
+```
+
+Record the `similarity` from visual-compare JSON stdout.
+
+**Responsive comparison** (if expanded screenshot exists):
+
+List `screenshot-*.png` in the fixture directory. Extract the width number from each filename, sort numerically. If 2+ screenshots exist, the smallest width is the original and the largest is the expanded viewport.
+
+```bash
+# Example: screenshot-1200.png (original), screenshot-1920.png (expanded)
+SCREENSHOTS=($(ls <fixture-path>/screenshot-*.png | sort -t- -k2 -n))
+LARGEST="${SCREENSHOTS[-1]}"
+LARGEST_WIDTH=$(echo "$LARGEST" | grep -oP 'screenshot-\K\d+')
+
+npx canicode visual-compare $RUN_DIR/output.html \
+  --figma-screenshot "$LARGEST" \
+  --width "$LARGEST_WIDTH" \
+  --expand-root \
+  --output $RUN_DIR/responsive
+```
+
+Record `responsiveSimilarity` from JSON stdout. If only 1 screenshot exists, set `responsiveSimilarity`, `responsiveDelta`, `responsiveViewport` to `null`.
+
+**Code metrics (baseline):**
+
+```bash
+npx canicode code-metrics $RUN_DIR/output.html
+```
+
+Record `htmlBytes`, `htmlLines`, `cssClassCount`, `cssVariableCount` from JSON stdout.
+
+**Strip measurements** — for each of the 6 strip types:
+
+```bash
+# Post-process
+npx canicode html-postprocess $RUN_DIR/stripped/<strip-type>.html
+
+# Visual comparison
+npx canicode visual-compare $RUN_DIR/stripped/<strip-type>.html \
+  --figma-screenshot $RUN_DIR/figma.png \
+  --output $RUN_DIR/stripped/<strip-type>
+
+# Code metrics
+npx canicode code-metrics $RUN_DIR/stripped/<strip-type>.html
+```
+
+For each strip, record `strippedSimilarity`, `strippedHtmlBytes`, `strippedCssClassCount`, `strippedCssVariableCount` from the CLI outputs.
+
+**Input tokens** (design-tree text): `inputTokens = ceil(utf8Text.length / 4)`
+- `baselineInputTokens` from `$RUN_DIR/design-tree.txt`
+- `strippedInputTokens` from `$RUN_DIR/stripped/<strip-type>.txt`
+- `tokenDelta` = `baselineInputTokens - strippedInputTokens`
+
+**Responsive for size-constraints strip** (if responsive comparison ran above):
+
+```bash
+npx canicode visual-compare $RUN_DIR/stripped/size-constraints.html \
+  --figma-screenshot "$LARGEST" \
+  --width "$LARGEST_WIDTH" \
+  --expand-root \
+  --output $RUN_DIR/stripped/size-constraints-responsive
+```
+
+Other strip types: set responsive fields to `null`.
+
+**Derived fields (every strip row):**
+
+- `delta` = `baselineSimilarity - strippedSimilarity` (percentage points)
+- `htmlBytesDelta` = `baselineHtmlBytes - strippedHtmlBytes`
+- `deltaDifficulty`: use the metric the evaluator uses for that strip family (`src/agents/evaluation-agent.ts` — `getStripDifficultyForRule`):
+  - `layout-direction-spacing` → map `delta` with `stripDeltaToDifficulty` (≤5 easy, 6–15 moderate, 16–30 hard, >30 failed)
+  - `size-constraints` → if `responsiveDelta` is finite, map `responsiveDelta` with `stripDeltaToDifficulty`; else map `delta`
+  - `component-references`, `node-names-hierarchy`, `variable-references`, `style-references` → if both token counts present, map with `tokenDeltaToDifficulty` (≤5% easy, 6–20% moderate, 21–40% hard, >40% failed); else map `delta` with `stripDeltaToDifficulty`
+
+**Difficulty from similarity:** Use `SIMILARITY_DIFFICULTY_THRESHOLDS` from `src/agents/orchestrator.ts`: 90%+ easy, 70-89% moderate, 50-69% hard, <50% failed.
+
+**Assemble `conversion.json`**: Merge Converter's `converter-assessment.json` (ruleImpactAssessment, uncoveredStruggles) with all measurement results:
+
+```json
+{
+  "rootNodeId": "<from converter-assessment.json>",
+  "similarity": <baseline similarity>,
+  "difficulty": "<from similarity thresholds>",
+  "responsiveSimilarity": <or null>,
+  "responsiveDelta": <or null>,
+  "responsiveViewport": <or null>,
+  "htmlBytes": <from code-metrics>,
+  "htmlLines": <from code-metrics>,
+  "cssClassCount": <from code-metrics>,
+  "cssVariableCount": <from code-metrics>,
+  "ruleImpactAssessment": <from converter-assessment.json>,
+  "uncoveredStruggles": <from converter-assessment.json>,
+  "stripDeltas": [<assembled from strip measurements>],
+  "converterTokens": <from subagent usage>,
+  "converterToolUses": <from subagent usage>,
+  "converterDurationMs": <from subagent usage>
+}
+```
+
+Write `$RUN_DIR/conversion.json`.
+
+Append to `$RUN_DIR/activity.jsonl`:
+```json
+{"step":"Measurements","timestamp":"<ISO8601>","result":"similarity=<N>% difficulty=<level> strips=<N>/6","durationMs":<ms>}
 ```
 
 ### Step 3 — Gap Analysis
@@ -135,7 +256,7 @@ Proceed to Step 4.
 
 **If EXISTS**: spawn the `calibration-gap-analyzer` subagent. In the prompt include:
 - Screenshot paths: `$RUN_DIR/figma.png`, `$RUN_DIR/code.png`, `$RUN_DIR/diff.png`
-- Similarity score from the Converter's output
+- Similarity score from `$RUN_DIR/conversion.json`
 - Generated HTML path: `$RUN_DIR/output.html`
 - Fixture path and analysis JSON path: `$RUN_DIR/analysis.json`
 - The Converter's interpretations list
