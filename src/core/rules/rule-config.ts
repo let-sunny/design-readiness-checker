@@ -42,7 +42,7 @@ export const RULE_ID_CATEGORY: Record<RuleId, Category> = {
  * - responsive-critical: -8 ~ -6 (size-constraints ΔV +15.9% at responsive viewports)
  * - code-quality: -7 ~ -3 (CSS classes -8~15, no pixel impact)
  * - token-management: -5 ~ -4 (wrong input = wrong output, irregular spacing actively causes errors)
- * - interaction: -5 (wrong guess > omission, interview confirmed)
+ * - interaction: -1 (uncalibrated — no metric to validate, kept minimal #210)
  * - semantic: -4 ~ -1 (non-semantic-name upgraded per interview — causes actual implementation errors)
  *
  * Category weights removed (#196) — overall score is simple average of categories.
@@ -127,8 +127,8 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
 
   // ── Interaction ──
   "missing-interaction-state": {
-    severity: "risk",
-    score: -5,
+    severity: "suggestion",
+    score: -1, // uncalibrated: no metric to validate score (#210), kept at -1 to preserve category visibility
     enabled: true,
   },
   "missing-prototype": {
