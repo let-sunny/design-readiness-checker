@@ -1089,4 +1089,168 @@ describe("generateDesignTree", () => {
       expect(output).not.toContain("url(images/");
     });
   });
+
+  describe("text auto-resize and truncation", () => {
+    it("emits text-resize: auto for WIDTH_AND_HEIGHT", () => {
+      const file = makeFile(
+        makeNode({
+          id: "1:1",
+          name: "Title",
+          type: "TEXT",
+          characters: "Hello",
+          style: { fontFamily: "Inter", textAutoResize: "WIDTH_AND_HEIGHT" },
+          absoluteBoundingBox: { x: 0, y: 0, width: 100, height: 20 },
+        })
+      );
+
+      const output = generateDesignTree(file);
+
+      expect(output).toContain("text-resize: auto");
+    });
+
+    it("emits text-resize: fixed-height for HEIGHT", () => {
+      const file = makeFile(
+        makeNode({
+          id: "1:1",
+          name: "Body",
+          type: "TEXT",
+          characters: "Wrapped text",
+          style: { fontFamily: "Inter", textAutoResize: "HEIGHT" },
+          absoluteBoundingBox: { x: 0, y: 0, width: 300, height: 48 },
+        })
+      );
+
+      const output = generateDesignTree(file);
+
+      expect(output).toContain("text-resize: fixed-height");
+    });
+
+    it("emits text-resize: truncate with max-lines for TRUNCATE", () => {
+      const file = makeFile(
+        makeNode({
+          id: "1:1",
+          name: "Truncated",
+          type: "TEXT",
+          characters: "Long text that gets cut off",
+          style: { fontFamily: "Inter", textAutoResize: "TRUNCATE" },
+          maxLines: 2,
+          absoluteBoundingBox: { x: 0, y: 0, width: 200, height: 40 },
+        })
+      );
+
+      const output = generateDesignTree(file);
+
+      expect(output).toContain("text-resize: truncate");
+      expect(output).toContain("text-overflow: ellipsis");
+      expect(output).toContain("max-lines: 2");
+    });
+
+    it("emits text-overflow: ellipsis when textTruncation is ENDING", () => {
+      const file = makeFile(
+        makeNode({
+          id: "1:1",
+          name: "Ellipsis",
+          type: "TEXT",
+          characters: "Truncated text",
+          style: { fontFamily: "Inter", textAutoResize: "HEIGHT" },
+          textTruncation: "ENDING",
+          maxLines: 3,
+          absoluteBoundingBox: { x: 0, y: 0, width: 200, height: 60 },
+        })
+      );
+
+      const output = generateDesignTree(file);
+
+      expect(output).toContain("text-overflow: ellipsis");
+      expect(output).toContain("max-lines: 3");
+    });
+
+    it("emits paragraph-spacing when set", () => {
+      const file = makeFile(
+        makeNode({
+          id: "1:1",
+          name: "Paragraphs",
+          type: "TEXT",
+          characters: "First paragraph\n\nSecond paragraph",
+          style: { fontFamily: "Inter", paragraphSpacing: 16 },
+          absoluteBoundingBox: { x: 0, y: 0, width: 300, height: 100 },
+        })
+      );
+
+      const output = generateDesignTree(file);
+
+      expect(output).toContain("paragraph-spacing: 16px");
+    });
+
+    it("emits text-resize: truncate without max-lines when maxLines is not set", () => {
+      const file = makeFile(
+        makeNode({
+          id: "1:1",
+          name: "TruncateNoMax",
+          type: "TEXT",
+          characters: "Truncated",
+          style: { fontFamily: "Inter", textAutoResize: "TRUNCATE" },
+          absoluteBoundingBox: { x: 0, y: 0, width: 200, height: 40 },
+        })
+      );
+
+      const output = generateDesignTree(file);
+
+      expect(output).toContain("text-resize: truncate");
+      expect(output).toContain("text-overflow: ellipsis");
+      expect(output).not.toContain("max-lines:");
+    });
+
+    it("does not emit text-overflow for textTruncation: DISABLED", () => {
+      const file = makeFile(
+        makeNode({
+          id: "1:1",
+          name: "NoTruncation",
+          type: "TEXT",
+          characters: "Normal text",
+          style: { fontFamily: "Inter", textAutoResize: "HEIGHT" },
+          textTruncation: "DISABLED",
+          absoluteBoundingBox: { x: 0, y: 0, width: 200, height: 40 },
+        })
+      );
+
+      const output = generateDesignTree(file);
+
+      expect(output).not.toContain("text-overflow:");
+    });
+
+    it("does not emit paragraph-spacing for 0", () => {
+      const file = makeFile(
+        makeNode({
+          id: "1:1",
+          name: "ZeroSpacing",
+          type: "TEXT",
+          characters: "Text",
+          style: { fontFamily: "Inter", paragraphSpacing: 0 },
+          absoluteBoundingBox: { x: 0, y: 0, width: 200, height: 40 },
+        })
+      );
+
+      const output = generateDesignTree(file);
+
+      expect(output).not.toContain("paragraph-spacing:");
+    });
+
+    it("does not emit text-resize for NONE or missing textAutoResize", () => {
+      const file = makeFile(
+        makeNode({
+          id: "1:1",
+          name: "Plain",
+          type: "TEXT",
+          characters: "No resize",
+          style: { fontFamily: "Inter" },
+          absoluteBoundingBox: { x: 0, y: 0, width: 100, height: 20 },
+        })
+      );
+
+      const output = generateDesignTree(file);
+
+      expect(output).not.toContain("text-resize:");
+    });
+  });
 });

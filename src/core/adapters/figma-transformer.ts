@@ -210,6 +210,12 @@ function transformNode(node: Node): AnalysisNode {
   if ("style" in node) {
     base.style = node.style as Record<string, unknown>;
   }
+  if ("textTruncation" in node && (node.textTruncation === "DISABLED" || node.textTruncation === "ENDING")) {
+    base.textTruncation = node.textTruncation;
+  }
+  if ("maxLines" in node && typeof node.maxLines === "number") {
+    base.maxLines = node.maxLines;
+  }
 
   // Handoff status
   if ("devStatus" in node && node.devStatus) {

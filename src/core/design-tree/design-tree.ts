@@ -490,6 +490,34 @@ function renderNode(
 
     const textColor = getFill(node);
     if (textColor) styles.push(`color: ${textColor}`);
+
+    // Text auto-resize behavior
+    const textAutoResize = s["textAutoResize"] as string | undefined;
+    if (textAutoResize === "WIDTH_AND_HEIGHT") {
+      styles.push("text-resize: auto");
+    } else if (textAutoResize === "HEIGHT") {
+      styles.push("text-resize: fixed-height");
+    } else if (textAutoResize === "TRUNCATE") {
+      styles.push("text-resize: truncate");
+      styles.push("text-overflow: ellipsis");
+      if (node.maxLines != null) {
+        styles.push(`max-lines: ${node.maxLines}`);
+      }
+    }
+
+    // Text truncation (when textAutoResize is not TRUNCATE but truncation is set)
+    if (textAutoResize !== "TRUNCATE" && node.textTruncation === "ENDING") {
+      styles.push("text-overflow: ellipsis");
+      if (node.maxLines != null) {
+        styles.push(`max-lines: ${node.maxLines}`);
+      }
+    }
+
+    // Paragraph spacing
+    const paragraphSpacing = s["paragraphSpacing"] as number | undefined;
+    if (paragraphSpacing) {
+      styles.push(`paragraph-spacing: ${paragraphSpacing}px`);
+    }
   }
 
   // Text content

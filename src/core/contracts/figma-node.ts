@@ -155,6 +155,8 @@ const BaseAnalysisNodeSchema = z.object({
   // Text analysis
   characters: z.string().optional(),
   style: z.record(z.string(), z.unknown()).optional(),
+  textTruncation: z.enum(["DISABLED", "ENDING"]).optional(),
+  maxLines: z.number().optional(),
 
   // Handoff analysis
   devStatus: z
