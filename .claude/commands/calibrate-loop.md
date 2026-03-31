@@ -256,7 +256,7 @@ Proceed to Step 4.
 
 **If EXISTS**: spawn the `calibration-gap-analyzer` subagent. In the prompt include:
 - Screenshot paths: `$RUN_DIR/figma.png`, `$RUN_DIR/code.png`, `$RUN_DIR/diff.png`
-- Similarity score from the Converter's output
+- Similarity score from `$RUN_DIR/conversion.json`
 - Generated HTML path: `$RUN_DIR/output.html`
 - Fixture path and analysis JSON path: `$RUN_DIR/analysis.json`
 - The Converter's interpretations list
