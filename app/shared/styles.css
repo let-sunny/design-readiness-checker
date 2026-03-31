@@ -189,6 +189,24 @@ body {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
+/* Compact inline view — hidden on desktop, shown on mobile */
+.rpt-group-compact {
+  display: none;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin-top: 8px;
+}
+.rpt-group-compact-item {
+  font-size: 12px;
+  cursor: pointer;
+}
+.rpt-group-compact-label {
+  color: var(--fg-muted);
+}
+.rpt-group-compact-pct {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
 
 
 /* ---- Issue Summary ---- */
@@ -602,6 +620,7 @@ body {
    ================================================================ */
 @media (max-width: 600px) {
   .rpt-group-bars { display: none; }
+  .rpt-group-compact { display: flex; }
   .rpt-group-header { border-bottom: none; }
   .rpt-overall { padding: 24px 0 16px; }
   .rpt-summary-inner { gap: 12px; }

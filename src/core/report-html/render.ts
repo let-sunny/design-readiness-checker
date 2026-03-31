@@ -153,6 +153,9 @@ export function renderCategoryGroup(
             <h2 class="rpt-group-title">${esc(group.label)}</h2>
           </div>
           <p class="rpt-group-desc">${esc(group.description)}</p>
+          <div class="rpt-group-compact">
+${catScores.map(cs => `            <span class="rpt-group-compact-item" data-tab="${cs.category}"><span class="rpt-group-compact-label">${CATEGORY_LABELS[cs.category]}</span> <span class="rpt-group-compact-pct" style="color:${gaugeColor(cs.percentage)}">${cs.percentage}%</span></span>`).join("\n")}
+          </div>
         </div>
         <div class="rpt-group-bars">
 ${catScores.map(cs => `          <button type="button" class="rpt-group-bar-item" data-tab="${cs.category}">
