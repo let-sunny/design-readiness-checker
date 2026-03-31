@@ -7,7 +7,7 @@ export type { AnalysisResult, AnalysisIssue, RuleFailure, RuleEngineOptions } fr
 export { calculateScores, formatScoreSummary, getCategoryLabel, getSeverityLabel, gradeToClassName } from "./core/engine/scoring.js";
 export type { ScoreReport, CategoryScoreResult, Grade } from "./core/engine/scoring.js";
 export { transformFigmaResponse, transformFileNodesResponse } from "./core/adapters/figma-transformer.js";
-export { parseFigmaUrl, buildFigmaDeepLink } from "./core/adapters/figma-url-parser.js";
+export { parseFigmaUrl, buildFigmaDeepLink, toCommentableNodeId } from "./core/adapters/figma-url-parser.js";
 export type { FigmaUrlInfo } from "./core/adapters/figma-url-parser.js";
 export { CATEGORIES, CATEGORY_LABELS } from "./core/contracts/category.js";
 export type { Category } from "./core/contracts/category.js";

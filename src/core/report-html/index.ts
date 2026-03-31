@@ -108,6 +108,7 @@ function renderFigmaCommentScript(figmaToken: string): string {
     async function postComment(btn) {
       const fileKey = btn.dataset.fileKey;
       const nodeId = btn.dataset.nodeId.replace(/-/g, ':');
+      const commentNodeId = nodeId.split(';')[0].replace(/^I/, '');
       const message = btn.dataset.message;
       const commentBody = '[CanICode] ' + message;
       btn.disabled = true;
@@ -117,7 +118,7 @@ function renderFigmaCommentScript(figmaToken: string): string {
         const res = await fetch('https://api.figma.com/v1/files/' + fileKey + '/comments', {
           method: 'POST',
           headers: { 'X-FIGMA-TOKEN': FIGMA_TOKEN, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: commentBody, client_meta: { node_id: nodeId, node_offset: { x: 0, y: 0 } } }),
+          body: JSON.stringify({ message: commentBody, client_meta: { node_id: commentNodeId, node_offset: { x: 0, y: 0 } } }),
         });
         if (!res.ok) {
           const errBody = await res.text().catch(() => '');

@@ -372,7 +372,7 @@
       var token = getToken();
       if (!token) return;
       var fileKey = btn.dataset.fileKey;
-      var nodeId = btn.dataset.nodeId.replace(/-/g, ':');
+      var nodeId = CanICode.toCommentableNodeId(btn.dataset.nodeId.replace(/-/g, ':'));
       var commentBody = '[CanICode] ' + btn.dataset.message;
       btn.disabled = true;
       btn.textContent = 'Sending...';
