@@ -108,7 +108,7 @@ body {
 }
 .rpt-gauges-grid {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
   gap: 16px;
 }
 .rpt-gauge-item {
@@ -548,7 +548,7 @@ body {
    ================================================================ */
 @media (max-width: 600px) {
   .rpt-gauges-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
   }
   .rpt-overall { padding: 24px 0 16px; }
   .rpt-gauges { padding: 16px; }
