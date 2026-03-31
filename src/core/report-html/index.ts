@@ -107,7 +107,7 @@ function renderFigmaCommentScript(figmaToken: string): string {
     const FIGMA_TOKEN = '${figmaToken}';
     async function postComment(btn) {
       const fileKey = btn.dataset.fileKey;
-      const nodeId = btn.dataset.nodeId.replace(/-/g, ':');
+      const nodeId = btn.dataset.nodeId.replace(/-/g, ':').split(';')[0].replace(/^I/, '');
       const message = btn.dataset.message;
       const commentBody = '[CanICode] ' + message;
       btn.disabled = true;
