@@ -251,6 +251,12 @@ npm publishing is handled by GitHub CI — **do not run `npm publish` manually**
 3. Tag the merged commit on main: `git tag v0.x.x && git push origin v0.x.x`
 4. GitHub Actions CI automatically publishes to npm on tag push
 
+## Immutable Data
+
+- Do not modify historical documents: decision logs, past experiment data (`data/ablation/`), archived session notes
+- `logs/calibration/` run directories are immutable after creation — never edit past run results
+- `data/calibration-evidence.json` may only be appended to or pruned by the calibration pipeline
+
 ## Conventions
 
 ### Language
