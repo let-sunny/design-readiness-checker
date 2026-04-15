@@ -33,25 +33,26 @@
 
 ## Internal (Claude Code Only)
 
-Calibration commands are NOT exposed as CLI commands. They run exclusively inside Claude Code via subagents.
+Calibration is orchestrated by `scripts/calibrate.ts` (ADR-008). CLI for deterministic steps, `claude -p` for judgment steps.
 
-**`/calibrate-loop` (Claude Code command)**
-- Role: Autonomous rule-config.ts improvement via fixture-based calibration
-- Input: fixture directory path (e.g. `fixtures/material3-kit`)
-- Flow: Analysis → Converter (HTML generation) → Measurements (html-postprocess + visual-compare + code-metrics) → Gap Analyzer → Evaluation → Critic → Arbitrator → Prune Evidence
-- Converter implements the full scoped design as one HTML page + 6 stripped variants; orchestrator runs all measurements (visual-compare, code-metrics, responsive comparison)
-- **Strip ablation**: Orchestrator measures 6 stripped design-trees (`DESIGN_TREE_INFO_TYPES` in `src/core/design-tree/strip.ts`: layout-direction-spacing, size-constraints, component-references, node-names-hierarchy, variable-references, style-references) → similarity delta vs baseline (plus tokens/HTML/CSS/responsive) → objective difficulty per rule category
-- Gap Analyzer examines the diff image, categorizes pixel differences, saves to run directory
+**`scripts/calibrate.ts` (orchestration script)**
+- Role: Explicit step-by-step calibration pipeline
+- Input: fixture directory path (e.g. `fixtures/material3-kit`), or `--resume <run-dir>`
+- Flow: Analyze → Design Tree → Strip → Convert (7 parallel `claude -p` sessions) → Measure → Gap Analyze → Evaluate → Critic → Arbitrator → Evidence
+- Each step tracked in `index.json` for resume-from-failure
+- Converter runs 7 parallel sessions: 1 baseline + 6 strip ablation types
+- **Strip ablation**: Measures 6 stripped design-trees (`DESIGN_TREE_INFO_TYPES` in `src/core/design-tree/strip.ts`: layout-direction-spacing, size-constraints, component-references, node-names-hierarchy, variable-references, style-references) → similarity delta vs baseline (plus tokens/HTML/CSS/responsive) → objective difficulty per rule category
 - Cross-run evidence: Evaluation appends overscored/underscored findings to `data/calibration-evidence.json`
 - After Arbitrator applies changes, evidence for applied rules is pruned (`calibrate-prune-evidence`)
 - Each run creates a self-contained directory: `logs/calibration/<fixture>--<timestamp>/`
-- No API keys needed — works fully offline
-- Auto-commits agreed score changes
+
+**`/calibrate-loop` (Claude Code command)**
+- Wrapper: runs `npx tsx scripts/calibrate.ts <fixture-path>` and reports results
 
 **`/calibrate-night` (Claude Code command)**
 - Role: Run calibration on multiple fixtures sequentially, then generate aggregate report
 - Input: fixture directory path (e.g. `fixtures/my-designs`) — auto-discovers active fixtures
-- Flow: `fixture-list` → sequential `/calibrate-loop` per fixture → `fixture-done` (converged) → `calibrate-gap-report` → `logs/calibration/REPORT.md`
+- Flow: `fixture-list` → sequential `scripts/calibrate.ts` per fixture → `fixture-done` (converged) → `calibrate-gap-report` → `logs/calibration/REPORT.md`
 
 ## File Output Structure
 

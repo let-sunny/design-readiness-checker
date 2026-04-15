@@ -10,7 +10,7 @@ Rule scores started as intuition-based estimates. The calibration pipeline valid
 4. Run `canicode visual-compare` — pixel-level comparison against Figma screenshot
 5. Analyze the diff image to categorize pixel gaps (`Gap Analyzer`)
 6. Compare conversion difficulty vs rule scores (`canicode calibrate-evaluate`) — strip deltas override Converter self-assessment
-7. Debate loop (`/calibrate-loop`): Analysis -> Converter (baseline + strips) -> Gap Analyzer -> Evaluation -> Critic -> Arbitrator
+7. Debate pipeline (`scripts/calibrate.ts`): Analysis -> Converter (baseline + 6 strips, 7 parallel `claude -p` sessions) -> Measurements -> Gap Analyzer -> Evaluation -> Critic -> Arbitrator. Each step tracked in `index.json` for resume-from-failure.
 
 ## Critic structured evidence (#144)
 

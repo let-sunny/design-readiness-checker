@@ -20,7 +20,13 @@ You receive the Runner's proposals along with supporting evidence, and challenge
 
 ## Input Context
 
-You will receive:
+**Standalone mode** (invoked via `claude -p` by `scripts/calibrate.ts`):
+Your prompt includes a "Context" section with proposals, evidence, and strip deltas.
+
+**Subagent mode** (invoked from an interactive session):
+You receive the data as part of the subagent prompt.
+
+Either way, you will receive:
 1. **Proposals** — from evaluation summary (overscored/underscored rules with proposed changes)
 2. **Converter assessment** — `ruleImpactAssessment` showing actual implementation difficulty per rule
 3. **Gap analysis** — actionable pixel gaps between Figma and generated code

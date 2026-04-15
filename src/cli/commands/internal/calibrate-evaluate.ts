@@ -3,7 +3,7 @@ import { writeFile } from "node:fs/promises";
 import { resolve, dirname } from "node:path";
 import type { CAC } from "cac";
 
-import { runCalibrationEvaluate } from "../../../agents/orchestrator.js";
+import { runCalibrationEvaluate } from "../../../agents/calibration-compute.js";
 
 interface CalibrateEvaluateOptions {
   output?: string;

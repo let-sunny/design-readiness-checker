@@ -3,7 +3,7 @@ import type { CAC } from "cac";
 import { parseFigmaUrl } from "../../../core/adapters/figma-url-parser.js";
 import { isFigmaUrl } from "../../../core/engine/loader.js";
 import { getFigmaToken } from "../../../core/engine/config-store.js";
-import { runCalibrationAnalyze } from "../../../agents/orchestrator.js";
+import { runCalibrationAnalyze } from "../../../agents/calibration-compute.js";
 
 interface CalibrateRunOptions {
   token?: string;

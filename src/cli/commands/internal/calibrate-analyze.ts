@@ -7,7 +7,7 @@ import {
   runCalibrationAnalyze,
   filterConversionCandidates,
   determineCalibrationTier,
-} from "../../../agents/orchestrator.js";
+} from "../../../agents/calibration-compute.js";
 
 interface CalibrateAnalyzeOptions {
   output?: string;

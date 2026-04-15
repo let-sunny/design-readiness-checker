@@ -8,5 +8,5 @@ export { generateCalibrationReport } from "./report-generator.js";
 export {
   runCalibrationAnalyze,
   runCalibrationEvaluate,
-} from "./orchestrator.js";
+} from "./calibration-compute.js";
 export { ActivityLogger } from "./activity-logger.js";

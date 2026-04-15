@@ -1,24 +1,26 @@
-Run nightly calibration across fixtures, then generate a gap-based rule review report.
+Run nightly calibration across all active fixtures, then generate the aggregate report.
 
 Input: $ARGUMENTS (optional: fixture directory path, default `fixtures`)
 
 ## Instructions
 
-You are the nightly orchestrator. Scan for active fixtures, run `/calibrate-loop` on each, move converged ones to `done/`, then generate the aggregate report.
-
 ### Step 0 — Discover fixtures
 
 ```bash
-npx canicode fixture-list <fixture-dir> --json
+npx canicode fixture-list $ARGUMENTS --json
 ```
 
 This returns `{ "active": [...], "done": [...] }`. Use the `active` list. If empty, stop with: "No active fixtures found."
 
 ### Step 1 — Run calibration for each fixture
 
-For each active fixture, run `/calibrate-loop` with that fixture path.
+For each active fixture, run the calibration script:
 
-- Run them **sequentially** (not in parallel) — each one modifies `rule-config.ts`
+```bash
+npx tsx scripts/calibrate.ts <fixture-path>
+```
+
+- Run them **sequentially** (not in parallel) — each one may modify `rule-config.ts`
 - If one fixture fails, log the failure and continue to the next
 - Track pass/fail counts
 
@@ -37,15 +39,13 @@ After each successful run, use the CLI to check convergence and move:
 npx canicode fixture-done <fixture-path> --run-dir $RUN_DIR
 ```
 
-This checks `debate.json` for convergence (`applied=0 AND rejected=0` by default) and moves the fixture to `done/`. If the fixture hasn't converged, the command exits with an error — that's expected, just skip and continue.
+This checks `debate.json` for convergence and moves the fixture to `done/`. If the fixture hasn't converged, the command exits with an error — that's expected, just skip and continue.
 
-If the same low-confidence proposals keep getting **rejected** and nothing is applied (issue #14), you can move anyway with **`--lenient-convergence`** (converged when there are no applied/revised decisions, ignoring rejects):
+For stuck fixtures (repeated rejects, no applies), use lenient convergence:
 
 ```bash
 npx canicode fixture-done <fixture-path> --run-dir $RUN_DIR --lenient-convergence
 ```
-
-Report which fixtures were moved to `done/`.
 
 ### Step 2.5 — Regression check
 
@@ -57,17 +57,9 @@ for dir in logs/calibration/<latest-run-dirs>; do
 done
 ```
 
-Compare the fresh evaluation output with the original. If a previously **validated** rule now shows as **overscored** or **underscored**, log a warning:
-
-```
-⚠ Regression: rule <ruleId> was validated in <fixture-A> but is now <type> after changes from <fixture-B>
-```
-
-This is informational — do not revert changes, just report regressions in the summary.
+Compare the fresh evaluation output with the original. If a previously validated rule now shows as overscored or underscored, log a warning. This is informational — do not revert changes, just report regressions.
 
 ### Step 3 — Generate aggregate report
-
-After all fixtures are done, build and run the gap report:
 
 ```bash
 pnpm build
@@ -81,12 +73,11 @@ Report:
 - Which fixtures were moved to `done/`
 - Which fixtures remain active
 - Where the aggregate report is: `logs/calibration/REPORT.md`
-- Remind: "Review the report. To add a new rule, implement it manually and re-run calibration for verification."
 
 ## Rules
 
-- Run fixtures sequentially, not in parallel.
+- Run fixtures sequentially, not in parallel (each may modify rule-config.ts).
 - If a fixture fails, continue to the next — don't stop the whole run.
-- Each `/calibrate-loop` creates its own run directory under `logs/calibration/`.
-- Do NOT modify source files yourself — `/calibrate-loop` handles that via its agent pipeline.
+- Each script run creates its own run directory under `logs/calibration/`.
+- Do NOT modify source files yourself — the calibration script handles that via its agent pipeline.
 - Use `npx canicode fixture-done` for convergence checks and moves — do NOT use `mv` directly.

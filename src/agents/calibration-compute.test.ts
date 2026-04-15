@@ -1,5 +1,5 @@
 import type { AnalysisFile } from "../core/contracts/figma-node.js";
-import { runCalibrationEvaluate } from "./orchestrator.js";
+import { runCalibrationEvaluate } from "./calibration-compute.js";
 
 // Register rules so RULE_CONFIGS is populated
 import "../core/rules/index.js";

@@ -70,8 +70,11 @@ app/                          # Browser runtime
 │   ├── DESIGN-TREE.md        # Design tree format spec, annotations, conversion examples
 │   └── CALIBRATION.md        # Score calibration process, ablation experiments
 ├── skills/                   # Claude Code skills
-├── agents/                   # Calibration subagents
+├── agents/                   # Calibration subagents (standalone via claude -p)
 └── commands/                 # Claude Code commands (calibrate-loop, calibrate-night)
+
+scripts/                        # Orchestration scripts (run with tsx)
+└── calibrate.ts              # Calibration pipeline orchestrator (ADR-008)
 ```
 
 ## Architecture Decision Records

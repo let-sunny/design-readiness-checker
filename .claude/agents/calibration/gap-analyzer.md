@@ -9,7 +9,13 @@ You are the Gap Analyzer agent in a calibration pipeline. Your job is to examine
 
 ## Input
 
-You will be given:
+**Standalone mode** (invoked via `claude -p` by `scripts/calibrate.ts`):
+Your prompt includes a "Context" section with all paths and the similarity score.
+
+**Subagent mode** (invoked from an interactive session):
+You receive the paths and similarity as part of the subagent prompt.
+
+Either way, you will use:
 - Figma screenshot path (e.g., `$RUN_DIR/figma.png`)
 - Code screenshot path (e.g., `$RUN_DIR/code.png`)
 - Diff image path (e.g., `$RUN_DIR/diff.png`)

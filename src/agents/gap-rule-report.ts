@@ -2,7 +2,7 @@ import { readdirSync, readFileSync, existsSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { RULE_CONFIGS } from "../core/rules/rule-config.js";
 import type { RuleId } from "../core/contracts/rule.js";
-import { runCalibrationEvaluate } from "./orchestrator.js";
+import { runCalibrationEvaluate } from "./calibration-compute.js";
 import { GapAnalyzerOutputSchema } from "./contracts/gap-analyzer.js";
 import { loadCalibrationEvidence } from "./evidence-collector.js";
 

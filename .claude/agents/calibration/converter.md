@@ -9,12 +9,13 @@ You are the Converter agent in a calibration pipeline. Your job is to implement 
 
 ## Input
 
-You will be given:
-- A run directory path (`$RUN_DIR`) containing `analysis.json`
-- The original fixture path or Figma URL
-- The `fileKey` and root `nodeId` from the analysis
+**Standalone mode** (invoked via `claude -p` by `scripts/calibrate.ts`):
+Your prompt includes a "Context" section with the run directory, fixture path, fileKey, and nodeId.
 
-Read `$RUN_DIR/analysis.json` to get:
+**Subagent mode** (invoked from an interactive session):
+You receive `$ARGUMENTS` as the run directory path.
+
+Either way, read `$RUN_DIR/analysis.json` to get:
 - `fileKey`: The Figma file key
 - `nodeIssueSummaries`: Issues grouped by node (used for per-rule impact assessment, not for selecting what to convert)
 
