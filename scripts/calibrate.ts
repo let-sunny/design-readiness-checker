@@ -284,7 +284,7 @@ async function runAll(): Promise<{ failed: number }> {
   const fixtures = listActiveFixtures("fixtures");
   if (fixtures.length === 0) {
     console.log("No active fixtures found. All may have converged (moved to fixtures/done/).");
-    return;
+    return { failed: 0 };
   }
 
   console.log(`Running calibration for ${fixtures.length} active fixture(s)...\n`);
