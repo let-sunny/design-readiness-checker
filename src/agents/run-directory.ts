@@ -3,6 +3,7 @@ import { resolve, join, basename } from "node:path";
 import { z } from "zod";
 
 const CALIBRATION_DIR = "logs/calibration";
+const DEVELOP_DIR = "logs/develop";
 
 function getDateTimeString(): string {
   const now = new Date();
@@ -62,6 +63,18 @@ export function createCalibrationRunDir(fixtureName: string): string {
   const timestamp = getDateTimeString();
   const dirName = buildRunDirName(fixtureName, timestamp);
   const dirPath = resolve(CALIBRATION_DIR, dirName);
+  mkdirSync(dirPath, { recursive: true });
+  return dirPath;
+}
+
+/**
+ * Create a development run directory and return its absolute path.
+ * Format: `logs/develop/<issue-number>--<YYYY-MM-DD-HHMM>/`
+ */
+export function createDevelopRunDir(issueNumber: number): string {
+  const timestamp = getDateTimeString();
+  const dirName = buildRunDirName(String(issueNumber), timestamp);
+  const dirPath = resolve(DEVELOP_DIR, dirName);
   mkdirSync(dirPath, { recursive: true });
   return dirPath;
 }

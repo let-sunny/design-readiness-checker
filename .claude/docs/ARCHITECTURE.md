@@ -54,6 +54,14 @@ Calibration is orchestrated by `scripts/calibrate.ts` (ADR-008). CLI for determi
 - Input: fixture directory path (e.g. `fixtures/my-designs`) — auto-discovers active fixtures
 - Flow: `fixture-list` → sequential `scripts/calibrate.ts` per fixture → `fixture-done` (converged) → `calibrate-gap-report` → `logs/calibration/REPORT.md`
 
+**`scripts/develop.ts` (development pipeline)**
+- Role: Automated feature development — reads a GitHub issue, plans, implements, tests, reviews, and creates a draft PR
+- Input: GitHub issue number (e.g. `247`), or `--resume <run-dir>`
+- Flow: Plan (agent) → Implement (agent) → Test (cli, retry loop) → Review (agent) → Fix (agent) → Verify (cli) → PR (cli)
+- State tracked in `logs/develop/<issue>--<timestamp>/index.json`
+- Test/Verify steps have internal fix retry loops (max 3 retries with fix agent)
+- See: issue #247
+
 ## File Output Structure
 
 ```text
@@ -77,5 +85,12 @@ logs/calibration/<name>--<timestamp>/       # One calibration run = one folder
   ├── code.png                              #   Code rendering screenshot
   └── diff.png                              #   Pixel diff image
 logs/calibration/REPORT.md                  # Cross-run aggregate report
+logs/develop/                               # Development pipeline runs
+logs/develop/<issue>--<timestamp>/          # One development run = one folder
+  ├── index.json                            #   Pipeline state (per-step status, resume point)
+  ├── plan.json                             #   Implementation plan (tasks, risks)
+  ├── review.json                           #   Self-review findings
+  ├── implement-output.txt                  #   Implementer agent output
+  └── pr-url.txt                            #   Created PR URL
 logs/activity/                              # Nightly orchestration logs
 ```
