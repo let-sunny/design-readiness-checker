@@ -19,6 +19,7 @@ import {
   readFileSync,
   writeFileSync,
   existsSync,
+  unlinkSync,
 } from "node:fs";
 import { resolve, join } from "node:path";
 import { parseArgs } from "node:util";
@@ -190,7 +191,18 @@ function resolveFromStep(from: string): string {
   process.exit(1);
 }
 
-/** Reset a step and all subsequent steps to pending. */
+/** Artifacts produced by each step — deleted on resetFrom to avoid stale state. */
+const STEP_ARTIFACTS: Record<string, string[]> = {
+  [DEV_STEP_NAMES.PLAN]: ["plan.json"],
+  [DEV_STEP_NAMES.IMPLEMENT]: ["implement-log.json", "implement-output.txt"],
+  [DEV_STEP_NAMES.TEST]: ["test-result.json"],
+  [DEV_STEP_NAMES.REVIEW]: ["review.json", "review-raw.txt"],
+  [DEV_STEP_NAMES.FIX]: ["fix-log.json"],
+  [DEV_STEP_NAMES.VERIFY]: ["circuit.json"],
+  [DEV_STEP_NAMES.PR]: ["pr-url.txt"],
+};
+
+/** Reset a step and all subsequent steps to pending, removing stale artifacts. */
 function resetFrom(index: DevelopRunIndex, fromStep: string): void {
   let found = false;
   for (const step of index.steps) {
@@ -201,9 +213,28 @@ function resetFrom(index: DevelopRunIndex, fromStep: string): void {
       step.summary = undefined;
       step.completedAt = undefined;
       step.durationMs = undefined;
+
+      // Delete artifacts produced by this step
+      const artifacts = STEP_ARTIFACTS[step.name];
+      if (artifacts) {
+        for (const file of artifacts) {
+          const filePath = join(index.runDir, file);
+          if (existsSync(filePath)) unlinkSync(filePath);
+        }
+      }
     }
   }
   saveIndex(index);
+}
+
+/** Abort if the working tree has staged or unstaged changes. */
+function ensureCleanWorktree(): void {
+  const status = execSync("git status --porcelain", { encoding: "utf-8", cwd: PROJECT_ROOT }).trim();
+  if (status) {
+    console.error("Error: Working tree is not clean. Commit or stash your changes first.");
+    console.error(status);
+    process.exit(1);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -308,6 +339,8 @@ async function main(): Promise<void> {
   let index: DevelopRunIndex;
   let runDir: string;
   let issue: IssueData;
+
+  ensureCleanWorktree();
 
   if (values.resume) {
     // Resume existing run
@@ -456,17 +489,23 @@ async function runPipeline(index: DevelopRunIndex, issue: IssueData): Promise<vo
       const context = buildContext(issue, runDir, { "plan.json": plan });
       const implementPrompt = `${agentDef}\n\n${context}`;
 
-      const implOutput = runAgent(implementPrompt, "Implementer");
-
-      // Check that changes were committed
-      const commitCount = execSync("git rev-list --count main...HEAD", {
+      // Capture HEAD before run to detect new commits (avoids false positive on resume)
+      const headBefore = execSync("git rev-parse HEAD", {
         encoding: "utf-8",
         cwd: PROJECT_ROOT,
       }).trim();
-      if (commitCount === "0") {
+
+      const implOutput = runAgent(implementPrompt, "Implementer");
+
+      // Check that the implementer created new commits this round
+      const headAfter = execSync("git rev-parse HEAD", {
+        encoding: "utf-8",
+        cwd: PROJECT_ROOT,
+      }).trim();
+      if (headAfter === headBefore) {
         throw new Error("Implementer did not create any commits");
       }
-      const diffStat = execSync("git diff --stat main...HEAD", {
+      const diffStat = execSync(`git diff --stat ${headBefore}..HEAD`, {
         encoding: "utf-8",
         cwd: PROJECT_ROOT,
       }).trim();
@@ -575,17 +614,19 @@ async function runPipeline(index: DevelopRunIndex, issue: IssueData): Promise<vo
         }
 
         const review = readJson<{ verdict: string; findings: unknown[] }>(join(runDir, "review.json"));
-        const errorCount = (review.findings as Array<{ severity: string }>)
-          .filter((f) => f.severity === "error").length;
+        const findings = review.findings as Array<{ severity: string }>;
+        const errorCount = findings.filter((f) => f.severity === "error").length;
+        const warningCount = findings.filter((f) => f.severity === "warning").length;
+        const actionableCount = errorCount + warningCount;
 
         markCompleted(index, DEV_STEP_NAMES.REVIEW, {
-          summary: `verdict=${review.verdict} findings=${review.findings.length} errors=${errorCount}`,
+          summary: `verdict=${review.verdict} findings=${review.findings.length} errors=${errorCount} warnings=${warningCount}`,
           outputs: ["review.json"],
         });
 
-        // If approved with no errors, skip fix step
-        if (review.verdict === "approve" && errorCount === 0) {
-          markSkipped(index, DEV_STEP_NAMES.FIX, "Review approved, no errors");
+        // If approved with no actionable findings (errors + warnings), skip fix step
+        if (review.verdict === "approve" && actionableCount === 0) {
+          markSkipped(index, DEV_STEP_NAMES.FIX, "Review approved, no actionable findings");
         }
       }
     } catch (err) {
@@ -709,11 +750,9 @@ async function runPipeline(index: DevelopRunIndex, issue: IssueData): Promise<vo
         });
         const rvOutput = runAgent(`${reviewerDef}\n\n${rvCtx}`, `Reviewer (round ${circuit.attempt})`);
 
-        // Save review
-        if (!existsSync(join(runDir, "review.json"))) {
-          const rvJson = rvOutput.match(/\{[\s\S]*"verdict"[\s\S]*\}/);
-          if (rvJson) writeFileSync(join(runDir, "review.json"), rvJson[0] + "\n");
-        }
+        // Always save fresh review — overwrite stale data from previous round
+        const rvJson = rvOutput.match(/\{[\s\S]*"verdict"[\s\S]*\}/);
+        if (rvJson) writeFileSync(join(runDir, "review.json"), rvJson[0] + "\n");
 
         // Fix
         const fixerDef = loadAgent("fixer");

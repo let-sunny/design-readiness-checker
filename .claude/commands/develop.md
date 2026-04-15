@@ -40,8 +40,8 @@ npx tsx scripts/develop.ts 236
 # Resume from failure
 npx tsx scripts/develop.ts --resume logs/develop/236--2026-04-16-1200
 
-# Resume from specific step
-npx tsx scripts/develop.ts --resume logs/develop/236--2026-04-16-1200 --from 4
+# Resume from specific step (name or 1-based index: plan=1, implement=2, test=3, review=4, fix=5, verify=6, pr=7)
+npx tsx scripts/develop.ts --resume logs/develop/236--2026-04-16-1200 --from review
 ```
 
 ## Rules
