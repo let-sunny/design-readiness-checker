@@ -51,6 +51,15 @@ These are mechanical checks. For each, report pass/fail in your review:
 - [ ] Commit message follows conventional commits (feat/fix/refactor/...)
 - [ ] No hardcoded secrets, API keys, or tokens
 
+## Architecture Checks (MUST verify)
+
+- [ ] New files follow ARCHITECTURE.md directory structure (core/ for shared, cli/ for CLI, contracts/ for schemas, etc.)
+- [ ] No ADR violations (design-tree over raw JSON, no custom rules, zod for validation, etc.)
+- [ ] New features have corresponding tests (co-located `*.test.ts`)
+- [ ] External inputs go through Zod schema in `contracts/`
+- [ ] No new dependencies added without justification
+- [ ] No `@/*` import aliases — relative paths only
+
 ## Output
 
 Write `$RUN_DIR/review.json`:
