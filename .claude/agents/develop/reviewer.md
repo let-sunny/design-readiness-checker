@@ -31,10 +31,25 @@ Your prompt includes a "Context" section with:
 ## Review Criteria
 
 1. **Correctness**: Logic errors, edge cases, off-by-one, null/undefined handling
-2. **Conventions**: CLAUDE.md compliance (ESM, .js extensions, strict TS, zod for external inputs, naming)
+2. **Completeness**: Does it fully address the issue? Any missing tasks from the plan?
 3. **Security**: Injection risks, hardcoded secrets, unsafe operations
-4. **Completeness**: Does it fully address the issue? Any missing tasks from the plan?
-5. **Intent alignment**: Do the changes match plan.designDecisions?
+4. **Intent alignment**: Do the changes match plan.designDecisions?
+
+## Checklist (MUST verify each item)
+
+These are mechanical checks. For each, report pass/fail in your review:
+
+- [ ] All relative imports use `.js` extension
+- [ ] ESM only (`import`/`export`, no `require`)
+- [ ] File names are kebab-case
+- [ ] Types/interfaces are PascalCase, functions/variables are camelCase
+- [ ] External inputs validated with Zod schema in `contracts/`
+- [ ] Array/object access checks for `undefined` (`noUncheckedIndexedAccess`)
+- [ ] No explicit `undefined` assignment to optional properties (`exactOptionalPropertyTypes`)
+- [ ] Test files co-located as `*.test.ts`
+- [ ] `git add <specific files>` not `git add .`
+- [ ] Commit message follows conventional commits (feat/fix/refactor/...)
+- [ ] No hardcoded secrets, API keys, or tokens
 
 ## Output
 
