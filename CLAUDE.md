@@ -74,7 +74,8 @@ app/                          # Browser runtime
 └── commands/                 # Claude Code commands (calibrate-loop, calibrate-night)
 
 scripts/                        # Orchestration scripts (run with tsx)
-└── calibrate.ts              # Calibration pipeline orchestrator (ADR-008)
+├── calibrate.ts              # Calibration pipeline orchestrator (ADR-008)
+└── develop.ts                # Development pipeline orchestrator (#247)
 ```
 
 ## Architecture Decision Records
