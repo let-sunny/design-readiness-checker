@@ -103,7 +103,7 @@ function computeTotalScorePerCategory(
  * even though diversity is low. Density captures this; diversity adds a penalty for
  * designs with scattered, unrelated issues.
  *
- * Status: initial values. To be validated via /calibrate-loop against visual-compare results.
+ * Status: initial values. To be validated via /calibrate against visual-compare results.
  */
 const DENSITY_WEIGHT = 0.7;
 const DIVERSITY_WEIGHT = 0.3;

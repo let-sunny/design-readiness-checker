@@ -71,10 +71,10 @@ app/                          # Browser runtime
 │   └── CALIBRATION.md        # Score calibration process, ablation experiments
 ├── skills/                   # Claude Code skills
 ├── agents/                   # Calibration subagents (standalone via claude -p)
-└── commands/                 # Claude Code commands (calibrate-loop, calibrate-night)
+└── commands/                 # Claude Code commands (calibrate, develop)
 
 scripts/                        # Orchestration scripts (run with tsx)
-├── calibrate.ts              # Calibration pipeline orchestrator (ADR-008)
+├── calibrate.ts              # Calibration pipeline orchestrator (ADR-008, single + --all mode)
 └── develop.ts                # Development pipeline orchestrator (#247)
 ```
 

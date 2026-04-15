@@ -11,6 +11,7 @@ Rule scores started as intuition-based estimates. The calibration pipeline valid
 5. Analyze the diff image to categorize pixel gaps (`Gap Analyzer`)
 6. Compare conversion difficulty vs rule scores (`canicode calibrate-evaluate`) — strip deltas override Converter self-assessment
 7. Debate pipeline (`scripts/calibrate.ts`): Analysis -> Converter (baseline + 6 strips, 7 parallel `claude -p` sessions) -> Measurements -> Gap Analyzer -> Evaluation -> Critic -> Arbitrator. Each step tracked in `index.json` for resume-from-failure.
+8. **Multi-fixture mode** (`--all`): Discovers active fixtures, runs the 14-step pipeline sequentially for each, checks convergence via `fixture-done`, runs regression check, and generates aggregate gap report.
 
 ## Critic structured evidence (#144)
 

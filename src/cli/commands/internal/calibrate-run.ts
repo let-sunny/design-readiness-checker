@@ -15,7 +15,7 @@ export function registerCalibrateRun(cli: CAC): void {
   cli
     .command(
       "calibrate-run <input>",
-      "Run full calibration pipeline (analysis-only, conversion via /calibrate-loop)"
+      "Run full calibration pipeline (analysis-only, conversion via /calibrate)"
     )
     .option("--token <token>", "Figma API token (or use FIGMA_TOKEN env var)")
     .option("--max-nodes <count>", "Max nodes to convert", { default: 5 })
@@ -43,7 +43,7 @@ export function registerCalibrateRun(cli: CAC): void {
         console.log("\nCalibration complete (analysis-only).");
         console.log(`  Grade: ${analysisOutput.scoreReport.overall.grade} (${analysisOutput.scoreReport.overall.percentage}%)`);
         console.log(`  Nodes with issues: ${analysisOutput.nodeIssueSummaries.length}`);
-        console.log("  Note: Use /calibrate-loop in Claude Code for full pipeline with visual comparison.");
+        console.log("  Note: Use /calibrate in Claude Code for full pipeline with visual comparison.");
       } catch (error) {
         console.error(
           "\nError:",

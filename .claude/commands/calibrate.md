@@ -1,10 +1,10 @@
-Run a calibration pipeline for a single fixture using the explicit orchestration script.
+Run the calibration pipeline for a single fixture, all active fixtures, or resume a failed run.
 
-Input: $ARGUMENTS (fixture directory path, e.g. `fixtures/material3-kit`)
+Input: $ARGUMENTS (fixture path, `--all`, or `--resume <run-dir>`)
 
 ## Instructions
 
-Run the calibration script which handles the full pipeline:
+Run the calibration script:
 
 ```bash
 npx tsx scripts/calibrate.ts $ARGUMENTS
@@ -22,22 +22,24 @@ The script (`scripts/calibrate.ts`) orchestrates:
 9. **Evidence** (CLI) — enrich + prune calibration evidence
 10. **Report** (CLI) — aggregate gap report
 
-The script creates a run directory (`logs/calibration/<fixture>--<timestamp>/`) and tracks each step in `index.json`. If the script fails mid-run, resume with:
+### Modes
 
-```bash
-npx tsx scripts/calibrate.ts --resume <run-dir>
-```
+- **Single fixture**: `npx tsx scripts/calibrate.ts <fixture-path>`
+- **All active fixtures**: `npx tsx scripts/calibrate.ts --all` — discovers active fixtures, runs sequentially, checks convergence, runs regression check, generates aggregate report
+- **Resume**: `npx tsx scripts/calibrate.ts --resume <run-dir>`
 
 ### After the script completes
 
-Read the run directory path from the script output, then report the summary from its `index.json`:
+Report the summary:
 - Which steps completed, skipped, or failed
 - Similarity score (from the measure step summary)
 - Proposals and decisions (from evaluate/arbitrator summaries)
-- Path to the run directory
+- For `--all` mode: fixtures ran/passed/failed/converged
+- Path to the run directory (or aggregate report for `--all`)
 
 ## Rules
 
 - The script handles all orchestration — do NOT manually run individual steps.
 - If the script fails, check `$RUN_DIR/index.json` for the failed step and error message.
 - To re-run from a failed step, use `--resume`. Do NOT delete the run directory.
+- Fixtures run sequentially in `--all` mode — each may modify `rule-config.ts`.

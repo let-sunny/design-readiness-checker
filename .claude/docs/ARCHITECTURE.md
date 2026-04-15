@@ -46,13 +46,10 @@ Calibration is orchestrated by `scripts/calibrate.ts` (ADR-008). CLI for determi
 - After Arbitrator applies changes, evidence for applied rules is pruned (`calibrate-prune-evidence`)
 - Each run creates a self-contained directory: `logs/calibration/<fixture>--<timestamp>/`
 
-**`/calibrate-loop` (Claude Code command)**
-- Wrapper: runs `npx tsx scripts/calibrate.ts <fixture-path>` and reports results
-
-**`/calibrate-night` (Claude Code command)**
-- Role: Run calibration on multiple fixtures sequentially, then generate aggregate report
-- Input: fixture directory path (e.g. `fixtures/my-designs`) — auto-discovers active fixtures
-- Flow: `fixture-list` → sequential `scripts/calibrate.ts` per fixture → `fixture-done` (converged) → `calibrate-gap-report` → `logs/calibration/REPORT.md`
+**`/calibrate` (Claude Code command)**
+- Wrapper: runs `npx tsx scripts/calibrate.ts $ARGUMENTS` and reports results
+- Modes: `<fixture-path>` (single), `--all` (all active fixtures), `--resume <run-dir>`
+- `--all` mode: discovers active fixtures, runs sequentially, checks convergence via `fixture-done`, runs regression check, generates aggregate report
 
 **`scripts/develop.ts` (development pipeline)**
 - Role: Automated feature development — reads a GitHub issue, plans, implements, tests, reviews, and creates a draft PR

@@ -3,7 +3,7 @@
 /**
  * Explicit calibration pipeline orchestrator.
  *
- * Replaces the delegated single-session orchestration (calibrate-loop.md)
+ * Replaces the delegated single-session orchestration
  * with step-by-step CLI + `claude -p` calls. Each step is tracked in
  * index.json for resume-from-failure support.
  *
@@ -34,7 +34,7 @@ import {
   type CalibrationRunIndex,
   type StepRecord,
 } from "../src/core/contracts/calibration-run.js";
-import { extractFixtureName, createCalibrationRunDir } from "../src/agents/run-directory.js";
+import { extractFixtureName, createCalibrationRunDir, listActiveFixtures } from "../src/agents/run-directory.js";
 
 // ---------------------------------------------------------------------------
 // CLI binary resolution
@@ -51,6 +51,7 @@ const { values, positionals } = parseArgs({
   args: process.argv.slice(2),
   options: {
     resume: { type: "string" },
+    all: { type: "boolean" },
     help: { type: "boolean", short: "h" },
   },
   allowPositionals: true,
@@ -58,10 +59,12 @@ const { values, positionals } = parseArgs({
 
 if (values.help) {
   console.log(`Usage:
-  npx tsx scripts/calibrate.ts <fixture-path>
-  npx tsx scripts/calibrate.ts --resume <run-dir>
+  npx tsx scripts/calibrate.ts <fixture-path>        # Single fixture
+  npx tsx scripts/calibrate.ts --all                  # All active fixtures
+  npx tsx scripts/calibrate.ts --resume <run-dir>     # Resume a failed run
 
 Options:
+  --all               Run calibration for all active fixtures sequentially
   --resume <run-dir>  Resume a failed run from the last incomplete step
   -h, --help          Show this help message`);
   process.exit(0);
@@ -238,18 +241,158 @@ const STRIP_TYPES = [
 // Main pipeline
 // ---------------------------------------------------------------------------
 
+/** Run a single fixture from start to finish. Returns the run directory and whether it succeeded. */
+async function runSingle(fixturePath: string): Promise<{ runDir: string; passed: boolean }> {
+  const resolved = resolve(fixturePath);
+  if (!existsSync(resolved)) {
+    console.error(`Error: Fixture not found: ${resolved}`);
+    return { runDir: "", passed: false };
+  }
+  const fixtureName = extractFixtureName(resolved);
+  const runDir = createCalibrationRunDir(fixtureName);
+  const index = createRunIndex(fixtureName, resolved, runDir);
+  saveIndex(index);
+  console.log(`Starting calibration for: ${fixtureName}`);
+  console.log(`  Fixture: ${resolved}`);
+  console.log(`  Run directory: ${runDir}`);
+
+  try {
+    await runPipeline(index);
+    index.status = "completed";
+    saveIndex(index);
+    console.log("\nCalibration complete.");
+    console.log(`  Run directory: ${runDir}`);
+    return { runDir, passed: true };
+  } catch (err) {
+    console.error("\nCalibration failed:", err instanceof Error ? err.message : String(err));
+    return { runDir, passed: false };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// --all mode: run all active fixtures sequentially, then post-process
+// ---------------------------------------------------------------------------
+
+interface CompletedRun {
+  fixturePath: string;
+  runDir: string;
+  passed: boolean;
+}
+
+async function runAll(): Promise<void> {
+  const fixtures = listActiveFixtures("fixtures");
+  if (fixtures.length === 0) {
+    console.log("No active fixtures found. All may have converged (moved to fixtures/done/).");
+    return;
+  }
+
+  console.log(`Running calibration for ${fixtures.length} active fixture(s)...\n`);
+
+  const completedRuns: CompletedRun[] = [];
+  let passed = 0;
+  let failed = 0;
+
+  for (let i = 0; i < fixtures.length; i++) {
+    const fixturePath = fixtures[i]!;
+    const fixtureName = extractFixtureName(fixturePath);
+    const idx = i + 1;
+
+    console.log(`\n[${ idx }/${ fixtures.length }] ${fixturePath}`);
+    const result = await runSingle(fixturePath);
+    completedRuns.push({ fixturePath, runDir: result.runDir, passed: result.passed });
+
+    if (result.passed) {
+      passed++;
+
+      // Convergence check: run fixture-done
+      try {
+        const fdOutput = runCli(
+          `${CANICODE_CLI} fixture-done ${shellEscape(fixturePath)} --run-dir ${shellEscape(result.runDir)}`,
+          "fixture-done (convergence check)",
+        );
+        console.log(`  [${idx}/${fixtures.length}] ${fixtureName} — Complete (converged)`);
+      } catch {
+        // Not converged is expected — just log and continue
+        // Extract applied count from debate.json for the summary
+        const debatePath = join(result.runDir, "debate.json");
+        let appliedInfo = "";
+        if (existsSync(debatePath)) {
+          try {
+            const debate = readJson<Record<string, unknown>>(debatePath);
+            const arb = debate["arbitrator"] as Record<string, unknown> | null;
+            if (arb) {
+              const decisions = arb["decisions"] as Array<Record<string, string>> | undefined;
+              const appliedCount = decisions?.filter((d) => d["decision"]?.toLowerCase() === "applied" || d["decision"]?.toLowerCase() === "revised").length ?? 0;
+              appliedInfo = `applied=${appliedCount}`;
+            }
+          } catch { /* ignore parse errors */ }
+        }
+        console.log(`  [${idx}/${fixtures.length}] ${fixtureName} — Complete (${appliedInfo || "not converged"})`);
+      }
+    } else {
+      failed++;
+      console.log(`  [${idx}/${fixtures.length}] ${fixtureName} — Failed`);
+    }
+  }
+
+  // --- Regression check ---
+  console.log("\nRegression check...");
+  const successfulRuns = completedRuns.filter((r) => r.passed && r.runDir);
+  for (const run of successfulRuns) {
+    try {
+      runCli(
+        `${CANICODE_CLI} calibrate-evaluate _ _ --run-dir ${shellEscape(run.runDir)}`,
+        `calibrate-evaluate (regression: ${extractFixtureName(run.fixturePath)})`,
+      );
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn(`  Warning: Regression check failed for ${extractFixtureName(run.fixturePath)}: ${msg.slice(0, 200)}`);
+    }
+  }
+
+  // --- Build and generate aggregate report ---
+  console.log("\nGenerating aggregate report...");
+  try {
+    runCli("pnpm build", "pnpm build");
+    runCli(
+      `${CANICODE_CLI} calibrate-gap-report --output logs/calibration/REPORT.md`,
+      "calibrate-gap-report",
+    );
+    console.log("  Report: logs/calibration/REPORT.md");
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.warn(`  Warning: Report generation failed: ${msg.slice(0, 200)}`);
+  }
+
+  // --- Summary ---
+  console.log(`\n${"=".repeat(60)}`);
+  console.log(`Calibration summary: ${passed} passed, ${failed} failed out of ${fixtures.length} fixtures`);
+  for (const run of completedRuns) {
+    const name = extractFixtureName(run.fixturePath);
+    console.log(`  ${run.passed ? "✓" : "✗"} ${name}`);
+  }
+}
+
 async function main(): Promise<void> {
-  let index: CalibrationRunIndex;
-  let runDir: string;
+  if (values.all) {
+    // --all mode: run all active fixtures
+    try {
+      await runAll();
+    } catch (err) {
+      console.error("Fatal:", err instanceof Error ? err.message : String(err));
+      process.exitCode = 1;
+    }
+    return;
+  }
 
   if (values.resume) {
     // Resume existing run
-    runDir = resolve(values.resume);
+    const runDir = resolve(values.resume);
     if (!existsSync(join(runDir, "index.json"))) {
       console.error(`Error: No index.json found in ${runDir}`);
       process.exit(1);
     }
-    index = loadIndex(runDir);
+    const index = loadIndex(runDir);
     const resumeFrom = findResumePoint(index);
     if (!resumeFrom) {
       console.log("All steps completed. Nothing to resume.");
@@ -259,35 +402,34 @@ async function main(): Promise<void> {
     saveIndex(index);
     console.log(`Resuming calibration from step: ${resumeFrom}`);
     console.log(`  Run directory: ${runDir}`);
-  } else {
-    // New run
-    const fixturePath = positionals[0];
-    if (!fixturePath) {
-      console.error("Error: fixture path required. Usage: npx tsx scripts/calibrate.ts <fixture-path>");
-      process.exit(1);
+
+    try {
+      await runPipeline(index);
+      index.status = "completed";
+      saveIndex(index);
+      console.log("\nCalibration complete.");
+      console.log(`  Run directory: ${runDir}`);
+    } catch (err) {
+      console.error("\nCalibration failed:", err instanceof Error ? err.message : String(err));
+      process.exitCode = 1;
     }
-    const resolved = resolve(fixturePath);
-    if (!existsSync(resolved)) {
-      console.error(`Error: Fixture not found: ${resolved}`);
-      process.exit(1);
-    }
-    const fixtureName = extractFixtureName(resolved);
-    runDir = createCalibrationRunDir(fixtureName);
-    index = createRunIndex(fixtureName, resolved, runDir);
-    saveIndex(index);
-    console.log(`Starting calibration for: ${fixtureName}`);
-    console.log(`  Fixture: ${resolved}`);
-    console.log(`  Run directory: ${runDir}`);
+    return;
   }
 
-  try {
-    await runPipeline(index);
-    index.status = "completed";
-    saveIndex(index);
-    console.log("\nCalibration complete.");
-    console.log(`  Run directory: ${runDir}`);
-  } catch (err) {
-    console.error("\nCalibration failed:", err instanceof Error ? err.message : String(err));
+  // Single fixture mode
+  const fixturePath = positionals[0];
+  if (!fixturePath) {
+    console.error(`Error: No fixture path or --all flag provided.
+
+Usage:
+  npx tsx scripts/calibrate.ts <fixture-path>        # Single fixture
+  npx tsx scripts/calibrate.ts --all                  # All active fixtures
+  npx tsx scripts/calibrate.ts --resume <run-dir>     # Resume a failed run`);
+    process.exit(1);
+  }
+
+  const result = await runSingle(fixturePath);
+  if (!result.passed) {
     process.exitCode = 1;
   }
 }
