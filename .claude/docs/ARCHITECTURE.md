@@ -61,6 +61,7 @@ data/calibration-evidence.json              # Cross-run calibration evidence (ov
 reports/                                    # HTML reports (canicode analyze)
 logs/calibration/                           # Calibration runs (internal)
 logs/calibration/<name>--<timestamp>/       # One calibration run = one folder
+  ├── index.json                            #   Pipeline state (per-step status, resume point)
   ├── analysis.json                         #   Rule analysis result
   ├── conversion.json                       #   HTML conversion + similarity + stripDeltas
   ├── stripped/                             #   Strip ablation outputs (6 types, see DESIGN_TREE_INFO_TYPES)

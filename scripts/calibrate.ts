@@ -457,20 +457,23 @@ Do NOT run visual-compare, html-postprocess, or code-metrics.`,
         console.warn(`  Warning: ${failures.length} converter session(s) failed: ${failures.map((f) => f.name).join(", ")}`);
       }
 
-      // Verify outputs — baseline output.html is required
-      const baselineHtml = join(runDir, "output.html");
-      if (!existsSync(baselineHtml)) {
-        throw new Error(`Baseline output.html not produced. ${failures.length}/${results.length} sessions failed.`);
+      // Verify outputs — baseline + assessment are required
+      const requiredFiles = [
+        join(runDir, "output.html"),
+        join(runDir, "converter-assessment.json"),
+      ];
+      const missingRequired = requiredFiles.filter((f) => !existsSync(f));
+      if (missingRequired.length > 0) {
+        throw new Error(`Required converter outputs missing: ${missingRequired.map((f) => basename(f)).join(", ")}. ${failures.length}/${results.length} sessions failed.`);
       }
 
       const expectedFiles = [
-        baselineHtml,
-        join(runDir, "converter-assessment.json"),
+        ...requiredFiles,
         ...STRIP_TYPES.map((t) => join(runDir, "stripped", `${t}.html`)),
       ];
       const missing = expectedFiles.filter((f) => !existsSync(f));
       if (missing.length > 0) {
-        console.warn(`  Warning: Missing converter outputs: ${missing.map((f) => basename(f)).join(", ")}`);
+        console.warn(`  Warning: Missing strip outputs: ${missing.map((f) => basename(f)).join(", ")}`);
       }
 
       markCompleted(index, STEP_NAMES.CONVERT, {
@@ -515,6 +518,12 @@ Do NOT run visual-compare, html-postprocess, or code-metrics.`,
         const conversion = readJson<Record<string, unknown>>(join(runDir, "conversion.json"));
         const similarity = conversion["similarity"] as number;
 
+        // Load Converter interpretations for gap classification
+        const assessment = readJson<Record<string, unknown>>(join(runDir, "converter-assessment.json"));
+        const interpretations = Array.isArray(assessment["interpretations"])
+          ? (assessment["interpretations"] as string[]).join("\n- ")
+          : "none";
+
         const gapPrompt = `${agentDef}
 
 ## Context (injected by orchestration script)
@@ -528,15 +537,19 @@ HTML path: ${join(runDir, "output.html")}
 Fixture: ${fixturePath}
 Analysis: ${join(runDir, "analysis.json")}
 
+### Converter interpretations (values that were guessed, not from data)
+- ${interpretations}
+
 Return the gap analysis as JSON. Do NOT write any files — print the JSON to stdout.`;
 
         const gapOutput = runAgent("calibration-gap-analyzer", gapPrompt, "Gap Analyzer");
 
-        // Extract JSON from agent output
-        const jsonMatch = gapOutput.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          writeFileSync(join(runDir, "gaps.json"), jsonMatch[0] + "\n");
+        // Extract JSON from agent output — fail if not found
+        const gapJson = gapOutput.match(/\{[\s\S]*\}/);
+        if (!gapJson) {
+          throw new Error("Gap Analyzer returned no JSON. Raw output saved to gaps-raw.txt");
         }
+        writeFileSync(join(runDir, "gaps.json"), gapJson[0] + "\n");
 
         markCompleted(index, STEP_NAMES.GAP_ANALYZE, {
           summary: "Gap analysis complete",
@@ -636,15 +649,16 @@ Return your critique as JSON. Do NOT write any files — print the JSON to stdou
 
       const criticOutput = runAgent("calibration-critic", criticPrompt, "Critic");
 
-      // Extract JSON and write debate.json
-      const jsonMatch = criticOutput.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const criticData = JSON.parse(jsonMatch[0]);
-        writeFileSync(
-          join(runDir, "debate.json"),
-          JSON.stringify({ critic: criticData }, null, 2) + "\n",
-        );
+      // Extract JSON and write debate.json — fail if not found
+      const criticJson = criticOutput.match(/\{[\s\S]*\}/);
+      if (!criticJson) {
+        throw new Error("Critic returned no JSON");
       }
+      const criticData = JSON.parse(criticJson[0]) as Record<string, unknown>;
+      writeFileSync(
+        join(runDir, "debate.json"),
+        JSON.stringify({ critic: criticData }, null, 2) + "\n",
+      );
 
       markCompleted(index, STEP_NAMES.CRITIC, {
         summary: "Critic review complete",
@@ -703,14 +717,15 @@ Return your decisions as JSON. Only edit rule-config.ts if applying changes. Do 
 
       const arbOutput = runAgent("calibration-arbitrator", arbitratorPrompt, "Arbitrator");
 
-      // Extract JSON and update debate.json
-      const jsonMatch = arbOutput.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const arbData = JSON.parse(jsonMatch[0]);
-        const debateData = readJson<Record<string, unknown>>(join(runDir, "debate.json"));
-        debateData["arbitrator"] = arbData;
-        writeFileSync(join(runDir, "debate.json"), JSON.stringify(debateData, null, 2) + "\n");
+      // Extract JSON and update debate.json — fail if not found
+      const arbJson = arbOutput.match(/\{[\s\S]*\}/);
+      if (!arbJson) {
+        throw new Error("Arbitrator returned no JSON");
       }
+      const arbData = JSON.parse(arbJson[0]) as Record<string, unknown>;
+      const debateData = readJson<Record<string, unknown>>(join(runDir, "debate.json"));
+      debateData["arbitrator"] = arbData;
+      writeFileSync(join(runDir, "debate.json"), JSON.stringify(debateData, null, 2) + "\n");
 
       // Finalize debate after arbitrator
       runCli(

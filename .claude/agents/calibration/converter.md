@@ -10,10 +10,10 @@ You are the Converter agent in a calibration pipeline. Your job is to implement 
 ## Input
 
 **Standalone mode** (invoked via `claude -p` by `scripts/calibrate.ts`):
-Your prompt includes a "Context" section with the run directory, fixture path, fileKey, and nodeId.
+Your prompt includes a "Context" section with `Run directory: <path>`. Use that path as `$RUN_DIR`.
 
 **Subagent mode** (invoked from an interactive session):
-You receive `$ARGUMENTS` as the run directory path.
+`$ARGUMENTS` is the run directory path. Use it as `$RUN_DIR`.
 
 Either way, read `$RUN_DIR/analysis.json` to get:
 - `fileKey`: The Figma file key

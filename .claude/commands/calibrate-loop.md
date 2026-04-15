@@ -22,7 +22,7 @@ The script (`scripts/calibrate.ts`) orchestrates:
 9. **Evidence** (CLI) — enrich + prune calibration evidence
 10. **Report** (CLI) — aggregate gap report
 
-Each step is tracked in `$RUN_DIR/index.json`. If the script fails mid-run, resume with:
+The script creates a run directory (`logs/calibration/<fixture>--<timestamp>/`) and tracks each step in `index.json`. If the script fails mid-run, resume with:
 
 ```bash
 npx tsx scripts/calibrate.ts --resume <run-dir>
@@ -30,7 +30,7 @@ npx tsx scripts/calibrate.ts --resume <run-dir>
 
 ### After the script completes
 
-Report the final summary from `$RUN_DIR/index.json`:
+Read the run directory path from the script output, then report the summary from its `index.json`:
 - Which steps completed, skipped, or failed
 - Similarity score (from the measure step summary)
 - Proposals and decisions (from evaluate/arbitrator summaries)
