@@ -37,6 +37,13 @@ import {
 import { extractFixtureName, createCalibrationRunDir } from "../src/agents/run-directory.js";
 
 // ---------------------------------------------------------------------------
+// CLI binary resolution
+// ---------------------------------------------------------------------------
+
+/** Resolve the canicode CLI command. Uses node + dist path for local dev. */
+const CANICODE_CLI = `node ${resolve("dist/cli/index.js")}`;
+
+// ---------------------------------------------------------------------------
 // CLI argument parsing
 // ---------------------------------------------------------------------------
 
@@ -143,8 +150,8 @@ function runAgent(agentName: string, prompt: string, label: string): string {
   console.log(`  [agent] ${label}`);
   try {
     return execSync(
-      `claude -p ${shellEscape(prompt)} --allowedTools "Bash,Read,Write,Glob,Edit,Grep"`,
-      { encoding: "utf-8", maxBuffer: 50 * 1024 * 1024, timeout: 600_000 },
+      `claude -p --allowedTools "Bash,Read,Write,Glob,Edit,Grep"`,
+      { input: prompt, encoding: "utf-8", maxBuffer: 50 * 1024 * 1024, timeout: 600_000 },
     );
   } catch (err) {
     const execErr = err as SpawnSyncReturns<string>;
@@ -153,15 +160,17 @@ function runAgent(agentName: string, prompt: string, label: string): string {
   }
 }
 
-/** Spawn a `claude -p` process and return its stdout as a promise. */
+/** Spawn a `claude -p` process and return its stdout as a promise. Prompt via stdin to avoid CLI arg parsing issues. */
 function spawnAgent(prompt: string): Promise<string> {
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
     const errChunks: Buffer[] = [];
-    const proc = spawn("claude", ["-p", prompt, "--allowedTools", "Bash,Read,Write,Glob,Edit,Grep"], {
-      stdio: ["ignore", "pipe", "pipe"],
+    const proc = spawn("claude", ["-p", "--allowedTools", "Bash,Read,Write,Glob,Edit,Grep"], {
+      stdio: ["pipe", "pipe", "pipe"],
       timeout: 600_000,
     });
+    proc.stdin.write(prompt);
+    proc.stdin.end();
     proc.stdout.on("data", (chunk: Buffer) => chunks.push(chunk));
     proc.stderr.on("data", (chunk: Buffer) => errChunks.push(chunk));
     proc.on("close", (code) => {
@@ -189,8 +198,9 @@ async function runAgentParallel(
       console.log(`  [agent] Done: ${task.label}`);
       return { name: task.name, output };
     } catch (err) {
-      console.warn(`  [agent] Failed: ${task.label}`);
-      return { name: task.name, output: "", error: err instanceof Error ? err.message : String(err) };
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn(`  [agent] Failed: ${task.label} — ${msg.slice(0, 200)}`);
+      return { name: task.name, output: "", error: msg };
     }
   });
 
@@ -298,7 +308,7 @@ async function runPipeline(index: CalibrationRunIndex): Promise<void> {
     markRunning(index, STEP_NAMES.ANALYZE);
     try {
       runCli(
-        `pnpm exec canicode calibrate-analyze ${shellEscape(fixturePath)} --run-dir ${shellEscape(runDir)}`,
+        `${CANICODE_CLI} calibrate-analyze ${shellEscape(fixturePath)} --run-dir ${shellEscape(runDir)}`,
         "calibrate-analyze",
       );
       const analysis = readJson<Record<string, unknown>>(join(runDir, "analysis.json"));
@@ -334,7 +344,7 @@ async function runPipeline(index: CalibrationRunIndex): Promise<void> {
     markRunning(index, STEP_NAMES.DESIGN_TREE);
     try {
       runCli(
-        `pnpm exec canicode design-tree ${shellEscape(fixturePath)} --output ${shellEscape(join(runDir, "design-tree.txt"))}`,
+        `${CANICODE_CLI} design-tree ${shellEscape(fixturePath)} --output ${shellEscape(join(runDir, "design-tree.txt"))}`,
         "design-tree",
       );
       markCompleted(index, STEP_NAMES.DESIGN_TREE, {
@@ -348,10 +358,13 @@ async function runPipeline(index: CalibrationRunIndex): Promise<void> {
   }
 
   // Copy fixture screenshot to run directory
-  const screenshotSrc = join(fixturePath, "screenshot.png");
+  // Fixtures use either screenshot.png or screenshot-<width>.png (smallest = base)
   const screenshotDest = join(runDir, "figma.png");
-  if (existsSync(screenshotSrc) && !existsSync(screenshotDest)) {
-    copyFileSync(screenshotSrc, screenshotDest);
+  if (!existsSync(screenshotDest)) {
+    const baseScreenshot = findBaseScreenshot(fixturePath);
+    if (baseScreenshot) {
+      copyFileSync(baseScreenshot, screenshotDest);
+    }
   }
 
   // ─── Step 3: Strip design trees ─────────────────────────────────────
@@ -361,7 +374,7 @@ async function runPipeline(index: CalibrationRunIndex): Promise<void> {
       const strippedDir = join(runDir, "stripped");
       mkdirSync(strippedDir, { recursive: true });
       runCli(
-        `pnpm exec canicode design-tree-strip ${shellEscape(join(runDir, "design-tree.txt"))} --output-dir ${shellEscape(strippedDir)}`,
+        `${CANICODE_CLI} design-tree-strip ${shellEscape(join(runDir, "design-tree.txt"))} --output-dir ${shellEscape(strippedDir)}`,
         "design-tree-strip",
       );
       markCompleted(index, STEP_NAMES.STRIP_DESIGN_TREE, {
@@ -444,9 +457,14 @@ Do NOT run visual-compare, html-postprocess, or code-metrics.`,
         console.warn(`  Warning: ${failures.length} converter session(s) failed: ${failures.map((f) => f.name).join(", ")}`);
       }
 
-      // Verify outputs
+      // Verify outputs — baseline output.html is required
+      const baselineHtml = join(runDir, "output.html");
+      if (!existsSync(baselineHtml)) {
+        throw new Error(`Baseline output.html not produced. ${failures.length}/${results.length} sessions failed.`);
+      }
+
       const expectedFiles = [
-        join(runDir, "output.html"),
+        baselineHtml,
         join(runDir, "converter-assessment.json"),
         ...STRIP_TYPES.map((t) => join(runDir, "stripped", `${t}.html`)),
       ];
@@ -536,7 +554,7 @@ Return the gap analysis as JSON. Do NOT write any files — print the JSON to st
     markRunning(index, STEP_NAMES.EVALUATE);
     try {
       runCli(
-        `pnpm exec canicode calibrate-evaluate _ _ --run-dir ${shellEscape(runDir)}`,
+        `${CANICODE_CLI} calibrate-evaluate _ _ --run-dir ${shellEscape(runDir)}`,
         "calibrate-evaluate",
       );
 
@@ -576,7 +594,7 @@ Return the gap analysis as JSON. Do NOT write any files — print the JSON to st
     markRunning(index, STEP_NAMES.GATHER_EVIDENCE);
     try {
       runCli(
-        `pnpm exec canicode calibrate-gather-evidence ${shellEscape(runDir)}`,
+        `${CANICODE_CLI} calibrate-gather-evidence ${shellEscape(runDir)}`,
         "calibrate-gather-evidence",
       );
       markCompleted(index, STEP_NAMES.GATHER_EVIDENCE, {
@@ -644,7 +662,7 @@ Return your critique as JSON. Do NOT write any files — print the JSON to stdou
     markRunning(index, STEP_NAMES.FINALIZE_DEBATE);
     try {
       const output = runCli(
-        `pnpm exec canicode calibrate-finalize-debate ${shellEscape(runDir)}`,
+        `${CANICODE_CLI} calibrate-finalize-debate ${shellEscape(runDir)}`,
         "calibrate-finalize-debate (early-stop check)",
       );
       const result = JSON.parse(output.trim()) as { action: string; stoppingReason?: string };
@@ -696,7 +714,7 @@ Return your decisions as JSON. Only edit rule-config.ts if applying changes. Do 
 
       // Finalize debate after arbitrator
       runCli(
-        `pnpm exec canicode calibrate-finalize-debate ${shellEscape(runDir)}`,
+        `${CANICODE_CLI} calibrate-finalize-debate ${shellEscape(runDir)}`,
         "calibrate-finalize-debate (post-arbitrator)",
       );
 
@@ -715,7 +733,7 @@ Return your decisions as JSON. Only edit rule-config.ts if applying changes. Do 
     markRunning(index, STEP_NAMES.ENRICH_EVIDENCE);
     try {
       runCli(
-        `pnpm exec canicode calibrate-enrich-evidence ${shellEscape(runDir)}`,
+        `${CANICODE_CLI} calibrate-enrich-evidence ${shellEscape(runDir)}`,
         "calibrate-enrich-evidence",
       );
       markCompleted(index, STEP_NAMES.ENRICH_EVIDENCE, { summary: "Evidence enriched" });
@@ -730,7 +748,7 @@ Return your decisions as JSON. Only edit rule-config.ts if applying changes. Do 
     markRunning(index, STEP_NAMES.PRUNE_EVIDENCE);
     try {
       runCli(
-        `pnpm exec canicode calibrate-prune-evidence ${shellEscape(runDir)}`,
+        `${CANICODE_CLI} calibrate-prune-evidence ${shellEscape(runDir)}`,
         "calibrate-prune-evidence",
       );
       markCompleted(index, STEP_NAMES.PRUNE_EVIDENCE, { summary: "Evidence pruned" });
@@ -745,7 +763,7 @@ Return your decisions as JSON. Only edit rule-config.ts if applying changes. Do 
     markRunning(index, STEP_NAMES.GAP_REPORT);
     try {
       runCli(
-        "pnpm exec canicode calibrate-gap-report --output logs/calibration/REPORT.md",
+        `${CANICODE_CLI} calibrate-gap-report --output logs/calibration/REPORT.md`,
         "calibrate-gap-report",
       );
       markCompleted(index, STEP_NAMES.GAP_REPORT, {
@@ -773,11 +791,11 @@ function runMeasurements(runDir: string, fixturePath: string): MeasurementResult
   const figmaPng = join(runDir, "figma.png");
 
   // Post-process baseline HTML
-  runCli(`pnpm exec canicode html-postprocess ${shellEscape(outputHtml)}`, "html-postprocess (baseline)");
+  runCli(`${CANICODE_CLI} html-postprocess ${shellEscape(outputHtml)}`, "html-postprocess (baseline)");
 
   // Baseline visual comparison
   const vcOutput = runCli(
-    `pnpm exec canicode visual-compare ${shellEscape(outputHtml)} --figma-screenshot ${shellEscape(figmaPng)} --output ${shellEscape(runDir)}`,
+    `${CANICODE_CLI} visual-compare ${shellEscape(outputHtml)} --figma-screenshot ${shellEscape(figmaPng)} --output ${shellEscape(runDir)}`,
     "visual-compare (baseline)",
   );
   const vcJson = parseJsonFromOutput(vcOutput);
@@ -785,7 +803,7 @@ function runMeasurements(runDir: string, fixturePath: string): MeasurementResult
 
   // Baseline code metrics
   const cmOutput = runCli(
-    `pnpm exec canicode code-metrics ${shellEscape(outputHtml)}`,
+    `${CANICODE_CLI} code-metrics ${shellEscape(outputHtml)}`,
     "code-metrics (baseline)",
   );
   const cmJson = parseJsonFromOutput(cmOutput);
@@ -798,7 +816,7 @@ function runMeasurements(runDir: string, fixturePath: string): MeasurementResult
   const expandedScreenshots = findExpandedScreenshots(fixturePath);
   if (expandedScreenshots) {
     const rvOutput = runCli(
-      `pnpm exec canicode visual-compare ${shellEscape(outputHtml)} --figma-screenshot ${shellEscape(expandedScreenshots.path)} --width ${expandedScreenshots.width} --expand-root --output ${shellEscape(join(runDir, "responsive"))}`,
+      `${CANICODE_CLI} visual-compare ${shellEscape(outputHtml)} --figma-screenshot ${shellEscape(expandedScreenshots.path)} --width ${expandedScreenshots.width} --expand-root --output ${shellEscape(join(runDir, "responsive"))}`,
       "visual-compare (responsive)",
     );
     const rvJson = parseJsonFromOutput(rvOutput);
@@ -823,11 +841,11 @@ function runMeasurements(runDir: string, fixturePath: string): MeasurementResult
     }
 
     // Post-process
-    runCli(`pnpm exec canicode html-postprocess ${shellEscape(stripHtml)}`, `html-postprocess (${stripType})`);
+    runCli(`${CANICODE_CLI} html-postprocess ${shellEscape(stripHtml)}`, `html-postprocess (${stripType})`);
 
     // Visual compare
     const stripVcOutput = runCli(
-      `pnpm exec canicode visual-compare ${shellEscape(stripHtml)} --figma-screenshot ${shellEscape(figmaPng)} --output ${shellEscape(join(runDir, "stripped", stripType))}`,
+      `${CANICODE_CLI} visual-compare ${shellEscape(stripHtml)} --figma-screenshot ${shellEscape(figmaPng)} --output ${shellEscape(join(runDir, "stripped", stripType))}`,
       `visual-compare (${stripType})`,
     );
     const stripVcJson = parseJsonFromOutput(stripVcOutput);
@@ -835,7 +853,7 @@ function runMeasurements(runDir: string, fixturePath: string): MeasurementResult
 
     // Code metrics
     const stripCmOutput = runCli(
-      `pnpm exec canicode code-metrics ${shellEscape(stripHtml)}`,
+      `${CANICODE_CLI} code-metrics ${shellEscape(stripHtml)}`,
       `code-metrics (${stripType})`,
     );
     const stripCmJson = parseJsonFromOutput(stripCmOutput);
@@ -852,7 +870,7 @@ function runMeasurements(runDir: string, fixturePath: string): MeasurementResult
     let stripResponseDelta: number | null = null;
     if (stripType === "size-constraints" && expandedScreenshots) {
       const stripRvOutput = runCli(
-        `pnpm exec canicode visual-compare ${shellEscape(stripHtml)} --figma-screenshot ${shellEscape(expandedScreenshots.path)} --width ${expandedScreenshots.width} --expand-root --output ${shellEscape(join(runDir, "stripped", "size-constraints-responsive"))}`,
+        `${CANICODE_CLI} visual-compare ${shellEscape(stripHtml)} --figma-screenshot ${shellEscape(expandedScreenshots.path)} --width ${expandedScreenshots.width} --expand-root --output ${shellEscape(join(runDir, "stripped", "size-constraints-responsive"))}`,
         "visual-compare (size-constraints responsive)",
       );
       const stripRvJson = parseJsonFromOutput(stripRvOutput);
@@ -928,6 +946,31 @@ function parseJsonFromOutput(output: string): Record<string, unknown> | null {
     }
   }
   return null;
+}
+
+/**
+ * Find the base screenshot for a fixture.
+ * Prefers screenshot.png, falls back to smallest screenshot-<width>.png.
+ */
+function findBaseScreenshot(fixturePath: string): string | null {
+  const plain = join(fixturePath, "screenshot.png");
+  if (existsSync(plain)) return plain;
+
+  const numbered = existsSync(fixturePath)
+    ? readdirSync(fixturePath).filter((f) => /^screenshot-\d+\.png$/.test(f))
+    : [];
+  if (numbered.length === 0) return null;
+
+  const parsed = numbered
+    .map((f) => {
+      const match = f.match(/screenshot-(\d+)\.png$/);
+      return { file: f, width: match ? parseInt(match[1]!, 10) : 0 };
+    })
+    .filter((p) => p.width > 0);
+  parsed.sort((a, b) => a.width - b.width);
+
+  const smallest = parsed[0];
+  return smallest ? join(fixturePath, smallest.file) : null;
 }
 
 function findExpandedScreenshots(fixturePath: string): { path: string; width: number } | null {
