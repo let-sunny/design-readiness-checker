@@ -280,7 +280,7 @@ interface CompletedRun {
   passed: boolean;
 }
 
-async function runAll(): Promise<void> {
+async function runAll(): Promise<{ failed: number }> {
   const fixtures = listActiveFixtures("fixtures");
   if (fixtures.length === 0) {
     console.log("No active fixtures found. All may have converged (moved to fixtures/done/).");
@@ -372,13 +372,18 @@ async function runAll(): Promise<void> {
     const name = extractFixtureName(run.fixturePath);
     console.log(`  ${run.passed ? "✓" : "✗"} ${name}`);
   }
+
+  return { failed };
 }
 
 async function main(): Promise<void> {
   if (values.all) {
     // --all mode: run all active fixtures
     try {
-      await runAll();
+      const { failed } = await runAll();
+      if (failed > 0) {
+        process.exitCode = 1;
+      }
     } catch (err) {
       console.error("Fatal:", err instanceof Error ? err.message : String(err));
       process.exitCode = 1;

@@ -22,6 +22,8 @@ The script (`scripts/calibrate.ts`) orchestrates:
 9. **Evidence** (CLI) — enrich + prune calibration evidence
 10. **Report** (CLI) — aggregate gap report
 
+> `index.json` tracks 14 internal sub-steps (e.g., screenshot capture, strip generation, post-processing split out separately). The 10 stages above are the logical grouping.
+
 ### Modes
 
 - **Single fixture**: `npx tsx scripts/calibrate.ts <fixture-path>`
