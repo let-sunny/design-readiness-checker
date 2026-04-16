@@ -9,6 +9,7 @@ import { exec } from "node:child_process";
 import { analyzeFile } from "../core/engine/rule-engine.js";
 import { loadFile, isJsonFile, isFixtureDir } from "../core/engine/loader.js";
 import { calculateScores, buildResultJson } from "../core/engine/scoring.js";
+import { generateGotchaSurvey } from "../core/gotcha/survey-generator.js";
 import { generateHtmlReport } from "../core/report-html/index.js";
 import { getReportsDir, ensureReportsDir } from "../core/engine/config-store.js";
 import { getConfigsWithPreset, RULE_CONFIGS, type Preset } from "../core/rules/rule-config.js";
@@ -115,6 +116,88 @@ Provide a Figma URL or fixture path via the input parameter. Requires FIGMA_TOKE
       trackError(
         error instanceof Error ? error : new Error(String(error)),
         { tool: "analyze" },
+      );
+      trackEvent(EVENTS.ANALYSIS_FAILED, {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: `Error: ${error instanceof Error ? error.message : String(error)}`,
+          },
+        ],
+        isError: true,
+      };
+    }
+  },
+);
+
+server.tool(
+  "gotcha-survey",
+  `Generate a gotcha survey from a Figma design analysis.
+
+Analyzes the design and returns a GotchaSurvey JSON with designGrade, isReadyForCodeGen, and questions[].
+When isReadyForCodeGen is true, questions will be empty (no survey needed).
+
+Provide a Figma URL or fixture path via the input parameter. Requires FIGMA_TOKEN env var or the token parameter for live Figma URLs.`,
+  {
+    input: z.string().describe("Figma URL or local fixture path. Requires FIGMA_TOKEN for live URLs."),
+    token: z.string().optional().describe("Figma API token (falls back to FIGMA_TOKEN env var)"),
+    preset: z.enum(["relaxed", "dev-friendly", "ai-ready", "strict"]).optional().describe("Analysis preset"),
+    targetNodeId: z.string().optional().describe("Scope analysis to a specific node ID"),
+    configPath: z.string().optional().describe("Path to config JSON file for rule overrides"),
+  },
+  {
+    readOnlyHint: false,
+    destructiveHint: false,
+    openWorldHint: true,
+    title: "Gotcha Survey",
+  },
+  async ({ input, token, preset, targetNodeId, configPath }) => {
+    trackEvent(EVENTS.MCP_TOOL_CALLED, { tool: "gotcha-survey" });
+    try {
+      const { file, nodeId } = await loadFile(input, token);
+
+      const effectiveNodeId = targetNodeId ?? nodeId;
+
+      let configs: Record<string, RuleConfig> = preset
+        ? { ...getConfigsWithPreset(preset as Preset) }
+        : { ...RULE_CONFIGS };
+
+      if (configPath) {
+        const configFile = await loadConfigFile(configPath);
+        configs = mergeConfigs(configs, configFile);
+      }
+
+      const result = analyzeFile(file, {
+        configs: configs as Record<RuleId, RuleConfig>,
+        ...(effectiveNodeId ? { targetNodeId: effectiveNodeId } : {}),
+      });
+
+      const scores = calculateScores(result, configs as Record<RuleId, RuleConfig>);
+      const survey = generateGotchaSurvey(result, scores);
+
+      trackEvent(EVENTS.ANALYSIS_COMPLETED, {
+        nodeCount: result.nodeCount,
+        issueCount: result.issues.length,
+        grade: scores.overall.grade,
+        percentage: scores.overall.percentage,
+        source: isJsonFile(input) || isFixtureDir(input) ? "fixture" : "figma",
+      });
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(survey, null, 2),
+          },
+        ],
+      };
+    } catch (error) {
+      trackError(
+        error instanceof Error ? error : new Error(String(error)),
+        { tool: "gotcha-survey" },
       );
       trackEvent(EVENTS.ANALYSIS_FAILED, {
         error: error instanceof Error ? error.message : String(error),
