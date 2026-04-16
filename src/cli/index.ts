@@ -26,6 +26,24 @@ import { registerConfig } from "./commands/config.js";
 import { registerListRules } from "./commands/list-rules.js";
 import { registerPrompt } from "./commands/prompt.js";
 
+// Internal command names — hidden from --help but still callable directly
+const INTERNAL_COMMANDS = [
+  "calibrate-analyze",
+  "calibrate-evaluate",
+  "calibrate-gap-report",
+  "calibrate-run",
+  "calibrate-gather-evidence",
+  "calibrate-finalize-debate",
+  "calibrate-enrich-evidence",
+  "calibrate-prune-evidence",
+  "calibrate-save-fixture",
+  "fixture-list",
+  "fixture-done",
+  "design-tree-strip",
+  "html-postprocess",
+  "code-metrics",
+];
+
 // Internal commands (used by subagents, hidden from user help)
 import { registerCalibrateAnalyze } from "./commands/internal/calibrate-analyze.js";
 import { registerCalibrateEvaluate } from "./commands/internal/calibrate-evaluate.js";
@@ -101,6 +119,16 @@ cli
   });
 
 cli.help((sections) => {
+  // Filter internal commands from "Commands" and "For more info" sections
+  for (const section of sections) {
+    if (section.title === "Commands" || section.title?.startsWith("For more info")) {
+      section.body = section.body
+        .split("\n")
+        .filter((line: string) => !INTERNAL_COMMANDS.some((cmd) => line.includes(cmd)))
+        .join("\n");
+    }
+  }
+
   sections.push(
     {
       title: "\nSetup",

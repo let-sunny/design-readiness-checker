@@ -1,0 +1,66 @@
+import { execFileSync } from "node:child_process";
+import { resolve } from "node:path";
+
+const CLI_PATH = resolve(import.meta.dirname, "../../dist/cli/index.js");
+
+describe("CLI --help", () => {
+  const INTERNAL_COMMANDS = [
+    "calibrate-analyze",
+    "calibrate-evaluate",
+    "calibrate-gap-report",
+    "calibrate-run",
+    "calibrate-gather-evidence",
+    "calibrate-finalize-debate",
+    "calibrate-enrich-evidence",
+    "calibrate-prune-evidence",
+    "calibrate-save-fixture",
+    "fixture-list",
+    "fixture-done",
+    "design-tree-strip",
+    "html-postprocess",
+    "code-metrics",
+  ];
+
+  it("should not show internal commands in --help output", () => {
+    const output = execFileSync("node", [CLI_PATH, "--help"], {
+      encoding: "utf-8",
+    });
+
+    for (const cmd of INTERNAL_COMMANDS) {
+      expect(output).not.toContain(cmd);
+    }
+  });
+
+  it("should show user-facing commands in --help output", () => {
+    const output = execFileSync("node", [CLI_PATH, "--help"], {
+      encoding: "utf-8",
+    });
+
+    const userCommands = [
+      "analyze",
+      "design-tree",
+      "implement",
+      "visual-compare",
+      "init",
+      "config",
+      "list-rules",
+      "prompt",
+      "docs",
+    ];
+
+    for (const cmd of userCommands) {
+      expect(output).toContain(cmd);
+    }
+  });
+
+  it("should allow direct invocation of internal commands", () => {
+    const output = execFileSync(
+      "node",
+      [CLI_PATH, "calibrate-save-fixture", "--help"],
+      { encoding: "utf-8" },
+    );
+
+    expect(output).toContain("calibrate-save-fixture");
+    expect(output).toContain("Options");
+  });
+});
