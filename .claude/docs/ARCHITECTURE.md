@@ -31,7 +31,7 @@
 - Data source: `analyze` + `gotcha-survey` MCP tools (canicode MCP server) + Figma MCP tools (`get_design_context`, `get_screenshot`)
 - Workflow: analyze → gate on `isReadyForCodeGen` → gotcha survey (if needed) → code generation with gotcha context injected inline
 - Orchestrates existing MCP tools — no new tools or CLI commands introduced
-- Gotcha answers are passed as inline conversation context, not saved as a separate skill file (ADR-009)
+- Gotcha answers are saved to `.claude/skills/canicode-gotchas/SKILL.md` (reusable) and also kept as inline conversation context for the implementation step
 - See #277
 
 **4. Web App (GitHub Pages)**

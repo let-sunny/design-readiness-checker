@@ -1,6 +1,7 @@
 ---
 name: canicode-roundtrip
 description: Run canicode analysis + gotcha survey, then implement with Figma MCP — full design-to-code roundtrip
+disable-model-invocation: false
 ---
 
 # CanICode Roundtrip -- Design Analysis to Code Generation
@@ -71,91 +72,53 @@ Wait for the user's answer before moving to the next question. The user may:
 - Say "skip" to skip a question
 - Say "n/a" if the question is not applicable
 
-After all questions are answered, compile the gotcha answers into a **Gotcha Context Block** (used in Step 4):
+After all questions are answered:
 
-```
-## Design Gotchas — Collected Answers
+1. **Save gotcha answers to file** at `.claude/skills/canicode-gotchas/SKILL.md` in the user's project (same format as the standalone `/canicode-gotchas` skill). Always overwrite any existing file — each run produces a fresh file.
 
-These gotcha answers were collected from the canicode gotcha survey.
-Apply them when translating the design to code.
+The saved file must follow this format:
+
+````markdown
+---
+name: canicode-gotchas
+description: Design gotcha answers for {designName} — reference during code generation
+---
+
+# Design Gotchas — {designName}
+
+Collected from canicode gotcha survey. Reference these answers when implementing this design.
+
+## Metadata
+
+- **Figma URL**: {figmaUrl}
+- **Grade**: {designGrade}
+- **Analyzed at**: {timestamp ISO 8601}
+
+## Gotchas
 
 ### {ruleId} — {nodeName}
+
 - **Severity**: {severity}
 - **Node ID**: {nodeId}
 - **Question**: {question}
 - **Answer**: {userAnswer}
 
-(repeat for each answered question)
-```
+(repeat for each question)
+````
 
 Mark skipped questions with `**Answer**: _(skipped)_`.
 
+2. **Compile inline gotcha context** for use in Step 4 — the gotcha answers from the saved file are also kept in the conversation so the implementation step can reference them directly.
+
 ### Step 4: Implement with Figma MCP
 
-This step follows the standard Figma design-to-code workflow, with gotcha context injected.
+Follow the **figma-implement-design** skill workflow to generate code from the Figma design.
 
-#### 4a. Get design context
+**If gotcha answers were collected in Step 3**, provide them as additional context when implementing:
 
-Call the Figma MCP tool:
-
-```
-get_design_context({ file_key: "<fileKey>", node_id: "<nodeId>" })
-```
-
-Extract `file_key` and `node_id` from the Figma URL:
-- `figma.com/design/:fileKey/:fileName?node-id=:nodeId` — convert `-` to `:` in nodeId
-- `figma.com/design/:fileKey/branch/:branchKey/:fileName` — use branchKey as fileKey
-
-#### 4b. Get screenshot
-
-Call the Figma MCP tool:
-
-```
-get_screenshot({ file_key: "<fileKey>", node_id: "<nodeId>" })
-```
-
-Use the screenshot as a visual reference for pixel-accurate implementation.
-
-#### 4c. Understand component structure
-
-From the `get_design_context` response, identify:
-- Component instances and their original component definitions
-- Design tokens (colors, typography, spacing) used
-- Layout structure (auto-layout directions, gaps, padding)
-- Any Code Connect mappings returned
-
-#### 4d. Plan component hierarchy
-
-Map the Figma layer structure to your project's component hierarchy:
-- Match Figma components to existing project components where possible
-- Identify where new components are needed
-- Plan the nesting structure
-
-#### 4e. Translate to project conventions — WITH gotcha context
-
-This is where gotcha answers are applied. When translating the design:
-
-1. Follow your project's existing patterns, components, and token system
-2. **If gotcha answers were collected in Step 3**, apply each answer as a constraint:
-   - Gotchas with severity **blocking** MUST be addressed — they indicate the design cannot be implemented correctly without this information
-   - Gotchas with severity **risk** SHOULD be addressed — they indicate potential issues that will surface later
-   - Reference the specific node IDs from gotcha answers to locate the affected elements
-3. Map Figma design tokens to your project's token system
-4. Use the screenshot from Step 4b to verify visual intent where the design structure is ambiguous
-
-#### 4f. Implement
-
-Write the code following your project's conventions:
-- Use existing components and utilities from the project
-- Apply gotcha constraints from Step 4e
-- Match the visual output to the Figma screenshot
-
-#### 4g. Verify
-
-After implementation:
-- Compare the rendered output visually against the Figma screenshot
-- Check that all gotcha constraints were addressed
-- Verify responsive behavior if the design includes responsive variants
+- Gotchas with severity **blocking** MUST be addressed — the design cannot be implemented correctly without this information
+- Gotchas with severity **risk** SHOULD be addressed — they indicate potential issues that will surface later
+- Reference the specific node IDs from gotcha answers to locate the affected elements in the design
 
 ## Edge Cases
 
