@@ -4,12 +4,12 @@ import { resolve, dirname } from "node:path";
 import type { CAC } from "cac";
 import { z } from "zod";
 
-import { parseFigmaUrl } from "../../core/adapters/figma-url-parser.js";
-import { analyzeFile } from "../../core/engine/rule-engine.js";
-import { loadFile, isFigmaUrl, isJsonFile, isFixtureDir } from "../../core/engine/loader.js";
-import { getFigmaToken } from "../../core/engine/config-store.js";
-import { calculateScores, buildResultJson } from "../../core/engine/scoring.js";
-import { collectVectorNodes, collectImageNodes, sanitizeFilename } from "../helpers.js";
+import { parseFigmaUrl } from "../../../core/adapters/figma-url-parser.js";
+import { analyzeFile } from "../../../core/engine/rule-engine.js";
+import { loadFile, isFigmaUrl, isJsonFile, isFixtureDir } from "../../../core/engine/loader.js";
+import { getFigmaToken } from "../../../core/engine/config-store.js";
+import { calculateScores, buildResultJson } from "../../../core/engine/scoring.js";
+import { collectVectorNodes, collectImageNodes, sanitizeFilename } from "../../helpers.js";
 
 const ImplementOptionsSchema = z.object({
   token: z.string().optional(),
@@ -19,18 +19,18 @@ const ImplementOptionsSchema = z.object({
 });
 
 
-export function registerImplement(cli: CAC): void {
+export function registerCalibrateImplement(cli: CAC): void {
   cli
     .command(
-      "implement <input>",
-      "Prepare design-to-code package: analysis + design tree + assets + prompt"
+      "calibrate-implement <input>",
+      "Prepare design-to-code package for calibration: analysis + design tree + assets + prompt"
     )
     .option("--token <token>", "Figma API token (or use FIGMA_TOKEN env var)")
     .option("--output <dir>", "Output directory (default: ./canicode-implement/)")
     .option("--prompt <path>", "Custom prompt file (default: built-in HTML+CSS prompt)")
     .option("--image-scale <n>", "Image export scale: 2 for PC (default), 3 for mobile")
-    .example("  canicode implement ./fixtures/my-design")
-    .example("  canicode implement ./fixtures/my-design --prompt ./my-react-prompt.md --image-scale 3")
+    .example("  canicode calibrate-implement ./fixtures/my-design")
+    .example("  canicode calibrate-implement ./fixtures/my-design --prompt ./my-react-prompt.md --image-scale 3")
     .action(async (input: string, rawOptions: Record<string, unknown>) => {
       try {
         const parseResult = ImplementOptionsSchema.safeParse(rawOptions);
@@ -112,7 +112,7 @@ export function registerImplement(cli: CAC): void {
           if (figmaToken) {
             const imgScale = options.imageScale !== undefined ? Number(options.imageScale) : 2;
 
-            const { FigmaClient } = await import("../../core/adapters/figma-client.js");
+            const { FigmaClient } = await import("../../../core/adapters/figma-client.js");
             const client = new FigmaClient({ token: figmaToken });
 
             // Download screenshot
@@ -220,7 +220,7 @@ export function registerImplement(cli: CAC): void {
         }
 
         // 4. Design tree (after assets so image paths are available)
-        const { generateDesignTreeWithStats } = await import("../../core/design-tree/design-tree.js");
+        const { generateDesignTreeWithStats } = await import("../../../core/design-tree/design-tree.js");
         const treeOptions = {
           ...(vectorDir && existsSync(vectorDir) ? { vectorDir } : {}),
           ...(imageDir && existsSync(imageDir) ? { imageDir } : {}),
@@ -242,8 +242,8 @@ export function registerImplement(cli: CAC): void {
           const { dirname: dirnameFn, resolve: resolveFn } = await import("node:path");
           const { fileURLToPath } = await import("node:url");
           const cliDir = dirnameFn(fileURLToPath(import.meta.url));
-          const projectRoot = resolveFn(cliDir, "../..");
-          const altRoot = resolveFn(cliDir, "..");
+          const projectRoot = resolveFn(cliDir, "../../..");
+          const altRoot = resolveFn(cliDir, "../..");
 
           let prompt = "";
           for (const root of [projectRoot, altRoot]) {

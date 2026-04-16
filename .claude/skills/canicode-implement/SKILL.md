@@ -20,19 +20,19 @@ One of:
 ### From a local fixture (simplest)
 
 ```bash
-npx canicode implement ./fixtures/my-design
+npx canicode calibrate-implement ./fixtures/my-design
 ```
 
 ### From a Figma URL
 
 ```bash
-npx canicode implement "https://www.figma.com/design/ABC/File?node-id=1-234"
+npx canicode calibrate-implement "https://www.figma.com/design/ABC/File?node-id=1-234"
 ```
 
 ### With a custom prompt (for your stack)
 
 ```bash
-npx canicode implement ./fixtures/my-design --prompt ./my-react-prompt.md
+npx canicode calibrate-implement ./fixtures/my-design --prompt ./my-react-prompt.md
 ```
 
 The default prompt generates HTML+CSS. Write your own prompt for React, Vue, or any other stack.
@@ -60,7 +60,7 @@ canicode-implement/
 
 ## Next Steps
 
-After running `canicode implement`:
+After running `canicode calibrate-implement`:
 
 1. Open `design-tree.txt` -- this is the primary input for the AI
 2. Open `PROMPT.md` -- this contains the coding conventions

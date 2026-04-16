@@ -14,7 +14,6 @@ CANICODE DOCUMENTATION (v${pkg.version})
 
   canicode docs setup      Full setup guide (CLI, MCP, Skills)
   canicode docs config     Config override guide + example
-  canicode docs implement  Design-to-code package guide
   canicode docs scoring    Scoring model explanation
 
 Full documentation: github.com/let-sunny/canicode#readme
@@ -188,50 +187,6 @@ USE CASES
 `.trimStart());
 }
 
-/** Print the implement command guide. */
-export function printDocsImplement(): void {
-  console.log(`
-DESIGN-TO-CODE IMPLEMENTATION GUIDE
-
-Prepare everything an AI needs to implement a Figma design as code.
-
-USAGE
-  canicode implement <figma-url-or-fixture> [options]
-
-OPTIONS
-  --prompt <path>      Custom prompt file (default: built-in HTML+CSS)
-  --image-scale <n>    Image export scale: 2 for PC (default), 3 for mobile
-  --output <dir>       Output directory (default: ./canicode-implement/)
-  --token <token>      Figma API token (for live URLs)
-
-OUTPUT
-  canicode-implement/
-    analysis.json      Analysis report with issues and scores
-    design-tree.txt    DOM-like tree with CSS styles (~N tokens)
-    images/            PNG assets with human-readable names (hero-banner@2x.png)
-    vectors/           SVG assets for vector nodes
-    PROMPT.md          Stack-specific code generation prompt
-
-WORKFLOW
-  1. Run: canicode implement ./my-fixture --prompt ./my-react-prompt.md
-  2. Feed design-tree.txt + PROMPT.md to your AI assistant
-  3. AI generates code matching the design pixel-perfectly
-  4. Verify with: canicode visual-compare ./output.html --figma-url <url>
-
-CUSTOM PROMPT
-  Default prompt generates HTML+CSS. For your own stack:
-  1. Write a prompt file (e.g. my-react-prompt.md)
-  2. Pass it: canicode implement ./fixture --prompt ./my-react-prompt.md
-  The design-tree.txt format is stack-agnostic — your prompt just needs
-  to describe how to convert it to your target framework.
-
-IMAGE SCALE
-  --image-scale 2     PC/desktop (default) — @2x retina
-  --image-scale 3     Mobile — @3x retina
-  SVG vectors are scale-independent and always included.
-`.trimStart());
-}
-
 /** Print the scoring model summary with pointer to full docs. */
 export function printDocsScoring(): void {
   console.log(`
@@ -253,7 +208,6 @@ const DOCS_TOPICS: Record<string, () => void> = {
   setup: printDocsSetup,
   install: printDocsSetup, // alias
   config: printDocsConfig,
-  implement: printDocsImplement,
   scoring: printDocsScoring,
   "visual-compare": printDocsVisualCompare,
   "design-tree": printDocsDesignTree,

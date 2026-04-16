@@ -25,7 +25,6 @@ describe.skipIf(!existsSync(CLI_PATH))("CLI --help", () => {
     const userCommands = [
       "analyze",
       "design-tree",
-      "implement",
       "visual-compare",
       "init",
       "config",

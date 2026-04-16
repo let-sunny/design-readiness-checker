@@ -2,6 +2,7 @@
 export const INTERNAL_COMMANDS = [
   "calibrate-analyze",
   "calibrate-evaluate",
+  "calibrate-implement",
   "calibrate-gap-report",
   "calibrate-run",
   "calibrate-gather-evidence",
