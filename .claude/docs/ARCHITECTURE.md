@@ -6,7 +6,6 @@
 - Data source: Figma REST API (requires FIGMA_TOKEN) or JSON fixture
 - Output: HTML report (opens in browser)
 - Options: `--preset`, `--token`, `--output`, `--config`
-- Also: `canicode save-fixture` to save Figma data as JSON for offline analysis
 - Also: `canicode implement` to prepare a design-to-code package (analysis + design tree + assets + prompt)
 - Component master resolution: fetches `componentDefinitions` for accurate component analysis
 - Annotations: NOT available (REST API annotations field is private beta)
@@ -45,6 +44,11 @@ Calibration is orchestrated by `scripts/calibrate.ts` (ADR-008). CLI for determi
 - Cross-run evidence: Evaluation appends overscored/underscored findings to `data/calibration-evidence.json`
 - After Arbitrator applies changes, evidence for applied rules is pruned (`calibrate-prune-evidence`)
 - Each run creates a self-contained directory: `logs/calibration/<fixture>--<timestamp>/`
+
+**`canicode calibrate-save-fixture`**
+- Role: Save Figma design as a fixture directory for calibration (internal command)
+- Input: Figma URL with node-id
+- Output: fixture directory with data.json, screenshot.png, vectors/, images/
 
 **`/calibrate` (Claude Code command)**
 - Wrapper: runs `npx tsx scripts/calibrate.ts $ARGUMENTS` and reports results

@@ -18,7 +18,6 @@ import "../core/rules/index.js";
 
 // User-facing commands
 import { registerAnalyze } from "./commands/analyze.js";
-import { registerSaveFixture } from "./commands/save-fixture.js";
 import { registerDesignTree } from "./commands/design-tree.js";
 import { registerImplement } from "./commands/implement.js";
 import { registerVisualCompare } from "./commands/visual-compare.js";
@@ -36,6 +35,7 @@ import { registerGatherEvidence, registerFinalizeDebate } from "./commands/inter
 import { registerFixtureManagement, registerEvidenceEnrich, registerEvidencePrune } from "./commands/internal/fixture-management.js";
 import { registerDesignTreeStrip } from "./commands/internal/design-tree-strip.js";
 import { registerHtmlPostprocess } from "./commands/internal/html-postprocess.js";
+import { registerCalibrateSaveFixture } from "./commands/internal/calibrate-save-fixture.js";
 import { registerCodeMetrics } from "./commands/internal/code-metrics.js";
 
 const require = createRequire(import.meta.url);
@@ -66,7 +66,6 @@ process.on("beforeExit", () => {
 // User-facing commands
 // ============================================
 registerAnalyze(cli);
-registerSaveFixture(cli);
 registerDesignTree(cli);
 registerImplement(cli);
 registerVisualCompare(cli);
@@ -89,6 +88,7 @@ registerEvidenceEnrich(cli);
 registerEvidencePrune(cli);
 registerDesignTreeStrip(cli);
 registerHtmlPostprocess(cli);
+registerCalibrateSaveFixture(cli);
 registerCodeMetrics(cli);
 
 // ============================================

@@ -104,7 +104,7 @@ jobs:
           FIGMA_TOKEN: ${{ secrets.FIGMA_TOKEN }}
         run: |
           FIXTURE_PATH="fixtures/${{ steps.parse.outputs.fixture_name }}.json"
-          node dist/cli/index.js save-fixture "${{ steps.parse.outputs.figma_url }}" \
+          node dist/cli/index.js calibrate-save-fixture "${{ steps.parse.outputs.figma_url }}" \
             --output "$FIXTURE_PATH" \
             --token "$FIGMA_TOKEN"
           echo "path=$FIXTURE_PATH" >> "$GITHUB_OUTPUT"

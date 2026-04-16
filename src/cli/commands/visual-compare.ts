@@ -18,7 +18,7 @@ export function registerVisualCompare(cli: CAC): void {
     .option("--output <dir>", "Output directory for screenshots and diff (default: /tmp/canicode-visual-compare)")
     .option("--width <px>", "Logical viewport width in CSS px (default: infer from Figma PNG ÷ export scale)")
     .option("--height <px>", "Logical viewport height in CSS px (default: infer from Figma PNG ÷ export scale)")
-    .option("--figma-scale <n>", "Figma export scale (default: 2, matches save-fixture / @2x PNGs)")
+    .option("--figma-scale <n>", "Figma export scale (default: 2, matches calibrate-save-fixture / @2x PNGs)")
     .option("--expand-root", "Replace root element's fixed width with 100% before rendering (for responsive comparison)")
     .example("  canicode visual-compare ./generated/index.html --figma-url 'https://www.figma.com/design/ABC/File?node-id=1-234'")
     .action(async (codePath: string, rawOptions: Record<string, unknown>) => {

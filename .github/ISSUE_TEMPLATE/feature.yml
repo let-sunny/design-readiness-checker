@@ -7,7 +7,7 @@ body:
     attributes:
       label: Background
       description: Why is this needed? What problem does it solve?
-      placeholder: "save-fixture doesn't store component master nodes, so design-tree and analysis rules can't access component structure"
+      placeholder: "calibrate-save-fixture doesn't store component master nodes, so design-tree and analysis rules can't access component structure"
     validations:
       required: true
   - type: textarea

@@ -4,10 +4,10 @@ import { resolve } from "node:path";
 import type { CAC } from "cac";
 import { z } from "zod";
 
-import { parseFigmaUrl } from "../../core/adapters/figma-url-parser.js";
-import { loadFile, isFigmaUrl } from "../../core/engine/loader.js";
-import { getFigmaToken } from "../../core/engine/config-store.js";
-import { collectVectorNodes, collectImageNodes, sanitizeFilename, countNodes } from "../helpers.js";
+import { parseFigmaUrl } from "../../../core/adapters/figma-url-parser.js";
+import { loadFile, isFigmaUrl } from "../../../core/engine/loader.js";
+import { getFigmaToken } from "../../../core/engine/config-store.js";
+import { collectVectorNodes, collectImageNodes, sanitizeFilename, countNodes } from "../../helpers.js";
 
 const SaveFixtureOptionsSchema = z.object({
   output: z.string().optional(),
@@ -18,18 +18,18 @@ const SaveFixtureOptionsSchema = z.object({
 });
 
 
-export function registerSaveFixture(cli: CAC): void {
+export function registerCalibrateSaveFixture(cli: CAC): void {
   cli
     .command(
-      "save-fixture <input>",
-      "Save Figma design as a fixture directory for offline analysis"
+      "calibrate-save-fixture <input>",
+      "Save Figma design as a fixture directory for calibration"
     )
     .option("--output <path>", "Output directory (default: fixtures/<name>/)")
     .option("--name <name>", "Fixture name (default: extracted from URL)")
     .option("--token <token>", "Figma API token (or use FIGMA_TOKEN env var)")
     .option("--image-scale <n>", "Image export scale: 2 for PC (default), 3 for mobile")
-    .example("  canicode save-fixture https://www.figma.com/design/ABC123/MyDesign?node-id=1-234")
-    .example("  canicode save-fixture https://www.figma.com/design/ABC123/MyDesign?node-id=1-234 --image-scale 3")
+    .example("  canicode calibrate-save-fixture https://www.figma.com/design/ABC123/MyDesign?node-id=1-234")
+    .example("  canicode calibrate-save-fixture https://www.figma.com/design/ABC123/MyDesign?node-id=1-234 --image-scale 3")
     .action(async (input: string, rawOptions: Record<string, unknown>) => {
       try {
         const parseResult = SaveFixtureOptionsSchema.safeParse(rawOptions);
@@ -41,7 +41,7 @@ export function registerSaveFixture(cli: CAC): void {
         const options = parseResult.data;
 
         if (!isFigmaUrl(input)) {
-          throw new Error("save-fixture requires a Figma URL as input.");
+          throw new Error("calibrate-save-fixture requires a Figma URL as input.");
         }
 
         // Validate --image-scale early (before any file I/O)
@@ -68,8 +68,8 @@ export function registerSaveFixture(cli: CAC): void {
         // 0. Resolve component master node trees
         const figmaTokenForComponents = options.token ?? getFigmaToken();
         if (figmaTokenForComponents) {
-          const { FigmaClient: FC } = await import("../../core/adapters/figma-client.js");
-          const { resolveComponentDefinitions, resolveInteractionDestinations } = await import("../../core/adapters/component-resolver.js");
+          const { FigmaClient: FC } = await import("../../../core/adapters/figma-client.js");
+          const { resolveComponentDefinitions, resolveInteractionDestinations } = await import("../../../core/adapters/component-resolver.js");
           const componentClient = new FC({ token: figmaTokenForComponents });
           try {
             const definitions = await resolveComponentDefinitions(componentClient, file.fileKey, file.document);
@@ -99,7 +99,7 @@ export function registerSaveFixture(cli: CAC): void {
         // 2. Download screenshot
         const figmaToken = options.token ?? getFigmaToken();
         if (figmaToken) {
-          const { FigmaClient } = await import("../../core/adapters/figma-client.js");
+          const { FigmaClient } = await import("../../../core/adapters/figma-client.js");
           const client = new FigmaClient({ token: figmaToken });
           const { nodeId } = parseFigmaUrl(input);
           const rootNodeId = nodeId?.replace(/-/g, ":") ?? file.document.id;

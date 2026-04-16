@@ -113,7 +113,7 @@ Setup: `canicode init --token figd_xxxxxxxxxxxxx`
 | View, Collab | 6 req/month | 6 req/month |
 | Dev, Full | 6 req/month | 10–20 req/min |
 
-Hitting 429 errors? Make sure the file is in a paid workspace. Or `save-fixture` once and analyze locally. [Full details](https://developers.figma.com/docs/rest-api/rate-limits/)
+Hitting 429 errors? Make sure the file is in a paid workspace. Or `calibrate-save-fixture` once and analyze locally. [Full details](https://developers.figma.com/docs/rest-api/rate-limits/)
 
 </details>
 

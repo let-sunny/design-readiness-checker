@@ -126,7 +126,7 @@ OPTIONS
   --output <dir>      Output directory (default: /tmp/canicode-visual-compare)
   --width <px>        Logical viewport width in CSS px (omit = infer from Figma PNG ÷ export scale)
   --height <px>       Logical viewport height in CSS px (omit = infer from Figma PNG ÷ export scale)
-  --figma-scale <n>   Figma Images API scale (default: 2, matches save-fixture @2x PNGs)
+  --figma-scale <n>   Figma Images API scale (default: 2, matches calibrate-save-fixture @2x PNGs)
 
 OUTPUT FILES
   /tmp/canicode-visual-compare/

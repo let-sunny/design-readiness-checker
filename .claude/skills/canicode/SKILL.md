@@ -10,7 +10,7 @@ Analyze Figma design files to score how development-friendly and AI-friendly the
 ## Prerequisites
 
 This skill uses the CLI. Requires either:
-- A **saved fixture** (from `canicode save-fixture`)
+- A **saved fixture** (from `canicode calibrate-save-fixture`)
 - A **FIGMA_TOKEN** for live Figma URLs
 
 ## How to Analyze
@@ -35,7 +35,7 @@ npx canicode analyze fixtures/my-design
 ### Save a fixture for offline analysis
 
 ```bash
-npx canicode save-fixture "https://www.figma.com/design/ABC123/MyDesign?node-id=1-234" --output fixtures/my-design
+npx canicode calibrate-save-fixture "https://www.figma.com/design/ABC123/MyDesign?node-id=1-234" --output fixtures/my-design
 ```
 
 ## Analysis Options

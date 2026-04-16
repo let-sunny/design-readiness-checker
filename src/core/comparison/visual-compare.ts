@@ -41,7 +41,7 @@ export interface VisualCompareOptions {
    */
   viewport?: { width?: number; height?: number } | undefined;
   /**
-   * Figma Images API `scale` and assumed scale for fixture `figma.png` (e.g. from `save-fixture`).
+   * Figma Images API `scale` and assumed scale for fixture `figma.png` (e.g. from `calibrate-save-fixture`).
    * Default 2 matches REST exports and avoids comparing a @2x PNG against a 1× Playwright capture.
    */
   figmaExportScale?: number | undefined;
