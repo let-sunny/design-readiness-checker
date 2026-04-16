@@ -11,7 +11,7 @@
 
 **2. MCP Server (`canicode-mcp`)**
 - Install: `claude mcp add canicode -- npx -y -p canicode canicode-mcp`
-- Tools: `analyze`, `list-rules`, `visual-compare`, `version`, `docs`
+- Tools: `analyze`, `gotcha-survey`, `list-rules`, `visual-compare`, `version`, `docs`
 - Data source: Figma REST API via `input` param (Figma URL or fixture path). Requires FIGMA_TOKEN for live URLs.
 
 **3. Claude Code Skill (`/canicode`)**
