@@ -13,8 +13,13 @@
     ],
     "Stop": [
       {
-        "type": "command",
-        "command": "pnpm lint 2>&1 && pnpm build 2>&1"
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pnpm lint 2>&1 && pnpm build 2>&1"
+          }
+        ]
       }
     ],
     "PostToolUse": [
