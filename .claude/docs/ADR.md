@@ -44,6 +44,12 @@ Core decisions that shape every session. For full history see [GitHub Wiki Decis
 **Why**: Ensures provenance, consistent build environment, and review gate.
 **Impact**: Local `npm publish` is blocked by safety hooks.
 
+## ADR-009: Gotcha delivery via Figma MCP skill auto-discovery
+
+**Decision**: Gotcha answers are written as a `.claude/skills/canicode-gotchas/SKILL.md` file in the user's project. No explicit wiring to code generation prompts or skills is needed.
+**Why**: Claude Code automatically scans `.claude/skills/` and loads relevant skills based on the `description` field and conversation context. When a user asks "implement this design", Claude Code finds the gotcha skill file (description: "Design gotcha answers for … — reference during code generation") and includes it in the code generation context. This is the standard Figma MCP pattern — gotchas are "debugging guides" that prevent AI from repeating mistakes (e.g., always making badges oval instead of circular). See [From Claude Code to Figma — and Back Again](https://fig-events.figma.com/claude-to-figma/).
+**Impact**: Do NOT add explicit gotcha references to code generation prompts, PROMPT.md, or other skills. The skill file with an appropriate description is the complete delivery mechanism. Adding explicit references would bypass the skill system's design and create maintenance coupling.
+
 ## ADR-008: Calibration pipeline — explicit claude -p orchestration
 
 **Decision**: Replace single-session delegated orchestrator with TypeScript script (`scripts/calibrate.ts`) that explicitly calls CLI commands for deterministic steps and `claude -p` for judgment steps (converter, gap-analyzer, critic, arbitrator). Strip ablation runs 7 parallel sessions. Delete `orchestrator.ts`.
