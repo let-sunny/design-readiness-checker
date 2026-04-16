@@ -71,7 +71,6 @@ claude mcp add canicode -- npx -y -p canicode canicode-mcp
 | **MCP Server** | Claude Code / Cursor / Claude Desktop integration |
 | **Claude Code Skill** | Lightweight, no MCP install |
 | **CLI** | Full control, CI/CD, offline analysis |
-| **`canicode implement`** | Generate code-ready package (analysis + assets + prompt) |
 | **[GitHub Action](https://github.com/marketplace/actions/canicode-action)** | PR gate with score threshold |
 
 </details>
@@ -138,31 +137,6 @@ For Cursor / Claude Desktop config, see [`docs/CUSTOMIZATION.md`](docs/CUSTOMIZA
 
 </details>
 
-
-<details>
-<summary><strong>Design to Code</strong> (prepare implementation package)</summary>
-
-```bash
-canicode implement ./fixtures/my-design
-canicode implement "https://www.figma.com/design/ABC/File?node-id=1-234" --prompt ./my-react-prompt.md --image-scale 3
-```
-
-Outputs a ready-to-use package for AI code generation:
-- `analysis.json` — issues + scores
-- `design-tree.txt` — DOM-like tree with CSS styles + token estimate
-- `images/` — PNG assets with human-readable names (`hero-banner@2x.png`)
-- `vectors/` — SVG assets
-- `PROMPT.md` — code generation prompt (default: HTML+CSS, or your custom prompt)
-
-| Option | Default | Description |
-|--------|---------|-------------|
-| `--prompt` | built-in HTML+CSS | Path to your custom prompt file for any stack |
-| `--image-scale` | `2` | Image export scale: `2` for PC, `3` for mobile |
-| `--output` | `./canicode-implement/` | Output directory |
-
-Feed `design-tree.txt` + `PROMPT.md` to your AI assistant (Claude, Cursor, etc.) to generate code.
-
-</details>
 
 <details>
 <summary><strong>Claude Code Skill</strong> (lightweight, no MCP install)</summary>
