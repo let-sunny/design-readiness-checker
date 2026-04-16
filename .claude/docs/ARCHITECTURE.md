@@ -26,6 +26,14 @@
 - Output: skill file with design gotcha Q&A pairs (nodeId, ruleId, severity, question, answer)
 - **Code generation delivery**: Auto-discovery of a separate skill file cannot reach `figma-implement-design` (Figma skills only support explicit cross-references). The `canicode-roundtrip` orchestration skill (#277) connects analyze → gotcha survey → code generation in a single flow (ADR-009).
 
+**3b. Claude Code Skill (`/canicode-roundtrip`)**
+- Location: `.claude/skills/canicode-roundtrip/SKILL.md` (copy to any project)
+- Data source: `analyze` + `gotcha-survey` MCP tools (canicode MCP server) + Figma MCP tools (`get_design_context`, `get_screenshot`)
+- Workflow: analyze → gate on `isReadyForCodeGen` → gotcha survey (if needed) → code generation with gotcha context injected inline
+- Orchestrates existing MCP tools — no new tools or CLI commands introduced
+- Gotcha answers are passed as inline conversation context, not saved as a separate skill file (ADR-009)
+- See #277
+
 **4. Web App (GitHub Pages)**
 - Source: `app/web/src/index.html`
 - Build: `pnpm build:web` → `app/web/dist/` (deployed via GitHub Pages)
