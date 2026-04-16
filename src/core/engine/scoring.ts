@@ -136,6 +136,15 @@ function calculateGrade(percentage: number): Grade {
 }
 
 /**
+ * Returns true if the design is ready for code generation.
+ * S, A+, and A grades (percentage >= 85) indicate the design has minimal blockers
+ * and can be implemented accurately by AI or developers.
+ */
+export function isReadyForCodeGen(grade: Grade): boolean {
+  return grade === "S" || grade === "A+" || grade === "A";
+}
+
+/**
  * Convert grade to a CSS-safe class name suffix
  * e.g. "A+" -> "Aplus", "B+" -> "Bplus", "C+" -> "Cplus"
  */
@@ -415,6 +424,8 @@ export function buildResultJson(
     nodeCount: result.nodeCount,
     maxDepth: result.maxDepth,
     issueCount: result.issues.length,
+    isReadyForCodeGen: isReadyForCodeGen(scores.overall.grade),
+    blockingIssueCount: scores.summary.blocking,
     scores: {
       overall: scores.overall,
       categories: scores.byCategory,

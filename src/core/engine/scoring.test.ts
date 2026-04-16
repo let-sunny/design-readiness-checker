@@ -1,4 +1,5 @@
-import { calculateScores, formatScoreSummary, gradeToClassName, getCategoryLabel, getSeverityLabel, buildResultJson } from "./scoring.js";
+import { calculateScores, formatScoreSummary, gradeToClassName, getCategoryLabel, getSeverityLabel, buildResultJson, isReadyForCodeGen } from "./scoring.js";
+import type { Grade } from "./scoring.js";
 import type { AnalysisIssue, AnalysisResult } from "./rule-engine.js";
 import type { AnalysisFile, AnalysisNode } from "../contracts/figma-node.js";
 import type { Rule, RuleConfig, RuleViolation } from "../contracts/rule.js";
@@ -478,4 +479,61 @@ describe("buildResultJson", () => {
     const withoutKey = buildResultJson("TestFile", result, scores);
     expect(withoutKey.fileKey).toBeUndefined();
   });
+
+  it("includes isReadyForCodeGen field", () => {
+    const result = makeResult([]);
+    const scores = calculateScores(result);
+    const json = buildResultJson("TestFile", result, scores);
+
+    expect(typeof json.isReadyForCodeGen).toBe("boolean");
+  });
+
+  it("includes blockingIssueCount field", () => {
+    const result = makeResult([
+      makeIssue({ ruleId: "no-auto-layout", category: "pixel-critical", severity: "blocking" }),
+      makeIssue({ ruleId: "no-auto-layout", category: "pixel-critical", severity: "blocking" }),
+      makeIssue({ ruleId: "raw-value", category: "token-management", severity: "missing-info" }),
+    ]);
+    const scores = calculateScores(result);
+    const json = buildResultJson("TestFile", result, scores);
+
+    expect(json.blockingIssueCount).toBe(2);
+  });
+
+  it("isReadyForCodeGen is true when no issues (S grade)", () => {
+    const result = makeResult([]);
+    const scores = calculateScores(result);
+    const json = buildResultJson("TestFile", result, scores);
+
+    expect(json.isReadyForCodeGen).toBe(true);
+  });
+
+  it("blockingIssueCount is 0 when no blocking issues", () => {
+    const result = makeResult([
+      makeIssue({ ruleId: "raw-value", category: "token-management", severity: "suggestion" }),
+    ]);
+    const scores = calculateScores(result);
+    const json = buildResultJson("TestFile", result, scores);
+
+    expect(json.blockingIssueCount).toBe(0);
+  });
+});
+
+// ─── isReadyForCodeGen helper ─────────────────────────────────────────────────
+
+describe("isReadyForCodeGen helper", () => {
+  const truthy: Grade[] = ["S", "A+", "A"];
+  const falsy: Grade[] = ["B+", "B", "C+", "C", "D", "F"];
+
+  for (const grade of truthy) {
+    it(`returns true for grade ${grade}`, () => {
+      expect(isReadyForCodeGen(grade)).toBe(true);
+    });
+  }
+
+  for (const grade of falsy) {
+    it(`returns false for grade ${grade}`, () => {
+      expect(isReadyForCodeGen(grade)).toBe(false);
+    });
+  }
 });
