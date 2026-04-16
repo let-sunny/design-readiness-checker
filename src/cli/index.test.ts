@@ -1,25 +1,10 @@
 import { execFileSync } from "node:child_process";
 import { resolve } from "node:path";
+import { INTERNAL_COMMANDS } from "./internal-commands.js";
 
 const CLI_PATH = resolve(import.meta.dirname, "../../dist/cli/index.js");
 
 describe("CLI --help", () => {
-  const INTERNAL_COMMANDS = [
-    "calibrate-analyze",
-    "calibrate-evaluate",
-    "calibrate-gap-report",
-    "calibrate-run",
-    "calibrate-gather-evidence",
-    "calibrate-finalize-debate",
-    "calibrate-enrich-evidence",
-    "calibrate-prune-evidence",
-    "calibrate-save-fixture",
-    "fixture-list",
-    "fixture-done",
-    "design-tree-strip",
-    "html-postprocess",
-    "code-metrics",
-  ];
 
   it("should not show internal commands in --help output", () => {
     const output = execFileSync("node", [CLI_PATH, "--help"], {

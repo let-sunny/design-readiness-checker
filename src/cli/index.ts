@@ -26,23 +26,7 @@ import { registerConfig } from "./commands/config.js";
 import { registerListRules } from "./commands/list-rules.js";
 import { registerPrompt } from "./commands/prompt.js";
 
-// Internal command names — hidden from --help but still callable directly
-const INTERNAL_COMMANDS = [
-  "calibrate-analyze",
-  "calibrate-evaluate",
-  "calibrate-gap-report",
-  "calibrate-run",
-  "calibrate-gather-evidence",
-  "calibrate-finalize-debate",
-  "calibrate-enrich-evidence",
-  "calibrate-prune-evidence",
-  "calibrate-save-fixture",
-  "fixture-list",
-  "fixture-done",
-  "design-tree-strip",
-  "html-postprocess",
-  "code-metrics",
-];
+import { INTERNAL_COMMANDS } from "./internal-commands.js";
 
 // Internal commands (used by subagents, hidden from user help)
 import { registerCalibrateAnalyze } from "./commands/internal/calibrate-analyze.js";
