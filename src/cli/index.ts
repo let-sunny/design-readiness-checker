@@ -26,7 +26,10 @@ import { registerConfig } from "./commands/config.js";
 import { registerListRules } from "./commands/list-rules.js";
 import { registerPrompt } from "./commands/prompt.js";
 
+import { INTERNAL_COMMANDS } from "./internal-commands.js";
+
 // Internal commands (used by subagents, hidden from user help)
+// When adding a new internal command, also add its name to internal-commands.ts
 import { registerCalibrateAnalyze } from "./commands/internal/calibrate-analyze.js";
 import { registerCalibrateEvaluate } from "./commands/internal/calibrate-evaluate.js";
 import { registerCalibrateGapReport } from "./commands/internal/calibrate-gap-report.js";
@@ -101,6 +104,16 @@ cli
   });
 
 cli.help((sections) => {
+  // Filter internal commands from "Commands" and "For more info" sections
+  for (const section of sections) {
+    if (section.title === "Commands" || section.title?.startsWith("For more info")) {
+      section.body = section.body
+        .split("\n")
+        .filter((line: string) => !INTERNAL_COMMANDS.some((cmd) => line.includes(cmd)))
+        .join("\n");
+    }
+  }
+
   sections.push(
     {
       title: "\nSetup",
