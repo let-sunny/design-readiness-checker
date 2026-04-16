@@ -163,9 +163,8 @@ npm publishing is handled by GitHub CI — **do not run `npm publish` manually**
 1. Always create PRs as **draft** first — wait for user approval before marking ready
 2. When changes are needed, convert back to **draft** — mark ready again when done
 3. After creating a PR, **subscribe** with `subscribe_pr_activity` to monitor reviews and CI in real-time
-4. After each push, watch for CodeRabbit's first comment — if it contains a rate limit message, wait the specified duration then push an empty commit (`git commit --allow-empty -m "chore: re-trigger review"`) to re-trigger
-5. Address review comments immediately as they arrive
-6. Never merge without **explicit user approval** — always use squash merge and delete the branch after
+4. Address review comments immediately as they arrive
+5. Never merge without **explicit user approval** — always use squash merge and delete the branch after
 
 ## Severity Levels
 
