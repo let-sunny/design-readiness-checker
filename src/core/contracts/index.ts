@@ -9,3 +9,4 @@ export * from "./score.js";
 export * from "./report.js";
 export * from "./visual-compare.js";
 export * from "./mcp-response.js";
+export * from "./gotcha-survey.js";
