@@ -110,75 +110,205 @@ Every gotcha-survey question (and every entry in `analyzeResult.issues[]`) carri
 
 Most production nodes sit under `INSTANCE` subtrees. `canicode` flags these via `question.isInstanceChild` and, when resolvable, surfaces the definition node id as `question.sourceChildId` plus extra metadata on `question.instanceContext`. You do not need to parse node ids.
 
-| Property / action | Typical override on instance child? | Notes |
-|-------------------|-------------------------------------|--------|
-| `node.name` | Often yes | Prefer scene node first. |
-| `layoutSizingHorizontal` / `layoutSizingVertical` on the **INSTANCE** root | Yes | Targets the instance node, not deep children. |
-| `annotations` | Often yes | Good fallback when a property cannot be set. |
-| `minWidth`, `maxWidth`, `minHeight`, `maxHeight` | Often **no** | Error text usually mentions instance override — route to definition node (`question.sourceChildId`) after confirmation. |
-| `layoutMode`, primary layout structure | Often **no** on deep children | Same as above — definition-level change. |
-| `itemSpacing`, padding fields | **Mixed** | Try scene node inside `try/catch`; on failure use definition path after confirmation. |
+Matrix below is confirmed by Experiment 08 ([#290](https://github.com/let-sunny/canicode/issues/290)) probes on shallow + deep instance-child FRAMEs in the Simple Design System fixture. `✅` = raw-value write accepted, `❌` = throws *"cannot be overridden in an instance"*, `⚠️` = no error but value silently unchanged (must detect with before/after compare).
+
+| Property | Raw-value write on instance child | Variable binding | Notes |
+|----------|----------------------------------|------------------|-------|
+| `node.name` | ✅ | — | Prefer scene node first. |
+| `annotations` | ✅ | — | Good fallback when another property cannot be set. |
+| `itemSpacing`, `paddingTop/Right/Bottom/Left` | ✅ | ✅ | |
+| `primaryAxisAlignItems`, `counterAxisAlignItems`, `layoutAlign` | ✅ | — | |
+| `cornerRadius`, `opacity` | ✅ | ✅ | |
+| `fills`, `strokes` (raw color) | ✅ | ✅ via `setBoundVariableForPaint(paint, "color", v)` | |
+| `layoutSizingHorizontal` / `layoutSizingVertical` | ✅ | — | |
+| `layoutMode` | ⚠️ on some nodes | — | Some instance children silently ignore the write (no throw, no change). |
+| **`minWidth`, `maxWidth`, `minHeight`, `maxHeight`** | ❌ on many nodes | **✅** | **Variable binding bypasses the override restriction** — prefer binding when the answer names a token. Raw values route to the definition node after confirmation. |
+| `fontSize`, `lineHeight`, `letterSpacing`, `paragraphSpacing` (TEXT) | ✅ | ✅ | |
+| `characters` (TEXT) | ✅ | ✅ STRING variable | |
 
 **Three-tier write policy:**
 
 1. **Scene (instance) node** — `await figma.getNodeByIdAsync(question.nodeId)` and apply the write inside `try/catch`. Success → done (local change only). Mark result with ✅.
-2. **Definition (source) node** — If the error indicates the property cannot be overridden in an instance, load `await figma.getNodeByIdAsync(question.sourceChildId)`. If that returns null, walk from the scene node to the nearest `INSTANCE` parent and use `await instance.getMainComponentAsync()`, then find the matching layer inside that component. **Ask the user to confirm** before mutating the definition — changes propagate to **all** instances. Mark result with 🌐.
+2. **Definition (source) node** — If the error indicates the property cannot be overridden in an instance, load `await figma.getNodeByIdAsync(question.sourceChildId)`. If that returns null, walk from the scene node to the nearest `INSTANCE` parent and use `await instance.getMainComponentAsync()`, then find the matching layer inside that component. Changes propagate to **all** instances of the component in the file. Mark result with 🌐.
 3. **Annotation fallback** — If `mainComponent` is null (common for **external published libraries**) or the write still fails, add a `labelMarkdown` annotation on the **scene** node documenting the answer and limitation. Mark result with 📝.
 
-**Shared helper pattern** (adapt per `use_figma` batch — keep each `writeFn` small so a throw does not abort unrelated writes):
+**Confirmation is a batch-level concern, not a helper-level one.** A `use_figma` call runs one JavaScript batch and cannot pause mid-batch for user input. So the orchestrator is responsible for pre-flighting: classify every `question` whose `isInstanceChild` is true as a *potential* definition write, enumerate the likely propagation set to the user up-front, and get **one confirmation for the whole batch**. The helper below assumes that confirmation has already happened — it does not prompt.
+
+**Shared helpers** — paste once at the top of every `use_figma` batch. Keep each `writeFn` small so a throw does not abort unrelated writes. Experiment 08 findings informed every branch here.
 
 ```javascript
-async function applyWithInstanceFallback(question, writeFn) {
+// ── D1: Figma readback populates BOTH `label` and `labelMarkdown` on every entry,
+// but writes accept only ONE. Strip to the non-empty field before spreading.
+// Entries where neither field has content are dropped — they cannot round-trip
+// through the write validator.
+function stripAnnotations(annotations) {
+  return (annotations || []).flatMap((a) => {
+    const hasLM = typeof a.labelMarkdown === "string" && a.labelMarkdown.length > 0;
+    const hasLabel = typeof a.label === "string" && a.label.length > 0;
+    if (!hasLM && !hasLabel) return [];
+    const base = hasLM ? { labelMarkdown: a.labelMarkdown } : { label: a.label };
+    if (a.categoryId) base.categoryId = a.categoryId;
+    if (Array.isArray(a.properties) && a.properties.length > 0) base.properties = a.properties;
+    return [base];
+  });
+}
+
+// ── D4: File-scoped custom categories. Run once per roundtrip (Step 4.0).
+// Returns { gotcha, autoFix, fallback } map of category ids.
+// Colors must be lowercase: yellow | orange | red | pink | violet | blue | teal | green.
+async function ensureCanicodeCategories() {
+  const api = figma.annotations;
+  const existing = await api.getAnnotationCategoriesAsync();
+  const byLabel = new Map(existing.map((c) => [c.label, c.id]));
+  async function ensure(label, color) {
+    if (byLabel.has(label)) return byLabel.get(label);
+    const created = await api.addAnnotationCategoryAsync({ label, color });
+    byLabel.set(label, created.id);
+    return created.id;
+  }
+  return {
+    gotcha:   await ensure("canicode:gotcha",   "blue"),
+    autoFix:  await ensure("canicode:auto-fix", "green"),
+    fallback: await ensure("canicode:fallback", "yellow"),
+  };
+}
+
+// ── D2: Upsert a canicode annotation — replace existing by ruleId prefix, else append.
+// Preserves `categoryId` and `properties` when replacing. Match covers both
+// `labelMarkdown` (current format) and `label` (pre-D1 legacy entries) so reruns
+// across versions consolidate instead of accumulating.
+// categoryId: id from ensureCanicodeCategories().
+// properties: optional array like [{ type: "width" }] — only valid camelCase types,
+//   and only types the node supports (e.g. FRAME accepts width/height/layoutMode/
+//   itemSpacing/padding; TEXT accepts width/height/fills/fontSize/lineHeight/…).
+function upsertCanicodeAnnotation(node, { ruleId, markdown, categoryId, properties }) {
+  if (!("annotations" in node)) return false;
+  const prefix = `**[canicode] ${ruleId}**`;
+  const body = markdown.startsWith(prefix) ? markdown : `${prefix}\n\n${markdown}`;
+  const existing = stripAnnotations(node.annotations);
+  const entry = { labelMarkdown: body };
+  if (categoryId) entry.categoryId = categoryId;
+  if (properties && properties.length) entry.properties = properties;
+  const idx = existing.findIndex((a) =>
+    a.labelMarkdown?.startsWith(prefix) || a.label?.startsWith(prefix),
+  );
+  if (idx >= 0) existing[idx] = entry;
+  else existing.push(entry);
+  node.annotations = existing;
+  return true;
+}
+
+// ── Three-tier write policy with silent-ignore detection (B matrix finding).
+// writeFn contract: may read `target[prop]` before/after to detect silent ignore
+// and return false to signal "no change" — caller routes to definition fallback.
+// Pre-condition: the orchestrator has already collected a batch-level confirmation
+// that writes targeting a source-component definition may fan out to every instance
+// of that component in the file. This helper never prompts.
+async function applyWithInstanceFallback(question, writeFn, { categories } = {}) {
   const scene = await figma.getNodeByIdAsync(question.nodeId);
   if (!scene) return { icon: "📝", label: "missing node" };
 
-  const definitionId = question.sourceChildId;
-  const definition = definitionId
-    ? await figma.getNodeByIdAsync(definitionId)
+  const definition = question.sourceChildId
+    ? await figma.getNodeByIdAsync(question.sourceChildId)
     : null;
 
   try {
-    await writeFn(scene);
+    const changed = await writeFn(scene);
+    if (changed === false) {
+      // Silent-ignore: write succeeded but value unchanged (e.g. layoutMode on some instances).
+      // Route to the source definition — already covered by the batch-level confirmation.
+      if (definition) {
+        await writeFn(definition);
+        return { icon: "🌐", label: "source definition (silent-ignore fallback)" };
+      }
+      // Cannot route — annotate scene as fallback.
+      if (categories) {
+        upsertCanicodeAnnotation(scene, {
+          ruleId: question.ruleId,
+          markdown: "write accepted but value unchanged; no definition available",
+          categoryId: categories.fallback,
+        });
+      }
+      return { icon: "📝", label: "silent-ignore, annotated" };
+    }
     return { icon: "✅", label: "instance/scene" };
   } catch (e) {
-    const msg = String(e && e.message ? e.message : e);
+    const msg = String(e?.message ?? e);
+    // Canonical match from Experiment 08: "This property cannot be overridden in an instance".
+    // The broader `/override/i` fallback catches variant wording from other properties but is
+    // narrow enough that unrelated errors (file missing, network, etc.) won't false-match.
+    // Do not add `/instance/i` — many unrelated messages mention "instance" and it over-routes.
     const looksLikeInstanceOverride =
-      /instance/i.test(msg) ||
-      /override/i.test(msg) ||
-      /cannot be overridden/i.test(msg);
+      /cannot be overridden/i.test(msg) || /override/i.test(msg);
     if (!looksLikeInstanceOverride || !definition) {
+      if (categories) {
+        upsertCanicodeAnnotation(scene, {
+          ruleId: question.ruleId,
+          markdown: `could not apply automatically: ${msg}`,
+          categoryId: categories.fallback,
+        });
+      }
       return { icon: "📝", label: "error: " + msg };
     }
-    // Orchestrator: pause here, ask user to confirm propagation to all instances, then:
+    // Route to source definition — batch-level confirmation already covers propagation.
     await writeFn(definition);
     return { icon: "🌐", label: "source definition" };
   }
 }
+
+// ── C: Resolve a variable reference from an answer like { variable: "mobile-width" }.
+// Scope is LOCAL variables only — exact-name match against `getLocalVariablesAsync()`.
+// Slash-path names (e.g. "Brand/Primary") work only when the variable's `name` field
+// itself contains the slash path. Library variables imported into this file are
+// included automatically because they appear in `getLocalVariablesAsync()`; variables
+// that live purely in an unimported remote library are NOT resolved here. Callers
+// must fall back to a raw write (or to an annotation explaining the missing token).
+async function resolveVariableByName(name) {
+  const locals = await figma.variables.getLocalVariablesAsync();
+  return locals.find((v) => v.name === name) || null;
+}
 ```
 
-Wrap every property write in `applyWithInstanceFallback(question, async (target) => { ... })` so failed instance overrides route to the definition path or annotation instead of silently aborting the batch.
+Wrap every property write in `applyWithInstanceFallback(question, async (target) => { ... }, { categories })` so failed or silently-ignored instance overrides route to the definition path or fallback annotation instead of silently aborting the batch.
 
 #### Strategy A: Property Modification — apply directly
 
-Rules with `applyStrategy === "property-mod"`. Use the unified helper below; it branches on `question.targetProperty` automatically.
+Rules with `applyStrategy === "property-mod"`. The helper below branches on `question.targetProperty` automatically, and on each value type — scalar, multi-property object, or variable reference (`{ variable: "token-name" }`).
 
 ```javascript
-async function applyPropertyMod(question, answerValue) {
+async function applyPropertyMod(question, answerValue, context) {
   const props = Array.isArray(question.targetProperty)
     ? question.targetProperty
     : [question.targetProperty];
+
   return applyWithInstanceFallback(question, async (target) => {
     if (!target) return;
+    let changed = undefined;
     for (const prop of props) {
       if (!(prop in target)) continue;
       // Multi-property rules (e.g. no-auto-layout → [layoutMode, itemSpacing]) expect
       // an object answer: { layoutMode: "VERTICAL", itemSpacing: 16 }.
-      // Single-property rules expect a scalar (number, string, enum).
-      target[prop] = (typeof answerValue === "object" && answerValue !== null)
+      const value = (typeof answerValue === "object" && answerValue !== null && !("variable" in answerValue))
         ? answerValue[prop]
         : answerValue;
+
+      // Variable binding — answer shape { variable: "name" }.
+      // Bypasses instance-child override restrictions for minWidth/maxWidth and siblings.
+      if (value && typeof value === "object" && "variable" in value) {
+        const variable = await resolveVariableByName(value.variable);
+        if (variable) { target.setBoundVariable(prop, variable); continue; }
+        // Variable not found — fall through to raw write if the answer also has a fallback scalar.
+        if (!("fallback" in value)) continue;
+      }
+
+      const scalar = (value && typeof value === "object" && "fallback" in value) ? value.fallback : value;
+      const before = target[prop];
+      target[prop] = scalar;
+      // B: some instance children silently ignore layoutMode writes.
+      if (target[prop] === before && before !== scalar) changed = false;
     }
-  });
+    return changed;
+  }, context);
 }
 ```
 
@@ -188,6 +318,10 @@ Answer shape guide (LLM judgment — the user's answer is prose; parse according
 - **`fixed-size-in-auto-layout`**: `"FILL"` \| `"HUG"` \| `"FIXED"` — applied to each axis listed in `targetProperty`.
 - **`missing-size-constraint`**: partial `{ minWidth, maxWidth }` — include only the keys the answer supplied.
 - **`no-auto-layout`**: `{ layoutMode, itemSpacing }`; optionally extend with padding/alignment from the answer.
+
+**Variable binding** — whenever the answer names a design-system token (e.g. the user says the width should be `mobile-width`, the gap should be `space-m`, the color should be `Brand/Primary`), shape the value as `{ variable: "token-name" }` instead of a raw scalar. The helper calls `setBoundVariable` which **bypasses instance-child override restrictions**, so `minWidth`/`maxWidth`/color fields that raw writes cannot touch on an instance child will bind successfully. Mix shapes per-property — e.g. `{ minWidth: { variable: "mobile-width" }, maxWidth: 1440 }`.
+
+The name must match **the variable's `name` field exactly** — including any slash path in the name (e.g. `"Brand/Primary"` matches only when the variable is literally named that way). Resolution is scoped to variables that `figma.variables.getLocalVariablesAsync()` returns: locally defined ones plus library variables that have already been imported into this file. If the token lives only in an unimported remote library, the binding step returns `null` and `applyPropertyMod` either falls through to a raw scalar (when the answer provided a `fallback` value) or records the miss — expose this as an annotation via the fallback category so the designer can import the variable and retry.
 
 #### Strategy B: Structural Modification — confirm with user first
 
@@ -219,18 +353,26 @@ If the user **declines** any structural modification, add an annotation instead 
 
 #### Strategy C: Annotation — record on the design for designer reference
 
-Rules with `applyStrategy === "annotation"` cannot be auto-fixed via Plugin API. Add the gotcha answer as a Figma annotation so designers see it in Dev Mode.
+Rules with `applyStrategy === "annotation"` cannot be auto-fixed via Plugin API. Add the gotcha answer as a Figma annotation so designers see it in Dev Mode. Use the helper — it handles the D1 mutex, D2 in-place upsert, and D4 category assignment.
 
 ```javascript
 const scene = await figma.getNodeByIdAsync(question.nodeId);
-if (scene && "annotations" in scene) {
-  scene.annotations = [...(scene.annotations || []), {
-    labelMarkdown: `**[canicode] ${question.ruleId}**\n\n**Q:** ${question.question}\n**A:** ${answer}`
-  }];
-}
+upsertCanicodeAnnotation(scene, {
+  ruleId: question.ruleId,
+  markdown: `**Q:** ${question.question}\n**A:** ${answer}`,
+  categoryId: categories.gotcha,
+  // Optional: surface live property values in Dev Mode alongside the note.
+  // Only include types the node supports (FRAME vs TEXT — see matrix above).
+  properties: question.ruleId === "absolute-position-in-auto-layout"
+    ? [{ type: "layoutMode" }]
+    : undefined,
+});
 ```
 
-Important: use `labelMarkdown` only — `label` and `labelMarkdown` are mutually exclusive. Preserve existing annotations by spreading `scene.annotations`. Prefer annotating the **scene** instance child so designers see the note where they work; mention in the markdown if the fix belongs on the source component but could not be applied (library/external).
+Notes:
+- `upsertCanicodeAnnotation` replaces an existing `**[canicode] <ruleId>**` entry on the same node instead of appending — reruns don't accumulate duplicates.
+- `label` and `labelMarkdown` are mutually exclusive on write, but Figma returns both on readback. Never spread `scene.annotations` directly; always go through `stripAnnotations` (the helper does this).
+- Prefer annotating the **scene** instance child so designers see the note where they work; mention in the markdown if the fix belongs on the source component but could not be applied (library/external).
 
 #### Strategy D: Auto-fix lower-severity issues from analysis
 
@@ -251,15 +393,17 @@ for (const issue of analyzeResult.issues) {
     // Naming rules — rename to the pre-computed suggestedName.
     await applyWithInstanceFallback(q, async (target) => {
       if (target) target.name = issue.suggestedName;
-    });
+    }, { categories });
   } else {
     // raw-value, missing-interaction-state, missing-prototype — designer judgment; annotate.
     const scene = await figma.getNodeByIdAsync(issue.nodeId);
-    if (scene && "annotations" in scene) {
-      scene.annotations = [...(scene.annotations || []), {
-        labelMarkdown: `**[canicode] ${issue.ruleId}**\n\n${issue.message}`
-      }];
-    }
+    upsertCanicodeAnnotation(scene, {
+      ruleId: issue.ruleId,
+      markdown: issue.message,
+      categoryId: categories.autoFix,
+      // Optional: surface the live value for the affected property in Dev Mode.
+      properties: issue.ruleId === "raw-value" ? [{ type: "fills" }] : undefined,
+    });
   }
 }
 ```
@@ -268,10 +412,11 @@ for (const issue of analyzeResult.issues) {
 
 #### Execution order
 
-1. **Batch all property modifications** (Strategy A) into a single `use_figma` call for efficiency.
+0. **Initialize categories** — first batch calls `const categories = await ensureCanicodeCategories();` and keeps the result in scope for every subsequent call in the same script. (Or re-run ensure at the top of each `use_figma` batch — it is idempotent by label.)
+1. **Batch all property modifications** (Strategy A) into a single `use_figma` call for efficiency. Pass `{ categories }` to `applyWithInstanceFallback` so fallbacks land in the correct category.
 2. **Present structural modifications** (Strategy B) one by one, apply confirmed ones.
-3. **Batch all annotations** (Strategy C + declined structural mods) into a single `use_figma` call.
-4. **Batch all auto-fixes and annotations for lower-severity issues** (Strategy D) into a single `use_figma` call.
+3. **Batch all annotations** (Strategy C + declined structural mods) into a single `use_figma` call — use `categories.gotcha` for the category id.
+4. **Batch all auto-fixes and annotations for lower-severity issues** (Strategy D) — use `categories.autoFix` for annotated ones, `categories.fallback` is reserved for errors surfaced by `applyWithInstanceFallback` itself.
 
 After applying, report what was done:
 
@@ -280,10 +425,11 @@ Applied {N} changes to the Figma design:
 - ✅ {nodeName}: renamed to "hero-section" (non-semantic-name) — scene/instance override
 - 🌐 {nodeName}: minWidth applied on source definition (missing-size-constraint) — propagates to all instances
 - ✅ {nodeName}: itemSpacing → 16px (irregular-spacing)
+- 🔗 {nodeName}: minWidth bound to variable "mobile-width" (missing-size-constraint)
 - ⏭️ {nodeName}: declined by user, added annotation (deep-nesting)
-- 📝 {nodeName}: annotation added (absolute-position-in-auto-layout)
+- 📝 {nodeName}: annotation added to canicode:gotcha (absolute-position-in-auto-layout)
 - 🔧 {nodeName}: auto-fixed to "Hover" (non-standard-naming)
-- 📝 {nodeName}: annotation — raw color needs token binding (raw-value)
+- 📝 {nodeName}: annotation added to canicode:auto-fix — raw color needs token binding (raw-value)
 ```
 
 ### Step 5: Re-analyze and verify
@@ -298,13 +444,13 @@ Compare the new grade with the original:
 
 **All gotcha issues resolved** (new grade is S, A+, or A):
 - Tell the user: "Design improved from **{oldGrade}** to **{newGrade}** — all gotcha issues resolved. Ready for code generation."
-- Clean up canicode annotations: remove annotations with `[canicode]` prefix from fixed nodes via `use_figma`:
+- Clean up canicode annotations: remove annotations with `[canicode]` prefix from fixed nodes via `use_figma`. Apply `stripAnnotations` to avoid the D1 mutex:
 ```javascript
 const nodeIds = ["id1", "id2"]; // nodes that now pass
 for (const id of nodeIds) {
-  const node = figma.getNodeById(id);
+  const node = await figma.getNodeByIdAsync(id);
   if (node && "annotations" in node) {
-    node.annotations = (node.annotations || []).filter(
+    node.annotations = stripAnnotations(node.annotations).filter(
       a => !a.labelMarkdown?.startsWith("**[canicode]")
     );
   }
