@@ -3,6 +3,15 @@ import { SeveritySchema } from "./severity.js";
 
 const GradeSchema = z.enum(["S", "A+", "A", "B+", "B", "C+", "C", "D", "F"]);
 
+export const InstanceContextSchema = z.object({
+  parentInstanceNodeId: z.string(),
+  sourceNodeId: z.string(),
+  sourceComponentId: z.string().optional(),
+  sourceComponentName: z.string().optional(),
+});
+
+export type InstanceContext = z.infer<typeof InstanceContextSchema>;
+
 export const GotchaSurveyQuestionSchema = z.object({
   nodeId: z.string(),
   nodeName: z.string(),
@@ -11,6 +20,7 @@ export const GotchaSurveyQuestionSchema = z.object({
   question: z.string(),
   hint: z.string(),
   example: z.string(),
+  instanceContext: InstanceContextSchema.optional(),
 });
 
 export type GotchaSurveyQuestion = z.infer<typeof GotchaSurveyQuestionSchema>;

@@ -58,8 +58,14 @@ function makeIssue(opts: {
   };
 }
 
-function makeResult(issues: AnalysisIssue[]): AnalysisResult {
-  const doc: AnalysisNode = {
+function makeResult(
+  issues: AnalysisIssue[],
+  fileOverrides?: {
+    document?: AnalysisNode;
+    components?: AnalysisFile["components"];
+  },
+): AnalysisResult {
+  const doc: AnalysisNode = fileOverrides?.document ?? {
     id: "0:1",
     name: "Document",
     type: "DOCUMENT",
@@ -71,7 +77,7 @@ function makeResult(issues: AnalysisIssue[]): AnalysisResult {
     lastModified: "",
     version: "1",
     document: doc,
-    components: {},
+    components: fileOverrides?.components ?? {},
     styles: {},
   };
   return {
@@ -364,6 +370,131 @@ describe("generateGotchaSurvey", () => {
 
     const result = GotchaSurveySchema.safeParse(survey);
     expect(result.success).toBe(true);
+  });
+
+  describe("instanceContext", () => {
+    it("omits instanceContext for non-instance node ids", () => {
+      const issues = [
+        makeIssue({
+          ruleId: "no-auto-layout",
+          category: "pixel-critical",
+          severity: "blocking",
+          nodeId: "1:1",
+          nodePath: "Root > Hero",
+        }),
+      ];
+
+      const survey = generateGotchaSurvey(
+        makeResult(issues),
+        makeScoreReport("D"),
+      );
+
+      expect(survey.questions[0]!.instanceContext).toBeUndefined();
+    });
+
+    it("resolves source component name when parent instance is in tree", () => {
+      const issues = [
+        makeIssue({
+          ruleId: "no-auto-layout",
+          category: "pixel-critical",
+          severity: "blocking",
+          nodeId: "I348:15903;2153:7840",
+          nodePath: "Root > Card > Inner",
+        }),
+      ];
+
+      const document: AnalysisNode = {
+        id: "0:1",
+        name: "Document",
+        type: "DOCUMENT",
+        visible: true,
+        children: [
+          {
+            id: "348:15903",
+            name: "Card Instance",
+            type: "INSTANCE",
+            visible: true,
+            componentId: "C:1",
+          },
+        ],
+      };
+      const components = {
+        "C:1": { key: "key1", name: "CardComponent", description: "" },
+      };
+
+      const survey = generateGotchaSurvey(
+        makeResult(issues, { document, components }),
+        makeScoreReport("D"),
+      );
+
+      expect(survey.questions[0]!.instanceContext).toEqual({
+        parentInstanceNodeId: "348:15903",
+        sourceNodeId: "2153:7840",
+        sourceComponentId: "C:1",
+        sourceComponentName: "CardComponent",
+      });
+    });
+
+    it("falls back to parent/source ids when parent instance not in tree", () => {
+      const issues = [
+        makeIssue({
+          ruleId: "no-auto-layout",
+          category: "pixel-critical",
+          severity: "blocking",
+          nodeId: "I348:15903;2153:7840",
+          nodePath: "Root > Hero",
+        }),
+      ];
+
+      const survey = generateGotchaSurvey(
+        makeResult(issues),
+        makeScoreReport("D"),
+      );
+
+      expect(survey.questions[0]!.instanceContext).toEqual({
+        parentInstanceNodeId: "348:15903",
+        sourceNodeId: "2153:7840",
+      });
+    });
+
+    it("output with instanceContext passes GotchaSurveySchema validation", () => {
+      const issues = [
+        makeIssue({
+          ruleId: "no-auto-layout",
+          category: "pixel-critical",
+          severity: "blocking",
+          nodeId: "I348:15903;2153:7840",
+          nodePath: "Root > Hero",
+        }),
+      ];
+
+      const document: AnalysisNode = {
+        id: "0:1",
+        name: "Document",
+        type: "DOCUMENT",
+        visible: true,
+        children: [
+          {
+            id: "348:15903",
+            name: "Card Instance",
+            type: "INSTANCE",
+            visible: true,
+            componentId: "C:1",
+          },
+        ],
+      };
+      const components = {
+        "C:1": { key: "key1", name: "CardComponent", description: "" },
+      };
+
+      const survey = generateGotchaSurvey(
+        makeResult(issues, { document, components }),
+        makeScoreReport("D"),
+      );
+
+      const result = GotchaSurveySchema.safeParse(survey);
+      expect(result.success).toBe(true);
+    });
   });
 
   it("sets isReadyForCodeGen based on grade", () => {
