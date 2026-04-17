@@ -53,6 +53,18 @@ Write `$RUN_DIR/implement-log.json` BEFORE committing:
 - `decisions`: The Review agent reads this to understand WHY you wrote code a certain way. Without this, the reviewer may flag intentional choices as bugs.
 - `knownRisks`: The Review agent pays EXTRA attention to these areas. Flag anything you're not confident about — it's better to admit uncertainty than to hide it.
 
+## Progress tracking
+
+The orchestrator reads `$RUN_DIR/implement-progress.jsonl` on timeout to synthesize a partial `implement-log.json` and decide whether to retry. File writes are tracked automatically by a PostToolUse hook — you do NOT need to log those.
+
+**Do this manually**: at the start of each task (before you read/edit files for that task), append one line to `$RUN_DIR/implement-progress.jsonl`:
+
+```
+{"t":"<ISO-timestamp>","taskId":<id>,"event":"task-start"}
+```
+
+Use the `Bash` tool: `echo '{"t":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","taskId":2,"event":"task-start"}' >> "$RUN_DIR/implement-progress.jsonl"`. One line per task; no line for subtasks. If `$RUN_DIR` is not in env, skip silently (non-pipeline session).
+
 ## Rules
 
 - Follow CLAUDE.md conventions strictly: ESM, .js extensions, strict TS, kebab-case files, etc.
@@ -61,3 +73,4 @@ Write `$RUN_DIR/implement-log.json` BEFORE committing:
 - Do NOT create a PR — a separate step handles that
 - Do NOT make changes beyond what the plan specifies
 - Every file you touch must be listed in `filesChanged`
+- Emit a `task-start` heartbeat line before beginning each plan task (see above)

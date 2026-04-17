@@ -106,3 +106,40 @@ export function findDevResumePoint(index: DevelopRunIndex): string | null {
   }
   return null;
 }
+
+// --- Implementer artifacts ---
+
+/**
+ * Schema for `implement-log.json` produced by the Implementer agent.
+ * Kept `.passthrough()` so the agent can include extra context without failing validation.
+ */
+export const ImplementLogSchema = z
+  .object({
+    filesChanged: z.array(z.string()),
+    commits: z.array(z.string()),
+    decisions: z.array(z.string()),
+    knownRisks: z.array(z.string()),
+    status: z.enum(["success", "timeout"]).optional(),
+    completedTasks: z.array(z.number()).optional(),
+    timedOutAt: z.string().optional(),
+  })
+  .passthrough();
+export type ImplementLog = z.infer<typeof ImplementLogSchema>;
+
+/**
+ * Schema for `implement-attempts/<n>.json` — one record per Implementer attempt.
+ * Used by the retry loop to detect stalled agents (identical filesWritten across attempts).
+ */
+export const ImplementAttemptSchema = z
+  .object({
+    attempt: z.number(),
+    startedAt: z.string(),
+    endedAt: z.string(),
+    status: z.enum(["success", "timeout", "error"]),
+    failureReason: z.string().optional(),
+    filesWritten: z.array(z.string()),
+    lastTaskId: z.number().optional(),
+    err: z.string().optional(),
+  })
+  .passthrough();
+export type ImplementAttempt = z.infer<typeof ImplementAttemptSchema>;
