@@ -102,7 +102,7 @@ describe("applyPropertyMod", () => {
     expect((scene as Record<string, unknown>).itemSpacing).toBe(16);
   });
 
-  it("detects silent-ignore when target[prop] doesn't change and routes to definition", async () => {
+  it("detects silent-ignore when target[prop] doesn't change and routes to definition (allowDefinitionWrite: true)", async () => {
     const definition: FigmaNode = {
       id: "def-1",
       name: "Def",
@@ -136,7 +136,7 @@ describe("applyPropertyMod", () => {
     const result = await applyPropertyMod(
       question,
       { layoutMode: "VERTICAL", itemSpacing: 16 },
-      { categories: CATEGORIES }
+      { categories: CATEGORIES, allowDefinitionWrite: true }
     );
     expect(result).toEqual({
       icon: "🌐",
@@ -144,6 +144,99 @@ describe("applyPropertyMod", () => {
     });
     expect((definition as Record<string, unknown>).layoutMode).toBe("VERTICAL");
     expect((definition as Record<string, unknown>).itemSpacing).toBe(16);
+  });
+
+  it("ADR-012: silent-ignore + allowDefinitionWrite: false → annotates scene without writing definition", async () => {
+    const definition: FigmaNode = {
+      id: "def-1",
+      name: "Card",
+      type: "FRAME",
+      layoutMode: "NONE",
+      itemSpacing: 0,
+      annotations: [],
+    };
+    const sceneWithFrozenProp: FigmaNode = {
+      id: "scene-1",
+      name: "Scene",
+      type: "FRAME",
+      annotations: [],
+    };
+    Object.defineProperty(sceneWithFrozenProp, "layoutMode", {
+      get: () => "NONE",
+      set: () => {
+        // Silent-ignore.
+      },
+    });
+    mock = createFigmaGlobal({
+      nodes: { "scene-1": sceneWithFrozenProp, "def-1": definition },
+    });
+    installFigmaGlobal(mock);
+    const question: RoundtripQuestion = {
+      nodeId: "scene-1",
+      ruleId: "no-auto-layout",
+      targetProperty: ["layoutMode", "itemSpacing"],
+      sourceChildId: "def-1",
+    };
+    const result = await applyPropertyMod(
+      question,
+      { layoutMode: "VERTICAL", itemSpacing: 16 },
+      { categories: CATEGORIES }
+    );
+    expect(result).toEqual({
+      icon: "📝",
+      label: "definition write skipped (opt-in disabled)",
+    });
+    // Definition must NOT have been mutated — the skip short-circuits before
+    // routing to the definition tier.
+    expect((definition as Record<string, unknown>).layoutMode).toBe("NONE");
+    expect((definition as Record<string, unknown>).itemSpacing).toBe(0);
+    const annotations = (sceneWithFrozenProp.annotations ??
+      []) as AnnotationEntry[];
+    expect(annotations).toHaveLength(1);
+    expect(annotations[0]?.labelMarkdown).toContain("**Card**");
+  });
+
+  it("ADR-012: allowDefinitionWrite flows from applyPropertyMod through to the inner helper (telemetry fires)", async () => {
+    const definition: FigmaNode = {
+      id: "def-1",
+      name: "Card",
+      type: "FRAME",
+      layoutMode: "NONE",
+      itemSpacing: 0,
+      annotations: [],
+    };
+    const sceneWithFrozenProp: FigmaNode = {
+      id: "scene-1",
+      name: "Scene",
+      type: "FRAME",
+      annotations: [],
+    };
+    Object.defineProperty(sceneWithFrozenProp, "layoutMode", {
+      get: () => "NONE",
+      set: () => {
+        // Silent-ignore.
+      },
+    });
+    mock = createFigmaGlobal({
+      nodes: { "scene-1": sceneWithFrozenProp, "def-1": definition },
+    });
+    installFigmaGlobal(mock);
+    const telemetry = vi.fn();
+    const question: RoundtripQuestion = {
+      nodeId: "scene-1",
+      ruleId: "no-auto-layout",
+      targetProperty: ["layoutMode", "itemSpacing"],
+      sourceChildId: "def-1",
+    };
+    await applyPropertyMod(
+      question,
+      { layoutMode: "VERTICAL", itemSpacing: 16 },
+      { categories: CATEGORIES, telemetry }
+    );
+    expect(telemetry).toHaveBeenCalledWith(
+      "cic_roundtrip_definition_write_skipped",
+      { ruleId: "no-auto-layout", reason: "silent-ignore" }
+    );
   });
 
   it("binds a variable via target.setBoundVariable for non-paint props", async () => {

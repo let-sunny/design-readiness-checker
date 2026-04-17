@@ -26,6 +26,14 @@ export const EVENTS = {
   // CLI
   CLI_COMMAND: `${EVENT_PREFIX}cli_command`,
   CLI_INIT: `${EVENT_PREFIX}cli_init`,
+
+  // Roundtrip (ADR-012)
+  // Wiring point for the roundtrip helper's `telemetry` callback. No Node-side
+  // orchestrator reads this yet — the helper ships in a sandbox-pure IIFE that
+  // cannot import `core/monitoring` directly, so the event fires through a
+  // caller-supplied callback. Define the typed name here so a future consumer
+  // has a single place to wire it up.
+  ROUNDTRIP_DEFINITION_WRITE_SKIPPED: `${EVENT_PREFIX}roundtrip_definition_write_skipped`,
 } as const;
 
 export type EventName = (typeof EVENTS)[keyof typeof EVENTS];

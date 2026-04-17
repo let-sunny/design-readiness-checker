@@ -31,10 +31,22 @@ export type GotchaApplyResolution = {
   /** Machine-readable write strategy — branch on this from TS consumers. */
   strategy: GotchaApplyStrategy;
   /**
-   * When true, layout and size-constraint style writes should use the definition path
-   * (after explicit user confirmation) because instance overrides are commonly rejected.
+   * Opt-in hints for the caller. Fields in this namespace take effect ONLY
+   * when the caller has enabled `allowDefinitionWrite` on the roundtrip helper.
+   * Under the ADR-012 default (opt-in off), these are informational — the
+   * actual write still routes to scene-then-annotate regardless.
+   *
+   * ADR-012 Q5: future per-rule opt-in fields grow under this namespace.
    */
-  shouldPreferDefinitionForLayoutProps: boolean;
+  optIn: {
+    /**
+     * Hint that the definition node is the better write target for layout and
+     * min/max size-constraint writes on this node. Takes effect only when
+     * `allowDefinitionWrite` is enabled — otherwise the helper annotates the
+     * scene and names the source component without propagating.
+     */
+    preferDefinitionForLayoutProps: boolean;
+  };
   /**
    * Human-readable note for skills, UI, or logs. Skill-oriented (may reference
    * Plugin API calls like `getMainComponentAsync`). TS consumers should branch
@@ -58,7 +70,7 @@ export function resolveGotchaApplyTarget(
       sceneNodeId: nodeId,
       definitionNodeId: instanceContext.sourceNodeId,
       strategy: "prefer-definition",
-      shouldPreferDefinitionForLayoutProps: true,
+      optIn: { preferDefinitionForLayoutProps: true },
       guidance:
         `This question targets a node inside an instance. Overrides may fail on the scene node. ` +
         `For layout and min/max sizing, apply changes on node ${instanceContext.sourceNodeId} ` +
@@ -72,7 +84,7 @@ export function resolveGotchaApplyTarget(
       sceneNodeId: nodeId,
       definitionNodeId: undefined,
       strategy: "definition-unknown",
-      shouldPreferDefinitionForLayoutProps: true,
+      optIn: { preferDefinitionForLayoutProps: true },
       guidance:
         "The node id looks like a Figma instance child (`I...;...`) but no `instanceContext` was attached. " +
         "Parse the segment after the last `;` as the source definition id, resolve the parent INSTANCE, " +
@@ -84,7 +96,7 @@ export function resolveGotchaApplyTarget(
     sceneNodeId: nodeId,
     definitionNodeId: undefined,
     strategy: "scene-only",
-    shouldPreferDefinitionForLayoutProps: false,
+    optIn: { preferDefinitionForLayoutProps: false },
     guidance: "",
   };
 }
