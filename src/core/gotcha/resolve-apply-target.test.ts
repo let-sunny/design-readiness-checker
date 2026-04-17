@@ -6,6 +6,7 @@ describe("resolveGotchaApplyTarget", () => {
     expect(r).toEqual({
       sceneNodeId: "348:15903",
       definitionNodeId: undefined,
+      strategy: "scene-only",
       shouldPreferDefinitionForLayoutProps: false,
       guidance: "",
     });
@@ -20,9 +21,10 @@ describe("resolveGotchaApplyTarget", () => {
     });
     expect(r.sceneNodeId).toBe("I348:15903;2153:7840");
     expect(r.definitionNodeId).toBe("2153:7840");
+    expect(r.strategy).toBe("prefer-definition");
     expect(r.shouldPreferDefinitionForLayoutProps).toBe(true);
     expect(r.guidance).toContain("2153:7840");
-    expect(r.guidance).toContain("Card");
+    expect(r.guidance).toContain("inside component Card");
     expect(r.guidance).toContain("348:15903");
   });
 
@@ -32,12 +34,14 @@ describe("resolveGotchaApplyTarget", () => {
       sourceNodeId: "2:2",
     });
     expect(r.definitionNodeId).toBe("2:2");
-    expect(r.guidance).toContain("the source component");
+    expect(r.strategy).toBe("prefer-definition");
+    expect(r.guidance).toContain("inside the source component");
   });
 
   it("detects instance-child ids even without instanceContext", () => {
     const r = resolveGotchaApplyTarget("I348:15903;2153:7840", undefined);
     expect(r.definitionNodeId).toBeUndefined();
+    expect(r.strategy).toBe("definition-unknown");
     expect(r.shouldPreferDefinitionForLayoutProps).toBe(true);
     expect(r.guidance).toContain("instanceContext");
   });
