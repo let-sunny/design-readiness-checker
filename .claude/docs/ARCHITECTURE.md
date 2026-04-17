@@ -80,9 +80,13 @@ Registered in `src/cli/index.ts` (lines 71–77) + docs command (line 101). Inte
 - Flow: Plan (agent) → Implement (agent) → Test (cli, retry loop) → Review (agent) → Fix (agent) → Verify (cli) → PR (cli)
 - State tracked in `logs/develop/<issue>--<timestamp>/index.json`
 - Test/Verify steps have internal fix retry loops (max 3 retries with fix agent)
+- Implementer timeout scales with plan size: `max(600s, files * 120s)` capped at 60 min. Up to 2 attempts; the retry stops if attempt 2 wrote the identical file set as attempt 1 (stuck, not flaky). Each attempt writes `implement-attempts/<n>.json`.
+- On Implementer timeout the orchestrator synthesizes a partial `implement-log.json` from the PostToolUse heartbeat (`implement-progress.jsonl`), saves the stderr tail to `implement-err.txt`, and stashes uncommitted work so `--resume --from implement` starts from a clean tree.
+- Planner applies five split gates (task count >5, file count ≥12, new-dir + new-bundler, skill/ADR doc + TS code, approach >2500 chars) and sets `splitReason` in `plan.json` when a gate fires. See `.claude/agents/develop/planner.md` §Split gates.
+- Sub-agent sessions receive `DEVELOP_SUBAGENT=1` so the `.claude/settings.json` Stop hook short-circuits and doesn't flood the user channel with pnpm lint/build output on every agent stop.
 - JSON handoff chain: `plan.json` (designDecisions) → `implement-log.json` (decisions, knownRisks) → `review.json` (implementIntent, intentConflict) → `fix-log.json` (resolution, skipped reasons)
 - Each `claude -p` agent receives previous step JSONs so it understands why, not just what
-- See: issue #247
+- See: issues #247 and #301
 
 ### CLI Commands (Internal)
 
@@ -156,12 +160,16 @@ logs/calibration/REPORT.md                  # Cross-run aggregate report
 logs/develop/                               # Development pipeline runs
 logs/develop/<issue>--<timestamp>/          # One development run = one folder
   ├── index.json                            #   Pipeline state (per-step status, resume point)
-  ├── plan.json                             #   Implementation plan (tasks, designDecisions, risks)
-  ├── implement-log.json                    #   Decisions + knownRisks (context chain for Review/Fix)
+  ├── plan.json                             #   Implementation plan (tasks, designDecisions, splitReason)
+  ├── implement-log.json                    #   Decisions + knownRisks; status=timeout + completedTasks on timeout
   ├── implement-output.txt                  #   Implementer agent raw output
+  ├── implement-progress.jsonl              #   PostToolUse heartbeat (one line per Edit/Write + task-start markers)
+  ├── implement-attempts/<n>.json           #   Per-attempt record (status, filesWritten, lastTaskId) — stall detection input
+  ├── implement-err.txt                     #   Stderr+stdout tail (last 2KB) on Implementer failure
   ├── test-result.json                      #   Test pass/fail + error details
   ├── review.json                           #   Self-review (implementIntent, intentConflict flags)
   ├── fix-log.json                          #   What was fixed/skipped and why
+  ├── circuit.json                          #   Verify retry circuit state (attempt count, error counts)
   └── pr-url.txt                            #   Created PR URL
 logs/activity/                              # Nightly orchestration logs
 ```
