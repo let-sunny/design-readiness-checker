@@ -129,21 +129,27 @@ Matrix below is confirmed by Experiment 08 ([#290](https://github.com/let-sunny/
 **Three-tier write policy:**
 
 1. **Scene (instance) node** — `await figma.getNodeByIdAsync(question.nodeId)` and apply the write inside `try/catch`. Success → done (local change only). Mark result with ✅.
-2. **Definition (source) node** — If the error indicates the property cannot be overridden in an instance, load `await figma.getNodeByIdAsync(question.sourceChildId)`. If that returns null, walk from the scene node to the nearest `INSTANCE` parent and use `await instance.getMainComponentAsync()`, then find the matching layer inside that component. **Ask the user to confirm** before mutating the definition — changes propagate to **all** instances. Mark result with 🌐.
+2. **Definition (source) node** — If the error indicates the property cannot be overridden in an instance, load `await figma.getNodeByIdAsync(question.sourceChildId)`. If that returns null, walk from the scene node to the nearest `INSTANCE` parent and use `await instance.getMainComponentAsync()`, then find the matching layer inside that component. Changes propagate to **all** instances of the component in the file. Mark result with 🌐.
 3. **Annotation fallback** — If `mainComponent` is null (common for **external published libraries**) or the write still fails, add a `labelMarkdown` annotation on the **scene** node documenting the answer and limitation. Mark result with 📝.
+
+**Confirmation is a batch-level concern, not a helper-level one.** A `use_figma` call runs one JavaScript batch and cannot pause mid-batch for user input. So the orchestrator is responsible for pre-flighting: classify every `question` whose `isInstanceChild` is true as a *potential* definition write, enumerate the likely propagation set to the user up-front, and get **one confirmation for the whole batch**. The helper below assumes that confirmation has already happened — it does not prompt.
 
 **Shared helpers** — paste once at the top of every `use_figma` batch. Keep each `writeFn` small so a throw does not abort unrelated writes. Experiment 08 findings informed every branch here.
 
 ```javascript
 // ── D1: Figma readback populates BOTH `label` and `labelMarkdown` on every entry,
 // but writes accept only ONE. Strip to the non-empty field before spreading.
+// Entries where neither field has content are dropped — they cannot round-trip
+// through the write validator.
 function stripAnnotations(annotations) {
-  return (annotations || []).map((a) => {
+  return (annotations || []).flatMap((a) => {
     const hasLM = typeof a.labelMarkdown === "string" && a.labelMarkdown.length > 0;
+    const hasLabel = typeof a.label === "string" && a.label.length > 0;
+    if (!hasLM && !hasLabel) return [];
     const base = hasLM ? { labelMarkdown: a.labelMarkdown } : { label: a.label };
     if (a.categoryId) base.categoryId = a.categoryId;
     if (Array.isArray(a.properties) && a.properties.length > 0) base.properties = a.properties;
-    return base;
+    return [base];
   });
 }
 
@@ -168,7 +174,9 @@ async function ensureCanicodeCategories() {
 }
 
 // ── D2: Upsert a canicode annotation — replace existing by ruleId prefix, else append.
-// Preserves `categoryId` and `properties` when replacing.
+// Preserves `categoryId` and `properties` when replacing. Match covers both
+// `labelMarkdown` (current format) and `label` (pre-D1 legacy entries) so reruns
+// across versions consolidate instead of accumulating.
 // categoryId: id from ensureCanicodeCategories().
 // properties: optional array like [{ type: "width" }] — only valid camelCase types,
 //   and only types the node supports (e.g. FRAME accepts width/height/layoutMode/
@@ -181,7 +189,9 @@ function upsertCanicodeAnnotation(node, { ruleId, markdown, categoryId, properti
   const entry = { labelMarkdown: body };
   if (categoryId) entry.categoryId = categoryId;
   if (properties && properties.length) entry.properties = properties;
-  const idx = existing.findIndex((a) => a.labelMarkdown?.startsWith(prefix));
+  const idx = existing.findIndex((a) =>
+    a.labelMarkdown?.startsWith(prefix) || a.label?.startsWith(prefix),
+  );
   if (idx >= 0) existing[idx] = entry;
   else existing.push(entry);
   node.annotations = existing;
@@ -191,6 +201,9 @@ function upsertCanicodeAnnotation(node, { ruleId, markdown, categoryId, properti
 // ── Three-tier write policy with silent-ignore detection (B matrix finding).
 // writeFn contract: may read `target[prop]` before/after to detect silent ignore
 // and return false to signal "no change" — caller routes to definition fallback.
+// Pre-condition: the orchestrator has already collected a batch-level confirmation
+// that writes targeting a source-component definition may fan out to every instance
+// of that component in the file. This helper never prompts.
 async function applyWithInstanceFallback(question, writeFn, { categories } = {}) {
   const scene = await figma.getNodeByIdAsync(question.nodeId);
   if (!scene) return { icon: "📝", label: "missing node" };
@@ -203,6 +216,7 @@ async function applyWithInstanceFallback(question, writeFn, { categories } = {})
     const changed = await writeFn(scene);
     if (changed === false) {
       // Silent-ignore: write succeeded but value unchanged (e.g. layoutMode on some instances).
+      // Route to the source definition — already covered by the batch-level confirmation.
       if (definition) {
         await writeFn(definition);
         return { icon: "🌐", label: "source definition (silent-ignore fallback)" };
@@ -220,8 +234,12 @@ async function applyWithInstanceFallback(question, writeFn, { categories } = {})
     return { icon: "✅", label: "instance/scene" };
   } catch (e) {
     const msg = String(e?.message ?? e);
+    // Canonical match from Experiment 08: "This property cannot be overridden in an instance".
+    // The broader `/override/i` fallback catches variant wording from other properties but is
+    // narrow enough that unrelated errors (file missing, network, etc.) won't false-match.
+    // Do not add `/instance/i` — many unrelated messages mention "instance" and it over-routes.
     const looksLikeInstanceOverride =
-      /cannot be overridden/i.test(msg) || /override/i.test(msg) || /instance/i.test(msg);
+      /cannot be overridden/i.test(msg) || /override/i.test(msg);
     if (!looksLikeInstanceOverride || !definition) {
       if (categories) {
         upsertCanicodeAnnotation(scene, {
@@ -232,15 +250,19 @@ async function applyWithInstanceFallback(question, writeFn, { categories } = {})
       }
       return { icon: "📝", label: "error: " + msg };
     }
-    // Orchestrator: pause here, ask user to confirm propagation to all instances, then:
+    // Route to source definition — batch-level confirmation already covers propagation.
     await writeFn(definition);
     return { icon: "🌐", label: "source definition" };
   }
 }
 
 // ── C: Resolve a variable reference from an answer like { variable: "mobile-width" }.
-// Tries local variables first, then imported-from-library by name via local collections.
-// Returns null when no match — caller falls back to raw value write.
+// Scope is LOCAL variables only — exact-name match against `getLocalVariablesAsync()`.
+// Slash-path names (e.g. "Brand/Primary") work only when the variable's `name` field
+// itself contains the slash path. Library variables imported into this file are
+// included automatically because they appear in `getLocalVariablesAsync()`; variables
+// that live purely in an unimported remote library are NOT resolved here. Callers
+// must fall back to a raw write (or to an annotation explaining the missing token).
 async function resolveVariableByName(name) {
   const locals = await figma.variables.getLocalVariablesAsync();
   return locals.find((v) => v.name === name) || null;
@@ -298,6 +320,8 @@ Answer shape guide (LLM judgment — the user's answer is prose; parse according
 - **`no-auto-layout`**: `{ layoutMode, itemSpacing }`; optionally extend with padding/alignment from the answer.
 
 **Variable binding** — whenever the answer names a design-system token (e.g. the user says the width should be `mobile-width`, the gap should be `space-m`, the color should be `Brand/Primary`), shape the value as `{ variable: "token-name" }` instead of a raw scalar. The helper calls `setBoundVariable` which **bypasses instance-child override restrictions**, so `minWidth`/`maxWidth`/color fields that raw writes cannot touch on an instance child will bind successfully. Mix shapes per-property — e.g. `{ minWidth: { variable: "mobile-width" }, maxWidth: 1440 }`.
+
+The name must match **the variable's `name` field exactly** — including any slash path in the name (e.g. `"Brand/Primary"` matches only when the variable is literally named that way). Resolution is scoped to variables that `figma.variables.getLocalVariablesAsync()` returns: locally defined ones plus library variables that have already been imported into this file. If the token lives only in an unimported remote library, the binding step returns `null` and `applyPropertyMod` either falls through to a raw scalar (when the answer provided a `fallback` value) or records the miss — expose this as an annotation via the fallback category so the designer can import the variable and retry.
 
 #### Strategy B: Structural Modification — confirm with user first
 
