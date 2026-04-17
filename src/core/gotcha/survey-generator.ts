@@ -1,9 +1,15 @@
 import type { AnalysisResult, AnalysisIssue } from "../engine/rule-engine.js";
 import type { ScoreReport } from "../engine/scoring.js";
 import { isReadyForCodeGen } from "../engine/scoring.js";
-import type { GotchaSurvey, GotchaSurveyQuestion } from "../contracts/gotcha-survey.js";
+import type {
+  GotchaSurvey,
+  GotchaSurveyQuestion,
+  InstanceContext,
+} from "../contracts/gotcha-survey.js";
+import type { AnalysisFile, AnalysisNode } from "../contracts/figma-node.js";
 import type { RuleId } from "../contracts/rule.js";
 import { GOTCHA_QUESTIONS } from "../rules/gotcha-questions.js";
+import { parseInstanceChildNodeId } from "../adapters/instance-id-parser.js";
 
 const NODE_PATH_SEPARATOR = " > ";
 
@@ -34,7 +40,7 @@ export function generateGotchaSurvey(
 
   // Step 4: Map to survey questions
   const questions = sorted
-    .map((issue) => mapToQuestion(issue))
+    .map((issue) => mapToQuestion(issue, result.file))
     .filter((q): q is GotchaSurveyQuestion => q !== null);
 
   return {
@@ -109,12 +115,16 @@ function stableSortBySeverity(issues: AnalysisIssue[]): AnalysisIssue[] {
  * Map an AnalysisIssue to a GotchaSurveyQuestion using the GOTCHA_QUESTIONS table.
  * Returns null if no mapping exists for the ruleId.
  */
-function mapToQuestion(issue: AnalysisIssue): GotchaSurveyQuestion | null {
+function mapToQuestion(
+  issue: AnalysisIssue,
+  file: AnalysisFile,
+): GotchaSurveyQuestion | null {
   const ruleId = issue.violation.ruleId as RuleId;
   const template = GOTCHA_QUESTIONS[ruleId];
   if (!template) return null;
 
   const nodeName = getNodeName(issue.violation.nodePath);
+  const instanceContext = buildInstanceContext(issue.violation.nodeId, file);
 
   return {
     nodeId: issue.violation.nodeId,
@@ -124,5 +134,47 @@ function mapToQuestion(issue: AnalysisIssue): GotchaSurveyQuestion | null {
     question: template.question.replace("{nodeName}", nodeName),
     hint: template.hint,
     example: template.example,
+    ...(instanceContext ? { instanceContext } : {}),
   };
+}
+
+/**
+ * Build instance context for a node id when it lives inside an instance.
+ * Resolves source component name via the parent instance's componentId when
+ * the parent is reachable in the analyzed subtree; falls back to the bare
+ * parent/source ids otherwise so the apply pipeline can still resolve the
+ * source component at runtime via `figma.getNodeById`.
+ */
+function buildInstanceContext(
+  nodeId: string,
+  file: AnalysisFile,
+): InstanceContext | null {
+  const parts = parseInstanceChildNodeId(nodeId);
+  if (!parts) return null;
+
+  const parentInstance = findNodeById(file.document, parts.parentInstanceId);
+  const componentId = parentInstance?.componentId;
+  const componentName = componentId ? file.components[componentId]?.name : undefined;
+
+  return {
+    parentInstanceNodeId: parts.parentInstanceId,
+    sourceNodeId: parts.sourceNodeId,
+    ...(componentId ? { sourceComponentId: componentId } : {}),
+    ...(componentName ? { sourceComponentName: componentName } : {}),
+  };
+}
+
+/**
+ * Walk the document tree for a node id (exact match — no `-`/`:` normalization;
+ * instance node ids natively use `:` and the input here is already in that form).
+ */
+function findNodeById(node: AnalysisNode, id: string): AnalysisNode | null {
+  if (node.id === id) return node;
+  if (node.children) {
+    for (const child of node.children) {
+      const found = findNodeById(child, id);
+      if (found) return found;
+    }
+  }
+  return null;
 }

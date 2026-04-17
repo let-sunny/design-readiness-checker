@@ -63,6 +63,13 @@ Core decisions that shape every session. For full history see [GitHub Wiki Decis
 **Why**: One-way flow (analyze → gotcha → code gen) is not a true roundtrip. Applying answers to the design means the next analysis passes without gotchas — the design itself improves. PoC confirmed all three strategies work via Figma Plugin API: `node.name`, `itemSpacing`, `setBoundVariable()`, `layoutSizingHorizontal`, `node.annotations`. Annotations enable designer communication for issues that require manual judgment.
 **Impact**: `canicode-roundtrip` becomes a true roundtrip: analyze → gotcha → apply to Figma → re-analyze → pass → code gen. All 16 rules are covered (modify or annotate). Requires Full seat + file edit permission. See #281.
 
+## ADR-011: Instance-child writes — try scene, then source definition, then annotate
+
+**Decision**: For gotcha apply (`use_figma` / Plugin API), attempt property writes on the scene node from `question.nodeId` first. On instance-override errors, resolve the source definition using `question.instanceContext.sourceNodeId` (and `getMainComponentAsync()` when needed) and apply there **only after explicit user confirmation**, because definition edits propagate to every instance of that component in the file. If the source is in an external library (`mainComponent` null) or the write still fails, fall back to annotations on the scene node.
+**Why**: Roundtrip Experiment 07 showed most violations sit under `INSTANCE` subtrees; many properties (for example `minWidth` / `maxWidth`) cannot be overridden on instance children, so naive `getNodeById` writes stall at D→C-style gains. Server-side `instanceContext` on `gotcha-survey` questions plus this three-tier policy unlocks meaningful fixes without silently reshaping shared components.
+**Impact**: `canicode-roundtrip` SKILL documents the matrix, `applyWithInstanceFallback`, and confirmation for definition-level changes. TypeScript adds `resolveGotchaApplyTarget` for programmatic consumers. See #286 and [Roundtrip Experiment 07](https://github.com/let-sunny/canicode/wiki/Roundtrip-Experiment-2026-04-17).
+**References**: [InstanceNode#mainComponent](https://www.figma.com/plugin-docs/api/InstanceNode/#maincomponent)
+
 ## ADR-008: Calibration pipeline — explicit claude -p orchestration
 
 **Decision**: Replace single-session delegated orchestrator with TypeScript script (`scripts/calibrate.ts`) that explicitly calls CLI commands for deterministic steps and `claude -p` for judgment steps (converter, gap-analyzer, critic, arbitrator). Strip ablation runs 7 parallel sessions. Delete `orchestrator.ts`.

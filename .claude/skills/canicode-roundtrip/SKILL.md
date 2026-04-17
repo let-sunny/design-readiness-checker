@@ -57,7 +57,15 @@ gotcha-survey({ input: "<figma-url>" })
 
 If `questions` is empty, skip to **Step 6**.
 
-For each question in the `questions` array, present it to the user one at a time:
+For each question in the `questions` array, present it to the user one at a time.
+
+Build the message from the question fields. **If `question.instanceContext` is present**, prepend one line before the question body:
+
+```
+_Instance note: This layer is inside an instance. Layout and size fixes may need to be applied on source component **{sourceComponentName or sourceComponentId or "unknown"}** (definition node `sourceNodeId`) and propagate to all instances — you will be asked to confirm before any definition-level write._
+```
+
+Then the standard block:
 
 ```
 **[{severity}] {ruleId}** — node: {nodeName}
@@ -81,50 +89,109 @@ Then proceed to **Step 4** to apply answers to the Figma design.
 
 Extract the `fileKey` from the Figma URL (format: `figma.com/design/:fileKey/...`).
 
-For each answered gotcha (skip questions answered with "skip" or "n/a"), determine the apply strategy based on the `ruleId`:
+For each answered gotcha (skip questions answered with "skip" or "n/a"), determine the apply strategy based on the `ruleId`.
+
+Use the **`nodeId` from the answered question** (same as `gotcha-survey` output). When the question includes **`instanceContext`**, treat layout and size-constraint changes as **high impact**: applying them on the source definition affects **every instance** of that component in the file. Ask for explicit user confirmation before writing to the definition node.
+
+#### Instance-child property overridability (Plugin API)
+
+Most production nodes sit under `INSTANCE` subtrees. Figma uses instance-scoped ids (`I<instanceId>;<innerId>`; nested instances add more `;` segments). The `gotcha-survey` tool adds optional `instanceContext` with `parentInstanceNodeId`, `sourceNodeId`, and (when resolvable) `sourceComponentId` / `sourceComponentName`.
+
+| Property / action | Typical override on instance child? | Notes |
+|-------------------|-------------------------------------|--------|
+| `node.name` | Often yes | Prefer scene node first. |
+| `layoutSizingHorizontal` / `layoutSizingVertical` on the **INSTANCE** root | Yes | Targets the instance node, not deep children. |
+| `annotations` | Often yes | Good fallback when a property cannot be set. |
+| `minWidth`, `maxWidth`, `minHeight`, `maxHeight` | Often **no** | Error text usually mentions instance override — route to **definition** node (`instanceContext.sourceNodeId`) after confirmation. |
+| `layoutMode`, primary layout structure | Often **no** on deep children | Same as above — definition-level change. |
+| `itemSpacing`, padding fields | **Mixed** | Try scene node inside `try/catch`; on failure use definition path after confirmation. |
+
+**Three-tier write policy (Strategy A and compatible parts of D):**
+
+1. **Scene (instance) node** — `await figma.getNodeByIdAsync(question.nodeId)` and apply the write inside `try/catch`. Success → done (local change only). Mark result with ✅.
+2. **Definition (source) node** — If the error indicates the property cannot be overridden in an instance (or closely related wording), load `await figma.getNodeByIdAsync(question.instanceContext.sourceNodeId)`. If that is null, walk from the scene node to the nearest `INSTANCE` parent and use `await instance.getMainComponentAsync()`, then find the matching layer by id or name path inside that component. **Ask the user to confirm** before mutating the definition — changes propagate to **all** instances. Mark result with 🌐.
+3. **Annotation fallback** — If `mainComponent` is null (common for **external published libraries**) or the write still fails, add a `labelMarkdown` annotation on the **scene** node documenting the answer and limitation. Mark result with 📝.
+
+**Shared helper pattern** (adapt per `use_figma` batch — keep each `writeFn` small so a throw does not abort unrelated writes):
+
+```javascript
+async function applyWithInstanceFallback(question, writeFn) {
+  const scene = await figma.getNodeByIdAsync(question.nodeId);
+  if (!scene) return { icon: "📝", label: "missing node" };
+
+  const definitionId = question.instanceContext?.sourceNodeId;
+  const definition = definitionId
+    ? await figma.getNodeByIdAsync(definitionId)
+    : null;
+
+  try {
+    await writeFn(scene);
+    return { icon: "✅", label: "instance/scene" };
+  } catch (e) {
+    const msg = String(e && e.message ? e.message : e);
+    const looksLikeInstanceOverride =
+      /instance/i.test(msg) ||
+      /override/i.test(msg) ||
+      /cannot be overridden/i.test(msg);
+    if (!looksLikeInstanceOverride || !definition) {
+      return { icon: "📝", label: "error: " + msg };
+    }
+    // Orchestrator: pause here, ask user to confirm propagation to all instances, then:
+    await writeFn(definition);
+    return { icon: "🌐", label: "source definition" };
+  }
+}
+```
+
+In the Strategy snippets below, treat `"nodeId"` as `question.nodeId` from the answered gotcha. Prefer `await figma.getNodeByIdAsync(...)` over the sync API. **Wrap property writes** in `applyWithInstanceFallback(question, async (target) => { ... })` (or equivalent) whenever `question.instanceContext` exists or the id starts with `I` and contains `;`.
 
 #### Strategy A: Property Modification — apply directly
 
-These rules have straightforward property changes. Apply without additional confirmation. Parse the user's answer to extract the target values.
+These rules have straightforward property changes. Parse the user's answer to extract target values. **Still use** `applyWithInstanceFallback` when instance children are involved so failed overrides route to definition or annotation instead of failing the whole batch silently.
 
 **`non-semantic-name`** — Rename the node to the answer:
 ```javascript
-const node = figma.getNodeById("nodeId");
-if (node) node.name = "hero-section";
+await applyWithInstanceFallback(question, async (target) => {
+  if (target) target.name = "hero-section";
+});
 ```
 
 **`irregular-spacing`** — Fix spacing to the grid-aligned value from the answer:
 ```javascript
-const node = figma.getNodeById("nodeId");
-if (node && "itemSpacing" in node) node.itemSpacing = 16;
-// For padding: node.paddingTop = 8; node.paddingBottom = 8; etc.
+await applyWithInstanceFallback(question, async (target) => {
+  if (target && "itemSpacing" in target) target.itemSpacing = 16;
+  // For padding: target.paddingTop = 8; target.paddingBottom = 8; etc.
+});
 ```
 
 **`fixed-size-in-auto-layout`** — Change sizing mode per the answer (FILL, HUG, or FIXED):
 ```javascript
-const node = figma.getNodeById("nodeId");
-if (node && "layoutSizingHorizontal" in node) {
-  node.layoutSizingHorizontal = "FILL"; // or "HUG" or "FIXED"
-}
+await applyWithInstanceFallback(question, async (target) => {
+  if (target && "layoutSizingHorizontal" in target) {
+    target.layoutSizingHorizontal = "FILL"; // or "HUG" or "FIXED"
+  }
+});
 ```
 
 **`missing-size-constraint`** — Set min/max constraints from the answer:
 ```javascript
-const node = figma.getNodeById("nodeId");
-if (node && "minWidth" in node) {
-  node.minWidth = 320;  // from answer
-  node.maxWidth = 1200; // from answer, if provided
-}
+await applyWithInstanceFallback(question, async (target) => {
+  if (target && "minWidth" in target) {
+    target.minWidth = 320;  // from answer
+    target.maxWidth = 1200; // from answer, if provided
+  }
+});
 ```
 
 **`no-auto-layout`** — Set layout mode, direction, and spacing from the answer:
 ```javascript
-const node = figma.getNodeById("nodeId");
-if (node && "layoutMode" in node) {
-  node.layoutMode = "VERTICAL"; // or "HORIZONTAL"
-  node.itemSpacing = 16;
-  // Optionally set padding, alignment from the answer
-}
+await applyWithInstanceFallback(question, async (target) => {
+  if (target && "layoutMode" in target) {
+    target.layoutMode = "VERTICAL"; // or "HORIZONTAL"
+    target.itemSpacing = 16;
+    // Optionally set padding, alignment from the answer
+  }
+});
 ```
 
 #### Strategy B: Structural Modification — confirm with user first
@@ -135,11 +202,12 @@ These rules change the design structure. Show the proposed change and **ask for 
 - Prompt: "I'll convert **{nodeName}** to an Auto Layout frame with {direction} layout and {spacing}px gap. Proceed?"
 - If confirmed:
 ```javascript
-const node = figma.getNodeById("nodeId");
-if (node && "layoutMode" in node) {
-  node.layoutMode = "VERTICAL";
-  node.itemSpacing = 12;
-}
+await applyWithInstanceFallback(question, async (target) => {
+  if (target && "layoutMode" in target) {
+    target.layoutMode = "VERTICAL";
+    target.itemSpacing = 12;
+  }
+});
 ```
 
 **`deep-nesting`** — Flatten intermediate wrappers or extract sub-component:
@@ -150,9 +218,9 @@ if (node && "layoutMode" in node) {
 - Prompt: "I'll convert **{nodeName}** to a reusable component. Proceed?"
 - If confirmed:
 ```javascript
-const node = figma.getNodeById("nodeId");
-if (node && node.type === "FRAME") {
-  figma.createComponentFromNode(node);
+const scene = await figma.getNodeByIdAsync(question.nodeId);
+if (scene && scene.type === "FRAME") {
+  figma.createComponentFromNode(scene);
 }
 ```
 
@@ -169,15 +237,15 @@ These rules cannot be auto-fixed via Plugin API. Add the gotcha answer as a Figm
 **Rules from gotcha survey**: `absolute-position-in-auto-layout`, `variant-structure-mismatch`
 
 ```javascript
-const node = figma.getNodeById("nodeId");
-if (node && "annotations" in node) {
-  node.annotations = [...(node.annotations || []), {
+const scene = await figma.getNodeByIdAsync(question.nodeId);
+if (scene && "annotations" in scene) {
+  scene.annotations = [...(scene.annotations || []), {
     labelMarkdown: "**[canicode] {ruleId}**\n\n**Q:** {question}\n**A:** {answer}"
   }];
 }
 ```
 
-Important: use `labelMarkdown` only — `label` and `labelMarkdown` are mutually exclusive. Preserve existing annotations by spreading `node.annotations`.
+Important: use `labelMarkdown` only — `label` and `labelMarkdown` are mutually exclusive. Preserve existing annotations by spreading `scene.annotations`. Prefer annotating the **scene** instance child so designers see the note where they work; mention in the markdown if the fix belongs on the source component but could not be applied (library/external).
 
 #### Strategy D: Auto-fix lower-severity issues from analysis
 
@@ -187,15 +255,19 @@ The gotcha survey only covers blocking/risk severity (11 rules). The remaining 5
 
 **`non-standard-naming`** — The analysis identifies non-standard state names. Rename to the standard equivalent:
 ```javascript
-const node = figma.getNodeById("nodeId");
-if (node) node.name = "Hover"; // standardize from "hover_v1", "on_hover", etc.
+const q = { nodeId: violation.nodeId, instanceContext: undefined };
+await applyWithInstanceFallback(q, async (target) => {
+  if (target) target.name = "Hover"; // standardize from "hover_v1", "on_hover", etc.
+});
 ```
 Standard state names: Default, Hover, Active, Pressed, Selected, Highlighted, Disabled, Enabled, Focus, Focused, Dragged.
 
 **`inconsistent-naming-convention`** — The analysis identifies the dominant convention among siblings. Rename minority nodes to match:
 ```javascript
-const node = figma.getNodeById("nodeId");
-if (node) node.name = "CardTitle"; // convert to dominant convention (e.g., PascalCase)
+const q = { nodeId: violation.nodeId, instanceContext: undefined };
+await applyWithInstanceFallback(q, async (target) => {
+  if (target) target.name = "CardTitle"; // convert to dominant convention (e.g., PascalCase)
+});
 ```
 
 **Annotate** — these require designer judgment, no auto-fix possible:
@@ -232,7 +304,8 @@ After applying, report what was done:
 
 ```
 Applied {N} changes to the Figma design:
-- ✅ {nodeName}: renamed to "hero-section" (non-semantic-name)
+- ✅ {nodeName}: renamed to "hero-section" (non-semantic-name) — scene/instance override
+- 🌐 {nodeName}: minWidth applied on source definition (missing-size-constraint) — propagates to all instances
 - ✅ {nodeName}: itemSpacing → 16px (irregular-spacing)
 - ⏭️ {nodeName}: declined by user, added annotation (deep-nesting)
 - 📝 {nodeName}: annotation added (absolute-position-in-auto-layout)
@@ -295,3 +368,4 @@ Follow the **figma-implement-design** skill workflow to generate code from the F
 - **use_figma call fails for a node**: Report the error for that specific node, continue with other nodes. Failed property modifications become annotations so the context is not lost.
 - **Re-analyze shows new issues**: Only address issues from the original gotcha survey. New issues may appear due to structural changes — report them but do not re-enter the gotcha loop.
 - **Very large design (many gotchas)**: The gotcha survey already deduplicates sibling nodes and filters to blocking/risk severity only. If there are still many questions, ask the user if they want to focus on blocking issues only.
+- **External library components**: When `getMainComponentAsync()` returns `null`, the source lives in a published library this file only references — there is no supported path to edit it from the current file via Plugin API. Use the annotation fallback on the scene node and state that limitation explicitly in `labelMarkdown`.

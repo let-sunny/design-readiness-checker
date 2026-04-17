@@ -90,6 +90,7 @@ Collected from canicode gotcha survey. Reference these answers when implementing
 
 - **Severity**: {severity}
 - **Node ID**: {nodeId}
+- **Instance context** (omit this bullet if `instanceContext` was not in the survey question): parent instance `parentInstanceNodeId`, source node `sourceNodeId`, component `sourceComponentName` / `sourceComponentId` when present — roundtrip apply uses this to write on the source definition when instance overrides fail.
 - **Question**: {question}
 - **Answer**: {userAnswer}
 
@@ -108,6 +109,7 @@ Collected from canicode gotcha survey. Reference these answers when implementing
 | `nodeName` | `nodeName` from each question |
 | `severity` | `severity` from each question (blocking / risk) |
 | `nodeId` | `nodeId` from each question |
+| `instanceContext` | When present on the question, copy `parentInstanceNodeId`, `sourceNodeId`, `sourceComponentId`, `sourceComponentName` into the bullet above (roundtrip / Plugin apply) |
 | `question` | `question` from each question |
 | `userAnswer` | The answer collected from the user in Step 3 |
 
