@@ -142,10 +142,10 @@ Each row below covers the full 33-value enum (`width`, `height`, `maxWidth`, `mi
 **Three-tier write policy:**
 
 1. **Scene (instance) node** — `await figma.getNodeByIdAsync(question.nodeId)` and apply the write inside `try/catch`. Success → done (local change only). Mark result with ✅.
-2. **Definition (source) node** — If the error indicates the property cannot be overridden in an instance, load `await figma.getNodeByIdAsync(question.sourceChildId)`. If that returns null, walk from the scene node to the nearest `INSTANCE` parent and use `await instance.getMainComponentAsync()`, then find the matching layer inside that component. Changes propagate to **all** instances of the component in the file. Mark result with 🌐.
-3. **Annotation fallback** — If `mainComponent` is null (common for **external published libraries**) or the write still fails, add a `labelMarkdown` annotation on the **scene** node documenting the answer and limitation. Mark result with 📝.
+2. **Definition (source) node** — If the error indicates the property cannot be overridden in an instance, load `await figma.getNodeByIdAsync(question.sourceChildId)`. If that returns null, walk from the scene node to the nearest `INSTANCE` parent and use `await instance.getMainComponentAsync()`, then find the matching layer inside that component. Changes propagate to **every non-overridden instance** in the file — pre-existing instance-level overrides are preserved (Experiment 10). Mark result with 🌐.
+3. **Annotation fallback** — Definition-tier writes can fail even when the node exists. The common case is an **external published library**: `getMainComponentAsync()` resolves with `mainComponent.remote === true`, but raw writes throw *"Cannot write to internal and read-only node"* (Experiment 10). Rarer is `mainComponent === null` (deleted / inaccessible component). Either way, catch the throw, add a `labelMarkdown` annotation on the **scene** node documenting the answer and limitation, and mark result with 📝.
 
-**Confirmation is a batch-level concern, not a helper-level one.** A `use_figma` call runs one JavaScript batch and cannot pause mid-batch for user input. So the orchestrator is responsible for pre-flighting: classify every `question` whose `isInstanceChild` is true as a *potential* definition write, enumerate the likely propagation set to the user up-front, and get **one confirmation for the whole batch**. The helper below assumes that confirmation has already happened — it does not prompt.
+**Confirmation is a batch-level concern, not a helper-level one.** A `use_figma` call runs one JavaScript batch and cannot pause mid-batch for user input. So the orchestrator is responsible for pre-flighting: classify every `question` whose `isInstanceChild` is true as a *potential* definition write, enumerate the likely propagation set to the user up-front, and get **one confirmation for the whole batch**. When describing impact to the user, note that the write reaches every **non-overridden** instance — any instance that already has a local override for the same property keeps its override. The helper below assumes that confirmation has already happened — it does not prompt.
 
 **Shared helpers** — paste once at the top of every `use_figma` batch. Keep each `writeFn` small so a throw does not abort unrelated writes. Experiment 08 findings informed every branch here.
 
@@ -279,8 +279,30 @@ async function applyWithInstanceFallback(question, writeFn, { categories } = {})
       return { icon: "📝", label: "error: " + msg };
     }
     // Route to source definition — batch-level confirmation already covers propagation.
-    await writeFn(definition);
-    return { icon: "🌐", label: "source definition" };
+    // External-library case (Experiment 10): `definition.remote === true` and the
+    // write throws *"Cannot write to internal and read-only node"*. Wrap the
+    // attempt so we can annotate-and-move-on instead of aborting the batch.
+    try {
+      await writeFn(definition);
+      return { icon: "🌐", label: "source definition" };
+    } catch (defErr) {
+      const defMsg = String(defErr?.message ?? defErr);
+      const isRemoteReadOnly =
+        definition.remote === true || /read-only/i.test(defMsg);
+      if (categories) {
+        upsertCanicodeAnnotation(scene, {
+          ruleId: question.ruleId,
+          markdown: isRemoteReadOnly
+            ? `source component lives in an external library and is read-only from this file — apply the fix in the library file itself.`
+            : `could not apply at source definition: ${defMsg}`,
+          categoryId: categories.fallback,
+        });
+      }
+      return {
+        icon: "📝",
+        label: isRemoteReadOnly ? "external library (read-only)" : "definition error: " + defMsg,
+      };
+    }
   }
 }
 
@@ -515,4 +537,4 @@ Follow the **figma-implement-design** skill workflow to generate code from the F
 - **use_figma call fails for a node**: Report the error for that specific node, continue with other nodes. Failed property modifications become annotations so the context is not lost.
 - **Re-analyze shows new issues**: Only address issues from the original gotcha survey. New issues may appear due to structural changes — report them but do not re-enter the gotcha loop.
 - **Very large design (many gotchas)**: The gotcha survey already deduplicates sibling nodes and filters to blocking/risk severity only. If there are still many questions, ask the user if they want to focus on blocking issues only.
-- **External library components**: When `getMainComponentAsync()` returns `null`, the source lives in a published library this file only references — there is no supported path to edit it from the current file via Plugin API. Use the annotation fallback on the scene node and state that limitation explicitly in `labelMarkdown`.
+- **External library components**: The common case is `getMainComponentAsync()` resolving with `mainComponent.remote === true` — writes then throw *"Cannot write to internal and read-only node"* (Experiment 10). The `null` case is rarer (deleted / inaccessible component). Either way the definition is unreachable from this file; `applyWithInstanceFallback` catches the throw and emits an annotation under the `canicode:fallback` category stating the fix must be applied in the library file itself.
