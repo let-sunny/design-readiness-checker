@@ -19,6 +19,7 @@
   "scripts": {
     "build": "tsup --config tsup.config.ts",
     "build:web": "bash scripts/build-web.sh",
+    "build:roundtrip": "tsup --config tsup.roundtrip.config.ts",
     "dev": "tsup --watch",
     "test": "vitest",
     "test:run": "vitest run",
