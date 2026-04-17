@@ -54,3 +54,6 @@ app/web/browser.global.js
 # Test/temp report files
 fixtures/_test-report.html
 fixtures/report.html
+
+# Stale roundtrip build artifact (pre-outExtension config)
+.claude/skills/canicode-roundtrip/helpers.global.js
