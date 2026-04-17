@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "pnpm lint 2>&1 && pnpm build 2>&1"
+            "command": "[ \"$DEVELOP_SUBAGENT\" = \"1\" ] && exit 0; OUT=$({ pnpm lint && pnpm build; } 2>&1); [ $? -eq 0 ] || { echo '[stop-hook] pnpm lint/build FAILED'; echo \"$OUT\"; exit 1; }"
           }
         ]
       }
@@ -35,6 +35,10 @@
             "type": "command",
             "command": "npx tsx scripts/sync-rule-docs.ts",
             "if": "Write(**/src/core/rules/**)"
+          },
+          {
+            "type": "command",
+            "command": "bash scripts/develop-heartbeat.sh"
           }
         ]
       }
