@@ -12,6 +12,22 @@ export const InstanceContextSchema = z.object({
 
 export type InstanceContext = z.infer<typeof InstanceContextSchema>;
 
+/**
+ * Apply-strategy enum surfaced on survey questions and analyze-output issues.
+ * Mirrors `RuleApplyStrategy` in `src/core/gotcha/apply-context.ts` —
+ * declared as a Zod enum here so MCP responses validate end-to-end.
+ */
+export const RuleApplyStrategySchema = z.enum([
+  "property-mod",
+  "structural-mod",
+  "annotation",
+  "auto-fix",
+]);
+
+export type RuleApplyStrategy = z.infer<typeof RuleApplyStrategySchema>;
+
+const TargetPropertySchema = z.union([z.string(), z.array(z.string())]);
+
 export const GotchaSurveyQuestionSchema = z.object({
   nodeId: z.string(),
   nodeName: z.string(),
@@ -21,6 +37,11 @@ export const GotchaSurveyQuestionSchema = z.object({
   hint: z.string(),
   example: z.string(),
   instanceContext: InstanceContextSchema.optional(),
+  applyStrategy: RuleApplyStrategySchema,
+  targetProperty: TargetPropertySchema.optional(),
+  suggestedName: z.string().optional(),
+  isInstanceChild: z.boolean(),
+  sourceChildId: z.string().optional(),
 });
 
 export type GotchaSurveyQuestion = z.infer<typeof GotchaSurveyQuestionSchema>;

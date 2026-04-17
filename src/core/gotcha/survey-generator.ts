@@ -10,6 +10,7 @@ import type { AnalysisFile, AnalysisNode } from "../contracts/figma-node.js";
 import type { RuleId } from "../contracts/rule.js";
 import { GOTCHA_QUESTIONS } from "../rules/gotcha-questions.js";
 import { parseInstanceChildNodeId } from "../adapters/instance-id-parser.js";
+import { computeApplyContext } from "./apply-context.js";
 
 const NODE_PATH_SEPARATOR = " > ";
 
@@ -125,6 +126,11 @@ function mapToQuestion(
 
   const nodeName = getNodeName(issue.violation.nodePath);
   const instanceContext = buildInstanceContext(issue.violation.nodeId, file);
+  const applyContext = computeApplyContext(
+    issue.violation,
+    instanceContext ?? undefined,
+  );
+  const suggestedName = issue.violation.suggestedName;
 
   return {
     nodeId: issue.violation.nodeId,
@@ -135,6 +141,15 @@ function mapToQuestion(
     hint: template.hint,
     example: template.example,
     ...(instanceContext ? { instanceContext } : {}),
+    applyStrategy: applyContext.applyStrategy,
+    ...(applyContext.targetProperty !== undefined
+      ? { targetProperty: applyContext.targetProperty }
+      : {}),
+    ...(suggestedName !== undefined ? { suggestedName } : {}),
+    isInstanceChild: applyContext.isInstanceChild,
+    ...(applyContext.sourceChildId !== undefined
+      ? { sourceChildId: applyContext.sourceChildId }
+      : {}),
   };
 }
 

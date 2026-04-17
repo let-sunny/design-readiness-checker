@@ -32,8 +32,9 @@ function makeViolation(
   ruleId: string,
   nodeId: string,
   nodePath: string,
+  extra: Partial<RuleViolation> = {},
 ): RuleViolation {
-  return { ruleId, nodeId, nodePath, message: "test", suggestion: "" };
+  return { ruleId, nodeId, nodePath, message: "test", suggestion: "", ...extra };
 }
 
 function makeIssue(opts: {
@@ -43,12 +44,18 @@ function makeIssue(opts: {
   nodeId?: string;
   nodePath?: string;
   score?: number;
+  subType?: string;
+  suggestedName?: string;
 }): AnalysisIssue {
+  const extra: Partial<RuleViolation> = {};
+  if (opts.subType !== undefined) extra.subType = opts.subType;
+  if (opts.suggestedName !== undefined) extra.suggestedName = opts.suggestedName;
   return {
     violation: makeViolation(
       opts.ruleId,
       opts.nodeId ?? "1:1",
       opts.nodePath ?? "Root > Node",
+      extra,
     ),
     rule: makeRule({ id: opts.ruleId, category: opts.category }),
     config: makeConfig(opts.severity, opts.score ?? -5),
@@ -495,6 +502,134 @@ describe("generateGotchaSurvey", () => {
       const result = GotchaSurveySchema.safeParse(survey);
       expect(result.success).toBe(true);
     });
+  });
+
+  describe("applyStrategy and targetProperty", () => {
+    it("property-mod rule carries strategy and target property", () => {
+      const issues = [
+        makeIssue({
+          ruleId: "missing-size-constraint",
+          category: "responsive-critical",
+          severity: "risk",
+          nodeId: "1:1",
+          nodePath: "Root > Banner",
+          subType: "wrap",
+        }),
+      ];
+
+      const survey = generateGotchaSurvey(
+        makeResult(issues),
+        makeScoreReport("D"),
+      );
+
+      expect(survey.questions[0]!.applyStrategy).toBe("property-mod");
+      expect(survey.questions[0]!.targetProperty).toBe("minWidth");
+    });
+
+    it("structural-mod rule carries strategy without targetProperty for deep-nesting", () => {
+      const issues = [
+        makeIssue({
+          ruleId: "deep-nesting",
+          category: "code-quality",
+          severity: "risk",
+          nodeId: "1:1",
+          nodePath: "Root > DeepWrap",
+        }),
+      ];
+
+      const survey = generateGotchaSurvey(
+        makeResult(issues),
+        makeScoreReport("D"),
+      );
+
+      expect(survey.questions[0]!.applyStrategy).toBe("structural-mod");
+      expect(survey.questions[0]!.targetProperty).toBeUndefined();
+    });
+
+    it("annotation rule carries annotation strategy", () => {
+      const issues = [
+        makeIssue({
+          ruleId: "absolute-position-in-auto-layout",
+          category: "pixel-critical",
+          severity: "risk",
+          nodeId: "1:1",
+          nodePath: "Root > Float",
+        }),
+      ];
+
+      const survey = generateGotchaSurvey(
+        makeResult(issues),
+        makeScoreReport("D"),
+      );
+
+      expect(survey.questions[0]!.applyStrategy).toBe("annotation");
+      expect(survey.questions[0]!.targetProperty).toBeUndefined();
+    });
+  });
+
+  describe("isInstanceChild and sourceChildId", () => {
+    it("flat instance-child id derives sourceChildId from last segment", () => {
+      const issues = [
+        makeIssue({
+          ruleId: "missing-size-constraint",
+          category: "responsive-critical",
+          severity: "risk",
+          nodeId: "I175:8312;2299:23057",
+          nodePath: "Root > Card > Inner",
+          subType: "wrap",
+        }),
+      ];
+
+      const survey = generateGotchaSurvey(
+        makeResult(issues),
+        makeScoreReport("D"),
+      );
+
+      expect(survey.questions[0]!.isInstanceChild).toBe(true);
+      expect(survey.questions[0]!.sourceChildId).toBe("2299:23057");
+    });
+
+    it("plain scene id sets isInstanceChild=false and omits sourceChildId", () => {
+      const issues = [
+        makeIssue({
+          ruleId: "no-auto-layout",
+          category: "pixel-critical",
+          severity: "blocking",
+          nodeId: "1:1",
+          nodePath: "Root > Hero",
+        }),
+      ];
+
+      const survey = generateGotchaSurvey(
+        makeResult(issues),
+        makeScoreReport("D"),
+      );
+
+      expect(survey.questions[0]!.isInstanceChild).toBe(false);
+      expect(survey.questions[0]!.sourceChildId).toBeUndefined();
+    });
+  });
+
+  it("passes suggestedName through to the survey question", () => {
+    // Survey only covers blocking/risk rules — naming rules are semantic suggestion
+    // so exercise the pass-through with a semantic rule elevated to risk severity.
+    const issues = [
+      makeIssue({
+        ruleId: "non-semantic-name",
+        category: "semantic",
+        severity: "risk",
+        nodeId: "1:1",
+        nodePath: "Root > Frame 1",
+        suggestedName: "HeroSection",
+      }),
+    ];
+
+    const survey = generateGotchaSurvey(
+      makeResult(issues),
+      makeScoreReport("D"),
+    );
+
+    expect(survey.questions[0]!.suggestedName).toBe("HeroSection");
   });
 
   it("sets isReadyForCodeGen based on grade", () => {

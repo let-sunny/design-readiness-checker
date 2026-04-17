@@ -4,6 +4,7 @@ import type { RuleId, RuleConfig } from "../contracts/rule.js";
 import type { Severity } from "../contracts/severity.js";
 import type { AnalysisResult } from "./rule-engine.js";
 import { RULE_CONFIGS, RULE_ID_CATEGORY } from "../rules/rule-config.js";
+import { computeApplyContext } from "../gotcha/apply-context.js";
 import { version as VERSION } from "../../../package.json";
 
 /**
@@ -407,14 +408,27 @@ export function buildResultJson(
     issuesByRule[id] = (issuesByRule[id] ?? 0) + 1;
   }
 
-  const issues = result.issues.map((issue) => ({
-    ruleId: issue.violation.ruleId,
-    ...(issue.violation.subType && { subType: issue.violation.subType }),
-    severity: issue.config.severity,
-    nodeId: issue.violation.nodeId,
-    nodePath: issue.violation.nodePath,
-    message: issue.violation.message,
-  }));
+  const issues = result.issues.map((issue) => {
+    const applyContext = computeApplyContext(issue.violation);
+    const suggestedName = issue.violation.suggestedName;
+    return {
+      ruleId: issue.violation.ruleId,
+      ...(issue.violation.subType && { subType: issue.violation.subType }),
+      severity: issue.config.severity,
+      nodeId: issue.violation.nodeId,
+      nodePath: issue.violation.nodePath,
+      message: issue.violation.message,
+      applyStrategy: applyContext.applyStrategy,
+      ...(applyContext.targetProperty !== undefined
+        ? { targetProperty: applyContext.targetProperty }
+        : {}),
+      ...(suggestedName !== undefined ? { suggestedName } : {}),
+      isInstanceChild: applyContext.isInstanceChild,
+      ...(applyContext.sourceChildId !== undefined
+        ? { sourceChildId: applyContext.sourceChildId }
+        : {}),
+    };
+  });
 
   const json: Record<string, unknown> = {
     version: VERSION,

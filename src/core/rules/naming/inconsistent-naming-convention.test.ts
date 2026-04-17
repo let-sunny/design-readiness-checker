@@ -110,6 +110,7 @@ describe("inconsistent-naming-convention", () => {
     const result = inconsistentNamingConvention.check(node, makeContext({ siblings }));
     expect(result).not.toBeNull();
     expect(result!.suggestion).toContain('"my-url-parser"');
+    expect(result!.suggestedName).toBe("my-url-parser");
   });
 
   it("still flags multi-word PascalCase in Title Case context", () => {

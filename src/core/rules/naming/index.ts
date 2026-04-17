@@ -3,6 +3,11 @@ import { defineRule } from "../rule-registry.js";
 import { getDefaultNameSubType, nonSemanticNameMsg, inconsistentNamingMsg, nonStandardNamingMsg } from "../rule-messages.js";
 import { isExcludedName, isDefaultName, isNonSemanticName, STANDARD_STATE_NAMES, STATE_NAME_SUGGESTIONS, STATE_LIKE_PATTERN } from "../node-semantics.js";
 
+function capitalize(s: string): string {
+  if (!s) return s;
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
 function detectNamingConvention(name: string): string | null {
   if (/^[a-z]+(-[a-z]+)*$/.test(name)) return "kebab-case";
   if (/^[a-z]+(_[a-z]+)*$/.test(name)) return "snake_case";
@@ -176,6 +181,7 @@ const inconsistentNamingConventionCheck: RuleCheckFn = (node, context) => {
       ruleId: inconsistentNamingConventionDef.id,
       nodeId: node.id,
       nodePath: context.path.join(" > "),
+      suggestedName: suggested,
       ...inconsistentNamingMsg(node.name, nodeConvention, dominantConvention, suggested),
     };
   }
@@ -228,6 +234,7 @@ const nonStandardNamingCheck: RuleCheckFn = (node, context) => {
             subType: "state-name" as const,
             nodeId: node.id,
             nodePath: context.path.join(" > "),
+            suggestedName: capitalize(suggestion),
             ...nonStandardNamingMsg.stateName(node.name, opt, suggestion),
           };
         }

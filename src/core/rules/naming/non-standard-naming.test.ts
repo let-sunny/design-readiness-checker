@@ -24,6 +24,8 @@ describe("non-standard-naming", () => {
     expect(result!.subType).toBe("state-name");
     expect(result!.message).toContain("Clicked");
     expect(result!.suggestion).toContain("pressed");
+    // suggestion stays lowercase for human prose; suggestedName is capitalized for Plugin API
+    expect(result!.suggestedName).toBe("Pressed");
   });
 
   it("flags 'On' → suggests 'active'", () => {
