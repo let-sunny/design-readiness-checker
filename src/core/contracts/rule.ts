@@ -72,6 +72,14 @@ export interface RuleViolation {
   message: string;
   suggestion: string;
   guide?: string;
+  /**
+   * Pre-computed name to write to `node.name` in Figma — populated by naming
+   * rules whose suggestion is a deterministic function of the node's existing
+   * state (`non-standard-naming`, `inconsistent-naming-convention`).
+   * Capitalized for direct Plugin-API use; the human-readable `suggestion`
+   * string keeps lowercase prose.
+   */
+  suggestedName?: string;
 }
 
 /**

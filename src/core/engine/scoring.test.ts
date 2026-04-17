@@ -517,6 +517,68 @@ describe("buildResultJson", () => {
 
     expect(json.blockingIssueCount).toBe(0);
   });
+
+  it("enriches each issue with applyStrategy, isInstanceChild, and targetProperty when known", () => {
+    const namingIssue = makeIssue({ ruleId: "non-standard-naming", category: "semantic", severity: "suggestion" });
+    namingIssue.violation.suggestedName = "Hover";
+
+    const rawValueIssue = makeIssue({ ruleId: "raw-value", category: "token-management", severity: "missing-info" });
+    rawValueIssue.violation.subType = "color";
+
+    const sizeIssue = makeIssue({
+      ruleId: "missing-size-constraint",
+      category: "responsive-critical",
+      severity: "risk",
+    });
+    sizeIssue.violation.subType = "wrap";
+
+    const result = makeResult([namingIssue, rawValueIssue, sizeIssue]);
+    const scores = calculateScores(result);
+    const json = buildResultJson("TestFile", result, scores);
+    const issues = json.issues as Array<Record<string, unknown>>;
+
+    expect(issues[0]).toMatchObject({
+      ruleId: "non-standard-naming",
+      applyStrategy: "auto-fix",
+      targetProperty: "name",
+      suggestedName: "Hover",
+      isInstanceChild: false,
+    });
+
+    expect(issues[1]).toMatchObject({
+      ruleId: "raw-value",
+      applyStrategy: "auto-fix",
+      isInstanceChild: false,
+    });
+    expect(issues[1]!["targetProperty"]).toBeUndefined();
+
+    expect(issues[2]).toMatchObject({
+      ruleId: "missing-size-constraint",
+      applyStrategy: "property-mod",
+      targetProperty: "minWidth",
+      isInstanceChild: false,
+    });
+  });
+
+  it("derives isInstanceChild and sourceChildId from instance-child node ids", () => {
+    const issue = makeIssue({
+      ruleId: "missing-size-constraint",
+      category: "responsive-critical",
+      severity: "risk",
+    });
+    issue.violation.nodeId = "I175:8312;2299:23057";
+    issue.violation.subType = "wrap";
+
+    const result = makeResult([issue]);
+    const scores = calculateScores(result);
+    const json = buildResultJson("TestFile", result, scores);
+    const issues = json.issues as Array<Record<string, unknown>>;
+
+    expect(issues[0]).toMatchObject({
+      isInstanceChild: true,
+      sourceChildId: "2299:23057",
+    });
+  });
 });
 
 // ─── isReadyForCodeGen helper ─────────────────────────────────────────────────
