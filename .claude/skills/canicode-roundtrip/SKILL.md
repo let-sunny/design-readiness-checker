@@ -139,227 +139,40 @@ Each row below covers the full 33-value enum (`width`, `height`, `maxWidth`, `mi
 
 `upsertCanicodeAnnotation` wraps the write in `try/catch`: if `properties` fails node-type validation it retries without them, so the markdown body always survives. You can pass `properties` speculatively.
 
+> **Note:** The write-policy default is **under review** in [#295](https://github.com/let-sunny/canicode/issues/295). The current three-tier policy routes to the source definition on override errors; the proposal in #295 flips the default to "instance override + annotation" so silent fan-out to all instances requires explicit opt-in per rule/run. The bundled helpers accept the current default but are structured so the switch becomes a config change, not a markdown rewrite.
+
 **Three-tier write policy:**
 
 1. **Scene (instance) node** — `await figma.getNodeByIdAsync(question.nodeId)` and apply the write inside `try/catch`. Success → done (local change only). Mark result with ✅.
 2. **Definition (source) node** — If the error indicates the property cannot be overridden in an instance, load `await figma.getNodeByIdAsync(question.sourceChildId)`. If that returns null, walk from the scene node to the nearest `INSTANCE` parent and use `await instance.getMainComponentAsync()`, then find the matching layer inside that component. Changes propagate to **every non-overridden instance** in the file — pre-existing instance-level overrides are preserved (Experiment 10). Mark result with 🌐.
-3. **Annotation fallback** — Definition-tier writes can fail even when the node exists. The common case is an **external published library**: `getMainComponentAsync()` resolves with `mainComponent.remote === true`, but raw writes throw *"Cannot write to internal and read-only node"* (Experiment 10). Rarer is `mainComponent === null` (deleted / inaccessible component). Either way, catch the throw, add a `labelMarkdown` annotation on the **scene** node documenting the answer and limitation, and mark result with 📝.
+3. **Annotation fallback** — Definition-tier writes can fail even when the node exists. The **observed case** (Experiment 10) is an **external published library**: `getMainComponentAsync()` resolves with `mainComponent.remote === true`, and raw writes throw *"Cannot write to internal and read-only node"*. A separate `mainComponent === null` case (deleted / inaccessible component) is documented in the Plugin API but was **not reproduced** in Experiment 10 — it is handled defensively on the same path. Either way, catch the throw, add a `labelMarkdown` annotation on the **scene** node documenting the answer and limitation, and mark result with 📝.
 
 **Confirmation is a batch-level concern, not a helper-level one.** A `use_figma` call runs one JavaScript batch and cannot pause mid-batch for user input. So the orchestrator is responsible for pre-flighting: classify every `question` whose `isInstanceChild` is true as a *potential* definition write, enumerate the likely propagation set to the user up-front, and get **one confirmation for the whole batch**. When describing impact to the user, note that the write reaches every **non-overridden** instance — any instance that already has a local override for the same property keeps its override. The helper below assumes that confirmation has already happened — it does not prompt.
 
-**Shared helpers** — paste once at the top of every `use_figma` batch. Keep each `writeFn` small so a throw does not abort unrelated writes. Experiment 08 findings informed every branch here.
+**Shared helpers (bundled)** — the deterministic helpers live in TypeScript at `src/core/roundtrip/*.ts` and are bundled to a single IIFE at `.claude/skills/canicode-roundtrip/helpers.js`. `use_figma` only accepts a self-contained JS string, so the source of truth is TypeScript (with vitest coverage) and the bundle is the delivery artifact.
 
-```javascript
-// ── D1: Figma readback populates BOTH `label` and `labelMarkdown` on every entry,
-// but writes accept only ONE. Strip to the non-empty field before spreading.
-// Entries where neither field has content are dropped — they cannot round-trip
-// through the write validator.
-function stripAnnotations(annotations) {
-  return (annotations || []).flatMap((a) => {
-    const hasLM = typeof a.labelMarkdown === "string" && a.labelMarkdown.length > 0;
-    const hasLabel = typeof a.label === "string" && a.label.length > 0;
-    if (!hasLM && !hasLabel) return [];
-    const base = hasLM ? { labelMarkdown: a.labelMarkdown } : { label: a.label };
-    if (a.categoryId) base.categoryId = a.categoryId;
-    if (Array.isArray(a.properties) && a.properties.length > 0) base.properties = a.properties;
-    return [base];
-  });
-}
+**Usage in a roundtrip session:**
 
-// ── D4: File-scoped custom categories. Run once per roundtrip (Step 4.0).
-// Returns { gotcha, autoFix, fallback } map of category ids.
-// Colors must be lowercase: yellow | orange | red | pink | violet | blue | teal | green.
-async function ensureCanicodeCategories() {
-  const api = figma.annotations;
-  const existing = await api.getAnnotationCategoriesAsync();
-  const byLabel = new Map(existing.map((c) => [c.label, c.id]));
-  async function ensure(label, color) {
-    if (byLabel.has(label)) return byLabel.get(label);
-    const created = await api.addAnnotationCategoryAsync({ label, color });
-    byLabel.set(label, created.id);
-    return created.id;
-  }
-  return {
-    gotcha:   await ensure("canicode:gotcha",   "blue"),
-    autoFix:  await ensure("canicode:auto-fix", "green"),
-    fallback: await ensure("canicode:fallback", "yellow"),
-  };
-}
+1. Read `.claude/skills/canicode-roundtrip/helpers.js` once at the start of Step 4.
+2. Prepend its contents verbatim at the top of every `use_figma` batch body — it registers a single global `CanICodeRoundtrip`.
+3. Reference exposed globals as `CanICodeRoundtrip.*`:
+   - `stripAnnotations(annotations)` — normalizes the D1 label/labelMarkdown mutex on readback.
+   - `ensureCanicodeCategories()` — returns `{ gotcha, autoFix, fallback }` category id map (D4); idempotent, safe to call at the top of every batch.
+   - `upsertCanicodeAnnotation(node, { ruleId, markdown, categoryId, properties })` — idempotent annotation upsert. Handles D1 mutex, D2 in-place replace by ruleId prefix, and the D3 `properties` node-type retry.
+   - `applyWithInstanceFallback(question, writeFn, { categories })` — three-tier write policy with silent-ignore detection. The `writeFn` may return `false` to signal "write accepted but value unchanged" so the helper can route to the definition tier.
+   - `applyPropertyMod(question, answerValue, { categories })` — Strategy A entry point. Branches on `targetProperty` (single vs array) and answer shape (scalar, per-property object, `{ variable: "name" }` binding). Uses `setBoundVariableForPaint` for `fills` / `strokes` and `setBoundVariable` for scalar fields.
+   - `resolveVariableByName(name)` — local-variable exact-name lookup; returns `null` for remote library variables not imported into this file.
 
-// ── D2: Upsert a canicode annotation — replace existing by ruleId prefix, else append.
-// Preserves `categoryId` and `properties` when replacing. Match covers both
-// `labelMarkdown` (current format) and `label` (pre-D1 legacy entries) so reruns
-// across versions consolidate instead of accumulating.
-// categoryId: id from ensureCanicodeCategories().
-// properties: optional array like [{ type: "width" }] — see the matrix above for
-//   node-type gated values. Safe to pass speculatively: if the write rejects the
-//   `properties` entry (e.g. `fills` on a FRAME), the helper retries without them
-//   so the markdown body always persists.
-function upsertCanicodeAnnotation(node, { ruleId, markdown, categoryId, properties }) {
-  if (!("annotations" in node)) return false;
-  const prefix = `**[canicode] ${ruleId}**`;
-  const body = markdown.startsWith(prefix) ? markdown : `${prefix}\n\n${markdown}`;
-  const existing = stripAnnotations(node.annotations);
-  const entry = { labelMarkdown: body };
-  if (categoryId) entry.categoryId = categoryId;
-  if (properties && properties.length) entry.properties = properties;
-  const idx = existing.findIndex((a) =>
-    a.labelMarkdown?.startsWith(prefix) || a.label?.startsWith(prefix),
-  );
-  if (idx >= 0) existing[idx] = entry;
-  else existing.push(entry);
-  try {
-    node.annotations = existing;
-    return true;
-  } catch (e) {
-    // Experiment 09: `properties` types are node-type-gated. The canonical
-    // error is "Invalid property X for a FRAME/TEXT node" — retry without
-    // `properties` only when the message matches, so unrelated errors
-    // (permission, read-only, API changes) still surface.
-    const msg = String(e?.message ?? e);
-    const isNodeTypeReject = /invalid property .+ for a .+ node/i.test(msg);
-    if (!entry.properties || !isNodeTypeReject) throw e;
-    delete entry.properties;
-    if (idx >= 0) existing[idx] = entry;
-    node.annotations = existing;
-    return true;
-  }
-}
+Keep each `writeFn` small so a throw does not abort unrelated writes. Experiment 08 findings informed every branch in the bundled helpers, and the batch-level confirmation contract still applies: `applyWithInstanceFallback` never prompts — the orchestrator must collect one confirmation covering every potential definition write before the batch runs.
 
-// ── Three-tier write policy with silent-ignore detection (B matrix finding).
-// writeFn contract: may read `target[prop]` before/after to detect silent ignore
-// and return false to signal "no change" — caller routes to definition fallback.
-// Pre-condition: the orchestrator has already collected a batch-level confirmation
-// that writes targeting a source-component definition may fan out to every instance
-// of that component in the file. This helper never prompts.
-async function applyWithInstanceFallback(question, writeFn, { categories } = {}) {
-  const scene = await figma.getNodeByIdAsync(question.nodeId);
-  if (!scene) return { icon: "📝", label: "missing node" };
-
-  const definition = question.sourceChildId
-    ? await figma.getNodeByIdAsync(question.sourceChildId)
-    : null;
-
-  try {
-    const changed = await writeFn(scene);
-    if (changed === false) {
-      // Silent-ignore: write succeeded but value unchanged (e.g. layoutMode on some instances).
-      // Route to the source definition — already covered by the batch-level confirmation.
-      if (definition) {
-        await writeFn(definition);
-        return { icon: "🌐", label: "source definition (silent-ignore fallback)" };
-      }
-      // Cannot route — annotate scene as fallback.
-      if (categories) {
-        upsertCanicodeAnnotation(scene, {
-          ruleId: question.ruleId,
-          markdown: "write accepted but value unchanged; no definition available",
-          categoryId: categories.fallback,
-        });
-      }
-      return { icon: "📝", label: "silent-ignore, annotated" };
-    }
-    return { icon: "✅", label: "instance/scene" };
-  } catch (e) {
-    const msg = String(e?.message ?? e);
-    // Canonical match from Experiment 08: "This property cannot be overridden in an instance".
-    // The broader `/override/i` fallback catches variant wording from other properties but is
-    // narrow enough that unrelated errors (file missing, network, etc.) won't false-match.
-    // Do not add `/instance/i` — many unrelated messages mention "instance" and it over-routes.
-    const looksLikeInstanceOverride =
-      /cannot be overridden/i.test(msg) || /override/i.test(msg);
-    if (!looksLikeInstanceOverride || !definition) {
-      if (categories) {
-        upsertCanicodeAnnotation(scene, {
-          ruleId: question.ruleId,
-          markdown: `could not apply automatically: ${msg}`,
-          categoryId: categories.fallback,
-        });
-      }
-      return { icon: "📝", label: "error: " + msg };
-    }
-    // Route to source definition — batch-level confirmation already covers propagation.
-    // External-library case (Experiment 10): `definition.remote === true` and the
-    // write throws *"Cannot write to internal and read-only node"*. Wrap the
-    // attempt so we can annotate-and-move-on instead of aborting the batch.
-    try {
-      await writeFn(definition);
-      return { icon: "🌐", label: "source definition" };
-    } catch (defErr) {
-      const defMsg = String(defErr?.message ?? defErr);
-      const isRemoteReadOnly =
-        definition.remote === true || /read-only/i.test(defMsg);
-      if (categories) {
-        upsertCanicodeAnnotation(scene, {
-          ruleId: question.ruleId,
-          markdown: isRemoteReadOnly
-            ? `source component lives in an external library and is read-only from this file — apply the fix in the library file itself.`
-            : `could not apply at source definition: ${defMsg}`,
-          categoryId: categories.fallback,
-        });
-      }
-      return {
-        icon: "📝",
-        label: isRemoteReadOnly ? "external library (read-only)" : "definition error: " + defMsg,
-      };
-    }
-  }
-}
-
-// ── C: Resolve a variable reference from an answer like { variable: "mobile-width" }.
-// Scope is LOCAL variables only — exact-name match against `getLocalVariablesAsync()`.
-// Slash-path names (e.g. "Brand/Primary") work only when the variable's `name` field
-// itself contains the slash path. Library variables imported into this file are
-// included automatically because they appear in `getLocalVariablesAsync()`; variables
-// that live purely in an unimported remote library are NOT resolved here. Callers
-// must fall back to a raw write (or to an annotation explaining the missing token).
-async function resolveVariableByName(name) {
-  const locals = await figma.variables.getLocalVariablesAsync();
-  return locals.find((v) => v.name === name) || null;
-}
-```
-
-Wrap every property write in `applyWithInstanceFallback(question, async (target) => { ... }, { categories })` so failed or silently-ignored instance overrides route to the definition path or fallback annotation instead of silently aborting the batch.
+Wrap every property write in `CanICodeRoundtrip.applyWithInstanceFallback(question, async (target) => { ... }, { categories })` so failed or silently-ignored instance overrides route to the definition path or fallback annotation instead of silently aborting the batch.
 
 #### Strategy A: Property Modification — apply directly
 
-Rules with `applyStrategy === "property-mod"`. The helper below branches on `question.targetProperty` automatically, and on each value type — scalar, multi-property object, or variable reference (`{ variable: "token-name" }`).
+Rules with `applyStrategy === "property-mod"`. Call the bundled helper — it branches on `question.targetProperty` (single vs array) and on each value type (scalar, multi-property object, `{ variable: "token-name" }` binding) automatically. Paint properties (`fills`, `strokes`) are bound with `setBoundVariableForPaint` per the Plugin API contract; scalar fields use `setBoundVariable`.
 
 ```javascript
-async function applyPropertyMod(question, answerValue, context) {
-  const props = Array.isArray(question.targetProperty)
-    ? question.targetProperty
-    : [question.targetProperty];
-
-  return applyWithInstanceFallback(question, async (target) => {
-    if (!target) return;
-    let changed = undefined;
-    for (const prop of props) {
-      if (!(prop in target)) continue;
-      // Multi-property rules (e.g. no-auto-layout → [layoutMode, itemSpacing]) expect
-      // an object answer: { layoutMode: "VERTICAL", itemSpacing: 16 }.
-      const value = (typeof answerValue === "object" && answerValue !== null && !("variable" in answerValue))
-        ? answerValue[prop]
-        : answerValue;
-
-      // Variable binding — answer shape { variable: "name" }.
-      // Bypasses instance-child override restrictions for minWidth/maxWidth and siblings.
-      if (value && typeof value === "object" && "variable" in value) {
-        const variable = await resolveVariableByName(value.variable);
-        if (variable) { target.setBoundVariable(prop, variable); continue; }
-        // Variable not found — fall through to raw write if the answer also has a fallback scalar.
-        if (!("fallback" in value)) continue;
-      }
-
-      const scalar = (value && typeof value === "object" && "fallback" in value) ? value.fallback : value;
-      const before = target[prop];
-      target[prop] = scalar;
-      // B: some instance children silently ignore layoutMode writes.
-      if (target[prop] === before && before !== scalar) changed = false;
-    }
-    return changed;
-  }, context);
-}
+await CanICodeRoundtrip.applyPropertyMod(question, answerValue, { categories });
 ```
 
 Answer shape guide (LLM judgment — the user's answer is prose; parse accordingly):
@@ -407,7 +220,7 @@ Rules with `applyStrategy === "annotation"` cannot be auto-fixed via Plugin API.
 
 ```javascript
 const scene = await figma.getNodeByIdAsync(question.nodeId);
-upsertCanicodeAnnotation(scene, {
+CanICodeRoundtrip.upsertCanicodeAnnotation(scene, {
   ruleId: question.ruleId,
   markdown: `**Q:** ${question.question}\n**A:** ${answer}`,
   categoryId: categories.gotcha,
@@ -421,7 +234,7 @@ upsertCanicodeAnnotation(scene, {
 
 Notes:
 - `upsertCanicodeAnnotation` replaces an existing `**[canicode] <ruleId>**` entry on the same node instead of appending — reruns don't accumulate duplicates.
-- `label` and `labelMarkdown` are mutually exclusive on write, but Figma returns both on readback. Never spread `scene.annotations` directly; always go through `stripAnnotations` (the helper does this).
+- `label` and `labelMarkdown` are mutually exclusive on write, but Figma returns both on readback. Never spread `scene.annotations` directly; always call `CanICodeRoundtrip.upsertCanicodeAnnotation` (or `CanICodeRoundtrip.stripAnnotations` if you truly need the normalized array).
 - Prefer annotating the **scene** instance child so designers see the note where they work; mention in the markdown if the fix belongs on the source component but could not be applied (library/external).
 
 #### Strategy D: Auto-fix lower-severity issues from analysis
@@ -441,13 +254,13 @@ for (const issue of analyzeResult.issues) {
 
   if (issue.targetProperty === "name" && issue.suggestedName) {
     // Naming rules — rename to the pre-computed suggestedName.
-    await applyWithInstanceFallback(q, async (target) => {
+    await CanICodeRoundtrip.applyWithInstanceFallback(q, async (target) => {
       if (target) target.name = issue.suggestedName;
     }, { categories });
   } else {
     // raw-value, missing-interaction-state, missing-prototype — designer judgment; annotate.
     const scene = await figma.getNodeByIdAsync(issue.nodeId);
-    upsertCanicodeAnnotation(scene, {
+    CanICodeRoundtrip.upsertCanicodeAnnotation(scene, {
       ruleId: issue.ruleId,
       markdown: issue.message,
       categoryId: categories.autoFix,
@@ -462,7 +275,7 @@ for (const issue of analyzeResult.issues) {
 
 #### Execution order
 
-0. **Initialize categories** — first batch calls `const categories = await ensureCanicodeCategories();` and keeps the result in scope for every subsequent call in the same script. (Or re-run ensure at the top of each `use_figma` batch — it is idempotent by label.)
+0. **Initialize categories** — first batch calls `const categories = await CanICodeRoundtrip.ensureCanicodeCategories();` and keeps the result in scope for every subsequent call in the same script. (Or re-run ensure at the top of each `use_figma` batch — it is idempotent by label.)
 1. **Batch all property modifications** (Strategy A) into a single `use_figma` call for efficiency. Pass `{ categories }` to `applyWithInstanceFallback` so fallbacks land in the correct category.
 2. **Present structural modifications** (Strategy B) one by one, apply confirmed ones.
 3. **Batch all annotations** (Strategy C + declined structural mods) into a single `use_figma` call — use `categories.gotcha` for the category id.
@@ -500,7 +313,7 @@ const nodeIds = ["id1", "id2"]; // nodes that now pass
 for (const id of nodeIds) {
   const node = await figma.getNodeByIdAsync(id);
   if (node && "annotations" in node) {
-    node.annotations = stripAnnotations(node.annotations).filter(
+    node.annotations = CanICodeRoundtrip.stripAnnotations(node.annotations).filter(
       a => !a.labelMarkdown?.startsWith("**[canicode]")
     );
   }
@@ -537,4 +350,4 @@ Follow the **figma-implement-design** skill workflow to generate code from the F
 - **use_figma call fails for a node**: Report the error for that specific node, continue with other nodes. Failed property modifications become annotations so the context is not lost.
 - **Re-analyze shows new issues**: Only address issues from the original gotcha survey. New issues may appear due to structural changes — report them but do not re-enter the gotcha loop.
 - **Very large design (many gotchas)**: The gotcha survey already deduplicates sibling nodes and filters to blocking/risk severity only. If there are still many questions, ask the user if they want to focus on blocking issues only.
-- **External library components**: The common case is `getMainComponentAsync()` resolving with `mainComponent.remote === true` — writes then throw *"Cannot write to internal and read-only node"* (Experiment 10). The `null` case is rarer (deleted / inaccessible component). Either way the definition is unreachable from this file; `applyWithInstanceFallback` catches the throw and emits an annotation under the `canicode:fallback` category stating the fix must be applied in the library file itself.
+- **External library components**: The **observed case** in Experiment 10 is `getMainComponentAsync()` resolving with `mainComponent.remote === true` — writes then throw *"Cannot write to internal and read-only node"*. The `mainComponent === null` case (deleted / inaccessible component) is documented in the Plugin API but was **not reproduced** in Experiment 10; it is handled defensively on the same fallback path. Either way the definition is unreachable from this file; `applyWithInstanceFallback` catches the throw and emits an annotation under the `canicode:fallback` category stating the fix must be applied in the library file itself.
