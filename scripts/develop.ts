@@ -20,6 +20,8 @@ import {
   writeFileSync,
   existsSync,
   unlinkSync,
+  mkdirSync,
+  rmSync,
 } from "node:fs";
 import { resolve, join } from "node:path";
 import { parseArgs } from "node:util";
@@ -31,6 +33,7 @@ import {
   DEV_STEP_NAMES,
   DEV_STEP_ORDER,
   type DevelopRunIndex,
+  type ImplementAttempt,
   type StepRecord,
 } from "../src/core/contracts/develop-run.js";
 import { createDevelopRunDir } from "../src/agents/run-directory.js";
@@ -40,7 +43,12 @@ import { createDevelopRunDir } from "../src/agents/run-directory.js";
 // ---------------------------------------------------------------------------
 
 const MAX_FIX_ROUNDS = 3;
-const AGENT_TIMEOUT = 600_000; // 10 minutes
+const DEFAULT_AGENT_TIMEOUT = 600_000; // 10 minutes — floor and default for all agents
+// Implementer timeout scales with plan size: max(floor, files * per-file).
+// 120s/file is a first-pass coefficient (issue #301) — tune with run data.
+const IMPLEMENT_TIMEOUT_PER_FILE_MS = 120_000;
+const MAX_IMPLEMENT_TIMEOUT = 3_600_000; // 60 minutes — safety ceiling
+const MAX_IMPLEMENTER_ATTEMPTS = 2; // initial + 1 retry
 const PROJECT_ROOT = resolve(import.meta.dirname ?? ".", "..");
 
 // ---------------------------------------------------------------------------
@@ -150,8 +158,24 @@ function runCli(command: string, label: string): string {
   }
 }
 
+interface RunAgentOptions {
+  timeout?: number;
+  env?: Record<string, string>;
+}
+
+interface AgentError extends Error {
+  isTimeout: boolean;
+  stderr: string;
+  stdout: string;
+}
+
 /** Run a `claude -p` agent with prompt via stdin. Returns stdout. */
-function runAgent(prompt: string, label: string): string {
+function runAgent(
+  prompt: string,
+  label: string,
+  opts: RunAgentOptions = {},
+): string {
+  const timeout = opts.timeout ?? DEFAULT_AGENT_TIMEOUT;
   console.log(`  [agent] ${label}`);
   try {
     return execSync(
@@ -160,14 +184,28 @@ function runAgent(prompt: string, label: string): string {
         input: prompt,
         encoding: "utf-8",
         maxBuffer: 50 * 1024 * 1024,
-        timeout: AGENT_TIMEOUT,
+        timeout,
         cwd: PROJECT_ROOT,
+        env: { ...process.env, ...(opts.env ?? {}) },
       },
     );
   } catch (err) {
-    const execErr = err as SpawnSyncReturns<string>;
+    const execErr = err as SpawnSyncReturns<string> & {
+      signal?: NodeJS.Signals | null;
+      code?: string | number;
+    };
     const stderr = execErr.stderr ?? "";
-    throw new Error(`Agent failed: ${label}\n${stderr}`.trim());
+    const stdout = execErr.stdout ?? "";
+    const isTimeout =
+      execErr.signal === "SIGTERM" || execErr.code === "ETIMEDOUT";
+    const prefix = isTimeout
+      ? `Agent timeout after ${Math.round(timeout / 1000)}s: ${label}`
+      : `Agent failed: ${label}`;
+    const wrapped = new Error(`${prefix}\n${stderr}\n${stdout}`.trim()) as AgentError;
+    wrapped.isTimeout = isTimeout;
+    wrapped.stderr = stderr;
+    wrapped.stdout = stdout;
+    throw wrapped;
   }
 }
 
@@ -191,15 +229,25 @@ function resolveFromStep(from: string): string {
   process.exit(1);
 }
 
-/** Artifacts produced by each step — deleted on resetFrom to avoid stale state. */
+/** Artifacts (files) produced by each step — deleted on resetFrom to avoid stale state. */
 const STEP_ARTIFACTS: Record<string, string[]> = {
   [DEV_STEP_NAMES.PLAN]: ["plan.json"],
-  [DEV_STEP_NAMES.IMPLEMENT]: ["implement-log.json", "implement-output.txt"],
+  [DEV_STEP_NAMES.IMPLEMENT]: [
+    "implement-log.json",
+    "implement-output.txt",
+    "implement-progress.jsonl",
+    "implement-err.txt",
+  ],
   [DEV_STEP_NAMES.TEST]: ["test-result.json"],
   [DEV_STEP_NAMES.REVIEW]: ["review.json", "review-raw.txt"],
   [DEV_STEP_NAMES.FIX]: ["fix-log.json"],
   [DEV_STEP_NAMES.VERIFY]: ["circuit.json"],
   [DEV_STEP_NAMES.PR]: ["pr-url.txt"],
+};
+
+/** Artifact directories produced by each step — recursively removed on resetFrom. */
+const STEP_ARTIFACT_DIRS: Record<string, string[]> = {
+  [DEV_STEP_NAMES.IMPLEMENT]: ["implement-attempts"],
 };
 
 /** Reset a step and all subsequent steps to pending, removing stale artifacts. */
@@ -214,7 +262,7 @@ function resetFrom(index: DevelopRunIndex, fromStep: string): void {
       step.completedAt = undefined;
       step.durationMs = undefined;
 
-      // Delete artifacts produced by this step
+      // Delete file artifacts produced by this step
       const artifacts = STEP_ARTIFACTS[step.name];
       if (artifacts) {
         for (const file of artifacts) {
@@ -222,9 +270,173 @@ function resetFrom(index: DevelopRunIndex, fromStep: string): void {
           if (existsSync(filePath)) unlinkSync(filePath);
         }
       }
+
+      // Recursively remove directory artifacts
+      const artifactDirs = STEP_ARTIFACT_DIRS[step.name];
+      if (artifactDirs) {
+        for (const dir of artifactDirs) {
+          const dirPath = join(index.runDir, dir);
+          if (existsSync(dirPath)) rmSync(dirPath, { recursive: true, force: true });
+        }
+      }
     }
   }
   saveIndex(index);
+}
+
+// ---------------------------------------------------------------------------
+// Implementer observability helpers (#301)
+// ---------------------------------------------------------------------------
+
+interface HeartbeatSummary {
+  filesWritten: string[];
+  completedTasks: number[];
+  lastTaskId: number | undefined;
+}
+
+/**
+ * Parse `implement-progress.jsonl` — returns unique files written and task progression.
+ * Missing or empty file → empty arrays. Malformed lines are ignored.
+ *
+ * The file is written by a PostToolUse hook (one line per Edit/Write) plus
+ * `task-start` markers emitted by the Implementer agent when it begins each task.
+ * Files come from hook lines; task IDs come from agent markers.
+ */
+function parseHeartbeat(runDir: string): HeartbeatSummary {
+  const path = join(runDir, "implement-progress.jsonl");
+  if (!existsSync(path)) {
+    return { filesWritten: [], completedTasks: [], lastTaskId: undefined };
+  }
+  const files = new Set<string>();
+  const tasksSeen: number[] = [];
+  for (const line of readFileSync(path, "utf-8").split("\n")) {
+    if (!line.trim()) continue;
+    try {
+      const entry = JSON.parse(line) as {
+        file?: string;
+        taskId?: number;
+        event?: string;
+      };
+      if (typeof entry.file === "string" && entry.file.length > 0) {
+        files.add(entry.file);
+      }
+      if (typeof entry.taskId === "number") tasksSeen.push(entry.taskId);
+    } catch {
+      // Ignore malformed line — heartbeat is best-effort.
+    }
+  }
+  const lastTaskId = tasksSeen.length > 0 ? tasksSeen[tasksSeen.length - 1] : undefined;
+  // All task IDs except the final one (which was in-progress when the agent stopped)
+  // are considered completed. Deduplicate while preserving insertion order.
+  const completedSet = new Set<number>();
+  for (const id of tasksSeen) {
+    if (id !== lastTaskId) completedSet.add(id);
+  }
+  const completedTasks = [...completedSet];
+  return lastTaskId === undefined
+    ? { filesWritten: [...files], completedTasks, lastTaskId: undefined }
+    : { filesWritten: [...files], completedTasks, lastTaskId };
+}
+
+/** Count unique files across a plan's tasks — used to scale the Implementer timeout. */
+function countPlanFiles(runDir: string): number {
+  const path = join(runDir, "plan.json");
+  if (!existsSync(path)) return 0;
+  try {
+    const plan = readJson<{ tasks?: Array<{ files?: string[] }> }>(path);
+    const set = new Set<string>();
+    for (const task of plan.tasks ?? []) {
+      for (const f of task.files ?? []) set.add(f);
+    }
+    return set.size;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * Synthesize a partial `implement-log.json` on timeout and capture stderr tail.
+ * Also stashes uncommitted files so `--resume --from implement` starts from a clean tree.
+ */
+function finalizeImplementerTimeout(
+  runDir: string,
+  attempt: number,
+  err: AgentError,
+): HeartbeatSummary {
+  const summary = parseHeartbeat(runDir);
+
+  const logPath = join(runDir, "implement-log.json");
+  let existing: Record<string, unknown> = {};
+  if (existsSync(logPath)) {
+    try {
+      existing = readJson<Record<string, unknown>>(logPath);
+    } catch {
+      // Malformed partial log — overwrite.
+    }
+  }
+  const commits = Array.isArray(existing.commits) ? (existing.commits as string[]) : [];
+  const decisions = Array.isArray(existing.decisions)
+    ? (existing.decisions as string[])
+    : [];
+  const knownRisks = Array.isArray(existing.knownRisks)
+    ? (existing.knownRisks as string[])
+    : [];
+  const partial = {
+    ...existing,
+    filesChanged: summary.filesWritten,
+    commits,
+    decisions,
+    knownRisks,
+    status: "timeout" as const,
+    completedTasks: summary.completedTasks,
+    timedOutAt: new Date().toISOString(),
+  };
+  writeFileSync(logPath, JSON.stringify(partial, null, 2) + "\n");
+
+  // stderr + stdout tail (last 2KB) for diagnostics
+  const tail = (err.stderr + err.stdout).slice(-2048);
+  writeFileSync(join(runDir, "implement-err.txt"), tail);
+
+  // Stash uncommitted work onto a named stash so resume finds a clean tree.
+  try {
+    const status = execSync("git status --porcelain", {
+      encoding: "utf-8",
+      cwd: PROJECT_ROOT,
+    }).trim();
+    if (status) {
+      const stashMsg = `develop/partial-attempt-${attempt}-${Date.now()}`;
+      execSync(`git stash push -u -m ${shellEscape(stashMsg)}`, {
+        encoding: "utf-8",
+        cwd: PROJECT_ROOT,
+      });
+      console.log(`  [implement] Stashed uncommitted work: ${stashMsg}`);
+    }
+  } catch (stashErr) {
+    console.warn(
+      `  [implement] Warning: failed to stash uncommitted work: ${stashErr instanceof Error ? stashErr.message : String(stashErr)}`,
+    );
+  }
+
+  return summary;
+}
+
+/** Persist a per-attempt record to `implement-attempts/<n>.json`. */
+function writeAttemptLog(
+  attemptsDir: string,
+  attempt: ImplementAttempt,
+): void {
+  writeFileSync(
+    join(attemptsDir, `${attempt.attempt}.json`),
+    JSON.stringify(attempt, null, 2) + "\n",
+  );
+}
+
+/** Set-equal comparison of two filesWritten arrays — used for stall detection. */
+function sameFileSet(a: string[], b: string[]): boolean {
+  if (a.length !== b.length) return false;
+  const setA = new Set(a);
+  for (const f of b) if (!setA.has(f)) return false;
+  return true;
 }
 
 /** Abort if the working tree has staged or unstaged changes. */
@@ -453,13 +665,18 @@ async function runPipeline(index: DevelopRunIndex, issue: IssueData): Promise<vo
         }
       }
 
-      const plan = readJson<{ tasks: unknown[]; split?: boolean; remainingDescription?: string }>(join(runDir, "plan.json"));
+      const plan = readJson<{
+        tasks: unknown[];
+        split?: boolean;
+        remainingDescription?: string;
+        splitReason?: string | null;
+      }>(join(runDir, "plan.json"));
 
       // Handle issue splitting
       if (plan.split && plan.remainingDescription) {
         console.log(`  [split] Issue too large — creating follow-up issue...`);
         try {
-          const followUpBody = `## Follow-up from #${issue.number}\n\n${plan.remainingDescription}\n\n---\nAuto-created by \`scripts/develop.ts\` (issue splitting)`;
+          const followUpBody = `## Follow-up from #${issue.number}\n\nSplit reason: ${plan.splitReason ?? "not provided"}\n\n${plan.remainingDescription}\n\n---\nAuto-created by \`scripts/develop.ts\` (issue splitting)`;
           const ghOutput = execSync(
             `gh issue create --title ${shellEscape(`feat: ${issue.title} (part 2)`)} --body ${shellEscape(followUpBody)}`,
             { encoding: "utf-8", cwd: PROJECT_ROOT },
@@ -471,7 +688,7 @@ async function runPipeline(index: DevelopRunIndex, issue: IssueData): Promise<vo
       }
 
       markCompleted(index, DEV_STEP_NAMES.PLAN, {
-        summary: `${plan.tasks.length} tasks planned${plan.split ? " (split)" : ""}`,
+        summary: `${plan.tasks.length} tasks planned${plan.split ? ` (split: ${plan.splitReason ?? "unspecified"})` : ""}`,
         outputs: ["plan.json"],
       });
     } catch (err) {
@@ -481,6 +698,8 @@ async function runPipeline(index: DevelopRunIndex, issue: IssueData): Promise<vo
   }
 
   // ─── Step 2: Implement (agent) ─────────────────────────────────────
+  // Retry loop with dynamic timeout (scaled by plan file count), per-attempt
+  // logging (`implement-attempts/<n>.json`), and stall detection.
   if (shouldRun(DEV_STEP_NAMES.IMPLEMENT)) {
     markRunning(index, DEV_STEP_NAMES.IMPLEMENT);
     try {
@@ -489,22 +708,110 @@ async function runPipeline(index: DevelopRunIndex, issue: IssueData): Promise<vo
       const context = buildContext(issue, runDir, { "plan.json": plan });
       const implementPrompt = `${agentDef}\n\n${context}`;
 
-      // Capture HEAD before run to detect new commits (avoids false positive on resume)
-      const headBefore = execSync("git rev-parse HEAD", {
-        encoding: "utf-8",
-        cwd: PROJECT_ROOT,
-      }).trim();
+      const fileCount = countPlanFiles(runDir);
+      const implementTimeout = Math.min(
+        MAX_IMPLEMENT_TIMEOUT,
+        Math.max(DEFAULT_AGENT_TIMEOUT, fileCount * IMPLEMENT_TIMEOUT_PER_FILE_MS),
+      );
+      console.log(
+        `  [implement] files=${fileCount} timeout=${Math.round(implementTimeout / 1000)}s max-attempts=${MAX_IMPLEMENTER_ATTEMPTS}`,
+      );
 
-      const implOutput = runAgent(implementPrompt, "Implementer");
+      const attemptsDir = join(runDir, "implement-attempts");
+      mkdirSync(attemptsDir, { recursive: true });
 
-      // Check that the implementer created new commits this round
-      const headAfter = execSync("git rev-parse HEAD", {
-        encoding: "utf-8",
-        cwd: PROJECT_ROOT,
-      }).trim();
-      if (headAfter === headBefore) {
-        throw new Error("Implementer did not create any commits");
+      const implementEnv = {
+        DEVELOP_RUN_DIR: runDir,
+        DEVELOP_SUBAGENT: "1",
+      };
+
+      let implOutput = "";
+      let headBefore = "";
+      let previousFilesWritten: string[] | null = null;
+      let lastErr: Error | null = null;
+      let succeeded = false;
+
+      for (let attempt = 1; attempt <= MAX_IMPLEMENTER_ATTEMPTS; attempt++) {
+        headBefore = execSync("git rev-parse HEAD", {
+          encoding: "utf-8",
+          cwd: PROJECT_ROOT,
+        }).trim();
+        const startedAt = new Date().toISOString();
+
+        try {
+          implOutput = runAgent(implementPrompt, `Implementer (attempt ${attempt})`, {
+            timeout: implementTimeout,
+            env: implementEnv,
+          });
+
+          const headAfter = execSync("git rev-parse HEAD", {
+            encoding: "utf-8",
+            cwd: PROJECT_ROOT,
+          }).trim();
+          if (headAfter === headBefore) {
+            throw new Error("Implementer did not create any commits");
+          }
+
+          writeAttemptLog(attemptsDir, {
+            attempt,
+            startedAt,
+            endedAt: new Date().toISOString(),
+            status: "success",
+            filesWritten: parseHeartbeat(runDir).filesWritten,
+          });
+          succeeded = true;
+          break;
+        } catch (err) {
+          const endedAt = new Date().toISOString();
+          const agentErr = err as Partial<AgentError> & Error;
+          const isTimeout = agentErr.isTimeout === true;
+          const summary = parseHeartbeat(runDir);
+
+          if (isTimeout) {
+            finalizeImplementerTimeout(runDir, attempt, agentErr as AgentError);
+          }
+
+          writeAttemptLog(attemptsDir, {
+            attempt,
+            startedAt,
+            endedAt,
+            status: isTimeout ? "timeout" : "error",
+            failureReason: isTimeout
+              ? `timeout after ${Math.round(implementTimeout / 1000)}s`
+              : agentErr.message.slice(0, 500),
+            filesWritten: summary.filesWritten,
+            ...(summary.lastTaskId !== undefined
+              ? { lastTaskId: summary.lastTaskId }
+              : {}),
+            ...(agentErr.stderr || agentErr.stdout
+              ? { err: ((agentErr.stderr ?? "") + (agentErr.stdout ?? "")).slice(-2048) }
+              : {}),
+          });
+
+          lastErr = agentErr;
+
+          if (
+            previousFilesWritten !== null &&
+            sameFileSet(previousFilesWritten, summary.filesWritten)
+          ) {
+            throw new Error(
+              `Implementer stuck: attempt ${attempt} wrote identical files to attempt ${attempt - 1}. ` +
+                `See ${join(runDir, "implement-attempts")}/ and implement-err.txt.`,
+            );
+          }
+          previousFilesWritten = summary.filesWritten;
+        }
       }
+
+      if (!succeeded) {
+        const baseMsg = lastErr?.message ?? "Implementer failed";
+        throw new Error(
+          `${baseMsg}\n` +
+            `Exhausted ${MAX_IMPLEMENTER_ATTEMPTS} attempts. ` +
+            `See ${join(runDir, "implement-attempts")}/ and implement-err.txt for diagnostics.`,
+        );
+      }
+
       const diffStat = execSync(`git diff --stat ${headBefore}..HEAD`, {
         encoding: "utf-8",
         cwd: PROJECT_ROOT,
@@ -524,7 +831,7 @@ async function runPipeline(index: DevelopRunIndex, issue: IssueData): Promise<vo
 
       markCompleted(index, DEV_STEP_NAMES.IMPLEMENT, {
         summary: diffStat.split("\n").pop() ?? "Changes committed",
-        outputs: ["implement-output.txt", "implement-log.json"],
+        outputs: ["implement-output.txt", "implement-log.json", "implement-attempts"],
       });
     } catch (err) {
       markFailed(index, DEV_STEP_NAMES.IMPLEMENT, err instanceof Error ? err.message : String(err));
