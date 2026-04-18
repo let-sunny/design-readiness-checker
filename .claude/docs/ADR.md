@@ -132,3 +132,22 @@ Core decisions that shape every session. ADRs are listed by ADR number; chronolo
 - Duplication cost — internal observation only: `canicode-implement` and `canicode prompt` are not exercised outside calibration plumbing in any flow we run or document, and we have no telemetry/issue evidence of external user adoption either way. Removal subtracts surface area without subtracting capability that we can show is in use; if external usage surfaces post-removal, the path forward is to re-introduce a thin wrapper around `figma-implement-design`, not to rebuild a parallel canicode-owned pipeline.
 
 **References**: ADR-009, ADR-010, ADR-011, #312 (removal + relocation work).
+
+## ADR-014: Skill distribution via npm package + explicit `canicode init` install
+
+**Decision**: Bundle the three Claude Code skill files (`canicode-roundtrip`, `canicode-gotchas`, `canicode`) — including `canicode-roundtrip`'s `SKILL.md` + `helpers.js` — inside the published canicode npm package, and install them via an explicit `canicode init` command that copies them into the user's `.claude/skills/` directory. No postinstall hook, no auto-discovery from `node_modules`, no dependency on a Claude Code skill marketplace. `canicode init --token figd_xxx` is the single setup command — it persists the Figma MCP token and installs all three skills in one step. Flags: `--global` (install to `~/.claude/skills/` instead of `./.claude/skills/`), `--no-skills` (token-only — preserves the pre-#318 behavior for users who manage skills manually), `--force` (skip the per-file overwrite prompt on upgrade).
+
+**Why**:
+- **Auto-discovery scope** — Claude Code only scans `<project>/.claude/skills/` and `~/.claude/skills/` for skills; files under `node_modules/canicode/skills/` are invisible to the harness. An install step that lands files in one of the two scanned directories is therefore mandatory — auto-discovery from the npm install location is not an option.
+- **No marketplace exists** — there is no first-party Claude Code skill marketplace today. npm is already the channel canicode users install canicode itself through, so bundling skills alongside the package collapses two distribution channels into one.
+- **Postinstall is a security / UX antipattern** — a postinstall hook would silently write files outside the package on every `npm install`, which users cannot meaningfully audit and which surprises CI environments that expect `npm install` to be side-effect-free outside `node_modules`. Explicit init avoids the audit and CI footguns.
+- **Explicit init = user-initiated + idempotent** — `canicode init` runs only when the user asks, can print what it is about to install, and re-runs safely on upgrades (`--force` overwrites; token configuration is preserved across re-runs).
+
+**Impact**:
+- `package.json`'s `files` array includes `skills/` so the skill directory ships inside the published npm tarball.
+- `canicode init --token` is the canonical single setup command. The README install section is the entry point for new users; the [Wiki Setup page](https://github.com/let-sunny/canicode/wiki/Setup) is the deeper reference (flags, what gets installed, where skills land, upgrade flow).
+- When a new canicode release ships updated `SKILL.md` or `helpers.js` content, users re-run `canicode init --force` to pick up the new skill files. No separate skill release channel is required — skill version = canicode release version.
+- The pre-#318 install path (`cp -r .claude/skills/canicode ~/.claude/skills/`) is removed from user-facing documentation. `--no-skills` preserves the equivalent token-only mode for users who want to continue managing skill files manually.
+- `canicode-roundtrip` is now reachable by end users via the default `canicode init` flow (previously, only the lightweight `canicode` wrapper skill was documented; `canicode-roundtrip` was effectively install-only-for-developers).
+
+**References**: ADR-009 (skill auto-discovery clarification), ADR-013 (scope boundary), #318 (implementation — CLI, build, README, bundled skill files), [README install section](https://github.com/let-sunny/canicode#installation), [Wiki Setup](https://github.com/let-sunny/canicode/wiki/Setup).
