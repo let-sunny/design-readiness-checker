@@ -88,6 +88,8 @@ export function registerGotchaSurvey(cli: CAC): void {
         source: isJsonFile(input) || isFixtureDir(input) ? "fixture" : "figma",
         tool: "gotcha-survey",
       });
+      // In --json mode, send progress messages to stderr so stdout contains only valid JSON
+      const log = options.json ? console.error.bind(console) : console.log.bind(console);
 
       try {
         if (!options.token && !getFigmaToken() && !isJsonFile(input) && !isFixtureDir(input)) {
@@ -101,7 +103,7 @@ export function registerGotchaSurvey(cli: CAC): void {
         if (options.json) {
           console.log(JSON.stringify(survey, null, 2));
         } else {
-          console.log(formatHumanSummary(survey));
+          log(formatHumanSummary(survey));
         }
 
         trackEvent(EVENTS.ANALYSIS_COMPLETED, {

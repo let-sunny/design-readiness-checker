@@ -21,14 +21,14 @@
 
 **3a. Claude Code Skill (`/canicode-gotchas`)**
 - Location: `.claude/skills/canicode-gotchas/SKILL.md` (copy to any project)
-- Data source: `gotcha-survey` MCP tool (requires canicode MCP server)
+- Data source: `gotcha-survey` MCP tool OR `npx canicode gotcha-survey --json` CLI fallback (canicode MCP server is optional)
 - Workflow: calls gotcha-survey → presents questions to user → collects answers → writes `.claude/skills/canicode-gotchas/SKILL.md` in the user's project
 - Output: skill file with design gotcha Q&A pairs (nodeId, ruleId, severity, question, answer)
 - **Code generation delivery**: Auto-discovery of a separate skill file cannot reach `figma-implement-design` (Figma skills only support explicit cross-references). The `canicode-roundtrip` orchestration skill (#277) connects analyze → gotcha survey → code generation in a single flow (ADR-009).
 
 **3b. Claude Code Skill (`/canicode-roundtrip`)**
 - Location: `.claude/skills/canicode-roundtrip/SKILL.md` (copy to any project)
-- Data source: `analyze` + `gotcha-survey` MCP tools (canicode MCP server) + Figma MCP tools (`get_design_context`, `get_screenshot`, `use_figma`)
+- Data source: `analyze` + `gotcha-survey` MCP tools OR `npx canicode analyze/gotcha-survey --json` CLI fallback (canicode MCP server is optional). Figma MCP (`get_design_context`, `get_screenshot`, `use_figma`) is still REQUIRED — there is no CLI fallback for `use_figma`.
 - Workflow: analyze → gate on `isReadyForCodeGen` → gotcha survey (if needed) → **apply fixes to Figma via `use_figma`** → re-analyze → code generation
 - True roundtrip: gotcha answers are applied back to the Figma design (property modification, structural modification with confirmation, or annotations for unfixable issues) so the design itself improves
 - Requires Figma Full seat + file edit permission for `use_figma`; falls back to one-way flow (gotcha as code gen context) if no edit permission
@@ -46,11 +46,14 @@
 
 ### CLI Commands (User-Facing)
 
-Registered in `src/cli/index.ts` (lines 71–77) + docs command (line 101). Internal commands are filtered from `--help` via the `INTERNAL_COMMANDS` array.
+Registered in `src/cli/index.ts` (lines 71–79) + docs command (line 102). Internal commands are filtered from `--help` via the `INTERNAL_COMMANDS` array.
+
+User-facing CLI commands mirror the MCP tool surface — call whichever channel is already set up. `analyze` and `gotcha-survey` return the same JSON (with `--json`) as their MCP counterparts.
 
 | Command | Description |
 |---------|-------------|
 | `analyze <input>` | Analyze a Figma file or JSON fixture |
+| `gotcha-survey <input>` | Generate a gotcha survey (same shape as the MCP `gotcha-survey` tool) |
 | `design-tree <input>` | Generate a DOM-like design tree from a Figma file or fixture |
 | `visual-compare <codePath>` | Compare rendered code against Figma screenshot (pixel-level similarity) |
 | `init` | Set up canicode with Figma API token |

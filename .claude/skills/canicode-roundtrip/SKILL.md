@@ -10,8 +10,9 @@ Orchestrate the full design-to-code roundtrip: analyze a Figma design for readin
 
 ## Prerequisites
 
-- **Figma MCP server** installed (provides `get_design_context`, `get_screenshot`, `use_figma`, and other Figma tools)
-- **canicode MCP server** installed: `claude mcp add canicode -e FIGMA_TOKEN=figd_xxx -- npx -y -p canicode canicode-mcp`
+- **Figma MCP server** installed (provides `get_design_context`, `get_screenshot`, `use_figma`, and other Figma tools) — REQUIRED, there is no CLI fallback for `use_figma`
+- **canicode MCP server** (preferred): `claude mcp add canicode -e FIGMA_TOKEN=figd_xxx -- npx -y -p canicode canicode-mcp`
+- **Without canicode MCP** (fallback): Steps 1 (analyze) and 3 (gotcha-survey) shell out to `npx canicode <command> --json` — same JSON shape as the MCP tools. Step 4 (apply to Figma) still requires Figma MCP `use_figma`.
 - **FIGMA_TOKEN** configured for live Figma URLs
 - **Figma Full seat + file edit permission** (required for `use_figma` to modify the design)
 
@@ -19,10 +20,16 @@ Orchestrate the full design-to-code roundtrip: analyze a Figma design for readin
 
 ### Step 1: Analyze the design
 
-Call the `analyze` MCP tool with the user's Figma URL:
+If the `analyze` MCP tool is available, call it with the user's Figma URL:
 
 ```
 analyze({ input: "<figma-url>" })
+```
+
+**Without canicode MCP** — shell out to the CLI (same JSON shape):
+
+```bash
+npx canicode analyze "<figma-url>" --json
 ```
 
 The response includes:
@@ -49,10 +56,16 @@ If `isReadyForCodeGen` is `false` (grade B+ or below):
 
 ### Step 3: Run gotcha survey and collect answers
 
-Call the `gotcha-survey` MCP tool:
+If the `gotcha-survey` MCP tool is available, call it:
 
 ```
 gotcha-survey({ input: "<figma-url>" })
+```
+
+**Without canicode MCP** — shell out to the CLI (same JSON shape):
+
+```bash
+npx canicode gotcha-survey "<figma-url>" --json
 ```
 
 If `questions` is empty, skip to **Step 6**.
@@ -341,7 +354,7 @@ Follow the **figma-implement-design** skill workflow to generate code from the F
 
 ## Edge Cases
 
-- **No canicode MCP server**: If the `analyze` tool is not found, tell the user to install the canicode MCP server (see Prerequisites). The Figma MCP tools alone are not sufficient for this workflow.
+- **No canicode MCP server**: Fall back to `npx canicode analyze --json` and `npx canicode gotcha-survey --json` — both CLI commands return the same shape as the MCP tools. The Figma MCP is still required for `use_figma` in Step 4; there is no CLI fallback for Figma design edits.
 - **No Figma MCP server**: If `get_design_context` or `use_figma` is not found, tell the user to set up the Figma MCP server. Without it, the apply and code generation phases cannot proceed.
 - **No edit permission**: If `use_figma` fails with a permission error, tell the user they need Full seat + file edit permission. Fall back to the one-way flow: skip Steps 4-5 and proceed directly to Step 6 with gotcha answers as code generation context.
 - **User wants analysis only**: Suggest using `/canicode` instead — it runs analysis without the code generation phase.

@@ -9,7 +9,7 @@ Analyze Figma design files to score how development-friendly and AI-friendly the
 
 ## Prerequisites
 
-This skill uses the CLI. Requires either:
+This skill works with either channel — the CLI or the canicode MCP server. Both return the same analysis; pick whichever is already set up. Requires either:
 - A **saved fixture** (from `canicode calibrate-save-fixture`)
 - A **FIGMA_TOKEN** for live Figma URLs
 
@@ -55,6 +55,16 @@ npx canicode analyze <input> --config ./my-config.json
 ```bash
 npx canicode analyze <input> --json
 ```
+
+### Via MCP (when `canicode-mcp` is installed)
+
+If the user has the canicode MCP server installed, prefer the MCP tool — it avoids the `npx` spawn overhead and reuses a warm Figma client:
+
+```
+analyze({ input: "<figma-url-or-fixture-path>" })
+```
+
+Options mirror the CLI: `preset`, `token`, `config`, `targetNodeId`, `json`. The `json` response field matches `npx canicode analyze --json` byte-for-byte, so downstream code can parse either source.
 
 ## What It Reports
 

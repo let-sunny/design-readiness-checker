@@ -9,20 +9,27 @@ Run a gotcha survey on a Figma design to identify implementation pitfalls, colle
 
 ## Prerequisites
 
-- **canicode MCP server** installed: `claude mcp add canicode -e FIGMA_TOKEN=figd_xxx -- npx -y -p canicode canicode-mcp`
+- **canicode MCP server** (preferred): `claude mcp add canicode -e FIGMA_TOKEN=figd_xxx -- npx -y -p canicode canicode-mcp`
+- **Without canicode MCP** (fallback): the `canicode gotcha-survey --json` CLI produces the same response shape — no MCP installation required.
 - **FIGMA_TOKEN** configured for live Figma URLs
 
 ## Workflow
 
 ### Step 1: Run the gotcha survey
 
-Call the `gotcha-survey` MCP tool with the user's Figma URL:
+If the `gotcha-survey` MCP tool is available, call it with the user's Figma URL:
 
 ```
 gotcha-survey({ input: "<figma-url-or-fixture-path>" })
 ```
 
-The tool returns:
+**Without canicode MCP** — shell out to the CLI. The `--json` output parses identically:
+
+```bash
+npx canicode gotcha-survey "<figma-url-or-fixture-path>" --json
+```
+
+Either channel returns:
 - `designGrade`: overall grade (S, A+, A, B+, B, C+, C, D, F)
 - `isReadyForCodeGen`: whether the design can be implemented without gotchas
 - `questions`: array of gotcha questions (may be empty)
@@ -127,5 +134,5 @@ This ensures the code generation agent knows the gotcha exists even if no answer
 
 - **No questions returned**: The design is ready for code generation. Inform the user and stop (Step 2).
 - **User wants to re-run**: Always overwrite the existing file. No merge or append — fresh output each time.
-- **MCP tool not available**: If the `gotcha-survey` tool is not found, tell the user to install the canicode MCP server (see Prerequisites).
+- **MCP tool not available**: Fall back to `npx canicode gotcha-survey <input> --json` — the CLI returns the same `GotchaSurvey` shape. If the CLI is also unavailable (e.g. no node runtime), tell the user to install the canicode MCP server or the `canicode` npm package (see Prerequisites).
 - **Partial answers**: If the user stops mid-survey, write the file with answers collected so far. Mark remaining questions as _(skipped)_.

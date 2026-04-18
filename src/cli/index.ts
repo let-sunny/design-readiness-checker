@@ -138,6 +138,7 @@ cli.help((sections) => {
         `  $ canicode analyze "https://www.figma.com/design/..." --api`,
         `  $ canicode analyze "https://www.figma.com/design/..." --preset strict`,
         `  $ canicode analyze "https://www.figma.com/design/..." --config ./my-config.json`,
+        `  $ canicode gotcha-survey "https://www.figma.com/design/..." --json`,
       ].join("\n"),
     },
     {
