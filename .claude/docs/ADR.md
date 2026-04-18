@@ -103,11 +103,11 @@ Core decisions that shape every session. ADRs are listed by ADR number; chronolo
 
 **Verification**: No new experiment required — the questions above all resolve against the Experiment 08 / 09 / 10 data already documented in ADR-011's Verification blocks (property matrix, annotation enum, external-library + propagation + override-precedence). The single un-verified claim — that "annotations are a strictly safer failure mode than propagation" — is a policy choice, not an empirical one, and the ADR records it as such.
 
-**Follow-up items** (opened as a separate issue by the human reviewer after this ADR lands):
-- Add `allowDefinitionWrite` option (default `false`) to `applyWithInstanceFallback` and thread it through `applyPropertyMod`.
-- Flip SKILL.md's Three-tier write policy prose to match, atomically with the code change.
-- Rename or demote `resolveGotchaApplyTarget.shouldPreferDefinitionForLayoutProps` to reflect opt-in semantics.
-- Add telemetry counter for skipped definition writes.
+**Follow-up items** (all shipped in commit `e2269bc`, tracked under #305):
+- ~~Add `allowDefinitionWrite` option (default `false`) to `applyWithInstanceFallback` and thread it through `applyPropertyMod`.~~ **Done.**
+- ~~Flip SKILL.md's Three-tier write policy prose to match, atomically with the code change.~~ **Done.**
+- ~~Rename or demote `resolveGotchaApplyTarget.shouldPreferDefinitionForLayoutProps` to reflect opt-in semantics.~~ **Done** — the helper was removed; the routing decision now lives entirely in `applyWithInstanceFallback`'s `allowDefinitionWrite` branch.
+- ~~Add telemetry counter for skipped definition writes.~~ **Done** — `applyWithInstanceFallback` accepts an optional `telemetry: (event, props) => void` callback fired when a definition write is skipped (see `src/core/roundtrip/apply-with-instance-fallback.ts`).
 
 **References**: ADR-010, ADR-011, #290 (Experiments 08/09/10), #286. See #295 for the full question list and design discussion.
 
