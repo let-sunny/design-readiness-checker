@@ -25,11 +25,12 @@ export interface InstallSummary {
 
 const SKILL_NAMES = ["canicode", "canicode-gotchas", "canicode-roundtrip"] as const;
 
-// Resolve the bundled `skills/` dir at runtime. The CLI entrypoint is
-// `<pkg>/dist/cli/index.js` (see package.json bin) and this module is
-// `<pkg>/dist/cli/skill-installer.js` after build, so `../../skills/` from
-// import.meta.url lands on `<pkg>/skills/`. If tsup ever changes layout,
-// update this URL.
+// Resolve the bundled `skills/` dir at runtime. tsup bundles this module
+// into the CLI entrypoint `<pkg>/dist/cli/index.js` (splitting: false), so
+// `import.meta.url` at runtime resolves to that entrypoint — depth 2 under
+// the package root. `../../skills/` therefore lands on `<pkg>/skills/`.
+// If tsup's output layout ever changes (new entrypoint depth, splitting
+// enabled, etc.), update this URL.
 function defaultSourceDir(): string {
   return fileURLToPath(new URL("../../skills/", import.meta.url));
 }
