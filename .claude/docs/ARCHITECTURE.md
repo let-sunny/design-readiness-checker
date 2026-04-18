@@ -24,15 +24,19 @@
 - Data source: `gotcha-survey` MCP tool OR `npx canicode gotcha-survey --json` CLI fallback (canicode MCP server is optional)
 - Workflow: calls gotcha-survey → presents questions to user → collects answers → writes `.claude/skills/canicode-gotchas/SKILL.md` in the user's project
 - Output: skill file with design gotcha Q&A pairs (nodeId, ruleId, severity, question, answer)
-- **Code generation delivery**: Auto-discovery of a separate skill file cannot reach `figma-implement-design` (Figma skills only support explicit cross-references). The `canicode-roundtrip` orchestration skill (#277) connects analyze → gotcha survey → code generation in a single flow (ADR-009).
+- **Augmentation handoff**: Auto-discovery of a separate skill file cannot reach `figma-implement-design` (Figma skills only support explicit cross-references). The `canicode-roundtrip` orchestration skill (#277) connects analyze → gotcha survey → apply to Figma in a single flow; the user then invokes `figma-implement-design` for code generation (ADR-009, ADR-013).
 
 **3b. Claude Code Skill (`/canicode-roundtrip`)**
 - Location: `.claude/skills/canicode-roundtrip/SKILL.md` (copy to any project)
 - Data source: `analyze` + `gotcha-survey` MCP tools OR `npx canicode analyze/gotcha-survey --json` CLI fallback (canicode MCP server is optional). Figma MCP (`get_design_context`, `get_screenshot`, `use_figma`) is still REQUIRED — there is no CLI fallback for `use_figma`.
-- Workflow: analyze → gate on `isReadyForCodeGen` → gotcha survey (if needed) → **apply fixes to Figma via `use_figma`** → re-analyze → code generation
-- True roundtrip: gotcha answers are applied back to the Figma design (property modification, structural modification with confirmation, or annotations for unfixable issues) so the design itself improves
-- Requires Figma Full seat + file edit permission for `use_figma`; falls back to one-way flow (gotcha as code gen context) if no edit permission
+- Workflow: analyze → gate on `isReadyForCodeGen` → gotcha survey (if needed) → **apply fixes to Figma via `use_figma`** → re-analyze → ready for `figma-implement-design`
+- True roundtrip: gotcha answers are applied back to the Figma design (property modification, structural modification with confirmation, or annotations for unfixable issues) so the design itself improves. Code generation is the user-driven downstream step (ADR-013) — canicode hands off once the re-analyze passes.
+- Requires Figma Full seat + file edit permission for `use_figma`; falls back to one-way flow (gotcha answers stay as a separate skill file the user can reference) if no edit permission
 - See #281, ADR-010
+
+**Removed / relocated by #312 (ADR-013)**:
+- ~~`/canicode-implement` skill~~ — external code-gen packaging, removed; `figma-implement-design` is the downstream code-gen surface
+- ~~`.claude/skills/design-to-code/PROMPT.md`~~ — relocated as a calibration-internal artifact; not a user-facing skill
 
 **4. Web App (GitHub Pages)**
 - Source: `app/web/src/index.html`
@@ -59,7 +63,7 @@ User-facing CLI commands mirror the MCP tool surface — call whichever channel 
 | `init` | Set up canicode with Figma API token |
 | `config` | Manage canicode configuration |
 | `list-rules` | List all analysis rules with scores and severity |
-| `prompt` | Output the standard design-to-code prompt for AI code generation |
+| `prompt` | ⚠️ Removed by #312 (ADR-013) — code-generation is downstream of canicode |
 | `docs [topic]` | Show documentation (topics: setup, rules, config, visual-compare, design-tree) |
 
 ## Internal (Claude Code Only)
@@ -132,10 +136,26 @@ All 15 internal commands are registered in `src/cli/index.ts` (lines 82–95), h
 - Modes: `<fixture-path>` (single), `--all` (all active fixtures), `--resume <run-dir>`
 - `--all` mode: discovers active fixtures, runs sequentially, checks convergence via `fixture-done`, runs regression check, generates aggregate report
 
+**`/develop`**
+- Wrapper: runs `npx tsx scripts/develop.ts $ARGUMENTS` and reports the resulting `index.json` summary
+- Modes: `<issue-number>` (new run), `--resume <run-dir>` (continue), optional `--from <step>` (re-run from plan/implement/test/review/fix/verify/pr)
+- Source: `.claude/commands/develop.md` — orchestrates the full Plan → Implement → Test → Review → Fix → Verify → PR pipeline described under `scripts/develop.ts` above
+
 **`/review-run`**
 - Role: QA review of a completed `/develop` pipeline run — reads all output artifacts and produces a structured assessment
 - Input: run directory path (e.g. `logs/develop/253--2026-04-16-0903`)
 - Flow: index.json → plan.json → implement-log.json + git diff → test-result.json → review.json → fix-log.json → circuit.json → final verdict
+
+### Build & Doc Scripts
+
+Non-orchestrator helpers in `scripts/`. Build scripts are wired into `package.json` (`pnpm build:web`, `pnpm build:plugin`); the others run on demand.
+
+| Script | Role |
+|---|---|
+| `scripts/build-web.sh` | Build `app/web/` for GitHub Pages deployment |
+| `scripts/build-plugin.sh` | Build `app/figma-plugin/` (output `app/figma-plugin/dist/`, gitignored) |
+| `scripts/develop-heartbeat.sh` | PostToolUse hook for `/develop` Implementer sub-agents — appends a line to `implement-progress.jsonl` so the orchestrator can recover progress on timeout. Guarded by `$DEVELOP_RUN_DIR`; no-op outside `/develop` sessions. |
+| `scripts/sync-rule-docs.ts` | Auto-generate rule tables from `rule-config.ts` + rule registry into `docs/CUSTOMIZATION.md` (and the wiki `Rule-Reference.md` page if `/tmp/canicode-wiki/` is cloned). Run after editing rule config or registry. |
 
 ## File Output Structure
 

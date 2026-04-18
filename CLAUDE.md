@@ -4,9 +4,11 @@ A CLI tool that analyzes Figma design structures to provide development-friendli
 
 ## Core Goal
 
-**Help teams implement Figma designs exactly as designed, with zero unnecessary AI token cost.**
+**Make the Figma file information-complete so `figma-implement-design` produces accurate code with fewer gotchas.**
 
-The design-tree format converts Figma data into a curated, CSS-ready representation that AI can implement directly. Early ablation experiments suggest design-tree produces higher pixel accuracy with significantly fewer tokens than raw Figma JSON. The key insight: **information curation > information abundance** — AI works better with focused, noise-free input.
+canicode's role is upstream of code generation: diagnose where design information is missing (`analyze`), elicit the missing answers from the user (`gotcha-survey`), and write those answers back into the Figma design (`canicode-roundtrip`). Once the design re-analyzes clean, the downstream code-generation step runs in Figma's official `figma-implement-design` skill — canicode does not own that step (see ADR-013 for the scope boundary).
+
+The design-tree format used internally by analysis is a curated, CSS-ready representation; ablation experiments use it as a controlled measurement input. The framing **information curation > information abundance** still drives rule design — fewer information gaps in the source design means cleaner downstream code.
 
 See [Experiment Wiki](https://github.com/let-sunny/canicode/wiki) for detailed data and methodology.
 
@@ -46,8 +48,11 @@ src/                          # Node.js runtime (tsup build)
 │   ├── rules/                # Rule definitions + config
 │   ├── contracts/            # Type definitions + Zod schemas
 │   ├── adapters/             # Figma API integrations
+│   ├── gotcha/               # Gotcha survey question generation, instance-context resolution
+│   ├── roundtrip/            # Apply gotcha answers to Figma (Plugin API helpers, annotation upsert)
 │   ├── report-html/          # HTML report generation
-│   └── monitoring/           # Telemetry
+│   ├── monitoring/           # Telemetry
+│   └── ui-helpers.ts / ui-constants.ts   # UI helpers shared with app/
 ├── cli/                      # Entrypoint: CLI
 ├── mcp/                      # Entrypoint: MCP server
 ├── agents/                   # Internal: Calibration pipeline (deterministic)
@@ -70,12 +75,23 @@ app/                          # Browser runtime
 │   ├── DESIGN-TREE.md        # Design tree format spec, annotations, conversion examples
 │   └── CALIBRATION.md        # Score calibration process, ablation experiments
 ├── skills/                   # Claude Code skills
-├── agents/                   # Calibration subagents (standalone via claude -p)
-└── commands/                 # Claude Code commands (calibrate, develop)
+│   ├── canicode/             #   CLI wrapper skill
+│   ├── canicode-gotchas/     #   Standalone gotcha survey
+│   ├── canicode-roundtrip/   #   Analyze → gotcha → apply to Figma orchestration
+│   ├── canicode-implement/   #   ⚠️ Removed by #312 (ADR-013) — external code-gen packaging, deprecated
+│   └── design-to-code/       #   ⚠️ Relocated by #312 (ADR-013) — calibration-internal prompt, not a skill
+├── agents/                   # Subagents invoked standalone via claude -p
+│   ├── calibration/          #   converter, gap-analyzer, critic, arbitrator, runner
+│   └── develop/              #   planner, implementer, reviewer, fixer
+└── commands/                 # Claude Code commands (calibrate, develop, review-run)
 
-scripts/                        # Orchestration scripts (run with tsx)
+scripts/                      # Orchestration + automation scripts
 ├── calibrate.ts              # Calibration pipeline orchestrator (ADR-008, single + --all mode)
-└── develop.ts                # Development pipeline orchestrator (#247)
+├── develop.ts                # Development pipeline orchestrator (#247)
+├── develop-heartbeat.sh      # PostToolUse hook — heartbeat lines for develop.ts timeout recovery
+├── sync-rule-docs.ts         # Auto-generate rule tables in docs/CUSTOMIZATION.md + Wiki Rule-Reference
+├── build-web.sh              # Build app/web/ for GitHub Pages
+└── build-plugin.sh           # Build app/figma-plugin/
 ```
 
 ## Architecture Decision Records

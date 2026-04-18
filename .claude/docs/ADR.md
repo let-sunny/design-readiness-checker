@@ -1,6 +1,6 @@
 # Architecture Decision Records
 
-Core decisions that shape every session. For full history see [GitHub Wiki Decision Log](https://github.com/let-sunny/canicode/wiki/Decision-Log).
+Core decisions that shape every session. ADRs are listed by ADR number; chronology lives in the [GitHub Wiki Decision Log](https://github.com/let-sunny/canicode/wiki/Decision-Log).
 
 ## ADR-001: design-tree > raw Figma JSON
 
@@ -44,11 +44,17 @@ Core decisions that shape every session. For full history see [GitHub Wiki Decis
 **Why**: Ensures provenance, consistent build environment, and review gate.
 **Impact**: Local `npm publish` is blocked by safety hooks.
 
+## ADR-008: Calibration pipeline — explicit claude -p orchestration
+
+**Decision**: Replace single-session delegated orchestrator with TypeScript script (`scripts/calibrate.ts`) that explicitly calls CLI commands for deterministic steps and `claude -p` for judgment steps (converter, gap-analyzer, critic, arbitrator). Strip ablation runs 7 parallel sessions. Delete `orchestrator.ts`.
+**Why**: Delegated orchestration accumulates context pressure, can't retry individual steps, and hides flow logic in Claude's head. Explicit orchestration is transparent, debuggable, and gives fresh context per step.
+**Impact**: Calibration flow is script-controlled. Each step produces artifacts in run directory with `index.json` state tracking. Agents are judgment-only, CLI handles computation. See #245.
+
 ## ADR-009: Gotcha delivery via orchestration skill
 
-**Decision**: Deliver gotcha answers to code generation via an orchestration skill (`canicode-roundtrip`), not via auto-discovery of a separate skill file.
-**Why**: Analysis of all 7 official Figma skills shows cross-skill references are **explicit links** (`[figma-use](../figma-use/SKILL.md)`), not auto-discovery. `figma-implement-design` is a built-in skill that cannot be modified to reference `canicode-gotchas`. Therefore, a single orchestration skill handles the full flow: analyze → gotcha survey → code generation with gotcha context. This follows the established pattern: `figma-generate-design` builds on `figma-use`, and community skill `bridge-ds` orchestrates 6 skills + a knowledge-base with a recipe system. See #277.
-**Impact**: `canicode-gotchas` (standalone survey) is preserved, but code generation delivery is handled by `canicode-roundtrip`. Do not rely on auto-discovery to connect separate skill files — Figma skills only support explicit references.
+**Decision**: Deliver gotcha answers via an orchestration skill (`canicode-roundtrip`), not via auto-discovery of a separate skill file. The downstream code-generation stage runs in `figma-implement-design` (see ADR-013); canicode's orchestration ends once the design re-analyzes clean.
+**Why**: Analysis of all 7 official Figma skills shows cross-skill references are **explicit links** (`[figma-use](../figma-use/SKILL.md)`), not auto-discovery. `figma-implement-design` is a built-in skill that cannot be modified to reference `canicode-gotchas`. Therefore, a single orchestration skill handles canicode's full augmentation flow (analyze → gotcha survey → apply to Figma → re-analyze) and then the user invokes `figma-implement-design` for code generation. This follows the established pattern: `figma-generate-design` builds on `figma-use`, and community skill `bridge-ds` orchestrates 6 skills + a knowledge-base with a recipe system. See #277.
+**Impact**: `canicode-gotchas` (standalone survey) is preserved, but the augmentation handoff (analyze + gotcha + apply) is handled by `canicode-roundtrip`. Code generation itself is downstream and not part of canicode (ADR-013). Do not rely on auto-discovery to connect separate skill files — Figma skills only support explicit references.
 **References**:
 - [Figma skills for MCP](https://help.figma.com/hc/en-us/articles/39166810751895-Figma-skills-for-MCP) — official skill structure
 - [Figma community skills](https://www.figma.com/community/skills) — third-party skill ecosystem
@@ -60,8 +66,8 @@ Core decisions that shape every session. For full history see [GitHub Wiki Decis
 ## ADR-010: Roundtrip — gotcha answers applied back to Figma design
 
 **Decision**: Apply gotcha answers back to the Figma design via `use_figma` (Plugin API), not just pass them as code generation context. Three strategies by rule type: (1) property modification for 8 rules (naming, spacing, sizing, variables), (2) structural modification for 4 rules (nesting, components) with user confirmation, (3) annotations for 4 rules that cannot be auto-fixed (absolute positioning, variant structure, interaction states, prototypes).
-**Why**: One-way flow (analyze → gotcha → code gen) is not a true roundtrip. Applying answers to the design means the next analysis passes without gotchas — the design itself improves. PoC confirmed all three strategies work via Figma Plugin API: `node.name`, `itemSpacing`, `setBoundVariable()`, `layoutSizingHorizontal`, `node.annotations`. Annotations enable designer communication for issues that require manual judgment.
-**Impact**: `canicode-roundtrip` becomes a true roundtrip: analyze → gotcha → apply to Figma → re-analyze → pass → code gen. All 16 rules are covered (modify or annotate). Requires Full seat + file edit permission. See #281.
+**Why**: One-way flow (analyze → gotcha → forward as context) is not a true roundtrip. Applying answers to the design means the next analysis passes without gotchas — the design itself improves, which is what the downstream `figma-implement-design` consumes. PoC confirmed all three strategies work via Figma Plugin API: `node.name`, `itemSpacing`, `setBoundVariable()`, `layoutSizingHorizontal`, `node.annotations`. Annotations enable designer communication for issues that require manual judgment.
+**Impact**: `canicode-roundtrip` becomes a true roundtrip: analyze → gotcha → apply to Figma → re-analyze → pass. The downstream code-generation stage runs in `figma-implement-design` (ADR-013); canicode hands off once the design re-analyzes clean. All 16 rules are covered (modify or annotate). Requires Full seat + file edit permission. See #281.
 
 ## ADR-011: Instance-child writes — try scene, then source definition, then annotate
 
@@ -72,12 +78,6 @@ Core decisions that shape every session. For full history see [GitHub Wiki Decis
 **Verification (Experiment 09, #290 follow-up)**: Re-measured the full 33-value annotation `properties` enum on a scene FRAME (`3077:9894`) and scene TEXT (`3077:9963`) in the same fixture. The acceptance gate is **node-type, not scene-vs-instance** — FRAMEs reject `fills`/`cornerRadius`/`opacity`/`maxWidth`/`effects`/`strokes` in every context, not because of instance-override rules. Instance children additionally lose `minWidth`/`minHeight`/`alignItems` on FRAMEs, which scene FRAMEs do accept; that subset is the only true scene-vs-instance delta for annotations. Two TEXT enum values surprised — `textAlignHorizontal` and `letterSpacing` — and are rejected on scene TEXT even though they apply to TEXT nodes semantically. `upsertCanicodeAnnotation` now wraps the write in `try/catch` and retries without `properties` on validation failure, so callers can pass the hint speculatively.
 **Verification (Experiment 10, #290 follow-up)**: Closed the two remaining follow-up items by seeding the Simple Design System fixture with an imported external library instance (`3215:7842`, "Sub Title") and probing one local component with six instances (`7768:19968`, "State=Default"). **External library**: `getMainComponentAsync()` did not return `null` — it resolved with `mainComponent.remote === true`, and any property write on that remote definition threw *"Cannot write to internal and read-only node. Are you trying to modify a remote style or component?"*. `applyWithInstanceFallback` now wraps the definition-tier write in a nested `try/catch` that treats this (and any `read-only` match on the definition-side error) as the annotation fallback instead of aborting the batch; scene-level writes on the external instance itself still succeed normally. **Propagation**: setting `paddingTop` on the source COMPONENT from `8` to `99` was reflected on all six instances in a single readback cycle, and the restore step brought all six back to `8` — definition writes do fan out to the full instance set in one pass. **Override precedence**: pre-setting `paddingTop: 42` on one instance before changing the definition kept that instance at `42` while the other five moved to `99`, so the batch-level confirmation message must describe impact as "every non-overridden instance" rather than "every instance". SKILL.md updates the three-tier policy prose and the external-library edge case accordingly.
 **References**: [InstanceNode#mainComponent](https://www.figma.com/plugin-docs/api/InstanceNode/#maincomponent)
-
-## ADR-008: Calibration pipeline — explicit claude -p orchestration
-
-**Decision**: Replace single-session delegated orchestrator with TypeScript script (`scripts/calibrate.ts`) that explicitly calls CLI commands for deterministic steps and `claude -p` for judgment steps (converter, gap-analyzer, critic, arbitrator). Strip ablation runs 7 parallel sessions. Delete `orchestrator.ts`.
-**Why**: Delegated orchestration accumulates context pressure, can't retry individual steps, and hides flow logic in Claude's head. Explicit orchestration is transparent, debuggable, and gives fresh context per step.
-**Impact**: Calibration flow is script-controlled. Each step produces artifacts in run directory with `index.json` state tracking. Agents are judgment-only, CLI handles computation. See #245.
 
 ## ADR-012: Safer write default — instance override + annotation by default, definition write opt-in
 
@@ -108,3 +108,25 @@ Core decisions that shape every session. For full history see [GitHub Wiki Decis
 - Add telemetry counter for skipped definition writes.
 
 **References**: ADR-010, ADR-011, #290 (Experiments 08/09/10), #286. See #295 for the full question list and design discussion.
+
+## ADR-013: Scope boundary — canicode is Figma augmentation; code generation belongs to `figma-implement-design`
+
+**Decision**: canicode's responsibility ends at **Figma augmentation** — diagnose (`analyze`), elicit gotchas (`gotcha-survey`), and apply answers back to the design (`canicode-roundtrip`). The downstream **code-generation** step is not part of canicode; users invoke Figma's official `figma-implement-design` skill once the design re-analyzes clean. The three external-facing surfaces that previously offered a code-generation packaging path (`canicode-implement` skill, `canicode prompt` CLI, `.claude/skills/design-to-code/PROMPT.md`) are removed from the user surface; the prompt itself is retained as a calibration-internal artifact (controlled variable for Converter / ablation experiments).
+
+**Why**: Figma now ships a native code-generation workflow (Claude Code + Figma MCP + `figma-implement-design` + roundtrip writes). A canicode-owned packaging surface would (1) duplicate what `figma-implement-design` already does and (2) compete with it on quality where Figma has the home-field advantage (live design context, native plugin API, official Anthropic + Figma collaboration). canicode's leverage is upstream: making the Figma file information-complete so `figma-implement-design` produces accurate code with fewer gotchas. Roundtrip Experiment 10 already confirmed this hand-off works: once the augmentation pass closes the gotchas, the next analyze is clean and the design is ready for the downstream skill. Maintaining a parallel "canicode does code-gen too" surface contradicts that boundary and confuses users about which tool to invoke.
+
+**Impact**:
+- **External user surfaces removed**: `canicode-implement` skill (`.claude/skills/canicode-implement/`) and `canicode prompt` CLI command (`src/cli/commands/prompt.ts`). Removal tracked in #312.
+- **`design-to-code/PROMPT.md` relocated**: moves out of `.claude/skills/` (it is not a skill — it is a controlled prompt for measurement) into a calibration-internal location. References in `src/cli/commands/internal/calibrate-implement.ts`, `src/experiments/ablation/helpers.ts`, and `.claude/agents/calibration/converter.md` rewire to the new path. Calibration Converter and ablation experiments continue to use it unchanged.
+- **`canicode-roundtrip` SKILL.md scope statement**: closes at "design re-analyzes clean → ready for `figma-implement-design`", not at "code generated". ADR-009 and ADR-010 wording updated in lock-step (this PR).
+- **CLAUDE.md Core Goal** reframed from "AI implements design with low token cost" to "Figma + `figma-implement-design` produces accurate code because canicode closed the information gaps first".
+- **Calibration scope unchanged**: ablation experiments and pixel-similarity measurement still depend on a controlled prompt (the relocated PROMPT.md). The boundary applies only to *user-facing* code-generation packaging.
+
+**Why now (vs. earlier)**: This pivot was reached implicitly when `canicode-roundtrip` was added (ADR-010) — once the design itself improves, the user no longer needs canicode to package the inputs for an AI. ADR-009 and ADR-010 still carried legacy "code gen with gotcha context" wording from the pre-roundtrip framing. ADR-013 records the boundary explicitly so future feature ideas don't drift back across it ("should canicode also wrap the AI call?" → no, by ADR-013).
+
+**Verification**: This is a positioning decision, not an empirical one. The supporting observations are already documented:
+- Roundtrip viability — ADR-010 + ADR-011 + Experiments 07/08/09/10 (a clean post-roundtrip design is the contract `figma-implement-design` is built to consume).
+- `figma-implement-design` exists and is the official downstream — see ADR-009 references (Figma skills documentation, [From Claude Code to Figma — and Back Again](https://fig-events.figma.com/claude-to-figma/)).
+- Duplication cost — `canicode-implement` and `canicode prompt` see no live usage signal beyond calibration plumbing; removing them subtracts surface area without subtracting capability.
+
+**References**: ADR-009, ADR-010, ADR-011, #312 (removal + relocation work).
