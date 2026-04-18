@@ -242,7 +242,7 @@ export function registerCalibrateImplement(cli: CAC): void {
           const { dirname: dirnameFn, resolve: resolveFn } = await import("node:path");
           const { fileURLToPath } = await import("node:url");
           const cliDir = dirnameFn(fileURLToPath(import.meta.url));
-          const projectRoot = resolveFn(cliDir, "../../..");
+          const projectRoot = resolveFn(cliDir, "../..");
           const promptPath = resolveFn(projectRoot, ".claude/agents/calibration/PROMPT.md");
 
           let prompt = "";
