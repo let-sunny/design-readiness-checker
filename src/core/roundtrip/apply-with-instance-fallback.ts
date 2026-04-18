@@ -10,8 +10,24 @@ import type {
 
 declare const figma: FigmaGlobal;
 
+// Telemetry event name for skipped definition writes. Mirrored (as a typed
+// constant) in src/core/monitoring/events.ts — this helper passes the literal
+// string so the IIFE bundle that runs in the Figma Plugin sandbox stays free
+// of any `core/monitoring` import.
+const DEFINITION_WRITE_SKIPPED_EVENT =
+  "cic_roundtrip_definition_write_skipped";
+
 export interface ApplyWithInstanceFallbackContext {
   categories?: CanicodeCategories;
+  // ADR-012: definition writes are opt-in. When false (the default), a
+  // recognized instance-override failure (override-error or silent-ignore)
+  // routes to a scene-level annotation naming the source component instead
+  // of propagating the write to the definition.
+  allowDefinitionWrite?: boolean;
+  // Fires once per skipped definition write so a Node-side orchestrator can
+  // track opt-in usage (ADR-012 Q5 data). Callback is optional; stays undefined
+  // inside the Figma Plugin sandbox where `fetch`/PostHog is unavailable.
+  telemetry?: (event: string, props?: Record<string, unknown>) => void;
 }
 
 interface RouteContext {
@@ -20,6 +36,24 @@ interface RouteContext {
   categories: CanicodeCategories | undefined;
   reason: "silent-ignore" | "override-error" | "non-override-error";
   errorMessage?: string;
+  allowDefinitionWrite: boolean;
+  telemetry:
+    | ((event: string, props?: Record<string, unknown>) => void)
+    | undefined;
+}
+
+function resolveSourceComponentName(
+  definition: FigmaNode | null,
+  question: RoundtripQuestion
+): string {
+  if (definition && typeof definition.name === "string" && definition.name) {
+    return definition.name;
+  }
+  const ic = question.instanceContext;
+  if (ic && typeof ic.sourceComponentName === "string" && ic.sourceComponentName) {
+    return ic.sourceComponentName;
+  }
+  return "the source component";
 }
 
 // Shared failure path: definition write attempted and annotated on throw.
@@ -32,6 +66,40 @@ async function routeToDefinitionOrAnnotate(
   writeFn: WriteFn,
   ctx: RouteContext
 ): Promise<RoundtripResult> {
+  // ADR-012: when the caller has not opted into definition writes, recognized
+  // instance-override failures route to a scene-level annotation naming the
+  // source component instead of propagating. The non-override-error branch
+  // already annotates-only (definition === null on entry), so the guard
+  // intentionally excludes that reason — the flag would change nothing there.
+  if (
+    definition &&
+    !ctx.allowDefinitionWrite &&
+    ctx.reason !== "non-override-error"
+  ) {
+    const componentName = resolveSourceComponentName(definition, ctx.question);
+    if (ctx.categories) {
+      // Generic phrasing: the helper does not have easy access to the resolved
+      // answer value at this site. Reviewers may push for exact-value inlining;
+      // a follow-up can thread the value through RouteContext if needed.
+      upsertCanicodeAnnotation(ctx.scene, {
+        ruleId: ctx.question.ruleId,
+        markdown:
+          `Apply this fix on the source component **${componentName}** to share across all instances. ` +
+          `This instance kept its current value to avoid unintended fan-out. ` +
+          `Re-run with \`allowDefinitionWrite: true\` to propagate.`,
+        categoryId: ctx.categories.fallback,
+      });
+    }
+    ctx.telemetry?.(DEFINITION_WRITE_SKIPPED_EVENT, {
+      ruleId: ctx.question.ruleId,
+      reason: ctx.reason,
+    });
+    return {
+      icon: "📝",
+      label: "definition write skipped (opt-in disabled)",
+    };
+  }
+
   if (!definition) {
     if (ctx.categories) {
       const markdown =
@@ -86,18 +154,18 @@ async function routeToDefinitionOrAnnotate(
 }
 
 // Three-tier write policy with silent-ignore detection (B matrix finding).
+// Default policy (ADR-012): scene → annotate. Definition writes require
+// `context.allowDefinitionWrite: true`, which the orchestrator flips on only
+// after a batch-level confirmation naming the propagation set.
 // writeFn contract: may read `target[prop]` before/after to detect silent
 // ignore and return `false` to signal "no change" — caller routes to the
-// definition fallback. Pre-condition: the orchestrator has already collected a
-// batch-level confirmation that writes targeting a source-component definition
-// may fan out to every instance of that component in the file. This helper
-// never prompts.
+// definition tier or (under the default) to the annotation fallback.
 export async function applyWithInstanceFallback(
   question: RoundtripQuestion,
   writeFn: WriteFn,
   context: ApplyWithInstanceFallbackContext = {}
 ): Promise<RoundtripResult> {
-  const { categories } = context;
+  const { categories, allowDefinitionWrite = false, telemetry } = context;
   const scene = await figma.getNodeByIdAsync(question.nodeId);
   if (!scene) return { icon: "📝", label: "missing node" };
 
@@ -113,6 +181,8 @@ export async function applyWithInstanceFallback(
         scene,
         categories,
         reason: "silent-ignore",
+        allowDefinitionWrite,
+        telemetry,
       });
     }
     return { icon: "✅", label: "instance/scene" };
@@ -133,6 +203,8 @@ export async function applyWithInstanceFallback(
         categories,
         reason: "non-override-error",
         errorMessage: msg,
+        allowDefinitionWrite,
+        telemetry,
       });
     }
     return routeToDefinitionOrAnnotate(definition, writeFn, {
@@ -141,6 +213,8 @@ export async function applyWithInstanceFallback(
       categories,
       reason: "override-error",
       errorMessage: msg,
+      allowDefinitionWrite,
+      telemetry,
     });
   }
 }

@@ -72,11 +72,19 @@ export interface CanicodeCategories {
   fallback: string;
 }
 
+export interface RoundtripInstanceContext {
+  parentInstanceNodeId?: string;
+  sourceNodeId?: string;
+  sourceComponentId?: string;
+  sourceComponentName?: string;
+}
+
 export interface RoundtripQuestion {
   nodeId: string;
   ruleId: string;
   sourceChildId?: string;
   targetProperty?: string | string[];
+  instanceContext?: RoundtripInstanceContext;
   [key: string]: unknown;
 }
 

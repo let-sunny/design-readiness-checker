@@ -41,7 +41,7 @@ let definition: FigmaNode;
 
 beforeEach(() => {
   scene = makeNode({ id: "scene-1", name: "SceneChild" });
-  definition = makeNode({ id: "def-1", name: "Definition" });
+  definition = makeNode({ id: "def-1", name: "Card" });
   mock = createFigmaGlobal({ nodes: { "scene-1": scene, "def-1": definition } });
   installFigmaGlobal(mock);
 });
@@ -61,13 +61,14 @@ describe("applyWithInstanceFallback", () => {
     expect(writeFn).toHaveBeenCalledWith(scene);
   });
 
-  it("routes to definition and returns 🌐 when writeFn returns false (silent-ignore)", async () => {
+  it("routes to definition and returns 🌐 when writeFn returns false (silent-ignore) AND allowDefinitionWrite: true", async () => {
     const writeFn = vi
       .fn()
       .mockResolvedValueOnce(false)
       .mockResolvedValueOnce(undefined);
     const result = await applyWithInstanceFallback(QUESTION, writeFn, {
       categories: CATEGORIES,
+      allowDefinitionWrite: true,
     });
     expect(result).toEqual({
       icon: "🌐",
@@ -77,7 +78,7 @@ describe("applyWithInstanceFallback", () => {
     expect(writeFn.mock.calls[1]?.[0]).toBe(definition);
   });
 
-  it("annotates and returns 📝 when silent-ignore AND definition throws read-only (bug #1 regression)", async () => {
+  it("annotates and returns 📝 when silent-ignore AND definition throws read-only (bug #1 regression) AND allowDefinitionWrite: true", async () => {
     definition.remote = true;
     const writeFn = vi
       .fn()
@@ -85,6 +86,7 @@ describe("applyWithInstanceFallback", () => {
       .mockRejectedValueOnce(new Error("Cannot write to internal and read-only node"));
     const result = await applyWithInstanceFallback(QUESTION, writeFn, {
       categories: CATEGORIES,
+      allowDefinitionWrite: true,
     });
     expect(result).toEqual({
       icon: "📝",
@@ -96,13 +98,14 @@ describe("applyWithInstanceFallback", () => {
     expect(annotations[0]?.categoryId).toBe("cat-fallback");
   });
 
-  it("annotates and returns 📝 when silent-ignore AND definition throws a non-read-only error", async () => {
+  it("annotates and returns 📝 when silent-ignore AND definition throws a non-read-only error AND allowDefinitionWrite: true", async () => {
     const writeFn = vi
       .fn()
       .mockResolvedValueOnce(false)
       .mockRejectedValueOnce(new Error("network timeout"));
     const result = await applyWithInstanceFallback(QUESTION, writeFn, {
       categories: CATEGORIES,
+      allowDefinitionWrite: true,
     });
     expect(result.icon).toBe("📝");
     expect(result.label).toContain("definition error");
@@ -129,7 +132,7 @@ describe("applyWithInstanceFallback", () => {
     expect(annotations[0]?.labelMarkdown).toContain("no definition available");
   });
 
-  it("routes to definition and returns 🌐 when scene throws an override error", async () => {
+  it("routes to definition and returns 🌐 when scene throws an override error AND allowDefinitionWrite: true", async () => {
     const writeFn = vi
       .fn()
       .mockRejectedValueOnce(
@@ -138,12 +141,13 @@ describe("applyWithInstanceFallback", () => {
       .mockResolvedValueOnce(undefined);
     const result = await applyWithInstanceFallback(QUESTION, writeFn, {
       categories: CATEGORIES,
+      allowDefinitionWrite: true,
     });
     expect(result).toEqual({ icon: "🌐", label: "source definition" });
     expect(writeFn.mock.calls[1]?.[0]).toBe(definition);
   });
 
-  it("annotates and returns 📝 when override-error and definition is read-only (external library)", async () => {
+  it("annotates and returns 📝 when override-error and definition is read-only (external library) AND allowDefinitionWrite: true", async () => {
     definition.remote = true;
     const writeFn = vi
       .fn()
@@ -155,6 +159,7 @@ describe("applyWithInstanceFallback", () => {
       );
     const result = await applyWithInstanceFallback(QUESTION, writeFn, {
       categories: CATEGORIES,
+      allowDefinitionWrite: true,
     });
     expect(result.icon).toBe("📝");
     expect(result.label).toBe("external library (read-only)");
@@ -162,7 +167,7 @@ describe("applyWithInstanceFallback", () => {
     expect(annotations[0]?.labelMarkdown).toContain("external library");
   });
 
-  it("annotates scene when a non-override error is thrown (unknown failure)", async () => {
+  it("annotates scene when a non-override error is thrown (unknown failure) — not gated by allowDefinitionWrite", async () => {
     const writeFn = vi
       .fn()
       .mockRejectedValueOnce(new Error("something weird went wrong"));
@@ -192,14 +197,182 @@ describe("applyWithInstanceFallback", () => {
     expect(writeFn).not.toHaveBeenCalled();
   });
 
-  it("does not annotate when categories are not provided (but still returns the expected icon)", async () => {
+  it("does not annotate when categories are not provided (but still returns the expected icon) AND allowDefinitionWrite: true", async () => {
     const writeFn = vi
       .fn()
       .mockResolvedValueOnce(false)
       .mockRejectedValueOnce(new Error("read-only"));
-    const result = await applyWithInstanceFallback(QUESTION, writeFn, {});
+    const result = await applyWithInstanceFallback(QUESTION, writeFn, {
+      allowDefinitionWrite: true,
+    });
     expect(result.icon).toBe("📝");
     const annotations = scene.annotations as AnnotationEntry[];
     expect(annotations).toEqual([]);
+  });
+
+  // ADR-012: default-off allowDefinitionWrite behavior.
+  describe("ADR-012 allowDefinitionWrite: false (default) — skips definition writes", () => {
+    it("override-error + flag false → annotates with Q3 phrasing naming the source component", async () => {
+      const writeFn = vi
+        .fn()
+        .mockRejectedValueOnce(
+          new Error("This property cannot be overridden in an instance")
+        );
+      const result = await applyWithInstanceFallback(QUESTION, writeFn, {
+        categories: CATEGORIES,
+      });
+      expect(result).toEqual({
+        icon: "📝",
+        label: "definition write skipped (opt-in disabled)",
+      });
+      // Definition write must NOT have been attempted.
+      expect(writeFn).toHaveBeenCalledTimes(1);
+      const annotations = scene.annotations as AnnotationEntry[];
+      expect(annotations).toHaveLength(1);
+      expect(annotations[0]?.labelMarkdown).toContain("**Card**");
+      expect(annotations[0]?.labelMarkdown).toContain(
+        "share across all instances"
+      );
+      expect(annotations[0]?.labelMarkdown).toContain("allowDefinitionWrite");
+      expect(annotations[0]?.categoryId).toBe("cat-fallback");
+    });
+
+    it("silent-ignore + flag false → annotates without attempting the definition write", async () => {
+      const writeFn = vi.fn().mockResolvedValueOnce(false);
+      const result = await applyWithInstanceFallback(QUESTION, writeFn, {
+        categories: CATEGORIES,
+      });
+      expect(result).toEqual({
+        icon: "📝",
+        label: "definition write skipped (opt-in disabled)",
+      });
+      expect(writeFn).toHaveBeenCalledTimes(1);
+      const annotations = scene.annotations as AnnotationEntry[];
+      expect(annotations[0]?.labelMarkdown).toContain("**Card**");
+    });
+
+    it("external read-only + flag false → annotates with Q3 phrasing (short-circuits before the read-only branch)", async () => {
+      // With the flag off, the helper never calls writeFn on the definition,
+      // so the read-only throw never fires — the annotation is Q3 phrasing
+      // (source component name), not the read-only-library phrasing.
+      definition.remote = true;
+      const writeFn = vi
+        .fn()
+        .mockRejectedValueOnce(
+          new Error("This property cannot be overridden in an instance")
+        );
+      const result = await applyWithInstanceFallback(QUESTION, writeFn, {
+        categories: CATEGORIES,
+      });
+      expect(result.label).toBe("definition write skipped (opt-in disabled)");
+      expect(writeFn).toHaveBeenCalledTimes(1);
+      const annotations = scene.annotations as AnnotationEntry[];
+      expect(annotations[0]?.labelMarkdown).toContain("**Card**");
+      expect(annotations[0]?.labelMarkdown).not.toContain("external library");
+    });
+
+    it("flag false but no categories provided → returns 📝 without annotating", async () => {
+      const writeFn = vi
+        .fn()
+        .mockRejectedValueOnce(
+          new Error("This property cannot be overridden in an instance")
+        );
+      const result = await applyWithInstanceFallback(QUESTION, writeFn, {});
+      expect(result.icon).toBe("📝");
+      expect(result.label).toBe("definition write skipped (opt-in disabled)");
+      const annotations = scene.annotations as AnnotationEntry[];
+      expect(annotations).toEqual([]);
+    });
+
+    it("falls back to question.instanceContext.sourceComponentName when definition.name is empty", async () => {
+      definition.name = "";
+      const writeFn = vi
+        .fn()
+        .mockRejectedValueOnce(
+          new Error("This property cannot be overridden in an instance")
+        );
+      const question: RoundtripQuestion = {
+        ...QUESTION,
+        instanceContext: { sourceComponentName: "HeroCard" },
+      };
+      await applyWithInstanceFallback(question, writeFn, {
+        categories: CATEGORIES,
+      });
+      const annotations = scene.annotations as AnnotationEntry[];
+      expect(annotations[0]?.labelMarkdown).toContain("**HeroCard**");
+    });
+
+    it("falls back to generic phrasing when no definition.name and no instanceContext", async () => {
+      definition.name = "";
+      const writeFn = vi
+        .fn()
+        .mockRejectedValueOnce(
+          new Error("This property cannot be overridden in an instance")
+        );
+      await applyWithInstanceFallback(QUESTION, writeFn, {
+        categories: CATEGORIES,
+      });
+      const annotations = scene.annotations as AnnotationEntry[];
+      expect(annotations[0]?.labelMarkdown).toContain("**the source component**");
+    });
+  });
+
+  describe("telemetry callback", () => {
+    it("fires with { ruleId, reason: 'override-error' } when override-error skips the definition write", async () => {
+      const telemetry = vi.fn();
+      const writeFn = vi
+        .fn()
+        .mockRejectedValueOnce(
+          new Error("This property cannot be overridden in an instance")
+        );
+      await applyWithInstanceFallback(QUESTION, writeFn, {
+        categories: CATEGORIES,
+        telemetry,
+      });
+      expect(telemetry).toHaveBeenCalledTimes(1);
+      expect(telemetry).toHaveBeenCalledWith(
+        "cic_roundtrip_definition_write_skipped",
+        { ruleId: "missing-size-constraint", reason: "override-error" }
+      );
+    });
+
+    it("fires with { ruleId, reason: 'silent-ignore' } when silent-ignore skips the definition write", async () => {
+      const telemetry = vi.fn();
+      const writeFn = vi.fn().mockResolvedValueOnce(false);
+      await applyWithInstanceFallback(QUESTION, writeFn, {
+        categories: CATEGORIES,
+        telemetry,
+      });
+      expect(telemetry).toHaveBeenCalledWith(
+        "cic_roundtrip_definition_write_skipped",
+        { ruleId: "missing-size-constraint", reason: "silent-ignore" }
+      );
+    });
+
+    it("does NOT fire when allowDefinitionWrite: true (definition write is attempted, not skipped)", async () => {
+      const telemetry = vi.fn();
+      const writeFn = vi
+        .fn()
+        .mockResolvedValueOnce(false)
+        .mockResolvedValueOnce(undefined);
+      await applyWithInstanceFallback(QUESTION, writeFn, {
+        categories: CATEGORIES,
+        allowDefinitionWrite: true,
+        telemetry,
+      });
+      expect(telemetry).not.toHaveBeenCalled();
+    });
+
+    it("does NOT fire on non-override errors (flag does not gate that branch)", async () => {
+      const telemetry = vi.fn();
+      const writeFn = vi
+        .fn()
+        .mockRejectedValueOnce(new Error("network timeout"));
+      await applyWithInstanceFallback(QUESTION, writeFn, {
+        categories: CATEGORIES,
+        telemetry,
+      });
+      expect(telemetry).not.toHaveBeenCalled();
+    });
   });
 });

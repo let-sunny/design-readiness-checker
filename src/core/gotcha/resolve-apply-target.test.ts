@@ -7,7 +7,7 @@ describe("resolveGotchaApplyTarget", () => {
       sceneNodeId: "348:15903",
       definitionNodeId: undefined,
       strategy: "scene-only",
-      shouldPreferDefinitionForLayoutProps: false,
+      optIn: { preferDefinitionForLayoutProps: false },
       guidance: "",
     });
   });
@@ -22,7 +22,7 @@ describe("resolveGotchaApplyTarget", () => {
     expect(r.sceneNodeId).toBe("I348:15903;2153:7840");
     expect(r.definitionNodeId).toBe("2153:7840");
     expect(r.strategy).toBe("prefer-definition");
-    expect(r.shouldPreferDefinitionForLayoutProps).toBe(true);
+    expect(r.optIn).toEqual({ preferDefinitionForLayoutProps: true });
     expect(r.guidance).toContain("2153:7840");
     expect(r.guidance).toContain("inside component Card");
     expect(r.guidance).toContain("348:15903");
@@ -42,7 +42,7 @@ describe("resolveGotchaApplyTarget", () => {
     const r = resolveGotchaApplyTarget("I348:15903;2153:7840", undefined);
     expect(r.definitionNodeId).toBeUndefined();
     expect(r.strategy).toBe("definition-unknown");
-    expect(r.shouldPreferDefinitionForLayoutProps).toBe(true);
+    expect(r.optIn).toEqual({ preferDefinitionForLayoutProps: true });
     expect(r.guidance).toContain("instanceContext");
   });
 });

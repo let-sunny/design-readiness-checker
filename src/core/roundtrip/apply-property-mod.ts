@@ -100,6 +100,8 @@ function applyPropertyScalar(
   return true;
 }
 
+// `context.allowDefinitionWrite` and `context.telemetry` propagate to
+// `applyWithInstanceFallback` via the shared `ApplyWithInstanceFallbackContext`.
 export async function applyPropertyMod(
   question: RoundtripQuestion,
   answerValue: unknown,

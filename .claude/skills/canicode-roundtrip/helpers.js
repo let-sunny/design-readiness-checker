@@ -68,7 +68,36 @@ ${markdown}`;
   }
 
   // src/core/roundtrip/apply-with-instance-fallback.ts
+  var DEFINITION_WRITE_SKIPPED_EVENT = "cic_roundtrip_definition_write_skipped";
+  function resolveSourceComponentName(definition, question) {
+    if (definition && typeof definition.name === "string" && definition.name) {
+      return definition.name;
+    }
+    const ic = question.instanceContext;
+    if (ic && typeof ic.sourceComponentName === "string" && ic.sourceComponentName) {
+      return ic.sourceComponentName;
+    }
+    return "the source component";
+  }
   async function routeToDefinitionOrAnnotate(definition, writeFn, ctx) {
+    if (definition && !ctx.allowDefinitionWrite && ctx.reason !== "non-override-error") {
+      const componentName = resolveSourceComponentName(definition, ctx.question);
+      if (ctx.categories) {
+        upsertCanicodeAnnotation(ctx.scene, {
+          ruleId: ctx.question.ruleId,
+          markdown: `Apply this fix on the source component **${componentName}** to share across all instances. This instance kept its current value to avoid unintended fan-out. Re-run with \`allowDefinitionWrite: true\` to propagate.`,
+          categoryId: ctx.categories.fallback
+        });
+      }
+      ctx.telemetry?.(DEFINITION_WRITE_SKIPPED_EVENT, {
+        ruleId: ctx.question.ruleId,
+        reason: ctx.reason
+      });
+      return {
+        icon: "\u{1F4DD}",
+        label: "definition write skipped (opt-in disabled)"
+      };
+    }
     if (!definition) {
       if (ctx.categories) {
         const markdown = ctx.reason === "silent-ignore" ? "write accepted but value unchanged; no definition available" : ctx.reason === "override-error" ? `could not apply automatically: ${ctx.errorMessage ?? ""}` : `could not apply automatically: ${ctx.errorMessage ?? ""}`;
@@ -103,7 +132,7 @@ ${markdown}`;
     }
   }
   async function applyWithInstanceFallback(question, writeFn, context = {}) {
-    const { categories } = context;
+    const { categories, allowDefinitionWrite = false, telemetry } = context;
     const scene = await figma.getNodeByIdAsync(question.nodeId);
     if (!scene) return { icon: "\u{1F4DD}", label: "missing node" };
     const definition = question.sourceChildId ? await figma.getNodeByIdAsync(question.sourceChildId) : null;
@@ -114,7 +143,9 @@ ${markdown}`;
           question,
           scene,
           categories,
-          reason: "silent-ignore"
+          reason: "silent-ignore",
+          allowDefinitionWrite,
+          telemetry
         });
       }
       return { icon: "\u2705", label: "instance/scene" };
@@ -127,7 +158,9 @@ ${markdown}`;
           scene,
           categories,
           reason: "non-override-error",
-          errorMessage: msg
+          errorMessage: msg,
+          allowDefinitionWrite,
+          telemetry
         });
       }
       return routeToDefinitionOrAnnotate(definition, writeFn, {
@@ -135,7 +168,9 @@ ${markdown}`;
         scene,
         categories,
         reason: "override-error",
-        errorMessage: msg
+        errorMessage: msg,
+        allowDefinitionWrite,
+        telemetry
       });
     }
   }
