@@ -6,7 +6,7 @@ Core decisions that shape every session. ADRs are listed by ADR number; chronolo
 
 **Decision**: Use curated design-tree format for AI/codegen inputs. Do not feed raw Figma JSON into AI/codegen. Ingestion pipelines (loader, FigmaFileLoader) accept raw JSON and transform it into design-tree before any codegen use.
 **Why**: design-tree 94% vs raw 79% pixel accuracy with 5x fewer tokens. Information curation > information abundance.
-**Impact**: All code generation pipelines use design-tree as input. Raw JSON is only for ingestion/transformation, never passed directly to AI.
+**Impact**: Downstream consumers of analysis output (calibration Converter, ablation experiments, and any external code-generation skill that picks up canicode's results — e.g. `figma-implement-design` after a `canicode-roundtrip` pass per ADR-013) consume design-tree, never raw Figma JSON. Raw JSON is only for ingestion/transformation inside canicode itself.
 
 ## ADR-002: Ablation + visual-compare for calibration, not LLM self-report
 
@@ -127,6 +127,6 @@ Core decisions that shape every session. ADRs are listed by ADR number; chronolo
 **Verification**: This is a positioning decision, not an empirical one. The supporting observations are already documented:
 - Roundtrip viability — ADR-010 + ADR-011 + Experiments 07/08/09/10 (a clean post-roundtrip design is the contract `figma-implement-design` is built to consume).
 - `figma-implement-design` exists and is the official downstream — see ADR-009 references (Figma skills documentation, [From Claude Code to Figma — and Back Again](https://fig-events.figma.com/claude-to-figma/)).
-- Duplication cost — `canicode-implement` and `canicode prompt` see no live usage signal beyond calibration plumbing; removing them subtracts surface area without subtracting capability.
+- Duplication cost — internal observation only: `canicode-implement` and `canicode prompt` are not exercised outside calibration plumbing in any flow we run or document, and we have no telemetry/issue evidence of external user adoption either way. Removal subtracts surface area without subtracting capability that we can show is in use; if external usage surfaces post-removal, the path forward is to re-introduce a thin wrapper around `figma-implement-design`, not to rebuild a parallel canicode-owned pipeline.
 
 **References**: ADR-009, ADR-010, ADR-011, #312 (removal + relocation work).

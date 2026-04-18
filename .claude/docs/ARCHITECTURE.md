@@ -63,7 +63,7 @@ User-facing CLI commands mirror the MCP tool surface — call whichever channel 
 | `init` | Set up canicode with Figma API token |
 | `config` | Manage canicode configuration |
 | `list-rules` | List all analysis rules with scores and severity |
-| `prompt` | ⚠️ Removed by #312 (ADR-013) — code-generation is downstream of canicode |
+| `prompt` | Output the standard design-to-code prompt for AI code generation. **Deprecated in docs (ADR-013); code remains until #312 lands** — runtime behavior unchanged for now. |
 | `docs [topic]` | Show documentation (topics: setup, rules, config, visual-compare, design-tree) |
 
 ## Internal (Claude Code Only)
