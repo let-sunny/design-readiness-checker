@@ -34,7 +34,7 @@ CANICODE SETUP GUIDE
 
   Setup:
     canicode init --token figd_xxxxxxxxxxxxx
-    (saved to ~/.canicode/config.json, reports go to ~/.canicode/reports/)
+    (saves token + installs skills — see section 2 for --no-skills)
 
   Use:
     canicode analyze "https://www.figma.com/design/ABC123/MyDesign?node-id=1-234"
@@ -49,14 +49,27 @@ CANICODE SETUP GUIDE
     ~/.canicode/reports/report-YYYY-MM-DD-HH-mm-<filekey>.html
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- 2. CLAUDE CODE SKILL (requires FIGMA_TOKEN)
+ 2. CLAUDE CODE SKILLS (requires FIGMA_TOKEN)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   Setup:
-    cp -r .claude/skills/canicode /your-project/.claude/skills/
+    canicode init --token figd_xxxxxxxxxxxxx
+    (installs three skills into ./.claude/skills/ alongside the token)
+
+  Installed skills:
+    canicode             Lightweight CLI wrapper
+    canicode-gotchas     Standalone gotcha survey
+    canicode-roundtrip   Full analyze -> gotcha -> apply roundtrip
+
+  Flags:
+    --global      Install to ~/.claude/skills/ instead of ./.claude/skills/
+    --no-skills   Skip skill install (token only — legacy behavior)
+    --force       Overwrite existing skill files without prompting
 
   Use (in Claude Code):
     /canicode https://www.figma.com/design/ABC123/MyDesign?node-id=1-234
+    /canicode-gotchas <url>      Run a gotcha survey
+    /canicode-roundtrip <url>    Analyze, fix gotchas in Figma, re-analyze
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  TOKEN PRIORITY

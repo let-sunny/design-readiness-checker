@@ -101,7 +101,7 @@ Each issue is classified: **Blocking** > **Risk** > **Missing Info** > **Suggest
 npx canicode analyze "https://www.figma.com/design/ABC123/MyDesign?node-id=1-234"
 ```
 
-Setup: `canicode init --token figd_xxxxxxxxxxxxx`
+Setup: `canicode init --token figd_xxxxxxxxxxxxx` — saves the token AND installs the Claude Code skills (see below).
 
 > **Get your token:** Figma → Settings → Security → Personal access tokens → Generate new token
 
@@ -139,13 +139,19 @@ For Cursor / Claude Desktop config, see [`docs/CUSTOMIZATION.md`](docs/CUSTOMIZA
 
 
 <details>
-<summary><strong>Claude Code Skill</strong> (lightweight, no MCP install)</summary>
+<summary><strong>Claude Code Skills</strong> (lightweight, no MCP install)</summary>
 
 ```bash
-cp -r .claude/skills/canicode /your-project/.claude/skills/
+canicode init --token figd_xxxxxxxxxxxxx
 ```
 
-Requires FIGMA_TOKEN. Then use `/canicode` with a Figma URL.
+Saves your Figma token AND installs three skills into `./.claude/skills/`:
+
+- **canicode** — lightweight CLI wrapper (use `/canicode <figma-url>`)
+- **canicode-gotchas** — standalone gotcha survey (use `/canicode-gotchas <figma-url>`)
+- **canicode-roundtrip** — full analyze → gotcha → apply roundtrip (use `/canicode-roundtrip <figma-url>`)
+
+Flags: `--global` installs into `~/.claude/skills/` instead. `--no-skills` skips skill install (token only). `--force` overwrites existing skill files without prompting. Run `canicode docs setup` for the full setup guide.
 
 </details>
 

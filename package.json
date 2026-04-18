@@ -17,19 +17,21 @@
     }
   },
   "scripts": {
-    "build": "tsup --config tsup.config.ts",
+    "build": "tsup --config tsup.config.ts && pnpm build:roundtrip && pnpm bundle:skills",
     "build:web": "bash scripts/build-web.sh",
     "build:roundtrip": "tsup --config tsup.roundtrip.config.ts",
+    "bundle:skills": "bash scripts/bundle-skills.sh",
     "dev": "tsup --watch",
     "test": "vitest",
     "test:run": "vitest run",
     "lint": "tsc --noEmit",
     "build:plugin": "bash scripts/build-plugin.sh",
     "sync-docs": "tsx scripts/sync-rule-docs.ts",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist skills"
   },
   "files": [
     "dist",
+    "skills",
     "README.md",
     "docs/CUSTOMIZATION.md"
   ],
