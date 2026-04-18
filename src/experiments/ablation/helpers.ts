@@ -21,7 +21,7 @@ export { getFixtureScreenshotPath, copyFixtureImages } from "../../core/utils/fi
 export const MODEL = "claude-sonnet-4-20250514";
 export const MAX_TOKENS = 32000;
 export const TEMPERATURE = 0;
-export const PROMPT_PATH = resolve(".claude/skills/design-to-code/PROMPT.md");
+export const PROMPT_PATH = resolve(".claude/agents/calibration/PROMPT.md");
 
 export const DEFAULT_FIXTURES = [
   "desktop-product-detail",

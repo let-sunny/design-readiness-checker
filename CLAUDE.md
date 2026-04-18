@@ -77,9 +77,7 @@ app/                          # Browser runtime
 ├── skills/                   # Claude Code skills
 │   ├── canicode/             #   CLI wrapper skill
 │   ├── canicode-gotchas/     #   Standalone gotcha survey
-│   ├── canicode-roundtrip/   #   Analyze → gotcha → apply to Figma orchestration
-│   ├── canicode-implement/   #   ⚠️ Removed by #312 (ADR-013) — external code-gen packaging, deprecated
-│   └── design-to-code/       #   ⚠️ Relocated by #312 (ADR-013) — calibration-internal prompt, not a skill
+│   └── canicode-roundtrip/   #   Analyze → gotcha → apply to Figma orchestration
 ├── agents/                   # Subagents invoked standalone via claude -p
 │   ├── calibration/          #   converter, gap-analyzer, critic, arbitrator, runner
 │   └── develop/              #   planner, implementer, reviewer, fixer

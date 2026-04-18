@@ -34,10 +34,6 @@
 - Requires Figma Full seat + file edit permission for `use_figma`; falls back to one-way flow (gotcha answers stay as a separate skill file the user can reference) if no edit permission
 - See #281, ADR-010
 
-**Removed / relocated by #312 (ADR-013)**:
-- ~~`/canicode-implement` skill~~ — external code-gen packaging, removed; `figma-implement-design` is the downstream code-gen surface
-- ~~`.claude/skills/design-to-code/PROMPT.md`~~ — relocated as a calibration-internal artifact; not a user-facing skill
-
 **4. Web App (GitHub Pages)**
 - Source: `app/web/src/index.html`
 - Build: `pnpm build:web` → `app/web/dist/` (deployed via GitHub Pages)
@@ -63,7 +59,6 @@ User-facing CLI commands mirror the MCP tool surface — call whichever channel 
 | `init` | Set up canicode with Figma API token |
 | `config` | Manage canicode configuration |
 | `list-rules` | List all analysis rules with scores and severity |
-| `prompt` | Output the standard design-to-code prompt. **Deprecated by ADR-013 — removal in #312.** |
 | `docs [topic]` | Show documentation (topics: setup, rules, config, visual-compare, design-tree) |
 
 ## Internal (Claude Code Only)

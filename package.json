@@ -31,8 +31,7 @@
   "files": [
     "dist",
     "README.md",
-    "docs/CUSTOMIZATION.md",
-    ".claude/skills/design-to-code/PROMPT.md"
+    "docs/CUSTOMIZATION.md"
   ],
   "keywords": [
     "figma",

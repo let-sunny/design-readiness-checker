@@ -24,7 +24,6 @@ import { registerVisualCompare } from "./commands/visual-compare.js";
 import { registerInit } from "./commands/init.js";
 import { registerConfig } from "./commands/config.js";
 import { registerListRules } from "./commands/list-rules.js";
-import { registerPrompt } from "./commands/prompt.js";
 
 import { INTERNAL_COMMANDS } from "./internal-commands.js";
 
@@ -76,7 +75,6 @@ registerVisualCompare(cli);
 registerInit(cli);
 registerConfig(cli);
 registerListRules(cli);
-registerPrompt(cli);
 
 // ============================================
 // Internal commands (calibration & fixtures)
