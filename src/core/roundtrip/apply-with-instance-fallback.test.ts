@@ -353,6 +353,187 @@ describe("applyWithInstanceFallback", () => {
     });
   });
 
+  // #310 / ADR-011 Experiment 12: regression-locks two routing invariants
+  // that the "definition write propagates to every non-overridden instance"
+  // behavior (live-verified in Experiment 10, ADR.md:79) relies on at the
+  // helper level — (a) under `allowDefinitionWrite: true`, Tier 2 writes
+  // resolve to the SAME shared definition node identity across every
+  // instance call (proxy for fan-out), and (b) under the ADR-012 default,
+  // an override-bearing scene annotates its own scene independently
+  // without touching the definition, so other plain instances in the same
+  // batch still proceed cleanly. The mocked `figma.getNodeByIdAsync` does
+  // not simulate Plugin API propagation — real fan-out is Experiment 10's
+  // live evidence. These tests catch the class of refactor that would
+  // silently decouple instance calls (e.g. cloning the definition node
+  // per lookup, routing Tier 2 through getNodeByNameAsync).
+  describe("#310: Tier 2 propagation + override-precedence routing", () => {
+    it("override-error path: Tier 2 routes BOTH instances to the same definition node (proxy for propagation)", async () => {
+      const sceneA = makeNode({ id: "scene-a", name: "SceneA" });
+      const sceneB = makeNode({ id: "scene-b", name: "SceneB" });
+      const sharedDef = makeNode({ id: "def-1", name: "Card" });
+      mock = createFigmaGlobal({
+        nodes: {
+          "scene-a": sceneA,
+          "scene-b": sceneB,
+          "def-1": sharedDef,
+        },
+      });
+      installFigmaGlobal(mock);
+
+      const writeFn = vi
+        .fn()
+        .mockRejectedValueOnce(
+          new Error("This property cannot be overridden in an instance")
+        )
+        .mockResolvedValueOnce(undefined)
+        .mockRejectedValueOnce(
+          new Error("This property cannot be overridden in an instance")
+        )
+        .mockResolvedValueOnce(undefined);
+
+      for (const nodeId of ["scene-a", "scene-b"]) {
+        const result = await applyWithInstanceFallback(
+          {
+            nodeId,
+            ruleId: "missing-size-constraint",
+            sourceChildId: "def-1",
+          },
+          writeFn,
+          { categories: CATEGORIES, allowDefinitionWrite: true }
+        );
+        expect(result).toEqual({ icon: "🌐", label: "source definition" });
+      }
+
+      // calls[1] and calls[3] are the definition-tier writes for scene-a
+      // and scene-b respectively. Identity equality is the invariant — a
+      // cloning-refactor of createFigmaGlobal or a lookup change would
+      // fail this assertion clearly.
+      expect(writeFn.mock.calls[1]?.[0]).toBe(sharedDef);
+      expect(writeFn.mock.calls[3]?.[0]).toBe(sharedDef);
+      expect(writeFn.mock.calls[1]?.[0]).toBe(writeFn.mock.calls[3]?.[0]);
+      expect(writeFn.mock.calls[1]?.[0]).toEqual(
+        expect.objectContaining({ id: "def-1" })
+      );
+    });
+
+    it("override-bearing instance annotates its own scene without affecting a plain instance in the same multi-instance batch (flag false)", async () => {
+      const sceneOverride = makeNode({
+        id: "scene-override",
+        name: "OverrideBearing",
+      });
+      const scenePlain = makeNode({ id: "scene-plain", name: "Plain" });
+      const sharedDef = makeNode({ id: "def-1", name: "Card" });
+      mock = createFigmaGlobal({
+        nodes: {
+          "scene-override": sceneOverride,
+          "scene-plain": scenePlain,
+          "def-1": sharedDef,
+        },
+      });
+      installFigmaGlobal(mock);
+
+      // scene-override's write rejects with the override error (models an
+      // instance whose property write is refused by the Plugin API); the
+      // subsequent plain-scene write succeeds. If the override-bearing
+      // scene ever routed through the definition, the shared def would
+      // pick up state that a later Tier 1 on scene-plain could read back —
+      // so the isolation is what protects a multi-instance batch.
+      const writeFn = vi
+        .fn()
+        .mockRejectedValueOnce(
+          new Error("This property cannot be overridden in an instance")
+        )
+        .mockResolvedValueOnce(undefined);
+
+      const resultOverride = await applyWithInstanceFallback(
+        {
+          nodeId: "scene-override",
+          ruleId: "missing-size-constraint",
+          sourceChildId: "def-1",
+        },
+        writeFn,
+        { categories: CATEGORIES }
+      );
+      const resultPlain = await applyWithInstanceFallback(
+        {
+          nodeId: "scene-plain",
+          ruleId: "missing-size-constraint",
+          sourceChildId: "def-1",
+        },
+        writeFn,
+        { categories: CATEGORIES }
+      );
+
+      expect(resultOverride).toEqual({
+        icon: "📝",
+        label: "definition write skipped (opt-in disabled)",
+      });
+      const overrideAnnotations =
+        sceneOverride.annotations as AnnotationEntry[];
+      expect(overrideAnnotations).toHaveLength(1);
+      expect(overrideAnnotations[0]?.labelMarkdown).toContain("**Card**");
+      expect(overrideAnnotations[0]?.categoryId).toBe("cat-fallback");
+
+      // Plain scene proceeds normally — no annotation, ✅ result.
+      expect(resultPlain).toEqual({ icon: "✅", label: "instance/scene" });
+      expect(scenePlain.annotations).toEqual([]);
+
+      // writeFn fired exactly twice (one per scene) — the shared
+      // definition was never touched, so no unintended fan-out happened.
+      expect(writeFn).toHaveBeenCalledTimes(2);
+      expect(sharedDef.annotations).toEqual([]);
+    });
+
+    it("silent-ignore opt-in path: definition write fires once per call, resolving to the same definition", async () => {
+      const sceneA = makeNode({ id: "scene-a", name: "SceneA" });
+      const sceneB = makeNode({ id: "scene-b", name: "SceneB" });
+      const sharedDef = makeNode({ id: "def-1", name: "Card" });
+      mock = createFigmaGlobal({
+        nodes: {
+          "scene-a": sceneA,
+          "scene-b": sceneB,
+          "def-1": sharedDef,
+        },
+      });
+      installFigmaGlobal(mock);
+
+      const writeFn = vi
+        .fn()
+        .mockResolvedValueOnce(false)
+        .mockResolvedValueOnce(undefined)
+        .mockResolvedValueOnce(false)
+        .mockResolvedValueOnce(undefined);
+
+      for (const nodeId of ["scene-a", "scene-b"]) {
+        const result = await applyWithInstanceFallback(
+          {
+            nodeId,
+            ruleId: "missing-size-constraint",
+            sourceChildId: "def-1",
+          },
+          writeFn,
+          { categories: CATEGORIES, allowDefinitionWrite: true }
+        );
+        expect(result).toEqual({
+          icon: "🌐",
+          label: "source definition (silent-ignore fallback)",
+        });
+      }
+
+      // Same identity invariant as the override-error path above, but
+      // via the silent-ignore entry (writeFn returning false). Both paths
+      // route through routeToDefinitionOrAnnotate — regression-locking
+      // both ensures a future refactor of either branch cannot silently
+      // fork the definition-resolution lookup.
+      expect(writeFn.mock.calls[1]?.[0]).toBe(sharedDef);
+      expect(writeFn.mock.calls[3]?.[0]).toBe(sharedDef);
+      expect(writeFn.mock.calls[1]?.[0]).toBe(writeFn.mock.calls[3]?.[0]);
+      expect(writeFn.mock.calls[1]?.[0]).toEqual(
+        expect.objectContaining({ id: "def-1" })
+      );
+    });
+  });
+
   describe("telemetry callback", () => {
     it("fires with { ruleId, reason: 'override-error' } when override-error skips the definition write", async () => {
       const telemetry = vi.fn();
