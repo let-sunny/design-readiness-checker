@@ -1,5 +1,6 @@
 import type { Category } from "../contracts/category.js";
 import type { RuleConfig, RuleId } from "../contracts/rule.js";
+import type { AnnotationProperty } from "../roundtrip/types.js";
 
 /**
  * Maps each rule ID to its category.
@@ -219,6 +220,72 @@ export function getConfigsWithPreset(
   }
 
   return configs;
+}
+
+/**
+ * Per-rule annotation `properties` hints surfaced in Dev Mode. Kept as a
+ * sibling map rather than a field on `RuleConfig` so the existing
+ * `RuleConfigSchema` Zod contract and preset helpers stay untouched.
+ *
+ * `bySubType` takes precedence over `default` — mirrors the ruleId+subType
+ * resolution pattern already used for `targetProperty` in apply-context.ts.
+ * The Experiment 09 node-type matrix is enforced at write time by
+ * `upsertCanicodeAnnotation`'s retry path, so hints can be passed
+ * speculatively without server-side filtering.
+ */
+export const RULE_ANNOTATION_PROPERTIES: Partial<
+  Record<
+    RuleId,
+    {
+      default?: AnnotationProperty[];
+      bySubType?: Record<string, AnnotationProperty[]>;
+    }
+  >
+> = {
+  "missing-size-constraint": {
+    default: [{ type: "width" }, { type: "height" }],
+  },
+  "irregular-spacing": {
+    bySubType: {
+      gap: [{ type: "itemSpacing" }],
+      padding: [{ type: "padding" }],
+    },
+  },
+  "fixed-size-in-auto-layout": {
+    default: [{ type: "width" }, { type: "height" }, { type: "layoutMode" }],
+  },
+  "raw-value": {
+    bySubType: {
+      color: [{ type: "fills" }],
+      font: [
+        { type: "fontSize" },
+        { type: "fontFamily" },
+        { type: "fontWeight" },
+        { type: "lineHeight" },
+      ],
+      spacing: [{ type: "itemSpacing" }, { type: "padding" }],
+    },
+  },
+  "absolute-position-in-auto-layout": {
+    default: [{ type: "layoutMode" }],
+  },
+};
+
+/**
+ * Resolve the annotation `properties` hint for a ruleId (+ subType).
+ * Returns `undefined` for rules with no entry.
+ */
+export function getAnnotationProperties(
+  ruleId: RuleId,
+  subType?: string
+): AnnotationProperty[] | undefined {
+  const entry = RULE_ANNOTATION_PROPERTIES[ruleId];
+  if (!entry) return undefined;
+  if (subType !== undefined && entry.bySubType) {
+    const match = entry.bySubType[subType];
+    if (match) return match;
+  }
+  return entry.default;
 }
 
 /**

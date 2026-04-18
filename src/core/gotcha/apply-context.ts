@@ -1,9 +1,11 @@
 import type { RuleId, RuleViolation } from "../contracts/rule.js";
 import type { InstanceContext } from "../contracts/gotcha-survey.js";
+import type { AnnotationProperty } from "../roundtrip/types.js";
 import {
   isInstanceChildNodeId,
   parseInstanceChildNodeId,
 } from "../adapters/instance-id-parser.js";
+import { getAnnotationProperties } from "../rules/rule-config.js";
 
 /**
  * Apply strategy for a rule violation. Tells the SKILL.md/`use_figma`
@@ -37,6 +39,7 @@ export type RuleApplyStrategy =
 export interface ApplyContext {
   applyStrategy: RuleApplyStrategy;
   targetProperty?: string | string[];
+  annotationProperties?: AnnotationProperty[];
   isInstanceChild: boolean;
   sourceChildId?: string;
 }
@@ -133,6 +136,10 @@ export function computeApplyContext(
   const ruleId = violation.ruleId as RuleId;
   const applyStrategy = STRATEGY_BY_RULE[ruleId] ?? "annotation";
   const targetProperty = resolveTargetProperty(ruleId, violation.subType);
+  const annotationProperties = getAnnotationProperties(
+    ruleId,
+    violation.subType,
+  );
 
   const parsed = parseInstanceChildNodeId(violation.nodeId);
   const isInstanceChild =
@@ -142,6 +149,7 @@ export function computeApplyContext(
   return {
     applyStrategy,
     ...(targetProperty !== undefined ? { targetProperty } : {}),
+    ...(annotationProperties !== undefined ? { annotationProperties } : {}),
     isInstanceChild,
     ...(sourceChildId !== undefined ? { sourceChildId } : {}),
   };

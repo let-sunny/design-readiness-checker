@@ -567,6 +567,73 @@ describe("generateGotchaSurvey", () => {
     });
   });
 
+  describe("annotationProperties", () => {
+    it("carries subType-aware hint for irregular-spacing gap → itemSpacing", () => {
+      const issues = [
+        makeIssue({
+          ruleId: "irregular-spacing",
+          category: "token-management",
+          severity: "risk",
+          nodeId: "1:1",
+          nodePath: "Root > Row",
+          subType: "gap",
+        }),
+      ];
+
+      const survey = generateGotchaSurvey(
+        makeResult(issues),
+        makeScoreReport("D"),
+      );
+
+      expect(survey.questions[0]!.annotationProperties).toEqual([
+        { type: "itemSpacing" },
+      ]);
+    });
+
+    it("carries default hint for missing-size-constraint with any subType", () => {
+      const issues = [
+        makeIssue({
+          ruleId: "missing-size-constraint",
+          category: "responsive-critical",
+          severity: "risk",
+          nodeId: "1:1",
+          nodePath: "Root > Banner",
+          subType: "wrap",
+        }),
+      ];
+
+      const survey = generateGotchaSurvey(
+        makeResult(issues),
+        makeScoreReport("D"),
+      );
+
+      expect(survey.questions[0]!.annotationProperties).toEqual([
+        { type: "width" },
+        { type: "height" },
+      ]);
+    });
+
+    it("omits annotationProperties for rules with no mapping", () => {
+      // deep-nesting has no annotation-properties entry.
+      const issues = [
+        makeIssue({
+          ruleId: "deep-nesting",
+          category: "code-quality",
+          severity: "risk",
+          nodeId: "1:1",
+          nodePath: "Root > DeepWrap",
+        }),
+      ];
+
+      const survey = generateGotchaSurvey(
+        makeResult(issues),
+        makeScoreReport("D"),
+      );
+
+      expect("annotationProperties" in survey.questions[0]!).toBe(false);
+    });
+  });
+
   describe("isInstanceChild and sourceChildId", () => {
     it("flat instance-child id derives sourceChildId from last segment", () => {
       const issues = [

@@ -172,6 +172,44 @@ describe("computeApplyContext", () => {
     });
   });
 
+  describe("annotationProperties", () => {
+    it("irregular-spacing gap → itemSpacing hint (subType match)", () => {
+      const ctx = computeApplyContext(
+        makeViolation("irregular-spacing", { subType: "gap" }),
+      );
+      expect(ctx.annotationProperties).toEqual([{ type: "itemSpacing" }]);
+    });
+
+    it("missing-size-constraint wrap → default hint (subType falls back)", () => {
+      const ctx = computeApplyContext(
+        makeViolation("missing-size-constraint", { subType: "wrap" }),
+      );
+      expect(ctx.annotationProperties).toEqual([
+        { type: "width" },
+        { type: "height" },
+      ]);
+    });
+
+    it("absolute-position-in-auto-layout → layoutMode hint", () => {
+      const ctx = computeApplyContext(
+        makeViolation("absolute-position-in-auto-layout"),
+      );
+      expect(ctx.annotationProperties).toEqual([{ type: "layoutMode" }]);
+    });
+
+    it("rule without mapping omits annotationProperties entirely", () => {
+      const ctx = computeApplyContext(makeViolation("deep-nesting"));
+      expect("annotationProperties" in ctx).toBe(false);
+    });
+
+    it("rule with subType-only mapping and unknown subType omits field", () => {
+      const ctx = computeApplyContext(
+        makeViolation("irregular-spacing", { subType: "unknown-subtype" }),
+      );
+      expect("annotationProperties" in ctx).toBe(false);
+    });
+  });
+
   describe("isInstanceChild / sourceChildId", () => {
     it("plain scene node id → not an instance child", () => {
       const ctx = computeApplyContext(

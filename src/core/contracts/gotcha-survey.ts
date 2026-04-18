@@ -28,6 +28,13 @@ export type RuleApplyStrategy = z.infer<typeof RuleApplyStrategySchema>;
 
 const TargetPropertySchema = z.union([z.string(), z.array(z.string())]);
 
+/**
+ * Mirrors the `AnnotationProperty` interface in `src/core/roundtrip/types.ts`.
+ * Declared here per the project's Zod convention (schemas live in contracts/)
+ * so MCP responses validate end-to-end.
+ */
+export const AnnotationPropertySchema = z.object({ type: z.string() });
+
 export const GotchaSurveyQuestionSchema = z.object({
   nodeId: z.string(),
   nodeName: z.string(),
@@ -39,6 +46,7 @@ export const GotchaSurveyQuestionSchema = z.object({
   instanceContext: InstanceContextSchema.optional(),
   applyStrategy: RuleApplyStrategySchema,
   targetProperty: TargetPropertySchema.optional(),
+  annotationProperties: z.array(AnnotationPropertySchema).optional(),
   suggestedName: z.string().optional(),
   isInstanceChild: z.boolean(),
   sourceChildId: z.string().optional(),

@@ -114,6 +114,7 @@ Every gotcha-survey question (and every entry in `analyzeResult.issues[]`) carri
 |-------|------|---------|
 | `applyStrategy` | `"property-mod"` \| `"structural-mod"` \| `"annotation"` \| `"auto-fix"` | Which strategy branch to enter (A/B/C/D). |
 | `targetProperty` | `string` \| `string[]` \| (absent) | Figma Plugin-API property to write. Array when multiple properties move together (e.g. `no-auto-layout` → `["layoutMode", "itemSpacing"]`). Absent for structural/annotation rules. |
+| `annotationProperties` | `Array<{ type: string }>` \| (absent) | Pre-computed Dev Mode annotation `properties` hint for the ruleId (+ subType). Pass directly to `upsertCanicodeAnnotation`. Absent when the rule has no mapping. See the annotation matrix below for the enum + node-type filtering (enforced by the helper's retry path). |
 | `suggestedName` | `string` \| (absent) | Naming rules only — pre-capitalized value to write to `node.name` (e.g. `"Hover"`). |
 | `isInstanceChild` | `boolean` | Whether the `nodeId` targets a node inside an INSTANCE subtree. |
 | `sourceChildId` | `string` \| (absent) | Definition node id inside the source component. Use directly with `figma.getNodeByIdAsync`. |
@@ -239,9 +240,7 @@ CanICodeRoundtrip.upsertCanicodeAnnotation(scene, {
   categoryId: categories.gotcha,
   // Optional: surface live property values in Dev Mode alongside the note.
   // Only include types the node supports (FRAME vs TEXT — see matrix above).
-  properties: question.ruleId === "absolute-position-in-auto-layout"
-    ? [{ type: "layoutMode" }]
-    : undefined,
+  properties: question.annotationProperties,
 });
 ```
 
@@ -252,7 +251,7 @@ Notes:
 
 #### Strategy D: Auto-fix lower-severity issues from analysis
 
-The gotcha survey covers only blocking/risk severity. Lower-severity rules appear in `analyzeResult.issues[]` without a survey question. Each issue carries the same pre-computed fields (`applyStrategy`, `targetProperty`, `suggestedName`, `isInstanceChild`, `sourceChildId`). Loop over them:
+The gotcha survey covers only blocking/risk severity. Lower-severity rules appear in `analyzeResult.issues[]` without a survey question. Each issue carries the same pre-computed fields (`applyStrategy`, `targetProperty`, `annotationProperties`, `suggestedName`, `isInstanceChild`, `sourceChildId`). Loop over them:
 
 ```javascript
 for (const issue of analyzeResult.issues) {
@@ -278,7 +277,7 @@ for (const issue of analyzeResult.issues) {
       markdown: issue.message,
       categoryId: categories.autoFix,
       // Optional: surface the live value for the affected property in Dev Mode.
-      properties: issue.ruleId === "raw-value" ? [{ type: "fills" }] : undefined,
+      properties: issue.annotationProperties,
     });
   }
 }

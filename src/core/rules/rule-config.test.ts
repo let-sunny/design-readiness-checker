@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { RULE_CONFIGS } from "./rule-config.js";
+import { RULE_CONFIGS, getAnnotationProperties } from "./rule-config.js";
 import { ruleRegistry } from "./rule-registry.js";
 import type { RuleId } from "../contracts/rule.js";
 
@@ -69,6 +69,67 @@ describe("rule-config sync", () => {
       for (const rule of ruleRegistry.getAll()) {
         expect(RULE_CONFIGS[rule.definition.id as RuleId]).toBeDefined();
       }
+    });
+  });
+
+  describe("getAnnotationProperties", () => {
+    it("returns bySubType match when present", () => {
+      expect(getAnnotationProperties("irregular-spacing", "gap")).toEqual([
+        { type: "itemSpacing" },
+      ]);
+      expect(getAnnotationProperties("irregular-spacing", "padding")).toEqual([
+        { type: "padding" },
+      ]);
+    });
+
+    it("falls back to default when subType has no bySubType entry", () => {
+      // missing-size-constraint has only a default — any subType resolves to it.
+      expect(
+        getAnnotationProperties("missing-size-constraint", "wrap")
+      ).toEqual([{ type: "width" }, { type: "height" }]);
+      expect(
+        getAnnotationProperties("missing-size-constraint")
+      ).toEqual([{ type: "width" }, { type: "height" }]);
+    });
+
+    it("returns undefined when subType does not match bySubType and no default exists", () => {
+      // irregular-spacing has no default — an unknown subType must return undefined.
+      expect(
+        getAnnotationProperties("irregular-spacing", "unknown")
+      ).toBeUndefined();
+    });
+
+    it("returns undefined for rules with no mapping", () => {
+      expect(getAnnotationProperties("deep-nesting")).toBeUndefined();
+      expect(getAnnotationProperties("non-semantic-name")).toBeUndefined();
+    });
+
+    it("raw-value subTypes: color → fills, font → font fields, spacing → itemSpacing+padding", () => {
+      expect(getAnnotationProperties("raw-value", "color")).toEqual([
+        { type: "fills" },
+      ]);
+      expect(getAnnotationProperties("raw-value", "font")).toEqual([
+        { type: "fontSize" },
+        { type: "fontFamily" },
+        { type: "fontWeight" },
+        { type: "lineHeight" },
+      ]);
+      expect(getAnnotationProperties("raw-value", "spacing")).toEqual([
+        { type: "itemSpacing" },
+        { type: "padding" },
+      ]);
+    });
+
+    it("absolute-position-in-auto-layout → layoutMode", () => {
+      expect(
+        getAnnotationProperties("absolute-position-in-auto-layout")
+      ).toEqual([{ type: "layoutMode" }]);
+    });
+
+    it("fixed-size-in-auto-layout → width, height, layoutMode", () => {
+      expect(
+        getAnnotationProperties("fixed-size-in-auto-layout", "horizontal")
+      ).toEqual([{ type: "width" }, { type: "height" }, { type: "layoutMode" }]);
     });
   });
 
