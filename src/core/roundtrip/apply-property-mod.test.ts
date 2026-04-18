@@ -239,6 +239,53 @@ describe("applyPropertyMod", () => {
     );
   });
 
+  // #309 / ADR-011 Experiment 08: variable binding is the first-choice write
+  // path — it bypasses the instance-child override gate that raw-value writes
+  // hit. The live Plugin-API message sample comes from Experiment 08/10; the
+  // mock below uses a synthetic throw with the matching phrase, so the
+  // regression lock is on the helper's internal routing, not on real-world
+  // message text.
+  it("#309: variable-binding path runs before raw write — binds successfully even when the raw setter would throw the override error", async () => {
+    const setBoundVariable = vi.fn();
+    const target: FigmaNode = {
+      id: "scene-1",
+      name: "Scene",
+      type: "FRAME",
+      annotations: [],
+    };
+    Object.defineProperty(target, "minWidth", {
+      get: () => 0,
+      set: () => {
+        throw new Error("This property cannot be overridden in an instance");
+      },
+      configurable: true,
+      enumerable: true,
+    });
+    (target as unknown as { setBoundVariable: typeof setBoundVariable }).setBoundVariable =
+      setBoundVariable;
+    mock = createFigmaGlobal({
+      nodes: { "scene-1": target },
+      variables: [{ id: "v-mobile", name: "mobile-width" }],
+    });
+    installFigmaGlobal(mock);
+    const question: RoundtripQuestion = {
+      nodeId: "scene-1",
+      ruleId: "missing-size-constraint",
+      targetProperty: "minWidth",
+    };
+    const result = await applyPropertyMod(
+      question,
+      { variable: "mobile-width" },
+      { categories: CATEGORIES }
+    );
+    // Binding succeeded — the throwing setter was never invoked.
+    expect(result).toEqual({ icon: "✅", label: "instance/scene" });
+    expect(setBoundVariable).toHaveBeenCalledWith("minWidth", {
+      id: "v-mobile",
+      name: "mobile-width",
+    });
+  });
+
   it("binds a variable via target.setBoundVariable for non-paint props", async () => {
     const setBoundVariable = vi.fn();
     const target: FigmaNode = {

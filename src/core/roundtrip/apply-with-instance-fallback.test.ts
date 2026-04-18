@@ -184,6 +184,42 @@ describe("applyWithInstanceFallback", () => {
     );
   });
 
+  // #309 / ADR-011 Experiment 11: the `mainComponent === null` live case
+  // (external library whose source has been unshared at the library end) was
+  // NOT reproduced by Experiment 10 — that probe resolved external instances
+  // with `mainComponent.remote === true` instead. The helper-level proxy is:
+  // when the server-side resolver has no source to name, `question.sourceChildId`
+  // is absent → `definition` is null inside the helper, and the override-error
+  // branch must route through the null-definition annotation path.
+  it("#309: override-error + no sourceChildId (definition === null) annotates with 'could not apply automatically' — not the 'source component' markdown", async () => {
+    const question: RoundtripQuestion = {
+      nodeId: "scene-1",
+      ruleId: "missing-size-constraint",
+    };
+    const writeFn = vi
+      .fn()
+      .mockRejectedValueOnce(
+        new Error("This property cannot be overridden in an instance")
+      );
+    const result = await applyWithInstanceFallback(question, writeFn, {
+      categories: CATEGORIES,
+    });
+    // Null definition skips the ADR-012 opt-in guard and lands in the
+    // annotation-only branch with `error: <msg>` labeling.
+    expect(result.icon).toBe("📝");
+    expect(result.label).toMatch(/^error: /);
+    expect(writeFn).toHaveBeenCalledTimes(1);
+    const annotations = scene.annotations as AnnotationEntry[];
+    expect(annotations).toHaveLength(1);
+    expect(annotations[0]?.labelMarkdown).toContain(
+      "could not apply automatically"
+    );
+    // NOT the ADR-012 Q3 markdown — there is no source component to name.
+    expect(annotations[0]?.labelMarkdown).not.toContain(
+      "Apply this fix on the source component"
+    );
+  });
+
   it("returns 📝 missing node when the scene id doesn't resolve", async () => {
     const question: RoundtripQuestion = {
       nodeId: "does-not-exist",
