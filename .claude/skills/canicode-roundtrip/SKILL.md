@@ -82,35 +82,83 @@ npx canicode gotcha-survey "<figma-url>" --json
 
 If `questions` is empty, skip to **Step 6**.
 
-For each question in the `questions` array, present it to the user one at a time.
+#### Step 3a: Why the response carries a pre-grouped+batched view
 
-Build the message from the question fields. **If `question.instanceContext` is present**, prepend one line before the question body:
+The naive "one-question-at-a-time" loop produces two well-known UX failures on real designs:
 
-```
-_Instance note: This layer is inside an instance. Layout and size fixes may need to be applied on source component **{sourceComponentName or sourceComponentId or "unknown"}** (definition node `sourceNodeId`) and propagate to all instances — you will be asked to confirm before any definition-level write._
-```
+- **Repeated Instance note (#370)** — when 10 consecutive questions share the same `instanceContext.sourceComponentId`, the standard "_Instance note: …source component **X**…_" paragraph prints 10 times. After the first occurrence it adds zero new information and consumes ~2 screens of vertical space.
+- **Repeated identical answer (#369)** — when 7 consecutive questions all carry the same `ruleId` (e.g. `missing-size-constraint`) and the user's reasonable answer would be the same for all of them (e.g. `min-width: 320px, max-width: 1200px`), the user types the same thing 7 times in a row.
 
-**If `question.replicas` is present (#356 dedup)**, prepend a second line noting the answer applies to N instances:
+`gotcha-survey` already ships the resolution on its `groupedQuestions` field. Sort key (`(sourceComponentId ?? "_no-source", ruleId, nodeName)`), source-component grouping, and the batchable-rule whitelist (`missing-size-constraint`, `irregular-spacing`, `no-auto-layout`, `fixed-size-in-auto-layout`) all live in `core/gotcha/group-and-batch-questions.ts` with vitest coverage. Per ADR-303 / PR #303, do **not** re-implement the sort, partition, or whitelist in prose — iterate over `groupedQuestions.groups[].batches[]` directly.
 
-```
-_Replicas: This question represents **{replicas} instances** of the same source-component child sharing the same rule. Your single answer will be applied to all of them in Step 4 (one annotation/write per instance scene)._
-```
+#### Step 3b: Prompt each group, then each batch within it
 
-Then the standard block:
+For each `group` in `response.groupedQuestions.groups`:
 
-```
-**[{severity}] {ruleId}** — node: {nodeName}
+- **`group.instanceContext === null`** — this is the trailing group of non-instance questions. Skip the header and prompt each batch directly.
+- **`group.instanceContext !== null`** — emit the Instance note **once** as a group header (#370):
 
-{question}
+  ```
+  ─────────────────────────────────────────
+  The next {sum of batch.questions.length} questions all target instance children of source component **{instanceContext.sourceComponentName ?? instanceContext.sourceComponentId ?? "unknown"}** (definition node `{instanceContext.sourceNodeId}`). Layout and size fixes may need to apply on the source and propagate to all instances — you will be asked to confirm before any definition-level write.
+  ─────────────────────────────────────────
+  ```
 
-> Hint: {hint}
-> Example: {example}
-```
+For each `batch` inside the group:
 
-Wait for the user's answer before moving to the next question. The user may:
-- Answer the question directly
-- Say "skip" to skip a question
-- Say "n/a" if the question is not applicable
+- **`batch.questions.length === 1`** — render the standard single-question block for `batch.questions[0]`:
+
+  ```
+  **[{severity}] {ruleId}** — node: {nodeName}
+
+  {question}
+
+  > Hint: {hint}
+  > Example: {example}
+  ```
+
+  **If `question.replicas` is present (#356 dedup)**, prepend one note above the standard block:
+
+  ```
+  _Replicas: This question represents **{replicas} instances** of the same source-component child sharing the same rule. Your single answer will be applied to all of them in Step 4 (one annotation/write per instance scene)._
+  ```
+
+- **`batch.questions.length >= 2 && batch.batchable === true`** (#369) — render one batch prompt covering all members. Use `batch.totalScenes` (already summed across each member's `replicas`) for the Figma-scene fan-out hint:
+
+  ```
+  **[{severity}] {batch.ruleId}** — {batch.questions.length} instances:
+    - {nodeName₁}{ruleSpecificContext₁}
+    - {nodeName₂}{ruleSpecificContext₂}
+    - …
+
+  {sharedQuestionPrompt}
+
+  Reply with one answer to apply to all {batch.questions.length}, or **split** to answer each individually.
+
+  > Hint: {hint}
+  > Example: {example}
+  ```
+
+  Where:
+  - `sharedQuestionPrompt` is the rule's `question` text with the per-node noun replaced by the rule's plural noun (e.g. "These layers all use FILL sizing without min/max constraints. What size boundaries should they share?" instead of repeating "What size boundaries should this layer have?" N times).
+  - `ruleSpecificContext` is short and rule-specific: e.g. for `missing-size-constraint` show the current `width`/`height` if the question has them; for `irregular-spacing` show the current `itemSpacing`; otherwise omit.
+  - On `split`, fall back to the per-question loop for that batch only — keep the rest of the group's batches as-is.
+
+  When `batch.totalScenes > batch.questions.length` (at least one member carries replicas), append one note so the user knows their single answer fans out further than the listed nodes:
+
+  ```
+  _Replicas: your one answer will land on **{batch.totalScenes}** Figma scenes total in Step 4 (some of these {batch.questions.length} questions already represent multiple instances of the same source-component child)._
+  ```
+
+- **`batch.batchable === false`** is always rendered as a single-question prompt — the helper guarantees `questions.length === 1` for those (identity-typed answers like `non-semantic-name`, structural-mod rules).
+
+Wait for the user's answer before moving to the next batch. For each batch, the user may:
+- Answer the question directly (single value covers all batch members)
+- Say **split** (batch only) to fall back to per-question prompting for that batch
+- Say **skip** to skip the question / the entire batch
+- Say **n/a** if the question / the entire batch is not applicable
+
+When applying the batched answer, expand back to per-question records before storing — the gotcha section format and Step 4 apply loop both expect one record per `nodeId`.
 
 After all questions are answered, **upsert this design's gotcha section** into `.claude/skills/canicode-gotchas/SKILL.md` in the user's project. Read the existing file, then either replace the section whose `Design key` matches this run (same Figma URL → fileKey+nodeId) or append a new numbered section under `# Collected Gotchas`. Never modify anything above the `# Collected Gotchas` heading — the region above it (frontmatter + workflow prose) is the skill loader contract installed by `canicode init`. See the `/canicode-gotchas` skill's "Upsert the gotcha section" step (Step 4) for the exact section format and matching rule.
 
@@ -281,6 +329,23 @@ The name must match **the variable's `name` field exactly** — including any sl
 
 Rules with `applyStrategy === "structural-mod"`. Show the proposed change and **ask for user confirmation** before applying.
 
+> **Instance-child guard (#368).** Strategy B mutations restructure the layer tree — `createComponentFromNode`, `flatten`, wrapper removal, instance-link reconnection. None of these compose safely with the Plugin API's instance-override rules: on a node where `question.isInstanceChild === true`, calling `createComponentFromNode` either throws *"Cannot create a component from a node inside an instance"* or detaches the parent instance entirely (the picked instance is replaced by a one-off frame, severing every existing override and propagation link). Restructuring deep-nested wrappers inside an instance child has the same risk surface — even when the call doesn't throw, the resulting structure cannot ride the source-component's propagation in future updates.
+>
+> Before showing the per-rule prompt below, check `question.isInstanceChild`. If it is true, **do not run the destructive call**. Surface this a/b prompt instead and default to **(a)**:
+>
+> ```
+> **{ruleId}** would normally restructure **{nodeName}** here, but this node lives inside instance **{instanceContext.parentInstanceNodeId}** of source component **{instanceContext.sourceComponentName or sourceComponentId or "unknown"}** (definition node `{instanceContext.sourceNodeId}`). On instance children Plugin API restructuring either fails outright or detaches the parent instance.
+>
+> ❯ a) Annotate the scene with a recommendation to apply the change on the source definition (safe — picks up via canicode-gotchas in code-gen, source designer can act on it later)
+>   b) Detach the parent instance and attempt the restructuring on the resulting one-off frame (destructive — every existing instance override is lost and the node no longer rides the source component's propagation)
+> ```
+>
+> On **(a)**, route to Strategy C — call `upsertCanicodeAnnotation(scene, { ruleId: question.ruleId, markdown: "**Q:** … **A:** Apply on source definition `${instanceContext.sourceNodeId}` (`${instanceContext.sourceComponentName ?? "unknown"}`) — instance-child restructuring would detach the parent instance.", categoryId: categories.gotcha })`. Reference `instanceContext.sourceComponentName` and `instanceContext.sourceNodeId` in the body so the source designer can locate the target.
+>
+> On **(b)**, gate behind a second confirmation that explicitly names the side effects ("This will detach instance **{parentInstanceNodeId}** — all overrides on it will be lost and it will stop receiving updates from **{sourceComponentName}**. Type the parent instance name to confirm."). Only then execute the per-rule destructive call below.
+>
+> The same posture as ADR-012's `allowDefinitionWrite: false` default: instance-child structural mutations are off-by-default and require explicit user opt-in *per node*, not per batch — the destructive call here doesn't have a quiet fallback the way Strategy A's `applyWithInstanceFallback` does.
+
 **`non-layout-container`** — Convert Group/Section to Auto Layout frame:
 - Prompt: "I'll convert **{nodeName}** to an Auto Layout frame with {direction} layout and {spacing}px gap. Proceed?"
 - If confirmed: `applyPropertyMod(question, { layoutMode: "VERTICAL", itemSpacing: 12 })`.
@@ -303,7 +368,7 @@ if (scene && scene.type === "FRAME") {
 - Prompt: "I'll reconnect **{nodeName}** to its original component. Any overrides will be preserved. Proceed?"
 - Requires finding the original component — if not identifiable, fall back to annotation.
 
-If the user **declines** any structural modification, add an annotation instead (same as Strategy C).
+If the user **declines** any structural modification (or the instance-child guard above routes to **(a)**), add an annotation instead (same as Strategy C).
 
 #### Strategy C: Annotation — record on the design for designer reference
 
