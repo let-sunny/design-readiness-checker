@@ -1,0 +1,108 @@
+name: SKILL.md ADR-016 audit reminder
+
+# Opens a periodic audit issue so SKILL.md drift is re-checked on a fixed
+# cadence even when no individual PR adds anything that the grep gate
+# (`pnpm check:skill-determinism`, PR #389) catches. The grep gate covers
+# pattern-level regressions; this workflow covers accumulated drift — small
+# prose adjustments across many PRs that each look harmless individually but
+# together blur the line between LLM judgment and deterministic logic. The
+# post-#387 audit is the precedent: it found two pre-existing violations
+# (dead `fileKey` prose, inline cleanup filter) that had survived several PRs
+# because no individual PR ever changed them and no scheduled re-read was on
+# the calendar.
+#
+# Cadence: 1st of every month at 09:00 UTC. The job is also exposed via
+# `workflow_dispatch` so a maintainer can trigger an off-cycle audit (e.g.
+# right after a large SKILL.md refactor lands) without waiting for the next
+# scheduled run.
+
+on:
+  schedule:
+    # min hour day-of-month month day-of-week
+    - cron: "0 9 1 * *"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  open-audit-issue:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Open audit issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          CYCLE_TAG="$(date -u +'%Y-%m')"
+          TITLE="SKILL.md ADR-016 audit (cycle ${CYCLE_TAG})"
+
+          # Idempotency: if an issue with this exact title already exists
+          # (open or closed), skip. Prevents duplicate issues if the workflow
+          # gets triggered twice in the same month (e.g. scheduled run +
+          # manual workflow_dispatch).
+          EXISTING="$(gh issue list \
+            --search "in:title \"${TITLE}\"" \
+            --state all \
+            --json number,title \
+            --jq '.[] | select(.title == "'"${TITLE}"'") | .number' \
+            | head -n1)"
+
+          if [ -n "${EXISTING}" ]; then
+            echo "Audit issue for cycle ${CYCLE_TAG} already exists as #${EXISTING}; skipping."
+            exit 0
+          fi
+
+          gh issue create \
+            --title "${TITLE}" \
+            --label "chore" \
+            --body "$(cat <<'BODY'
+          Periodic re-audit of `.claude/skills/canicode-{roundtrip,gotchas,canicode}/SKILL.md` against ADR-016 (`.claude/docs/ADR.md`). Auto-opened by `.github/workflows/skill-audit-reminder.yml` (issue #390).
+
+          ## Why this exists
+
+          The grep gate from PR #389 (`pnpm check:skill-determinism`) catches pattern-level violations the moment they're added to a PR. This audit covers what the grep gate cannot: **accumulated drift** — small prose adjustments across many PRs that each look harmless individually but together blur the line between LLM judgment and deterministic logic. The post-#387 audit is the precedent: it found two pre-existing violations (dead `fileKey` prose, inline cleanup filter) that had survived several PRs because no individual PR ever changed them and no scheduled re-read was on the calendar.
+
+          ## Audit checklist
+
+          For each SKILL.md file in scope:
+
+          - [ ] `.claude/skills/canicode-roundtrip/SKILL.md`
+          - [ ] `.claude/skills/canicode-gotchas/SKILL.md`
+          - [ ] `.claude/skills/canicode/SKILL.md`
+
+          Re-read each one cover-to-cover and check:
+
+          1. **Imperative deterministic prose** — does any line tell the LLM to count, sum, extract, parse, classify, walk, accumulate, or filter something where the inputs and outputs are both deterministic? If yes, file an extraction issue and link it here.
+          2. **Inline JS / TS code blocks** — does any block contain logic beyond a helper / SDK invocation? Loops, filters, accumulators, parsers should all live in `src/core/` with vitest coverage. If yes, file an extraction issue.
+          3. **Stale `<!-- adr-016-ack: ... -->` markers** — for every ACK in the file, is the justification still valid? In particular, ACKs that reference an in-flight extraction issue (e.g. "tracked by #386 — remove when helper lands") should be removed once the referenced PR has merged. List any stale ACKs here.
+          4. **Dead prose** — does any prose section reference a field, helper, or workflow step that no longer exists? The dead `fileKey` extraction prose in `canicode-roundtrip/SKILL.md` survived ~6 months past the last call site that needed it; an audit catches this.
+
+          ## Findings
+
+          File each finding as a separate GitHub issue (don't bundle them into this one) so they can be triaged and assigned independently. List them below as you file them:
+
+          - [ ] *(no findings yet — re-edit this section as you audit)*
+
+          ## Closing this issue
+
+          Close when:
+          - All three SKILL.md files have been re-read.
+          - Every finding has its own tracking issue.
+          - No stale ACK markers remain (or each remaining stale ACK has its own removal issue).
+
+          If the audit found zero issues, close with a comment saying so — the close timestamp itself is the audit record.
+
+          ## References
+
+          - ADR-016 (`.claude/docs/ADR.md`) — the rule this audit enforces.
+          - PR #303 — origin of the rule (`helpers.js` IIFE pattern + bundle drift CI).
+          - PR #387 — the audit precedent that found the two pre-existing violations.
+          - PR #389 — the grep gate this audit complements.
+          - Issue #390 — this audit cadence proposal.
+          BODY
+          )"
+
+          echo "Opened audit issue for cycle ${CYCLE_TAG}."
