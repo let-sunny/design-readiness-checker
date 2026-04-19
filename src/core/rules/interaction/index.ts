@@ -70,6 +70,32 @@ function hasStateInComponentMaster(
   return hasStateInVariantProps(master, statePattern);
 }
 
+/**
+ * Decide whether we have enough source data to assert a state variant is missing.
+ *
+ * The Figma REST API does not consistently mirror `componentPropertyDefinitions`
+ * onto deeply-nested INSTANCE children, and `context.file.componentDefinitions`
+ * only contains masters the loader actually fetched (external-library masters
+ * stay null even after extra passes). When BOTH paths are empty for an INSTANCE
+ * we cannot tell whether the master defines the variant or not — treat that as
+ * "unknown" (return false here) rather than asserting a missing variant.
+ *
+ * COMPONENT nodes are special: a COMPONENT IS the master, so the absence of
+ * `componentPropertyDefinitions` on a COMPONENT is itself meaningful evidence
+ * (standalone master with no variant axis at all). Always treat COMPONENTs as
+ * determinable so the rule still catches the "designer never added variants"
+ * case the rule is supposed to flag.
+ */
+function canDetermineVariants(node: AnalysisNode, context: RuleContext): boolean {
+  if (node.type === "COMPONENT") return true;
+  if (node.componentPropertyDefinitions !== undefined) return true;
+  if (node.componentId !== undefined) {
+    const defs = context.file.componentDefinitions;
+    if (defs && defs[node.componentId] !== undefined) return true;
+  }
+  return false;
+}
+
 // ============================================
 // missing-interaction-state
 // ============================================
@@ -92,6 +118,14 @@ const missingInteractionStateCheck: RuleCheckFn = (node, context) => {
 
   const expectedStates = EXPECTED_STATES[interactiveType];
   if (!expectedStates) return null;
+
+  // Probe gate: only assert a missing variant when we can actually observe the
+  // master's variant axes. For nested INSTANCE children whose master was not
+  // fetched into `componentDefinitions` and whose own `componentPropertyDefinitions`
+  // is undefined, treat the verdict as unknown and skip — this avoids the
+  // false-positive class described in #354. The data-availability check is
+  // per-node (not per-state), so it lives outside the for-loop below.
+  if (!canDetermineVariants(node, context)) return null;
 
   const seen = getSeen(context);
   const nodePath = context.path.join(" > ");

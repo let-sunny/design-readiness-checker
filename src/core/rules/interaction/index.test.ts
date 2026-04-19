@@ -12,9 +12,11 @@ describe("missing-interaction-state", () => {
     expect(def.category).toBe("interaction");
   });
 
-  it("flags INSTANCE button without hover variant", () => {
+  it("flags INSTANCE button without hover variant (master fetched, no variants)", () => {
+    const masterNode = makeNode({ id: "c:1", name: "Button Master", type: "COMPONENT" });
     const node = makeNode({ id: "1:1", name: "Primary Button", type: "INSTANCE", componentId: "c:1" });
-    const ctx = makeContext({ path: ["Page", "Button"] });
+    const file = makeFile({ componentDefinitions: { "c:1": masterNode } });
+    const ctx = makeContext({ file, path: ["Page", "Button"] });
     const result = missingInteractionState.check(node, ctx);
 
     expect(result).not.toBeNull();
@@ -83,6 +85,7 @@ describe("missing-interaction-state", () => {
   });
 
   it("still flags hover even when ON_HOVER prototype exists (prototype ≠ variant)", () => {
+    const masterNode = makeNode({ id: "c:1", name: "Link Master", type: "COMPONENT" });
     const node = makeNode({
       id: "1:1",
       name: "Link Item",
@@ -92,15 +95,18 @@ describe("missing-interaction-state", () => {
         { trigger: { type: "ON_HOVER" }, actions: [{ navigation: "CHANGE_TO", destinationId: "d:1" }] },
       ],
     });
-    const ctx = makeContext();
+    const file = makeFile({ componentDefinitions: { "c:1": masterNode } });
+    const ctx = makeContext({ file });
     const result = missingInteractionState.check(node, ctx);
     expect(result).not.toBeNull();
     expect(result!.subType).toBe("hover");
   });
 
   it("flags input without focus variant", () => {
+    const masterNode = makeNode({ id: "c:1", name: "Input Master", type: "COMPONENT" });
     const node = makeNode({ id: "1:1", name: "Search Input", type: "INSTANCE", componentId: "c:1" });
-    const ctx = makeContext({ path: ["Page", "Input"] });
+    const file = makeFile({ componentDefinitions: { "c:1": masterNode } });
+    const ctx = makeContext({ file, path: ["Page", "Input"] });
     const result = missingInteractionState.check(node, ctx);
 
     expect(result).not.toBeNull();
@@ -108,8 +114,10 @@ describe("missing-interaction-state", () => {
   });
 
   it("flags tab without hover variant", () => {
+    const masterNode = makeNode({ id: "c:1", name: "Tab Master", type: "COMPONENT" });
     const node = makeNode({ id: "1:1", name: "Navigation Tab", type: "INSTANCE", componentId: "c:1" });
-    const ctx = makeContext({ path: ["Page", "Tab"] });
+    const file = makeFile({ componentDefinitions: { "c:1": masterNode } });
+    const ctx = makeContext({ file, path: ["Page", "Tab"] });
     const result = missingInteractionState.check(node, ctx);
 
     expect(result).not.toBeNull();
@@ -117,7 +125,9 @@ describe("missing-interaction-state", () => {
   });
 
   it("deduplicates per componentId + subType", () => {
-    const ctx = makeContext({ path: ["Page", "Section"] });
+    const masterNode = makeNode({ id: "c:1", name: "Link Master", type: "COMPONENT" });
+    const file = makeFile({ componentDefinitions: { "c:1": masterNode } });
+    const ctx = makeContext({ file, path: ["Page", "Section"] });
     // Use link — only expects hover (single state), so dedup is clean
     const node1 = makeNode({ id: "1:1", name: "Link", type: "INSTANCE", componentId: "c:1" });
     const node2 = makeNode({ id: "1:2", name: "Link", type: "INSTANCE", componentId: "c:1" });
@@ -128,6 +138,65 @@ describe("missing-interaction-state", () => {
     expect(result1).not.toBeNull();
     expect(result1!.subType).toBe("hover");
     expect(result2).toBeNull(); // deduped: same componentId + hover
+  });
+
+  // ============================================
+  // #354: false-positive on nested instance whose master was not fetched
+  // ============================================
+
+  it("returns null when nested instance has no propDefs and master is not in componentDefinitions", () => {
+    // Repro for #354: deeply-nested INSTANCE child whose master the loader
+    // never fetched. Both data paths the rule consults are empty, so the
+    // verdict is unknown — must NOT fire.
+    const node = makeNode({
+      id: "1:1",
+      name: "Email Button",
+      type: "INSTANCE",
+      componentId: "c:nested-354",
+    });
+    const file = makeFile({ componentDefinitions: {} });
+    const ctx = makeContext({ file, path: ["Page", "Form", "Button"] });
+    expect(missingInteractionState.check(node, ctx)).toBeNull();
+  });
+
+  it("still flags missing variant when master IS resolved without it", () => {
+    // Regression guard: the new probe gate must NOT swallow a real miss when
+    // we have positive evidence (master fetched, demonstrably no State variant).
+    const masterNode = makeNode({
+      id: "c:resolved-354",
+      name: "Button Master",
+      type: "COMPONENT",
+      componentPropertyDefinitions: {
+        "Size": { type: "VARIANT", variantOptions: ["Sm", "Lg"] },
+      },
+    });
+    const node = makeNode({
+      id: "1:1",
+      name: "Submit Button",
+      type: "INSTANCE",
+      componentId: "c:resolved-354",
+    });
+    const file = makeFile({ componentDefinitions: { "c:resolved-354": masterNode } });
+    const ctx = makeContext({ file, path: ["Page", "Button"] });
+    const result = missingInteractionState.check(node, ctx);
+    expect(result).not.toBeNull();
+    expect(result!.subType).toBe("hover");
+  });
+
+  it("flags when instance carries empty componentPropertyDefinitions", () => {
+    // Empty object (vs undefined) is positive evidence the API answered for
+    // this instance and the master truly has no variant axes — must fire.
+    const node = makeNode({
+      id: "1:1",
+      name: "Confirm Button",
+      type: "INSTANCE",
+      componentId: "c:empty-354",
+      componentPropertyDefinitions: {},
+    });
+    const ctx = makeContext({ path: ["Page", "Button"] });
+    const result = missingInteractionState.check(node, ctx);
+    expect(result).not.toBeNull();
+    expect(result!.subType).toBe("hover");
   });
 });
 
