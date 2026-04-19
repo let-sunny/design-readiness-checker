@@ -43,36 +43,40 @@ If `isReadyForCodeGen` is `true` or `questions` is empty:
 
 ### Step 3: Present questions to the user
 
-Sort questions by `(ruleId, nodeName)` first so questions sharing the same rule sit next to each other in the loop.
+The survey response carries a pre-computed `groupedQuestions.groups[].batches[]` shape so the SKILL never has to sort, partition, or maintain a batchable-rule whitelist in prose. The sort key, `_no-source` sentinel, and batchable-rule list all live in `core/gotcha/group-and-batch-questions.ts` with vitest coverage (per ADR-303 / PR #303). Iterate over it:
 
-For each run of consecutive questions sharing the same `ruleId` AND a batchable answer-shape (`missing-size-constraint`, `irregular-spacing`, `no-auto-layout`, `fixed-size-in-auto-layout`), present **one batch prompt** instead of the same question N times (#369):
+For every `batch` in `groupedQuestions.groups.flatMap((g) => g.batches)`:
 
-```
-**[{severity}] {ruleId}** — {N} instances:
-  - {nodeName₁}
-  - {nodeName₂}
-  - …
+- **Single-question batch (`batch.questions.length === 1`)** — render the standard prompt for `batch.questions[0]`:
 
-{sharedQuestionPrompt}
+  ```
+  **[{severity}] {ruleId}** — node: {nodeName}
 
-Reply with one answer to apply to all {N}, or **split** to answer each individually.
+  {question}
 
-> Hint: {hint}
-> Example: {example}
-```
+  > Hint: {hint}
+  > Example: {example}
+  ```
 
-Where `sharedQuestionPrompt` reuses the rule's question text with the per-node noun replaced by the rule's plural noun (e.g. "These layers all use FILL sizing without min/max constraints. What size boundaries should they share?"). On `split`, fall back to per-question prompting for that batch only.
+- **Batch of N ≥ 2 with `batch.batchable === true`** (#369) — render one shared prompt covering every member:
 
-For everything else (single-question batches, identity-typed answers like `non-semantic-name`, structural-mod rules), present one question at a time:
+  ```
+  **[{severity}] {ruleId}** — {batch.questions.length} instances:
+    - {nodeName₁}
+    - {nodeName₂}
+    - …
 
-```
-**[{severity}] {ruleId}** — node: {nodeName}
+  {sharedQuestionPrompt}
 
-{question}
+  Reply with one answer to apply to all {batch.questions.length}, or **split** to answer each individually.
 
-> Hint: {hint}
-> Example: {example}
-```
+  > Hint: {hint}
+  > Example: {example}
+  ```
+
+  Where `sharedQuestionPrompt` reuses the rule's `question` text with the per-node noun replaced by the rule's plural noun (e.g. "These layers all use FILL sizing without min/max constraints. What size boundaries should they share?" instead of repeating the singular phrasing N times).
+
+- **Any batch with `batch.batchable === false`** is always rendered as a single-question prompt — the helper guarantees `questions.length === 1` for those (identity-typed answers like `non-semantic-name`, structural-mod rules).
 
 Wait for the user's answer before moving to the next batch. The user may:
 - Answer the question / batch directly
@@ -81,6 +85,8 @@ Wait for the user's answer before moving to the next batch. The user may:
 - Say **n/a** if the question / the entire batch is not applicable
 
 When applying the batched answer, expand back to per-question records in Step 4 — the gotcha section format stores one record per `nodeId`.
+
+> The `groupedQuestions.groups[].instanceContext` field exists for the `canicode-roundtrip` SKILL's "Instance note" hoist (#370). This skill ignores it — every record gets its own `Instance context` bullet in Step 4 anyway.
 
 ### Step 4: Upsert the gotcha section
 

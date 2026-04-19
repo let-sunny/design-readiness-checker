@@ -14,6 +14,7 @@ import {
   parseInstanceChildNodeId,
 } from "../adapters/instance-id-parser.js";
 import { computeApplyContext } from "./apply-context.js";
+import { groupAndBatchSurveyQuestions } from "./group-and-batch-questions.js";
 
 const NODE_PATH_SEPARATOR = " > ";
 
@@ -57,10 +58,17 @@ export function generateGotchaSurvey(
   // different source components stay separate.
   const questions = deduplicateBySourceComponent(mapped);
 
+  // Step 6 (#369, #370, #381): pre-compute the grouped+batched view so the
+  // SKILLs (`canicode-gotchas`, `canicode-roundtrip`) can iterate over it
+  // directly without re-implementing sort / partition / batchable-rule
+  // logic in prose. ADR-303 / PR #303.
+  const groupedQuestions = groupAndBatchSurveyQuestions(questions);
+
   return {
     designGrade: grade,
     isReadyForCodeGen: isReadyForCodeGen(grade),
     questions,
+    groupedQuestions,
   };
 }
 

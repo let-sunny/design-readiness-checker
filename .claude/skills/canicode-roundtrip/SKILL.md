@@ -82,32 +82,31 @@ npx canicode gotcha-survey "<figma-url>" --json
 
 If `questions` is empty, skip to **Step 6**.
 
-#### Step 3a: Group and batch questions before prompting
+#### Step 3a: Why the response carries a pre-grouped+batched view
 
 The naive "one-question-at-a-time" loop produces two well-known UX failures on real designs:
 
 - **Repeated Instance note (#370)** — when 10 consecutive questions share the same `instanceContext.sourceComponentId`, the standard "_Instance note: …source component **X**…_" paragraph prints 10 times. After the first occurrence it adds zero new information and consumes ~2 screens of vertical space.
 - **Repeated identical answer (#369)** — when 7 consecutive questions all carry the same `ruleId` (e.g. `missing-size-constraint`) and the user's reasonable answer would be the same for all of them (e.g. `min-width: 320px, max-width: 1200px`), the user types the same thing 7 times in a row.
 
-Pre-process `questions` once before the prompting loop:
-
-1. **Stable order** — sort by `(instanceContext.sourceComponentId ?? "_no-source", ruleId, nodeName)`. The `_no-source` sentinel keeps non-instance questions together at the end so the source-component groups stay contiguous.
-2. **Source-component groups (#370)** — partition the sorted list into runs of consecutive questions sharing the same `instanceContext.sourceComponentId` (or one shared run for the `_no-source` tail).
-3. **Rule batches (#369)** — within each source-component group, partition again into runs of consecutive questions sharing the same `ruleId` AND a batchable answer-shape. **Batchable rules** are the ones whose answer is a value the user would reasonably apply uniformly — `missing-size-constraint`, `irregular-spacing`, `no-auto-layout`, `fixed-size-in-auto-layout`. **Non-batchable rules** are identity-typed answers — `non-semantic-name` (each node needs its own name), structural-mod rules (`non-layout-container`, `deep-nesting`, `missing-component`, `detached-instance` — each one is a per-node decision). Treat those as batch-of-one.
+`gotcha-survey` already ships the resolution on its `groupedQuestions` field. Sort key (`(sourceComponentId ?? "_no-source", ruleId, nodeName)`), source-component grouping, and the batchable-rule whitelist (`missing-size-constraint`, `irregular-spacing`, `no-auto-layout`, `fixed-size-in-auto-layout`) all live in `core/gotcha/group-and-batch-questions.ts` with vitest coverage. Per ADR-303 / PR #303, do **not** re-implement the sort, partition, or whitelist in prose — iterate over `groupedQuestions.groups[].batches[]` directly.
 
 #### Step 3b: Prompt each group, then each batch within it
 
-For each source-component group, **emit the Instance note once as a group header** (#370). Skip the header entirely when the group's `instanceContext` is absent (the `_no-source` tail):
+For each `group` in `response.groupedQuestions.groups`:
 
-```
-─────────────────────────────────────────
-The next {groupSize} questions all target instance children of source component **{sourceComponentName or sourceComponentId or "unknown"}** (definition node `{sourceNodeId}`). Layout and size fixes may need to apply on the source and propagate to all instances — you will be asked to confirm before any definition-level write.
-─────────────────────────────────────────
-```
+- **`group.instanceContext === null`** — this is the trailing group of non-instance questions. Skip the header and prompt each batch directly.
+- **`group.instanceContext !== null`** — emit the Instance note **once** as a group header (#370):
 
-Then, for each rule batch inside that group:
+  ```
+  ─────────────────────────────────────────
+  The next {sum of batch.questions.length} questions all target instance children of source component **{instanceContext.sourceComponentName ?? instanceContext.sourceComponentId ?? "unknown"}** (definition node `{instanceContext.sourceNodeId}`). Layout and size fixes may need to apply on the source and propagate to all instances — you will be asked to confirm before any definition-level write.
+  ─────────────────────────────────────────
+  ```
 
-- **Batch of 1 (or non-batchable rule)** — render the standard single-question block:
+For each `batch` inside the group:
+
+- **`batch.questions.length === 1`** — render the standard single-question block for `batch.questions[0]`:
 
   ```
   **[{severity}] {ruleId}** — node: {nodeName}
@@ -124,32 +123,34 @@ Then, for each rule batch inside that group:
   _Replicas: This question represents **{replicas} instances** of the same source-component child sharing the same rule. Your single answer will be applied to all of them in Step 4 (one annotation/write per instance scene)._
   ```
 
-- **Batch of N ≥ 2 (batchable rule, #369)** — render one batch prompt covering all N nodes:
+- **`batch.questions.length >= 2 && batch.batchable === true`** (#369) — render one batch prompt covering all members. Use `batch.totalScenes` (already summed across each member's `replicas`) for the Figma-scene fan-out hint:
 
   ```
-  **[{severity}] {ruleId}** — {N} instances:
+  **[{severity}] {batch.ruleId}** — {batch.questions.length} instances:
     - {nodeName₁}{ruleSpecificContext₁}
     - {nodeName₂}{ruleSpecificContext₂}
     - …
 
   {sharedQuestionPrompt}
 
-  Reply with one answer to apply to all {N}, or **split** to answer each individually.
+  Reply with one answer to apply to all {batch.questions.length}, or **split** to answer each individually.
 
   > Hint: {hint}
   > Example: {example}
   ```
 
   Where:
-  - `sharedQuestionPrompt` is the rule's question text with the per-node noun replaced by the rule's plural noun (e.g. "These layers all use FILL sizing without min/max constraints. What size boundaries should they share?" instead of repeating "What size boundaries should this layer have?" N times).
+  - `sharedQuestionPrompt` is the rule's `question` text with the per-node noun replaced by the rule's plural noun (e.g. "These layers all use FILL sizing without min/max constraints. What size boundaries should they share?" instead of repeating "What size boundaries should this layer have?" N times).
   - `ruleSpecificContext` is short and rule-specific: e.g. for `missing-size-constraint` show the current `width`/`height` if the question has them; for `irregular-spacing` show the current `itemSpacing`; otherwise omit.
-  - On `split`, fall back to the per-question loop for that batch only — keep the rest of the source-group's batches as-is.
+  - On `split`, fall back to the per-question loop for that batch only — keep the rest of the group's batches as-is.
 
-  Each batch question still carries the `#356` cross-instance dedupe semantics on every member: when one of the batch members has `replicas` set, the batched answer fans out to that member's replicas too in Step 4. Mention this once on the batch prompt only when at least one member carries replicas:
+  When `batch.totalScenes > batch.questions.length` (at least one member carries replicas), append one note so the user knows their single answer fans out further than the listed nodes:
 
   ```
-  _Replicas: {M} of these {N} questions also represent multiple instances of the same source-component child — your one answer will land on **{totalScenes}** Figma scenes total in Step 4._
+  _Replicas: your one answer will land on **{batch.totalScenes}** Figma scenes total in Step 4 (some of these {batch.questions.length} questions already represent multiple instances of the same source-component child)._
   ```
+
+- **`batch.batchable === false`** is always rendered as a single-question prompt — the helper guarantees `questions.length === 1` for those (identity-typed answers like `non-semantic-name`, structural-mod rules).
 
 Wait for the user's answer before moving to the next batch. For each batch, the user may:
 - Answer the question directly (single value covers all batch members)
