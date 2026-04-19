@@ -1,8 +1,8 @@
 {
   "name": "canicode",
-  "version": "0.10.2",
+  "version": "0.10.3",
   "mcpName": "io.github.let-sunny/canicode",
-  "description": "Score your Figma designs with AI-calibrated rules. CLI + MCP server.",
+  "description": "Lint Figma designs for AI code-gen and roundtrip the answers back into the file. CLI + MCP server.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
