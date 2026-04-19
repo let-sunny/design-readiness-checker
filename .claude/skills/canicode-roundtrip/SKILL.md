@@ -293,6 +293,8 @@ The probe is read-only and idempotent; running it before the picker adds one rou
    - `extractAcknowledgmentsFromNode(node, canicodeCategoryIds?)` — synchronous pure helper (#371). Reads one node's annotations and returns `{ nodeId, ruleId }[]` for entries gated by canicode `categoryId` plus a recognisable `— *<ruleId>*` footer (or legacy `**[canicode] <ruleId>**` prefix). When `canicodeCategoryIds` is omitted, footer-text matching alone is sufficient (test mode).
    - `readCanicodeAcknowledgments(rootNodeId, categories?)` — async tree walker (#371). Loads `rootNodeId` via `figma.getNodeByIdAsync`, recurses through `children`, and accumulates one acknowledgment per recognised entry. Used at the top of Step 5a to harvest the side channel that lets the analysis pipeline distinguish "still broken" from "the designer has a plan" — pass the result straight to `analyze({ acknowledgments })`. Errors on individual nodes are swallowed so locked / external nodes don't abort the sweep.
    - `computeRoundtripTally({ stepFourReport, reanalyzeResponse })` — pure helper (#383). Takes the structured Step 4 outcome counts (`{ resolved, annotated, definitionWritten, skipped }`) plus a narrowed re-analyze view (`{ issueCount, acknowledgedCount }`) and returns `{ X, Y, Z, W, N, V, V_ack, V_open }`. Replaces the LLM-side emoji-bullet re-counting in Step 5 — render the returned object directly into the wrap-up templates. Throws when `acknowledgedCount > issueCount` (impossible state).
+   - `applyAutoFix(issue, { categories, allowDefinitionWrite?, telemetry? })` — Strategy D entry point (#386). Branches on `targetProperty === "name" && suggestedName` once: renames the node via `applyWithInstanceFallback` (so naming auto-fixes share the same tier-1/2/3 policy as Strategy A) or writes a `categories.flag` annotation carrying `issue.message` and `issue.annotationProperties`. Returns one `AutoFixOutcome` (`{ outcome, nodeId, nodeName, ruleId, label }`) where `outcome` is `🔧` / `🌐` / `📝` so Step 4 can bump the structured `stepFourReport` counters without parsing prose. Replaces the inline JS the SKILL used to carry (per ADR-303 / PR #303).
+   - `applyAutoFixes(issues, { categories, allowDefinitionWrite?, telemetry? })` — loop wrapper (#386). Filters `issues` to `applyStrategy === "auto-fix"` (skipped entries surface as `⏭️` outcomes for symmetry) and applies each one in sequence. Returns the full `AutoFixOutcome[]`.
    - `removeCanicodeAnnotations(annotations, categories)` — pure filter. Returns `annotations` with every canicode-authored entry removed (gates on `categories.gotcha` / `flag` / `fallback` / `legacyAutoFix` plus the legacy `**[canicode]` body prefix). Use after `stripAnnotations` in the Step 5 cleanup loop — replaces the inline filter predicate the SKILL used to carry. `isCanicodeAnnotation(annotation, categories)` is the single-entry version, exported for callers that need the predicate alone.
 
 Keep each `writeFn` small so a throw does not abort unrelated writes. Experiment 08 findings informed every branch in the bundled helpers, and the batch-level confirmation contract still applies *when opting in*: if the orchestrator passes `allowDefinitionWrite: true`, it must have already collected one confirmation covering every potential definition write in the batch. Under the default, no confirmation is needed — the helper annotates the scene instead of propagating.
@@ -398,39 +400,15 @@ Notes:
 
 #### Strategy D: Auto-fix lower-severity issues from analysis
 
-The gotcha survey covers only blocking/risk severity. Lower-severity rules appear in `analyzeResult.issues[]` without a survey question. Each issue carries the same pre-computed fields (`applyStrategy`, `targetProperty`, `annotationProperties`, `suggestedName`, `isInstanceChild`, `sourceChildId`). Loop over them:
+The gotcha survey covers only blocking/risk severity. Lower-severity rules appear in `analyzeResult.issues[]` without a survey question. Each issue carries the same pre-computed fields (`applyStrategy`, `targetProperty`, `annotationProperties`, `suggestedName`, `isInstanceChild`, `sourceChildId`). The bundled helper handles the loop, the filter (`applyStrategy === "auto-fix"`), the naming-vs-annotation branch, and the per-issue outcome accumulator in one call:
 
 ```javascript
-for (const issue of analyzeResult.issues) {
-  if (issue.applyStrategy !== "auto-fix") continue;
-
-  // Shape an ad-hoc question-like object so the same helpers apply.
-  const q = {
-    nodeId: issue.nodeId,
-    ruleId: issue.ruleId,
-    ...(issue.sourceChildId ? { sourceChildId: issue.sourceChildId } : {}),
-  };
-
-  if (issue.targetProperty === "name" && issue.suggestedName) {
-    // Naming rules — rename to the pre-computed suggestedName.
-    await CanICodeRoundtrip.applyWithInstanceFallback(q, async (target) => {
-      if (target) target.name = issue.suggestedName;
-    }, { categories });
-  } else {
-    // raw-value, missing-interaction-state, missing-prototype — designer judgment; annotate.
-    const scene = await figma.getNodeByIdAsync(issue.nodeId);
-    CanICodeRoundtrip.upsertCanicodeAnnotation(scene, {
-      ruleId: issue.ruleId,
-      markdown: issue.message,
-      categoryId: categories.flag,
-      // Optional: surface the live value for the affected property in Dev Mode.
-      properties: issue.annotationProperties,
-    });
-  }
-}
+const outcomes = await CanICodeRoundtrip.applyAutoFixes(analyzeResult.issues, { categories });
 ```
 
-`suggestedName` is already capitalized for direct Plugin-API use (e.g. `"Hover"`, `"Default"`, `"Pressed"`). Do not transform it further.
+`outcomes` is an array of `{ outcome, nodeId, nodeName, ruleId, label }`. `outcome` is one of `🔧` (rename succeeded), `🌐` (definition write propagated — only when `allowDefinitionWrite: true`), `📝` (annotation written, including the fallback path), or `⏭️` (issue's `applyStrategy` was not `"auto-fix"` so it was skipped). Bump the matching `stepFourReport` counter for each entry — `🔧` → `resolved`, `🌐` → `definitionWritten`, `📝` → `annotated`, `⏭️` → `skipped` — so the Step 5 tally (`CanICodeRoundtrip.computeRoundtripTally`, #383) consumes the same structured shape as Strategies A/B/C.
+
+`suggestedName` is already capitalized for direct Plugin-API use (e.g. `"Hover"`, `"Default"`, `"Pressed"`). The helper writes it through `applyWithInstanceFallback` so locked / read-only / instance-override nodes annotate cleanly instead of aborting the batch — see the source at `src/core/roundtrip/apply-auto-fix.ts` (#386, ADR-303).
 
 #### Execution order
 
