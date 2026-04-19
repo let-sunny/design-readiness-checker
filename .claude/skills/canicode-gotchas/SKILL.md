@@ -43,7 +43,27 @@ If `isReadyForCodeGen` is `true` or `questions` is empty:
 
 ### Step 3: Present questions to the user
 
-For each question in the `questions` array, present it to the user one at a time:
+Sort questions by `(ruleId, nodeName)` first so questions sharing the same rule sit next to each other in the loop.
+
+For each run of consecutive questions sharing the same `ruleId` AND a batchable answer-shape (`missing-size-constraint`, `irregular-spacing`, `no-auto-layout`, `fixed-size-in-auto-layout`), present **one batch prompt** instead of the same question N times (#369):
+
+```
+**[{severity}] {ruleId}** — {N} instances:
+  - {nodeName₁}
+  - {nodeName₂}
+  - …
+
+{sharedQuestionPrompt}
+
+Reply with one answer to apply to all {N}, or **split** to answer each individually.
+
+> Hint: {hint}
+> Example: {example}
+```
+
+Where `sharedQuestionPrompt` reuses the rule's question text with the per-node noun replaced by the rule's plural noun (e.g. "These layers all use FILL sizing without min/max constraints. What size boundaries should they share?"). On `split`, fall back to per-question prompting for that batch only.
+
+For everything else (single-question batches, identity-typed answers like `non-semantic-name`, structural-mod rules), present one question at a time:
 
 ```
 **[{severity}] {ruleId}** — node: {nodeName}
@@ -54,10 +74,13 @@ For each question in the `questions` array, present it to the user one at a time
 > Example: {example}
 ```
 
-Wait for the user's answer before moving to the next question. The user may:
-- Answer the question directly
-- Say "skip" to skip a question
-- Say "n/a" if the question is not applicable
+Wait for the user's answer before moving to the next batch. The user may:
+- Answer the question / batch directly
+- Say **split** (batch only) to fall back to per-question prompting for that batch
+- Say **skip** to skip the question / the entire batch
+- Say **n/a** if the question / the entire batch is not applicable
+
+When applying the batched answer, expand back to per-question records in Step 4 — the gotcha section format stores one record per `nodeId`.
 
 ### Step 4: Upsert the gotcha section
 
