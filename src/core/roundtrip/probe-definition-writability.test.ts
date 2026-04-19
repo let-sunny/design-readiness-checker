@@ -77,6 +77,102 @@ describe("probeDefinitionWritability (#357)", () => {
     expect(result.unwritableSourceNames).toEqual(["RemoteCard"]);
   });
 
+  // #363 regression: real Plugin API responses point `sourceChildId` at the
+  // child node INSIDE the source component (TEXT / FRAME / etc.) — not the
+  // component itself. `.remote` is undefined on those types, so a direct
+  // `node.remote === true` check would silently classify every candidate as
+  // writable. The probe must walk `.parent` up to the containing
+  // COMPONENT / COMPONENT_SET and read `.remote` from there.
+  it("walks up to the containing COMPONENT to read remote (#363)", async () => {
+    const remoteComp = makeDef({
+      id: "comp-1",
+      name: "RemoteCard",
+      type: "COMPONENT",
+      remote: true,
+    });
+    const child: FigmaNode = {
+      id: "def-child",
+      name: "Title",
+      type: "TEXT",
+      parent: remoteComp,
+    };
+    mock = createFigmaGlobal({ nodes: { "def-child": child } });
+    installFigmaGlobal(mock);
+    const result = await probeDefinitionWritability([
+      makeQuestion({ sourceChildId: "def-child" }),
+    ]);
+    expect(result.allUnwritable).toBe(true);
+    // Source name should reflect the containing component, not the child.
+    expect(result.unwritableSourceNames).toEqual(["RemoteCard"]);
+  });
+
+  it("walks up through nested non-component frames before checking remote (#363)", async () => {
+    const remoteSet = makeDef({
+      id: "set-1",
+      name: "RemoteSet",
+      type: "COMPONENT_SET",
+      remote: true,
+    });
+    const innerFrame: FigmaNode = {
+      id: "inner",
+      name: "Inner",
+      type: "FRAME",
+      parent: remoteSet,
+    };
+    const child: FigmaNode = {
+      id: "def-child",
+      name: "Caption",
+      type: "TEXT",
+      parent: innerFrame,
+    };
+    mock = createFigmaGlobal({ nodes: { "def-child": child } });
+    installFigmaGlobal(mock);
+    const result = await probeDefinitionWritability([
+      makeQuestion({ sourceChildId: "def-child" }),
+    ]);
+    expect(result.allUnwritable).toBe(true);
+    expect(result.unwritableSourceNames).toEqual(["RemoteSet"]);
+  });
+
+  it("classifies a child of a LOCAL component as writable (#363)", async () => {
+    const localComp = makeDef({
+      id: "comp-1",
+      name: "LocalCard",
+      type: "COMPONENT",
+      remote: false,
+    });
+    const child: FigmaNode = {
+      id: "def-child",
+      name: "Title",
+      type: "TEXT",
+      parent: localComp,
+    };
+    mock = createFigmaGlobal({ nodes: { "def-child": child } });
+    installFigmaGlobal(mock);
+    const result = await probeDefinitionWritability([
+      makeQuestion({ sourceChildId: "def-child" }),
+    ]);
+    expect(result.allUnwritable).toBe(false);
+    expect(result.unwritableCount).toBe(0);
+  });
+
+  it("treats a node with no containing component as writable (best-effort default)", async () => {
+    const child: FigmaNode = {
+      id: "def-child",
+      name: "Orphan",
+      type: "TEXT",
+      // No parent chain, no `remote` field — runtime fallback can still catch
+      // any throw at write time.
+    };
+    mock = createFigmaGlobal({ nodes: { "def-child": child } });
+    installFigmaGlobal(mock);
+    const result = await probeDefinitionWritability([
+      makeQuestion({ sourceChildId: "def-child" }),
+    ]);
+    expect(result.allUnwritable).toBe(false);
+    expect(result.unwritableCount).toBe(0);
+  });
+
   it("classifies an unresolved source (Experiment 11 — null) as unwritable", async () => {
     // Mock returns null for the lookup — same fallback path as
     // applyWithInstanceFallback's "definition === null" branch.

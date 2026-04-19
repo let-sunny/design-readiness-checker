@@ -272,10 +272,11 @@ ${footer}`;
       if (!id) continue;
       if (verdict.has(id)) continue;
       const node = await figma.getNodeByIdAsync(id);
-      const isUnwritable = node === null || node.remote === true;
+      const writability = resolveWritability(node);
+      const isUnwritable = writability.isUnwritable;
       verdict.set(id, isUnwritable ? "unwritable" : "writable");
       if (isUnwritable) {
-        const name = typeof node?.name === "string" && node.name || q.instanceContext?.sourceComponentName || id;
+        const name = typeof writability.componentName === "string" && writability.componentName || typeof node?.name === "string" && node.name || q.instanceContext?.sourceComponentName || id;
         if (!seenName.has(name)) {
           seenName.add(name);
           unwritableNames.push(name);
@@ -292,6 +293,29 @@ ${footer}`;
       allUnwritable: totalCount > 0 && unwritableCount === totalCount,
       partiallyUnwritable: unwritableCount > 0 && unwritableCount < totalCount
     };
+  }
+  function resolveWritability(node) {
+    if (node === null) return { isUnwritable: true };
+    if ("remote" in node && typeof node.remote === "boolean") {
+      return { isUnwritable: node.remote === true };
+    }
+    const containing = findContainingComponent(node);
+    if (!containing) {
+      return { isUnwritable: false };
+    }
+    const isUnwritable = "remote" in containing && containing.remote === true;
+    return {
+      isUnwritable,
+      ...isUnwritable && typeof containing.name === "string" ? { componentName: containing.name } : {}
+    };
+  }
+  function findContainingComponent(node) {
+    let cur = node;
+    for (let i = 0; i < 100 && cur; i++) {
+      if (cur.type === "COMPONENT" || cur.type === "COMPONENT_SET") return cur;
+      cur = cur.parent ?? null;
+    }
+    return null;
   }
 
   exports.applyPropertyMod = applyPropertyMod;

@@ -25,7 +25,11 @@ export interface FigmaNode {
   id: string;
   name: string;
   type: string;
+  // `remote` is only observable on InstanceNode / ComponentNode /
+  // ComponentSetNode. On any other node type it is `undefined`. The probe
+  // walks `parent` up to the containing COMPONENT/COMPONENT_SET to read it.
   remote?: boolean;
+  parent?: FigmaNode | null;
   annotations?: readonly AnnotationEntry[];
   fills?: unknown;
   strokes?: unknown;
