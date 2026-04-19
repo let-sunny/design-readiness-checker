@@ -14,7 +14,7 @@ import type {
  * silently undercounts the annotated total. By emitting the structured
  * `stepFourReport` as Strategy A/B/C/D execute and then calling this
  * helper at the top of Step 5, every count is derived from explicit data,
- * not the LLM's re-parse of its own prose. ADR-303 / PR #303.
+ * not the LLM's re-parse of its own prose. ADR-016.
  *
  * Throws when `reanalyzeResponse.acknowledgedCount > issueCount` — that
  * shape is impossible (acknowledged issues are a subset of remaining

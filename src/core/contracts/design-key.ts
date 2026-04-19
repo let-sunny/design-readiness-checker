@@ -32,7 +32,7 @@ export type DesignKey = z.infer<typeof DesignKeySchema>;
  * Both `gotcha-survey` and `analyze` MCP/CLI tools surface the result on
  * their response's top-level `designKey` field. The `canicode-gotchas` and
  * `canicode-roundtrip` SKILLs read that field directly — neither one
- * re-implements URL parsing in prose anymore (per ADR-303 / PR #303).
+ * re-implements URL parsing in prose anymore (per ADR-016).
  */
 export function computeDesignKey(input: string): string {
   if (isFigmaUrl(input)) {

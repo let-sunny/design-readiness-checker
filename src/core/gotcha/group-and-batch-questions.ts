@@ -84,7 +84,7 @@ export interface GroupedSurvey {
  *
  * `gotcha-survey` MCP/CLI returns the result on the `groupedQuestions`
  * field; the SKILL.md files iterate over `groups[].batches[]` directly with
- * no sort/partition logic in prose. See ADR-303 / PR #303.
+ * no sort/partition logic in prose. See ADR-016.
  */
 export function groupAndBatchSurveyQuestions(
   questions: readonly GotchaSurveyQuestion[],

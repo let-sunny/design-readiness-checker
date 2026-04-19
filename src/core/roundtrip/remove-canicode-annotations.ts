@@ -7,7 +7,7 @@
  * That counted as deterministic logic re-derived by the LLM each session
  * (and the legacy-prefix branch already broke once when ADR-353 dropped
  * the `**[canicode]` prefix) so it now lives here with vitest coverage,
- * per ADR-303 / PR #303.
+ * per ADR-016.
  *
  * The contract:
  * - Strip every annotation whose `categoryId` is in the canicode-owned

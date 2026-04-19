@@ -165,3 +165,34 @@ Core decisions that shape every session. ADRs are listed by ADR number; chronolo
 - History grows unbounded; pruning is a manual user action. Revisit only if the file size starts causing load-time problems.
 
 **References**: ADR-009 (gotcha delivery via orchestration skill — original skill-file shape), ADR-014 (skill distribution + `canicode init` as recovery path), [#340](https://github.com/let-sunny/canicode/issues/340).
+
+## ADR-016: Deterministic logic in SKILL.md must be extracted to TypeScript with vitest coverage
+
+> Originally referenced as "ADR-303" in [PR #303](https://github.com/let-sunny/canicode/pull/303) and downstream commits / PR bodies / code comments. The rule was never landed as an ADR entry until [#388](https://github.com/let-sunny/canicode/issues/388) — this entry is the formal codification under the file's sequential numbering. Future references should cite **ADR-016**.
+
+**Decision**: Any deterministic transformation, predicate, accumulator, sort/group/partition, parser, or state-machine that a `.claude/skills/*/SKILL.md` file asks the LLM to execute must live in TypeScript under `src/core/` with vitest coverage — not in SKILL.md prose. Two delivery channels are valid, picked by skill:
+
+- **`canicode-roundtrip`** — helper goes in `src/core/roundtrip/*.ts`, re-exported from `src/core/roundtrip/index.ts`, bundled to `.claude/skills/canicode-roundtrip/helpers.js` via `pnpm build:roundtrip` (tsup IIFE, exposed as `globalThis.CanICodeRoundtrip`). SKILL.md calls it as `CanICodeRoundtrip.<helperName>(...)` from inside `use_figma` batches.
+- **`canicode-gotchas`** (no `helpers.js` channel — the gotchas SKILL is a plain Claude Code skill, not a `use_figma` consumer) — pre-compute on the Node side and surface the result as a field on the `gotcha-survey` MCP/CLI response. SKILL.md reads the field directly. Pattern set by [#381](https://github.com/let-sunny/canicode/pull/381) (`survey.groupedQuestions`) and [#384](https://github.com/let-sunny/canicode/issues/384) (`survey.designKey`).
+
+The extraction must cover the **full cycle** — input collection + computation + output rendering on the same flow. Half-extracting one side leaves the drift surface live: [#383](https://github.com/let-sunny/canicode/issues/383) extracted Step 5's tally arithmetic into `computeRoundtripTally` but left the input (`stepFourReport`) being populated by an LLM that re-counted its own emoji bullets, so `accumulateStepFourReport` had to be re-extracted in [#386](https://github.com/let-sunny/canicode/issues/386). New work that touches one side of a deterministic flow checks both sides before merging.
+
+SKILL.md prose is restricted to: workflow orchestration (Step 1 → Step 2 → ...), user-facing rendering templates, branching on already-computed fields, and LLM judgment (parsing free-form user prose into typed answers, deciding confirmation copy, classifying gotcha intent, etc.). Anything with a deterministic input → output mapping is out of scope for SKILL.md prose.
+
+**Why**: Deterministic logic re-derived by the LLM each invocation drifts under context pressure and is invisible to vitest. The cost is silent — one missed counter or one dropped filter branch and the next roundtrip looks identical to the previous one to the user. Live regressions already on record:
+
+- The Step 5 cleanup filter's legacy `**[canicode]` body-prefix branch silently broke when [ADR-353](https://github.com/let-sunny/canicode/pull/353) changed the annotation prefix shape, because the predicate was inline in SKILL.md prose and no test covered it. Fixed by extracting `removeCanicodeAnnotations` in [#387](https://github.com/let-sunny/canicode/pull/387).
+- The Step 5 tally re-counted emoji bullets the LLM had just emitted (`<count of ✅ + 🔧 + 🔗>`, `<count of 📝>`, `V_open = V - V_ack`). A single missed `📝` undercounted the annotated total with no detection. Fixed by `computeRoundtripTally` in #383.
+- The `fileKey` extraction prose in roundtrip Step 4 lived for ~6 months past the last call site that needed it — pure dead deterministic logic the LLM was asked to run each session for no purpose. Removed in #387.
+- The 4-state file detection / section walking in `canicode-gotchas` Step 4 is the same shape — file-state classification + section-by-section walking is a deterministic transform of the SKILL.md file body, but it was authored as prose because it felt like LLM judgment. Extraction tracked in [#385](https://github.com/let-sunny/canicode/issues/385).
+
+This rule was originally established in [PR #303](https://github.com/let-sunny/canicode/pull/303) (which extracted the first six roundtrip helpers and added the `helpers.js` bundle drift CI), but it lived only in that PR's body until now. The post-#303 cleanup found four follow-up violations (#383, #384, #385, #386) plus two more in the post-#387 audit — root cause being that no one could `grep` it from `.claude/docs/ADR.md`. This entry closes that loop.
+
+**Impact**:
+- Both extraction channels (helpers.js IIFE, response-field pre-computation) must already be in place — and the consumer already wired through SKILL.md — before merging a SKILL.md prose change that introduces deterministic logic. CI guards `helpers.js` drift today (PR #303); a follow-up grep CI ([#389](https://github.com/let-sunny/canicode/issues/389)) catches new prose-side violations.
+- A PR that adds deterministic prose to SKILL.md is rejected at review even if the prose works for the immediate use case. The cost of fixing it after merge (audit issue → extraction PR → SKILL.md flip → bundle drift CI cycle) is strictly larger than extracting it before merge.
+- Author-side reminder ships in the PR template ([#390](https://github.com/let-sunny/canicode/issues/390)) so the rule is visible at the moment of authoring, not just at audit time.
+
+**Verification**: This is a process / coding-standard ADR, not an empirical one — there is no experiment to cite. The supporting evidence is the regression record cited under **Why** above (six known violations across two SKILL files, all caught only by manual audit, all with the same root cause). The rule's automated enforcement is split across two follow-ups (#389 grep CI, #390 PR template / audit cadence), each with its own test plan.
+
+**References**: PR #303 (origin of the rule), PR #381 (response-field channel pattern: `groupedQuestions`), PR #387 (helpers.js channel + half-extraction lesson: `computeRoundtripTally`, `removeCanicodeAnnotations`), [#385](https://github.com/let-sunny/canicode/issues/385) and [#386](https://github.com/let-sunny/canicode/issues/386) (in-flight extractions), [#388](https://github.com/let-sunny/canicode/issues/388) (this ADR), [#389](https://github.com/let-sunny/canicode/issues/389) (grep CI), [#390](https://github.com/let-sunny/canicode/issues/390) (PR template + audit cadence).

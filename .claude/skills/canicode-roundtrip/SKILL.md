@@ -89,7 +89,7 @@ The naive "one-question-at-a-time" loop produces two well-known UX failures on r
 - **Repeated Instance note (#370)** — when 10 consecutive questions share the same `instanceContext.sourceComponentId`, the standard "_Instance note: …source component **X**…_" paragraph prints 10 times. After the first occurrence it adds zero new information and consumes ~2 screens of vertical space.
 - **Repeated identical answer (#369)** — when 7 consecutive questions all carry the same `ruleId` (e.g. `missing-size-constraint`) and the user's reasonable answer would be the same for all of them (e.g. `min-width: 320px, max-width: 1200px`), the user types the same thing 7 times in a row.
 
-`gotcha-survey` already ships the resolution on its `groupedQuestions` field. Sort key (`(sourceComponentId ?? "_no-source", ruleId, nodeName)`), source-component grouping, and the batchable-rule whitelist (`missing-size-constraint`, `irregular-spacing`, `no-auto-layout`, `fixed-size-in-auto-layout`) all live in `core/gotcha/group-and-batch-questions.ts` with vitest coverage. Per ADR-303 / PR #303, do **not** re-implement the sort, partition, or whitelist in prose — iterate over `groupedQuestions.groups[].batches[]` directly.
+`gotcha-survey` already ships the resolution on its `groupedQuestions` field. Sort key (`(sourceComponentId ?? "_no-source", ruleId, nodeName)`), source-component grouping, and the batchable-rule whitelist (`missing-size-constraint`, `irregular-spacing`, `no-auto-layout`, `fixed-size-in-auto-layout`) all live in `core/gotcha/group-and-batch-questions.ts` with vitest coverage. Per ADR-016, do **not** re-implement the sort, partition, or whitelist in prose — iterate over `groupedQuestions.groups[].batches[]` directly.
 
 #### Step 3b: Prompt each group, then each batch within it
 
@@ -440,7 +440,7 @@ for (const issue of analyzeResult.issues) {
 3. **Batch all annotations** (Strategy C + declined structural mods) into a single `use_figma` call — use `categories.gotcha` for the category id.
 4. **Batch all auto-fixes and annotations for lower-severity issues** (Strategy D) — use `categories.flag` for annotated ones (renamed from `autoFix` per #355 — the category means "flagged for designer attention", not "fixed"), `categories.fallback` is reserved for errors surfaced by `applyWithInstanceFallback` itself.
 
-After applying, **emit a structured `stepFourReport`** alongside the human-readable per-question lines. Step 5 reads from this object — it does **not** re-parse the per-question lines (per ADR-303 / PR #303). Increment each counter as Strategy A/B/C/D complete:
+After applying, **emit a structured `stepFourReport`** alongside the human-readable per-question lines. Step 5 reads from this object — it does **not** re-parse the per-question lines (per ADR-016). Increment each counter as Strategy A/B/C/D complete:
 
 ```
 Applied {N} changes to the Figma design:
@@ -532,7 +532,7 @@ If Step 4 produced no `stepFourReport` (e.g. user skipped every question, or no 
 
   Grade: {oldGrade} → {newGrade}. Ready for code generation.
   ```
-- Clean up canicode annotations on fixed nodes via `use_figma`. Use the bundled `removeCanicodeAnnotations` helper — it gates on **categoryId** (the durable canicode-side identifier — the body no longer carries a `[canicode]` prefix per #353), includes `legacyAutoFix` if `ensureCanicodeCategories` returned it (pre-#355 `canicode:auto-fix` sweep), and also matches the legacy `**[canicode]` body prefix as a secondary marker for entries on files that have not been re-roundtripped yet. The match logic lives in `src/core/roundtrip/remove-canicode-annotations.ts` with vitest coverage so prose stays ADR-303-compliant (PR #303):
+- Clean up canicode annotations on fixed nodes via `use_figma`. Use the bundled `removeCanicodeAnnotations` helper — it gates on **categoryId** (the durable canicode-side identifier — the body no longer carries a `[canicode]` prefix per #353), includes `legacyAutoFix` if `ensureCanicodeCategories` returned it (pre-#355 `canicode:auto-fix` sweep), and also matches the legacy `**[canicode]` body prefix as a secondary marker for entries on files that have not been re-roundtripped yet. The match logic lives in `src/core/roundtrip/remove-canicode-annotations.ts` with vitest coverage so prose stays ADR-016-compliant:
 ```javascript
 const nodeIds = ["id1", "id2"]; // nodes that now pass
 for (const id of nodeIds) {

@@ -5,7 +5,7 @@ import { z } from "zod";
  * accumulates as Strategy A / B / C / D execute on each question in Step 4.
  * Replaces the free-form `✅ X / 📝 Y / 🌐 Z / ⏭️ W` emoji bullets the
  * Step 5 wrap-up used to re-parse from the LLM's own previous output —
- * see ADR-303 / PR #303.
+ * see ADR-016.
  */
 export const StepFourReportSchema = z.object({
   /** ✅ — Strategy A property write (or A's auto-fix branch) succeeded. */

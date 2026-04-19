@@ -62,7 +62,7 @@ export function generateGotchaSurvey(
   // Step 6 (#369, #370, #381): pre-compute the grouped+batched view so the
   // SKILLs (`canicode-gotchas`, `canicode-roundtrip`) can iterate over it
   // directly without re-implementing sort / partition / batchable-rule
-  // logic in prose. ADR-303 / PR #303.
+  // logic in prose. ADR-016.
   const groupedQuestions = groupAndBatchSurveyQuestions(questions);
 
   return {

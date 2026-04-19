@@ -43,7 +43,7 @@ If `isReadyForCodeGen` is `true` or `questions` is empty:
 
 ### Step 3: Present questions to the user
 
-The survey response carries a pre-computed `groupedQuestions.groups[].batches[]` shape so the SKILL never has to sort, partition, or maintain a batchable-rule whitelist in prose. The sort key, `_no-source` sentinel, and batchable-rule list all live in `core/gotcha/group-and-batch-questions.ts` with vitest coverage (per ADR-303 / PR #303). Iterate over it:
+The survey response carries a pre-computed `groupedQuestions.groups[].batches[]` shape so the SKILL never has to sort, partition, or maintain a batchable-rule whitelist in prose. The sort key, `_no-source` sentinel, and batchable-rule list all live in `core/gotcha/group-and-batch-questions.ts` with vitest coverage (per ADR-016). Iterate over it:
 
 For every `batch` in `groupedQuestions.groups.flatMap((g) => g.batches)`:
 
@@ -102,7 +102,7 @@ This file goes in the **user's project** (current working directory), NOT in the
 
 `designKey` uniquely identifies the design so re-running on the same URL replaces the existing section in place. The survey response carries it on `survey.designKey` — read it directly. Do **not** parse the input URL in prose.
 
-The `core/contracts/design-key.ts` helper (`computeDesignKey`) handles every shape with vitest coverage so the SKILL stays ADR-303-compliant (PR #303):
+The `core/contracts/design-key.ts` helper (`computeDesignKey`) handles every shape with vitest coverage so the SKILL stays ADR-016-compliant:
 
 - **Figma URL** → `<fileKey>#<nodeId>` with `-` → `:` normalization on the nodeId. Example: `https://figma.com/design/abc123XYZ/My-File?node-id=42-100&t=ref` → `designKey = "abc123XYZ#42:100"`. Trailing query parameters (`?t=...`, `?mode=...`) are dropped.
 - **Figma URL without `node-id`** → just `<fileKey>` (file-level key).
