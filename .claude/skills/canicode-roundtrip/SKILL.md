@@ -185,7 +185,7 @@ The helper walks the tiers in order; variable binding is an alternative writeFn 
 2. Prepend its contents verbatim at the top of every `use_figma` batch body — it registers a single global `CanICodeRoundtrip`.
 3. Reference exposed globals as `CanICodeRoundtrip.*`:
    - `stripAnnotations(annotations)` — normalizes the D1 label/labelMarkdown mutex on readback.
-   - `ensureCanicodeCategories()` — returns `{ gotcha, autoFix, fallback }` category id map (D4); idempotent, safe to call at the top of every batch.
+   - `ensureCanicodeCategories()` — returns `{ gotcha, flag, fallback }` category id map (D4); idempotent, safe to call at the top of every batch. May also include `legacyAutoFix` when the file already carries the pre-#355 `canicode:auto-fix` category from earlier roundtrips — read-only on the canicode side, used only by Step 5 cleanup to sweep old annotations.
    - `upsertCanicodeAnnotation(node, { ruleId, markdown, categoryId, properties })` — idempotent annotation upsert. Handles D1 mutex, D2 in-place replace by ruleId prefix, and the D3 `properties` node-type retry.
    - `applyWithInstanceFallback(question, writeFn, { categories, allowDefinitionWrite, telemetry })` — three-tier write policy with silent-ignore detection. `allowDefinitionWrite` defaults to `false` per ADR-012 — override-errors and silent-ignores annotate the scene naming the source component instead of writing the definition. Set `true` only after a batch-level confirmation. `telemetry` is an optional `(event, props) => void` callback fired when a definition write is skipped (wiring point for future Node-side opt-in usage data). The `writeFn` may return `false` to signal "write accepted but value unchanged" so the helper can route to the next tier.
    - `applyPropertyMod(question, answerValue, { categories, allowDefinitionWrite, telemetry })` — Strategy A entry point. Branches on `targetProperty` (single vs array) and answer shape (scalar, per-property object, `{ variable: "name" }` binding). Uses `setBoundVariableForPaint` for `fills` / `strokes` and `setBoundVariable` for scalar fields. Passes the full context through to `applyWithInstanceFallback`.
@@ -259,7 +259,7 @@ CanICodeRoundtrip.upsertCanicodeAnnotation(scene, {
 ```
 
 Notes:
-- `upsertCanicodeAnnotation` replaces an existing `**[canicode] <ruleId>**` entry on the same node instead of appending — reruns don't accumulate duplicates.
+- `upsertCanicodeAnnotation` writes the recommendation directly as the body and appends an italic `— *<ruleId>*` footer. The footer is the dedup marker — reruns replace the existing entry in place. The category badge (`canicode:gotcha` / `canicode:flag` / `canicode:fallback`) above the body already brands the annotation, so the body no longer leads with `**[canicode] <ruleId>**` (#353). Pre-#353 entries are still recognised on rerun and replaced with the new format.
 - `label` and `labelMarkdown` are mutually exclusive on write, but Figma returns both on readback. Never spread `scene.annotations` directly; always call `CanICodeRoundtrip.upsertCanicodeAnnotation` (or `CanICodeRoundtrip.stripAnnotations` if you truly need the normalized array).
 - Prefer annotating the **scene** instance child so designers see the note where they work; mention in the markdown if the fix belongs on the source component but could not be applied (library/external).
 
@@ -289,7 +289,7 @@ for (const issue of analyzeResult.issues) {
     CanICodeRoundtrip.upsertCanicodeAnnotation(scene, {
       ruleId: issue.ruleId,
       markdown: issue.message,
-      categoryId: categories.autoFix,
+      categoryId: categories.flag,
       // Optional: surface the live value for the affected property in Dev Mode.
       properties: issue.annotationProperties,
     });
@@ -305,7 +305,7 @@ for (const issue of analyzeResult.issues) {
 1. **Batch all property modifications** (Strategy A) into a single `use_figma` call for efficiency. Pass `{ categories }` to `applyWithInstanceFallback` so fallbacks land in the correct category.
 2. **Present structural modifications** (Strategy B) one by one, apply confirmed ones.
 3. **Batch all annotations** (Strategy C + declined structural mods) into a single `use_figma` call — use `categories.gotcha` for the category id.
-4. **Batch all auto-fixes and annotations for lower-severity issues** (Strategy D) — use `categories.autoFix` for annotated ones, `categories.fallback` is reserved for errors surfaced by `applyWithInstanceFallback` itself.
+4. **Batch all auto-fixes and annotations for lower-severity issues** (Strategy D) — use `categories.flag` for annotated ones (renamed from `autoFix` per #355 — the category means "flagged for designer attention", not "fixed"), `categories.fallback` is reserved for errors surfaced by `applyWithInstanceFallback` itself.
 
 After applying, report what was done:
 
@@ -318,7 +318,7 @@ Applied {N} changes to the Figma design:
 - ⏭️ {nodeName}: declined by user, added annotation (deep-nesting)
 - 📝 {nodeName}: annotation added to canicode:gotcha (absolute-position-in-auto-layout)
 - 🔧 {nodeName}: auto-fixed to "Hover" (non-standard-naming)
-- 📝 {nodeName}: annotation added to canicode:auto-fix — raw color needs token binding (raw-value)
+- 📝 {nodeName}: annotation added to canicode:flag — raw color needs token binding (raw-value)
 ```
 
 ### Step 5: Re-analyze and report what the roundtrip addressed
@@ -355,14 +355,18 @@ If Step 4 produced no report block (e.g. user skipped every question, or no gotc
 
   Grade: {oldGrade} → {newGrade}. Ready for code generation.
   ```
-- Clean up canicode annotations: remove annotations with `[canicode]` prefix from fixed nodes via `use_figma`. Apply `stripAnnotations` to avoid the D1 mutex:
+- Clean up canicode annotations on fixed nodes via `use_figma`. Filter by **categoryId** (the durable canicode-side identifier — the body no longer carries a `[canicode]` prefix per #353). Include `legacyAutoFix` if `ensureCanicodeCategories` returned it, so pre-#355 `canicode:auto-fix` entries get swept too. The trailing `— *<ruleId>*` footer is kept as a secondary marker for legacy `[canicode]`-prefix entries that may exist on files that have not been re-roundtripped yet:
 ```javascript
+const canicodeIds = new Set(
+  [categories.gotcha, categories.flag, categories.fallback, categories.legacyAutoFix].filter(Boolean)
+);
 const nodeIds = ["id1", "id2"]; // nodes that now pass
 for (const id of nodeIds) {
   const node = await figma.getNodeByIdAsync(id);
   if (node && "annotations" in node) {
     node.annotations = CanICodeRoundtrip.stripAnnotations(node.annotations).filter(
-      a => !a.labelMarkdown?.startsWith("**[canicode]")
+      a => !(a.categoryId && canicodeIds.has(a.categoryId)) &&
+           !a.labelMarkdown?.startsWith("**[canicode]")
     );
   }
 }
@@ -384,7 +388,23 @@ for (const id of nodeIds) {
   Grade: {oldGrade} → {newGrade}. Proceed to code generation with remaining context?
   ```
 - If yes → proceed to **Step 6** with remaining gotcha context.
-- If no → stop and let the user address remaining issues manually.
+- If no → stop and emit the **Stop wrap-up** below; do **not** restate the grade as the lead.
+
+#### Wrap-up message rubric (Stop branch)
+
+When the user picks **Stop** here, the closing message is the *last thing the user sees of canicode* in this session. Keep the issues-delta as the headline (`✅ X / 📝 Y / 🌐 Z / ⏭️ W / V remaining`) — grade movement, if any, belongs as a footnote line **after** the delta, not as the lead bullet. Reason: the value canicode delivers under the ADR-012 default is the annotation count carried into code-gen, not score movement (per [#341](https://github.com/let-sunny/canicode/issues/341), [#352](https://github.com/let-sunny/canicode/issues/352)).
+
+```
+Stopped — N issues addressed, V remaining for manual follow-up:
+  ✅  X resolved
+  📝  Y annotated on Figma (carried into code-gen via canicode-gotchas)
+  🌐  Z definition writes propagated
+  ⏭️  W skipped
+
+Grade: {oldGrade} → {newGrade}.
+```
+
+Anti-pattern (do **not** lead with a grade-only sentence like "Grade: C → C+. Most size-constraint gotchas are now annotations…"). Lead with the delta block; mention grade once, on its own footnote line, plain prose only.
 
 ### Step 6: Implement with Figma MCP
 
@@ -398,6 +418,23 @@ Follow the **figma-implement-design** skill workflow to generate code from the F
 - Pass the Figma URL (or `designKey` = `<fileKey>#<nodeId>`) to `figma-implement-design` so it can grep the matching `## #NNN — …` section in `.claude/skills/canicode-gotchas/SKILL.md` instead of reading the whole accumulated file
 
 **If all issues were resolved in Steps 4-5**, no additional gotcha context is needed — the design speaks for itself.
+
+#### Wrap-up message rubric (post-handoff)
+
+After `figma-implement-design` returns, summarise the roundtrip in the same shape as the Step 5 / Stop wrap-up — issues-delta first, grade as a footnote, then the code-gen outcome. Do **not** lead with grade movement (per [#352](https://github.com/let-sunny/canicode/issues/352)):
+
+```
+Roundtrip complete — N issues addressed, code generated:
+  ✅  X resolved
+  📝  Y annotated on Figma (referenced during code-gen)
+  🌐  Z definition writes propagated
+  ⏭️  W skipped
+  —
+  V issues remaining
+
+Grade: {oldGrade} → {newGrade}.
+Code: <files generated / next-step pointer from figma-implement-design>
+```
 
 ## Edge Cases
 

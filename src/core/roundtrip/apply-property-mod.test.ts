@@ -19,7 +19,7 @@ import type {
 
 const CATEGORIES: CanicodeCategories = {
   gotcha: "cat-gotcha",
-  autoFix: "cat-auto",
+  flag: "cat-flag",
   fallback: "cat-fallback",
 };
 

@@ -29,28 +29,39 @@ var CanICodeRoundtrip = (function (exports) {
       byLabel.set(label, created.id);
       return created.id;
     }
-    return {
+    const result = {
       gotcha: await ensure("canicode:gotcha", "blue"),
-      autoFix: await ensure("canicode:auto-fix", "green"),
+      flag: await ensure("canicode:flag", "green"),
       fallback: await ensure("canicode:fallback", "yellow")
     };
+    const legacyAutoFix = byLabel.get("canicode:auto-fix");
+    if (legacyAutoFix) result.legacyAutoFix = legacyAutoFix;
+    return result;
   }
   function upsertCanicodeAnnotation(node, input) {
     if (!node || !("annotations" in node)) return false;
     const { ruleId, markdown, categoryId, properties } = input;
-    const prefix = `**[canicode] ${ruleId}**`;
-    const body = markdown.startsWith(prefix) ? markdown : `${prefix}
+    const legacyPrefix = `**[canicode] ${ruleId}**`;
+    const footer = `\u2014 *${ruleId}*`;
+    let bodyText = markdown;
+    if (bodyText.startsWith(legacyPrefix)) {
+      bodyText = bodyText.slice(legacyPrefix.length).replace(/^\s*\n+/, "");
+    }
+    const trimmed = bodyText.replace(/\s+$/, "");
+    const body = trimmed.endsWith(footer) ? trimmed : `${trimmed}
 
-${markdown}`;
+${footer}`;
     const existing = stripAnnotations(node.annotations);
     const entry = { labelMarkdown: body };
     if (categoryId) entry.categoryId = categoryId;
     if (properties && properties.length > 0) entry.properties = properties;
-    const idx = existing.findIndex((a) => {
-      const lm = a.labelMarkdown;
-      const lb = a.label;
-      return typeof lm === "string" && lm.startsWith(prefix) || typeof lb === "string" && lb.startsWith(prefix);
-    });
+    const matchesRuleId = (text) => {
+      if (typeof text !== "string") return false;
+      return text.startsWith(legacyPrefix) || text.includes(footer);
+    };
+    const idx = existing.findIndex(
+      (a) => matchesRuleId(a.labelMarkdown) || matchesRuleId(a.label)
+    );
     if (idx >= 0) existing[idx] = entry;
     else existing.push(entry);
     try {

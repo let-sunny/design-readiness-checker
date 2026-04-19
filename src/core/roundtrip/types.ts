@@ -68,8 +68,16 @@ export interface FigmaGlobal {
 
 export interface CanicodeCategories {
   gotcha: string;
-  autoFix: string;
+  // Renamed from `autoFix` per #355 — the previous name read as
+  // "canicode auto-fixed something" but the category actually means
+  // "canicode auto-flagged something it could not fix".
+  flag: string;
   fallback: string;
+  // Pre-rename installations may still carry a `canicode:auto-fix` category
+  // populated by older runs. When present, expose its id here so the Step 5
+  // cleanup filter can sweep old annotations alongside the new ones. The new
+  // code path never WRITES to this id — read-only on the canicode side.
+  legacyAutoFix?: string;
 }
 
 export interface RoundtripInstanceContext {

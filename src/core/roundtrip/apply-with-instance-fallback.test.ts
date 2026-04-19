@@ -25,7 +25,7 @@ function makeNode(overrides: Partial<FigmaNode>): FigmaNode {
 
 const CATEGORIES: CanicodeCategories = {
   gotcha: "cat-gotcha",
-  autoFix: "cat-auto",
+  flag: "cat-flag",
   fallback: "cat-fallback",
 };
 

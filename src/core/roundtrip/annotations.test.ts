@@ -87,13 +87,13 @@ describe("ensureCanicodeCategories", () => {
     uninstallFigmaGlobal();
   });
 
-  it("creates the three labels on first call", async () => {
+  it("creates the three labels on first call (uses canicode:flag, not canicode:auto-fix)", async () => {
     const result = await ensureCanicodeCategories();
-    expect(Object.keys(result)).toEqual(["gotcha", "autoFix", "fallback"]);
+    expect(Object.keys(result)).toEqual(["gotcha", "flag", "fallback"]);
     expect(mock.annotations.addAnnotationCategoryAsync).toHaveBeenCalledTimes(3);
     expect(mock.annotations.addAnnotationCategoryAsync.mock.calls.map((c) => c[0])).toEqual([
       { label: "canicode:gotcha", color: "blue" },
-      { label: "canicode:auto-fix", color: "green" },
+      { label: "canicode:flag", color: "green" },
       { label: "canicode:fallback", color: "yellow" },
     ]);
   });
@@ -106,11 +106,11 @@ describe("ensureCanicodeCategories", () => {
     expect(mock.annotations.addAnnotationCategoryAsync).toHaveBeenCalledTimes(0);
   });
 
-  it("reuses pre-existing categories seeded before the first call", async () => {
+  it("reuses pre-existing canicode:flag category seeded before the first call", async () => {
     const seeded = createFigmaGlobal({
       categories: [
         { id: "seed-gotcha", label: "canicode:gotcha" },
-        { id: "seed-auto", label: "canicode:auto-fix" },
+        { id: "seed-flag", label: "canicode:flag" },
         { id: "seed-fall", label: "canicode:fallback" },
       ],
     });
@@ -118,15 +118,37 @@ describe("ensureCanicodeCategories", () => {
     const result = await ensureCanicodeCategories();
     expect(result).toEqual({
       gotcha: "seed-gotcha",
-      autoFix: "seed-auto",
+      flag: "seed-flag",
       fallback: "seed-fall",
     });
     expect(seeded.annotations.addAnnotationCategoryAsync).toHaveBeenCalledTimes(0);
   });
+
+  it("exposes legacy canicode:auto-fix id (if present) so Step 5 cleanup can sweep old annotations", async () => {
+    const seeded = createFigmaGlobal({
+      categories: [{ id: "legacy-auto", label: "canicode:auto-fix" }],
+    });
+    installFigmaGlobal(seeded);
+    const result = await ensureCanicodeCategories();
+    expect(result.legacyAutoFix).toBe("legacy-auto");
+    // The new code path still creates canicode:flag separately — legacy
+    // category is read-only on the canicode side and never written to.
+    expect(result.flag).not.toBe("legacy-auto");
+    const createdLabels = seeded.annotations.addAnnotationCategoryAsync.mock.calls.map(
+      (c) => c[0].label
+    );
+    expect(createdLabels).toContain("canicode:flag");
+    expect(createdLabels).not.toContain("canicode:auto-fix");
+  });
+
+  it("omits legacyAutoFix on a fresh file with no pre-rename history", async () => {
+    const result = await ensureCanicodeCategories();
+    expect("legacyAutoFix" in result).toBe(false);
+  });
 });
 
 describe("upsertCanicodeAnnotation", () => {
-  it("appends a new annotation when no matching ruleId exists", () => {
+  it("appends a new annotation with trailing ruleId footer (no [canicode] prefix)", () => {
     const node = makeNode({ annotations: [{ labelMarkdown: "other" }] });
     const result = upsertCanicodeAnnotation(node, {
       ruleId: "no-auto-layout",
@@ -135,11 +157,28 @@ describe("upsertCanicodeAnnotation", () => {
     expect(result).toBe(true);
     expect(node.annotations).toEqual([
       { labelMarkdown: "other" },
-      { labelMarkdown: "**[canicode] no-auto-layout**\n\nuse VERTICAL" },
+      { labelMarkdown: "use VERTICAL\n\n— *no-auto-layout*" },
     ]);
   });
 
-  it("replaces existing canicode entry for the same ruleId (labelMarkdown match)", () => {
+  it("replaces existing entry for the same ruleId (footer-match on new format)", () => {
+    const node = makeNode({
+      annotations: [
+        { labelMarkdown: "old body\n\n— *no-auto-layout*" },
+        { labelMarkdown: "sibling" },
+      ],
+    });
+    upsertCanicodeAnnotation(node, {
+      ruleId: "no-auto-layout",
+      markdown: "new body",
+    });
+    expect(node.annotations).toEqual([
+      { labelMarkdown: "new body\n\n— *no-auto-layout*" },
+      { labelMarkdown: "sibling" },
+    ]);
+  });
+
+  it("replaces legacy [canicode] prefix entry on rerun (forward-compat for pre-#353 files)", () => {
     const node = makeNode({
       annotations: [
         { labelMarkdown: "**[canicode] no-auto-layout**\n\nold body" },
@@ -151,12 +190,12 @@ describe("upsertCanicodeAnnotation", () => {
       markdown: "new body",
     });
     expect(node.annotations).toEqual([
-      { labelMarkdown: "**[canicode] no-auto-layout**\n\nnew body" },
+      { labelMarkdown: "new body\n\n— *no-auto-layout*" },
       { labelMarkdown: "sibling" },
     ]);
   });
 
-  it("replaces legacy `label`-only entries (pre-D1) with the canicode prefix", () => {
+  it("replaces legacy `label`-only entries (pre-D1) with the new format", () => {
     const node = makeNode({
       annotations: [{ label: "**[canicode] raw-value**\n\nold" }],
     });
@@ -165,7 +204,7 @@ describe("upsertCanicodeAnnotation", () => {
       markdown: "new",
     });
     expect(node.annotations).toEqual([
-      { labelMarkdown: "**[canicode] raw-value**\n\nnew" },
+      { labelMarkdown: "new\n\n— *raw-value*" },
     ]);
   });
 
@@ -179,22 +218,31 @@ describe("upsertCanicodeAnnotation", () => {
     });
     expect(node.annotations).toEqual([
       {
-        labelMarkdown:
-          "**[canicode] absolute-position-in-auto-layout**\n\nbody",
+        labelMarkdown: "body\n\n— *absolute-position-in-auto-layout*",
         categoryId: "cat-gotcha",
         properties: [{ type: "layoutMode" }],
       },
     ]);
   });
 
-  it("does not re-prefix a markdown body that already starts with the canicode prefix", () => {
+  it("does not re-append the footer if the markdown body already ends with it", () => {
+    const node = makeNode();
+    upsertCanicodeAnnotation(node, {
+      ruleId: "raw-value",
+      markdown: "embedded\n\n— *raw-value*",
+    });
+    const written = (node.annotations as AnnotationEntry[])[0]?.labelMarkdown;
+    expect(written).toBe("embedded\n\n— *raw-value*");
+  });
+
+  it("strips a re-passed legacy [canicode] prefix instead of double-encoding the rule id", () => {
     const node = makeNode();
     upsertCanicodeAnnotation(node, {
       ruleId: "raw-value",
       markdown: "**[canicode] raw-value**\n\nembedded",
     });
     const written = (node.annotations as AnnotationEntry[])[0]?.labelMarkdown;
-    expect(written).toBe("**[canicode] raw-value**\n\nembedded");
+    expect(written).toBe("embedded\n\n— *raw-value*");
   });
 
   it("retries without properties on Experiment 09 node-type rejection", () => {
@@ -223,7 +271,7 @@ describe("upsertCanicodeAnnotation", () => {
     expect(result).toBe(true);
     const written = (node as { _annotations: AnnotationEntry[] })._annotations;
     expect(written[0]?.properties).toBeUndefined();
-    expect(written[0]?.labelMarkdown).toBe("**[canicode] raw-value**\n\nbody");
+    expect(written[0]?.labelMarkdown).toBe("body\n\n— *raw-value*");
   });
 
   it("re-throws unrelated errors (permission, read-only) rather than swallowing", () => {
