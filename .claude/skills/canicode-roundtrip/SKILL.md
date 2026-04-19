@@ -311,6 +311,7 @@ await CanICodeRoundtrip.applyPropertyMod(question, answerValue, { categories });
 
 **Replicas (#356)** — when `question.replicaNodeIds` is present, the same answer must land on every replica instance. Iterate the merged set so each scene gets its own per-node failure routing (under the ADR-012 default each replica annotates independently; with `allowDefinitionWrite: true` they share the one definition write because they share the source):
 
+<!-- adr-016-ack: fan-out over an explicit small array of node IDs; the deterministic work lives inside applyPropertyMod -->
 ```javascript
 const targets = [question.nodeId, ...(question.replicaNodeIds ?? [])];
 for (const nodeId of targets) {
@@ -378,6 +379,7 @@ If the user **declines** any structural modification (or the instance-child guar
 
 Rules with `applyStrategy === "annotation"` cannot be auto-fixed via Plugin API. Add the gotcha answer as a Figma annotation so designers see it in Dev Mode. Use the helper — it handles the D1 mutex, D2 in-place upsert, and D4 category assignment. When `question.replicaNodeIds` is present (#356), iterate the merged set so every replica instance gets the annotation:
 
+<!-- adr-016-ack: fan-out over an explicit small array of node IDs; the deterministic work lives inside upsertCanicodeAnnotation -->
 ```javascript
 const targets = [question.nodeId, ...(question.replicaNodeIds ?? [])];
 for (const nodeId of targets) {
@@ -402,6 +404,7 @@ Notes:
 
 The gotcha survey covers only blocking/risk severity. Lower-severity rules appear in `analyzeResult.issues[]` without a survey question. Each issue carries the same pre-computed fields (`applyStrategy`, `targetProperty`, `annotationProperties`, `suggestedName`, `isInstanceChild`, `sourceChildId`). The bundled helper handles the loop, the filter (`applyStrategy === "auto-fix"`), the naming-vs-annotation branch, and the per-issue outcome accumulator in one call:
 
+<!-- adr-016-ack: in-flight extraction tracked by #386 (Strategy D auto-fix loop + per-question outcome accumulator). Remove this ACK when the helper lands. -->
 ```javascript
 const outcomes = await CanICodeRoundtrip.applyAutoFixes(analyzeResult.issues, { categories });
 ```
@@ -511,6 +514,7 @@ If Step 4 produced no `stepFourReport` (e.g. user skipped every question, or no 
   Grade: {oldGrade} → {newGrade}. Ready for code generation.
   ```
 - Clean up canicode annotations on fixed nodes via `use_figma`. Use the bundled `removeCanicodeAnnotations` helper — it gates on **categoryId** (the durable canicode-side identifier — the body no longer carries a `[canicode]` prefix per #353), includes `legacyAutoFix` if `ensureCanicodeCategories` returned it (pre-#355 `canicode:auto-fix` sweep), and also matches the legacy `**[canicode]` body prefix as a secondary marker for entries on files that have not been re-roundtripped yet. The match logic lives in `src/core/roundtrip/remove-canicode-annotations.ts` with vitest coverage so prose stays ADR-016-compliant:
+<!-- adr-016-ack: fan-out over an explicit small array of node IDs; the deterministic work lives inside removeCanicodeAnnotations -->
 ```javascript
 const nodeIds = ["id1", "id2"]; // nodes that now pass
 for (const id of nodeIds) {

@@ -27,6 +27,7 @@
     "lint": "tsc --noEmit",
     "build:plugin": "bash scripts/build-plugin.sh",
     "sync-docs": "tsx scripts/sync-rule-docs.ts",
+    "check:skill-determinism": "tsx scripts/check-skill-determinism.ts",
     "clean": "rm -rf dist skills"
   },
   "files": [
