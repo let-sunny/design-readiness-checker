@@ -99,6 +99,7 @@ jobs:
 
           - ADR-016 (`.claude/docs/ADR.md`) — the rule this audit enforces.
           - PR #303 — origin of the rule (`helpers.js` IIFE pattern + bundle drift CI).
+          - PRs #381, #387, #391, #392 — extraction precedents (`groupedQuestions` response field, Step 5 tally + cleanup filter, `upsertGotchaSection`, `applyAutoFix`).
           - PR #387 — the audit precedent that found the two pre-existing violations.
           - PR #389 — the grep gate this audit complements.
           - Issue #390 — this audit cadence proposal.
