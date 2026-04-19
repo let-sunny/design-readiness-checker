@@ -292,6 +292,57 @@ describe("calculateScores", () => {
     expect(scores.byCategory["pixel-critical"].bySeverity["missing-info"]).toBe(0);
     expect(scores.byCategory["pixel-critical"].bySeverity.suggestion).toBe(0);
   });
+
+  it("acknowledged issues contribute half weight to density (#371)", () => {
+    const baseIssue = (): AnalysisIssue =>
+      makeIssue({ ruleId: "no-auto-layout", category: "pixel-critical", severity: "blocking", score: -10 });
+
+    const allUnack = calculateScores(makeResult([baseIssue(), baseIssue(), baseIssue(), baseIssue()], 100));
+    // 4 issues × 1.0 weight each → sqrt(4) = 2 → score 10 × 2 = 20
+    expect(allUnack.byCategory["pixel-critical"].weightedIssueCount).toBeCloseTo(20, 1);
+
+    const ackOne = baseIssue();
+    ackOne.acknowledged = true;
+    const ackTwo = baseIssue();
+    ackTwo.acknowledged = true;
+    const allAck = calculateScores(makeResult([ackOne, ackTwo, baseIssue(), baseIssue()], 100));
+    // 2 acknowledged × 0.5 + 2 unack × 1.0 = 3.0 → sqrt(3) → score 10 × sqrt(3) ≈ 17.32
+    expect(allAck.byCategory["pixel-critical"].weightedIssueCount).toBeCloseTo(10 * Math.sqrt(3), 1);
+    // Density score reflects the lighter weight — must be strictly higher
+    expect(allAck.byCategory["pixel-critical"].densityScore).toBeGreaterThan(
+      allUnack.byCategory["pixel-critical"].densityScore
+    );
+  });
+
+  it("acknowledged issues are counted in summary.totalIssues and summary.acknowledgedCount (#371)", () => {
+    const ack = makeIssue({ ruleId: "raw-value", category: "token-management", severity: "missing-info" });
+    ack.acknowledged = true;
+    const issues = [
+      ack,
+      makeIssue({ ruleId: "no-auto-layout", category: "pixel-critical", severity: "blocking" }),
+    ];
+    const scores = calculateScores(makeResult(issues));
+
+    expect(scores.summary.totalIssues).toBe(2);
+    expect(scores.summary.acknowledgedCount).toBe(1);
+    expect(scores.summary.blocking).toBe(1);
+    expect(scores.summary.missingInfo).toBe(1);
+  });
+
+  it("formatScoreSummary surfaces acknowledged/unaddressed split when count > 0 (#371)", () => {
+    const ack = makeIssue({ ruleId: "raw-value", category: "token-management", severity: "missing-info" });
+    ack.acknowledged = true;
+    const scores = calculateScores(makeResult([ack, makeIssue({ ruleId: "no-auto-layout", category: "pixel-critical", severity: "blocking" })]));
+    expect(formatScoreSummary(scores)).toContain("Total: 2 (1 acknowledged via canicode annotations / 1 unaddressed)");
+  });
+
+  it("formatScoreSummary keeps the simple Total line when no acknowledgments", () => {
+    const scores = calculateScores(makeResult([
+      makeIssue({ ruleId: "no-auto-layout", category: "pixel-critical", severity: "blocking" }),
+    ]));
+    expect(formatScoreSummary(scores)).toContain("Total: 1");
+    expect(formatScoreSummary(scores)).not.toContain("acknowledged");
+  });
 });
 
 // ─── Grade boundaries ─────────────────────────────────────────────────────────
@@ -580,6 +631,34 @@ describe("buildResultJson", () => {
       isInstanceChild: true,
       sourceChildId: "2299:23057",
     });
+  });
+
+  it("surfaces acknowledgedCount on the JSON top level and per-issue acknowledged: true (#371)", () => {
+    const ack = makeIssue({ ruleId: "raw-value", category: "token-management", severity: "missing-info" });
+    ack.acknowledged = true;
+    const unack = makeIssue({ ruleId: "no-auto-layout", category: "pixel-critical", severity: "blocking" });
+
+    const result = makeResult([ack, unack]);
+    const scores = calculateScores(result);
+    const json = buildResultJson("TestFile", result, scores);
+    const issues = json.issues as Array<Record<string, unknown>>;
+
+    expect(json.acknowledgedCount).toBe(1);
+    expect(issues[0]).toMatchObject({ ruleId: "raw-value", acknowledged: true });
+    expect(issues[1]).toMatchObject({ ruleId: "no-auto-layout" });
+    expect(issues[1]).not.toHaveProperty("acknowledged");
+  });
+
+  it("acknowledgedCount is 0 and per-issue field omitted when no acknowledgments", () => {
+    const result = makeResult([
+      makeIssue({ ruleId: "no-auto-layout", category: "pixel-critical", severity: "blocking" }),
+    ]);
+    const scores = calculateScores(result);
+    const json = buildResultJson("TestFile", result, scores);
+    const issues = json.issues as Array<Record<string, unknown>>;
+
+    expect(json.acknowledgedCount).toBe(0);
+    expect(issues[0]).not.toHaveProperty("acknowledged");
   });
 });
 

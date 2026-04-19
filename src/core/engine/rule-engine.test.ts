@@ -459,3 +459,69 @@ describe("analyzeFile", () => {
     expect(result.issues.length).toBe(0);
   });
 });
+
+// ─── Acknowledgments (#371) ──────────────────────────────────────────────────
+
+describe("RuleEngine.analyze — acknowledgments", () => {
+  // Build a document where two leaf frames produce non-semantic-name violations.
+  // We then mark one of them as acknowledged and assert only that one carries
+  // the flag — the other stays unacknowledged.
+  function buildMultiViolationFile(): { file: AnalysisFile; targetNodeIds: string[] } {
+    const child1 = makeNode({ id: "10:1", name: "Frame 1", type: "FRAME" });
+    const child2 = makeNode({ id: "10:2", name: "Frame 2", type: "FRAME" });
+    const doc = makeNode({
+      id: "0:1",
+      name: "Document",
+      type: "DOCUMENT",
+      children: [child1, child2],
+    });
+    return { file: makeFile({ document: doc }), targetNodeIds: [child1.id, child2.id] };
+  }
+
+  it("flags issues whose (nodeId, ruleId) match an acknowledgment", () => {
+    const { file, targetNodeIds } = buildMultiViolationFile();
+    const result = analyzeFile(file, {
+      acknowledgments: [{ nodeId: targetNodeIds[0]!, ruleId: "non-semantic-name" }],
+    });
+
+    const naming = result.issues.filter(
+      (i) => i.violation.ruleId === "non-semantic-name"
+    );
+    expect(naming.length).toBeGreaterThanOrEqual(2);
+    const acked = naming.find((i) => i.violation.nodeId === targetNodeIds[0]);
+    const unacked = naming.find((i) => i.violation.nodeId === targetNodeIds[1]);
+    expect(acked?.acknowledged).toBe(true);
+    expect(unacked?.acknowledged).toBeUndefined();
+  });
+
+  it("normalizes acknowledgment nodeIds (URL form `-` matches Plugin form `:`)", () => {
+    const { file, targetNodeIds } = buildMultiViolationFile();
+    const urlForm = targetNodeIds[0]!.replace(/:/g, "-");
+    const result = analyzeFile(file, {
+      acknowledgments: [{ nodeId: urlForm, ruleId: "non-semantic-name" }],
+    });
+
+    const acked = result.issues.find(
+      (i) => i.violation.nodeId === targetNodeIds[0] && i.violation.ruleId === "non-semantic-name"
+    );
+    expect(acked?.acknowledged).toBe(true);
+  });
+
+  it("ignores acknowledgments that do not match any issue", () => {
+    const { file } = buildMultiViolationFile();
+    const result = analyzeFile(file, {
+      acknowledgments: [{ nodeId: "999:999", ruleId: "non-semantic-name" }],
+    });
+
+    const anyAcked = result.issues.some((i) => i.acknowledged === true);
+    expect(anyAcked).toBe(false);
+  });
+
+  it("leaves issues unflagged when no acknowledgments are passed", () => {
+    const { file } = buildMultiViolationFile();
+    const result = analyzeFile(file);
+
+    const anyAcked = result.issues.some((i) => i.acknowledged === true);
+    expect(anyAcked).toBe(false);
+  });
+});

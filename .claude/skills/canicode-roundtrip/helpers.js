@@ -318,10 +318,68 @@ ${footer}`;
     return null;
   }
 
+  // src/core/roundtrip/read-acknowledgments.ts
+  var FOOTER_RE = /—\s+\*([A-Za-z0-9-]+)\*\s*$/;
+  var LEGACY_PREFIX_RE = /^\*\*\[canicode\]\s+([A-Za-z0-9-]+)\*\*/;
+  function extractAcknowledgmentsFromNode(node, canicodeCategoryIds) {
+    if (!node || !("annotations" in node)) return [];
+    const annotations = node.annotations ?? [];
+    if (annotations.length === 0) return [];
+    const out = [];
+    for (const a of annotations) {
+      const text = (typeof a.labelMarkdown === "string" && a.labelMarkdown.length > 0 ? a.labelMarkdown : "") || (typeof a.label === "string" && a.label.length > 0 ? a.label : "");
+      if (!text) continue;
+      if (canicodeCategoryIds) {
+        if (!a.categoryId || !canicodeCategoryIds.has(a.categoryId)) continue;
+      }
+      const ruleId = extractRuleId(text);
+      if (!ruleId) continue;
+      out.push({ nodeId: node.id, ruleId });
+    }
+    return out;
+  }
+  function extractRuleId(text) {
+    const footer = FOOTER_RE.exec(text);
+    if (footer) return footer[1] ?? null;
+    const legacy = LEGACY_PREFIX_RE.exec(text);
+    if (legacy) return legacy[1] ?? null;
+    return null;
+  }
+  async function readCanicodeAcknowledgments(rootNodeId, categories) {
+    const root = await figma.getNodeByIdAsync(rootNodeId);
+    if (!root) return [];
+    const canicodeCategoryIds = categories ? new Set(
+      [
+        categories.gotcha,
+        categories.flag,
+        categories.fallback,
+        categories.legacyAutoFix
+      ].filter((id) => typeof id === "string" && id.length > 0)
+    ) : void 0;
+    const out = [];
+    walk(root, canicodeCategoryIds, out);
+    return out;
+  }
+  function walk(node, canicodeCategoryIds, out) {
+    try {
+      const local = extractAcknowledgmentsFromNode(node, canicodeCategoryIds);
+      for (const a of local) out.push(a);
+    } catch {
+    }
+    const children = node.children;
+    if (Array.isArray(children)) {
+      for (const child of children) {
+        if (child && typeof child === "object") walk(child, canicodeCategoryIds, out);
+      }
+    }
+  }
+
   exports.applyPropertyMod = applyPropertyMod;
   exports.applyWithInstanceFallback = applyWithInstanceFallback;
   exports.ensureCanicodeCategories = ensureCanicodeCategories;
+  exports.extractAcknowledgmentsFromNode = extractAcknowledgmentsFromNode;
   exports.probeDefinitionWritability = probeDefinitionWritability;
+  exports.readCanicodeAcknowledgments = readCanicodeAcknowledgments;
   exports.resolveVariableByName = resolveVariableByName;
   exports.stripAnnotations = stripAnnotations;
   exports.upsertCanicodeAnnotation = upsertCanicodeAnnotation;

@@ -9,9 +9,21 @@ import type {
 import { supportsDepthWeight } from "../contracts/rule.js";
 import { ruleRegistry } from "../rules/rule-registry.js";
 import { RULE_CONFIGS } from "../rules/rule-config.js";
+import {
+  normalizeNodeId,
+  type Acknowledgment,
+} from "../contracts/acknowledgment.js";
 
 /**
- * Analysis issue with calculated score and metadata
+ * Analysis issue with calculated score and metadata.
+ *
+ * `acknowledged` (#371) — set when the analysis engine receives an
+ * `acknowledgments` list (typically read from canicode-authored Figma
+ * annotations) whose `(nodeId, ruleId)` matches this issue. Acknowledged
+ * issues still surface in the result (so code-gen retains the context) but
+ * contribute half their normal weight to the density score, so the grade
+ * reflects "the designer has a plan for this" instead of treating the rule
+ * as fully unaddressed.
  */
 export interface AnalysisIssue {
   violation: RuleViolation;
@@ -20,6 +32,7 @@ export interface AnalysisIssue {
   depth: number;
   maxDepth: number;
   calculatedScore: number;
+  acknowledged?: boolean;
 }
 
 /**
@@ -54,6 +67,14 @@ export interface RuleEngineOptions {
   targetNodeId?: string;
   excludeNodeNames?: string[];
   excludeNodeTypes?: string[];
+  /**
+   * `(nodeId, ruleId)` pairs sourced from canicode-authored Figma annotations
+   * (#371). Issues whose violation matches an entry are flagged
+   * `acknowledged: true` and contribute half their normal weight to the
+   * density score in `calculateScores`. nodeId may be passed in URL form
+   * (`123-456`) or Plugin-API form (`123:456`) — both normalize to `:`.
+   */
+  acknowledgments?: Acknowledgment[];
 }
 
 /**
@@ -136,6 +157,7 @@ export class RuleEngine {
   private targetNodeId: string | undefined;
   private excludeNamePattern: RegExp | null;
   private excludeNodeTypes: Set<string> | null;
+  private acknowledgments: ReadonlySet<string>;
 
   constructor(options: RuleEngineOptions = {}) {
     this.configs = options.configs ?? RULE_CONFIGS;
@@ -150,6 +172,11 @@ export class RuleEngine {
     this.excludeNodeTypes = options.excludeNodeTypes && options.excludeNodeTypes.length > 0
       ? new Set(options.excludeNodeTypes)
       : null;
+    this.acknowledgments = new Set(
+      (options.acknowledgments ?? []).map(
+        (a) => `${normalizeNodeId(a.nodeId)}::${a.ruleId}`
+      )
+    );
   }
 
   /**
@@ -193,6 +220,15 @@ export class RuleEngine {
       undefined,
       undefined
     );
+
+    if (this.acknowledgments.size > 0) {
+      for (const issue of issues) {
+        const key = `${normalizeNodeId(issue.violation.nodeId)}::${issue.violation.ruleId}`;
+        if (this.acknowledgments.has(key)) {
+          issue.acknowledged = true;
+        }
+      }
+    }
 
     return {
       file,
