@@ -45,6 +45,7 @@ Provide a Figma URL or fixture path via the input parameter. Requires FIGMA_TOKE
     preset: z.enum(["relaxed", "dev-friendly", "ai-ready", "strict"]).optional().describe("Analysis preset"),
     targetNodeId: z.string().optional().describe("Scope analysis to a specific node ID"),
     configPath: z.string().optional().describe("Path to config JSON file for rule overrides"),
+    openReport: z.boolean().optional().describe("Open the generated HTML report in the user's browser. Defaults to false — opt in only when a visible report is the explicit user request (#365). The HTML file is always written to disk regardless."),
   },
   {
     readOnlyHint: false,
@@ -52,7 +53,7 @@ Provide a Figma URL or fixture path via the input parameter. Requires FIGMA_TOKE
     openWorldHint: true,
     title: "Analyze Figma Design",
   },
-  async ({ input, token, preset, targetNodeId, configPath }) => {
+  async ({ input, token, preset, targetNodeId, configPath, openReport }) => {
     trackEvent(EVENTS.MCP_TOOL_CALLED, { tool: "analyze" });
     try {
       // Fetch via REST API or load from fixture
@@ -92,9 +93,15 @@ Provide a Figma URL or fixture path via the input parameter. Requires FIGMA_TOKE
         });
       });
 
-      // Open report in browser
-      const openCmd = process.platform === "darwin" ? "open" : process.platform === "win32" ? "start" : "xdg-open";
-      exec(`${openCmd} "${reportPath}"`);
+      // #365: only open the report in the user's browser when explicitly
+      // requested. The MCP `analyze` tool is machine-callable from skill
+      // workflows (e.g. `/canicode-roundtrip` Step 1 + Step 5), where
+      // popping a browser tab mid-conversation breaks flow. The HTML file
+      // is still written to disk so follow-up sessions can open it manually.
+      if (openReport === true) {
+        const openCmd = process.platform === "darwin" ? "open" : process.platform === "win32" ? "start" : "xdg-open";
+        exec(`${openCmd} "${reportPath}"`);
+      }
 
       trackEvent(EVENTS.ANALYSIS_COMPLETED, {
         nodeCount: result.nodeCount,
