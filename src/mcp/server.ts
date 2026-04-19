@@ -314,10 +314,10 @@ Get your token: Figma → Settings → Security → Personal access tokens → G
 
 ## MCP Server (Claude Code / Cursor / Claude Desktop)
 \`\`\`bash
-claude mcp add canicode -e FIGMA_TOKEN=figd_xxxxxxxxxxxxx -- npx -y -p canicode canicode-mcp
+claude mcp add canicode -- npx --yes --package=canicode canicode-mcp
 \`\`\`
 
-Requires FIGMA_TOKEN for live Figma URL analysis.
+Requires FIGMA_TOKEN for live Figma URL analysis. The MCP server reads it from \`~/.canicode/config.json\` (set via \`canicode init --token …\`) or from the host's environment, so do **not** pass \`-e FIGMA_TOKEN=…\` to \`claude mcp add\` — \`@anthropic-ai/claude-code\`'s current parser rejects short-form flags placed before \`--\`. (#364, #366)
 
 ## CLI only (no MCP server)
 

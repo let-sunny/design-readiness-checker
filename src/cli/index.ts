@@ -143,7 +143,7 @@ cli.help((sections) => {
       title: "\nInstallation",
       body: [
         `  CLI:     npm install -g canicode`,
-        `  MCP:     claude mcp add canicode -- npx -y -p canicode canicode-mcp`,
+        `  MCP:     claude mcp add canicode -- npx --yes --package=canicode canicode-mcp`,
         `  Skills:  github.com/let-sunny/canicode`,
       ].join("\n"),
     },

@@ -72,7 +72,7 @@ npx canicode init --token figd_xxxxxxxxxxxxx
 npx canicode analyze "https://www.figma.com/design/ABC123/MyDesign?node-id=1-234"
 
 # MCP Server — works with Claude Code, Cursor, Claude Desktop
-claude mcp add canicode -- npx -y -p canicode canicode-mcp
+claude mcp add canicode -- npx --yes --package=canicode canicode-mcp
 ```
 
 <details>
@@ -107,18 +107,64 @@ Each issue is classified: **Blocking** > **Risk** > **Missing Info** > **Suggest
 
 ---
 
-## Installation
+## Installation — pick one
+
+Each row below is a **complete** install. Don't run more than one — they cover overlapping use cases. (#367)
+
+| If you use… | Install |
+|-------------|---------|
+| **Claude Code** (recommended for the roundtrip workflow) | `npx canicode init --token figd_xxxxxxxxxxxxx` — saves the token AND drops `/canicode`, `/canicode-gotchas`, `/canicode-roundtrip` skills into `./.claude/skills/`. The skills already know how to call canicode via `npx canicode …`, no MCP install needed. |
+| **Cursor / Claude Desktop / other MCP host** | `claude mcp add canicode -- npx --yes --package=canicode canicode-mcp` — registers the MCP server. |
+| **Just the CLI** (CI, scripts) | Nothing. `npx canicode analyze "<figma-url>"` works directly. Run `canicode init --token …` once if you want the token persisted to `~/.canicode/config.json`. |
+
+> **Get your token:** Figma → Settings → Security → Personal access tokens → Generate new token
+
+> **Roundtrip prerequisite:** the `/canicode-roundtrip` skill calls the Figma MCP server to read and write the design. Install it once with `claude mcp add -s project -t http figma https://mcp.figma.com/mcp` and restart Claude Code so the new MCP tools load.
 
 <details>
-<summary><strong>CLI</strong></summary>
+<summary><strong>Claude Code Skills</strong> — install details</summary>
+
+```bash
+npx canicode init --token figd_xxxxxxxxxxxxx
+```
+
+Drops three skills into `./.claude/skills/`:
+
+- **canicode** — lightweight CLI wrapper (use `/canicode <figma-url>`)
+- **canicode-gotchas** — standalone gotcha survey (use `/canicode-gotchas <figma-url>`)
+- **canicode-roundtrip** — full analyze → gotcha → apply roundtrip (use `/canicode-roundtrip <figma-url>`)
+
+The skills shell out to `npx canicode …` for analyze / gotcha-survey when the canicode MCP server is not installed — both paths produce the same JSON shape. The Figma MCP server is still required for the apply step (Step 4 in `/canicode-roundtrip`); see the prereq note above.
+
+Flags: `--global` installs into `~/.claude/skills/` instead. `--no-skills` skips skill install (token only). `--force` overwrites existing skill files without prompting. Run `canicode docs setup` for the full setup guide.
+
+</details>
+
+<details>
+<summary><strong>MCP Server</strong> — install details</summary>
+
+```bash
+claude mcp add canicode -- npx --yes --package=canicode canicode-mcp
+```
+
+Then ask: *"Analyze this Figma design: https://www.figma.com/design/..."*
+
+canicode's rule engine analyzes the design data — the AI assistant just orchestrates the calls. The MCP server reads `FIGMA_TOKEN` from `~/.canicode/config.json` (set via `canicode init --token …`) or from the host's environment, so passing `-e FIGMA_TOKEN=…` to `claude mcp add` is **not** required and the current parser rejects it anyway (#364).
+
+If you genuinely need a per-server token without using `canicode init`, export it on the calling shell instead: `export FIGMA_TOKEN=figd_xxxxxxxxxxxxx`.
+
+For Cursor / Claude Desktop config, see [`docs/CUSTOMIZATION.md`](docs/CUSTOMIZATION.md).
+
+</details>
+
+<details>
+<summary><strong>CLI</strong> — install details</summary>
 
 ```bash
 npx canicode analyze "https://www.figma.com/design/ABC123/MyDesign?node-id=1-234"
 ```
 
-Setup: `npx canicode init --token figd_xxxxxxxxxxxxx` — saves the token AND installs the Claude Code skills (see below).
-
-> **Get your token:** Figma → Settings → Security → Personal access tokens → Generate new token
+Setup: `npx canicode init --token figd_xxxxxxxxxxxxx` saves the token (and installs the Claude Code skills as a bonus — pass `--no-skills` to skip).
 
 **Figma API Rate Limits** — Rate limits depend on **where the file lives**, not just your plan.
 
@@ -128,47 +174,6 @@ Setup: `npx canicode init --token figd_xxxxxxxxxxxxx` — saves the token AND in
 | Dev, Full | 6 req/month | 10–20 req/min |
 
 Hitting 429 errors? Make sure the file is in a paid workspace. Or save a fixture once and analyze locally. [Full details](https://developers.figma.com/docs/rest-api/rate-limits/)
-
-</details>
-
-<details>
-<summary><strong>MCP Server</strong> (Claude Code / Cursor / Claude Desktop)</summary>
-
-```bash
-claude mcp add canicode -- npx -y -p canicode canicode-mcp
-claude mcp add -s project -t http figma https://mcp.figma.com/mcp
-```
-
-Then ask: *"Analyze this Figma design: https://www.figma.com/design/..."*
-
-canicode's rule engine analyzes the design data — the AI assistant just orchestrates the calls.
-
-With a Figma API token:
-```bash
-claude mcp add canicode -e FIGMA_TOKEN=figd_xxxxxxxxxxxxx -- npx -y -p canicode canicode-mcp
-```
-
-For Cursor / Claude Desktop config, see [`docs/CUSTOMIZATION.md`](docs/CUSTOMIZATION.md).
-
-</details>
-
-
-<details>
-<summary><strong>Claude Code Skills</strong> (lightweight, no MCP install)</summary>
-
-```bash
-npx canicode init --token figd_xxxxxxxxxxxxx
-```
-
-Saves your Figma token AND installs three skills into `./.claude/skills/`:
-
-- **canicode** — lightweight CLI wrapper (use `/canicode <figma-url>`)
-- **canicode-gotchas** — standalone gotcha survey (use `/canicode-gotchas <figma-url>`)
-- **canicode-roundtrip** — full analyze → gotcha → apply roundtrip (use `/canicode-roundtrip <figma-url>`)
-
-> **Next:** install the Figma MCP server (`claude mcp add -s project -t http figma https://mcp.figma.com/mcp`) and restart Claude Code so both the skills and the MCP tools load. See the **MCP Server** section above for context.
-
-Flags: `--global` installs into `~/.claude/skills/` instead. `--no-skills` skips skill install (token only). `--force` overwrites existing skill files without prompting. Run `canicode docs setup` for the full setup guide.
 
 </details>
 

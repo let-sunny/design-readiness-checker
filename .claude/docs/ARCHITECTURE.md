@@ -10,7 +10,7 @@
 - Annotations: NOT available (REST API annotations field is private beta)
 
 **2. MCP Server (`canicode-mcp`)**
-- Install: `claude mcp add canicode -- npx -y -p canicode canicode-mcp`
+- Install: `claude mcp add canicode -- npx --yes --package=canicode canicode-mcp` (long-form flags; short-form `-y -p` collides with `claude mcp add`'s parser, #366)
 - Tools: `analyze`, `gotcha-survey`, `list-rules`, `visual-compare`, `version`, `docs`
 - Data source: Figma REST API via `input` param (Figma URL or fixture path). Requires FIGMA_TOKEN for live URLs.
 

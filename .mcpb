@@ -15,7 +15,7 @@
       "package": "canicode",
       "command": "npx -y -p canicode canicode-mcp"
     },
-    "claude_code": "claude mcp add canicode -- npx -y -p canicode canicode-mcp",
+    "claude_code": "claude mcp add canicode -- npx --yes --package=canicode canicode-mcp",
     "cursor": {
       "mcpServers": {
         "canicode": {

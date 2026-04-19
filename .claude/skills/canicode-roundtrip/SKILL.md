@@ -11,7 +11,7 @@ Orchestrate the full design-to-code roundtrip: analyze a Figma design for readin
 ## Prerequisites
 
 - **Figma MCP server** installed (provides `get_design_context`, `get_screenshot`, `use_figma`, and other Figma tools) — REQUIRED, there is no CLI fallback for `use_figma`
-- **canicode MCP server** (preferred): `claude mcp add canicode -e FIGMA_TOKEN=figd_xxx -- npx -y -p canicode canicode-mcp`
+- **canicode MCP server** (preferred): `claude mcp add canicode -- npx --yes --package=canicode canicode-mcp` — long-form flags only; the short-form `-y -p` collides with `claude mcp add`'s parser (#366). The MCP server reads `FIGMA_TOKEN` from `~/.canicode/config.json` or the host environment, so do **not** pass `-e FIGMA_TOKEN=…` here (#364).
 - **Without canicode MCP** (fallback): Steps 1 (analyze) and 3 (gotcha-survey) shell out to `npx canicode <command> --json` — same JSON shape as the MCP tools. Step 4 (apply to Figma) still requires Figma MCP `use_figma`.
 - **FIGMA_TOKEN** configured for live Figma URLs
 - **Figma Full seat + file edit permission** (required for `use_figma` to modify the design)

@@ -9,7 +9,7 @@ Run a gotcha survey on a Figma design to identify implementation pitfalls, colle
 
 ## Prerequisites
 
-- **canicode MCP server** (preferred): `claude mcp add canicode -e FIGMA_TOKEN=figd_xxx -- npx -y -p canicode canicode-mcp`
+- **canicode MCP server** (preferred): `claude mcp add canicode -- npx --yes --package=canicode canicode-mcp` — long-form flags only; the short-form `-y -p` collides with `claude mcp add`'s parser (#366). The MCP server reads `FIGMA_TOKEN` from `~/.canicode/config.json` or the host environment, so do **not** pass `-e FIGMA_TOKEN=…` here (#364).
 - **Without canicode MCP** (fallback): the `canicode gotcha-survey --json` CLI produces the same response shape — no MCP installation required.
 - **FIGMA_TOKEN** configured for live Figma URLs
 
