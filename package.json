@@ -1,6 +1,6 @@
 {
   "name": "canicode",
-  "version": "0.10.1",
+  "version": "0.10.2",
   "mcpName": "io.github.let-sunny/canicode",
   "description": "Score your Figma designs with AI-calibrated rules. CLI + MCP server.",
   "type": "module",
