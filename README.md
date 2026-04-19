@@ -166,6 +166,8 @@ Saves your Figma token AND installs three skills into `./.claude/skills/`:
 - **canicode-gotchas** — standalone gotcha survey (use `/canicode-gotchas <figma-url>`)
 - **canicode-roundtrip** — full analyze → gotcha → apply roundtrip (use `/canicode-roundtrip <figma-url>`)
 
+> **Next:** install the Figma MCP server (`claude mcp add -s project -t http figma https://mcp.figma.com/mcp`) and restart Claude Code so both the skills and the MCP tools load. See the **MCP Server** section above for context.
+
 Flags: `--global` installs into `~/.claude/skills/` instead. `--no-skills` skips skill install (token only). `--force` overwrites existing skill files without prompting. Run `canicode docs setup` for the full setup guide.
 
 </details>

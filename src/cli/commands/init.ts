@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
 import type { CAC } from "cac";
 import { z } from "zod";
 
@@ -6,6 +9,42 @@ import {
 } from "../../core/engine/config-store.js";
 import { installSkills } from "../skill-installer.js";
 import { trackEvent, EVENTS } from "../../core/monitoring/index.js";
+
+export function figmaMcpRegistered(cwd: string = process.cwd()): boolean {
+  try {
+    const raw = readFileSync(join(cwd, ".mcp.json"), "utf-8");
+    const parsed = JSON.parse(raw) as { mcpServers?: Record<string, unknown> };
+    const figma = parsed?.mcpServers?.["figma"];
+    return typeof figma === "object" && figma !== null;
+  } catch {
+    return false;
+  }
+}
+
+export function formatNextSteps(opts: {
+  figmaMcpPresent: boolean;
+  skillsInstalled: boolean;
+}): string {
+  if (!opts.skillsInstalled) {
+    return `\n  Next: canicode analyze "https://www.figma.com/design/..."`;
+  }
+  if (opts.figmaMcpPresent) {
+    return [
+      "",
+      "  Next:",
+      "    1. Restart Claude Code (the newly installed skills only load on a fresh session)",
+      "    2. Run /canicode-roundtrip <figma-url>",
+    ].join("\n");
+  }
+  return [
+    "",
+    "  Next:",
+    "    1. Install Figma MCP:",
+    "         claude mcp add -s project -t http figma https://mcp.figma.com/mcp",
+    "    2. Restart Claude Code (so the new skills + Figma MCP tools both load)",
+    "    3. Run /canicode-roundtrip <figma-url>",
+  ].join("\n");
+}
 
 const InitOptionsSchema = z.object({
   token: z.string().optional(),
@@ -76,7 +115,12 @@ export function registerInit(cli: CAC): void {
           });
 
           if (skillStepOk) {
-            console.log(`\n  Next: canicode analyze "https://www.figma.com/design/..."`);
+            console.log(
+              formatNextSteps({
+                figmaMcpPresent: figmaMcpRegistered(),
+                skillsInstalled: options.skills !== false,
+              }),
+            );
           }
           return;
         }
