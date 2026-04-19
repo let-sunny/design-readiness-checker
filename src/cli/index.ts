@@ -98,7 +98,7 @@ registerCodeMetrics(cli);
 // Documentation command
 // ============================================
 cli
-  .command("docs [topic]", "Show documentation (topics: setup, config, scoring, visual-compare, design-tree)")
+  .command("docs [topic]", "Show documentation (topics: setup, config, scoring, rules, visual-compare, design-tree)")
   .action((topic?: string) => {
     handleDocs(topic);
   });

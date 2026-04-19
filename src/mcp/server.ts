@@ -272,6 +272,7 @@ server.tool(
 
 Available topics:
 - setup: Installation and token configuration
+- scoring: Scoring model formula (density+diversity, severity weights, grades)
 - rules: All rule IDs with default scores and severity
 - config: Config overrides (scores, severity, node exclusions, thresholds)
 - visual-compare: Pixel-level comparison between Figma and AI-generated code
@@ -280,7 +281,7 @@ Available topics:
 
 Use this when the user asks about how to use canicode, configuration, rules, visual comparison, or any feature.`,
   {
-    topic: z.enum(["all", "setup", "rules", "config", "visual-compare", "design-tree"]).optional()
+    topic: z.enum(["all", "setup", "scoring", "rules", "config", "visual-compare", "design-tree"]).optional()
       .describe("Topic to retrieve. Default: all"),
   },
   {
@@ -367,6 +368,37 @@ Viewport and device pixel ratio are auto-inferred from the Figma PNG dimensions 
 ## Requirements
 - npx playwright install chromium
 - Figma API token with read access`,
+
+      "scoring": `# Scoring Model
+
+Score = density (70%) + diversity (30%), averaged across 6 categories.
+
+## Severity weights
+
+| Severity | Weight |
+|----------|--------|
+| blocking | 3.0x |
+| risk | 2.0x |
+| missing-info | 1.0x |
+| suggestion | 0.5x |
+
+## Grades
+
+| Grade | Min score |
+|-------|-----------|
+| S | 95 |
+| A+ | 90 |
+| A | 85 |
+| B+ | 80 |
+| B | 75 |
+| C+ | 70 |
+| C | 65 |
+| D | 50 |
+| F | <50 |
+
+Floor: 5% minimum.
+
+Full documentation: https://github.com/let-sunny/canicode/wiki/Scoring-Model`,
 
       "design-tree": `# Design Tree
 

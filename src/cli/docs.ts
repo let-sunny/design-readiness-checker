@@ -15,6 +15,7 @@ CANICODE DOCUMENTATION (v${pkg.version})
   canicode docs setup      Full setup guide (CLI, MCP, Skills)
   canicode docs config     Config override guide + example
   canicode docs scoring    Scoring model explanation
+  canicode docs rules      Pointer to rule list (canicode list-rules)
 
 Full documentation: github.com/let-sunny/canicode#readme
 `.trimStart());
@@ -200,6 +201,21 @@ USE CASES
 `.trimStart());
 }
 
+/** Print pointer to the rule list. */
+export function printDocsRules(): void {
+  console.log(`
+RULES
+
+  Run 'canicode list-rules' for the full table of rule IDs, scores, and severity.
+
+  Customize per-rule via config:
+    canicode docs config
+
+  Full reference:
+    https://github.com/let-sunny/canicode/blob/main/docs/CUSTOMIZATION.md
+`.trimStart());
+}
+
 /** Print the scoring model summary with pointer to full docs. */
 export function printDocsScoring(): void {
   console.log(`
@@ -222,6 +238,7 @@ const DOCS_TOPICS: Record<string, () => void> = {
   install: printDocsSetup, // alias
   config: printDocsConfig,
   scoring: printDocsScoring,
+  rules: printDocsRules,
   "visual-compare": printDocsVisualCompare,
   "design-tree": printDocsDesignTree,
 };
