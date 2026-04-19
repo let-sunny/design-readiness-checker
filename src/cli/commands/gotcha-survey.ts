@@ -8,6 +8,7 @@ import { loadFile, isJsonFile, isFixtureDir } from "../../core/engine/loader.js"
 import { getFigmaToken } from "../../core/engine/config-store.js";
 import { calculateScores } from "../../core/engine/scoring.js";
 import { generateGotchaSurvey } from "../../core/gotcha/survey-generator.js";
+import { computeDesignKey } from "../../core/contracts/design-key.js";
 import { getConfigsWithPreset, RULE_CONFIGS } from "../../core/rules/rule-config.js";
 import { loadConfigFile, mergeConfigs } from "../../core/rules/config-loader.js";
 import { trackEvent, trackError, EVENTS } from "../../core/monitoring/index.js";
@@ -49,7 +50,7 @@ export async function runGotchaSurvey(
   });
 
   const scores = calculateScores(result, configs as Record<RuleId, RuleConfig>);
-  return generateGotchaSurvey(result, scores);
+  return generateGotchaSurvey(result, scores, { designKey: computeDesignKey(input) });
 }
 
 function formatHumanSummary(survey: GotchaSurvey): string {

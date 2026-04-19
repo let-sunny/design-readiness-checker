@@ -20,6 +20,7 @@ import { initMonitoring, trackEvent, trackError, shutdownMonitoring, EVENTS } fr
 import { POSTHOG_API_KEY as BUILTIN_PH_KEY, SENTRY_DSN as BUILTIN_SENTRY_DSN } from "../core/monitoring/keys.js";
 import { getTelemetryEnabled, getPosthogApiKey, getSentryDsn, getDeviceId } from "../core/engine/config-store.js";
 import { AcknowledgmentSchema } from "../core/contracts/acknowledgment.js";
+import { computeDesignKey } from "../core/contracts/design-key.js";
 
 // Load .env for FIGMA_TOKEN (quiet: suppress dotenv's stdout banner — MCP uses stdout for JSON-RPC)
 config({ quiet: true });
@@ -120,7 +121,7 @@ Provide a Figma URL or fixture path via the input parameter. Requires FIGMA_TOKE
         content: [
           {
             type: "text" as const,
-            text: JSON.stringify(buildResultJson(file.name, result, scores, { fileKey: file.fileKey }), null, 2),
+            text: JSON.stringify(buildResultJson(file.name, result, scores, { fileKey: file.fileKey, designKey: computeDesignKey(input) }), null, 2),
           },
         ],
       };
@@ -188,7 +189,7 @@ Provide a Figma URL or fixture path via the input parameter. Requires FIGMA_TOKE
       });
 
       const scores = calculateScores(result, configs as Record<RuleId, RuleConfig>);
-      const survey = generateGotchaSurvey(result, scores);
+      const survey = generateGotchaSurvey(result, scores, { designKey: computeDesignKey(input) });
 
       trackEvent(EVENTS.ANALYSIS_COMPLETED, {
         nodeCount: result.nodeCount,

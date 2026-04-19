@@ -141,6 +141,21 @@ describe("generateGotchaSurvey", () => {
     expect(survey.isReadyForCodeGen).toBe(true);
   });
 
+  it("passes the caller-supplied designKey through to the response (#384)", () => {
+    const survey = generateGotchaSurvey(
+      makeResult([]),
+      makeScoreReport("S"),
+      { designKey: "abc123XYZ#42:100" },
+    );
+
+    expect(survey.designKey).toBe("abc123XYZ#42:100");
+  });
+
+  it("falls back to an empty designKey when no options are provided (test ergonomics)", () => {
+    const survey = generateGotchaSurvey(makeResult([]), makeScoreReport("S"));
+    expect(survey.designKey).toBe("");
+  });
+
   it("includes only blocking and risk severity issues", () => {
     const issues = [
       makeIssue({

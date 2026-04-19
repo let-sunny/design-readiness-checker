@@ -29,6 +29,7 @@ const NODE_PATH_SEPARATOR = " > ";
 export function generateGotchaSurvey(
   result: AnalysisResult,
   scores: ScoreReport,
+  options: { designKey?: string } = {},
 ): GotchaSurvey {
   const grade = scores.overall.grade;
 
@@ -69,6 +70,7 @@ export function generateGotchaSurvey(
     isReadyForCodeGen: isReadyForCodeGen(grade),
     questions,
     groupedQuestions,
+    designKey: options.designKey ?? "",
   };
 }
 

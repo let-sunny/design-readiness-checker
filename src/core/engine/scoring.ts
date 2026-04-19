@@ -425,7 +425,7 @@ export function buildResultJson(
   fileName: string,
   result: AnalysisResult,
   scores: ScoreReport,
-  options?: { fileKey?: string },
+  options?: { fileKey?: string; designKey?: string },
 ): Record<string, unknown> {
   const issuesByRule: Record<string, number> = {};
   for (const issue of result.issues) {
@@ -463,6 +463,7 @@ export function buildResultJson(
     version: VERSION,
     analyzedAt: result.analyzedAt,
     ...(options?.fileKey && { fileKey: options.fileKey }),
+    ...(options?.designKey && { designKey: options.designKey }),
     fileName,
     nodeCount: result.nodeCount,
     maxDepth: result.maxDepth,

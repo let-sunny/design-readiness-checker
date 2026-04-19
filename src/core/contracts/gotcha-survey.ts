@@ -119,6 +119,14 @@ export const GotchaSurveySchema = z.object({
   isReadyForCodeGen: z.boolean(),
   questions: z.array(GotchaSurveyQuestionSchema),
   groupedQuestions: GroupedSurveySchema,
+  /**
+   * #384 — canonical identifier for this design across canicode runs.
+   * Computed by `computeDesignKey(input)` (`<fileKey>#<nodeId>` for Figma
+   * URLs, absolute path for fixtures). The `canicode-gotchas` SKILL reads
+   * this directly when upserting the per-design section, so the SKILL.md
+   * prose no longer parses URLs (per ADR-303 / PR #303).
+   */
+  designKey: z.string(),
 });
 
 export type GotchaSurvey = z.infer<typeof GotchaSurveySchema>;

@@ -15,6 +15,7 @@ import {
   getFigmaToken, getReportsDir, ensureReportsDir,
 } from "../../core/engine/config-store.js";
 import { calculateScores, formatScoreSummary, buildResultJson } from "../../core/engine/scoring.js";
+import { computeDesignKey } from "../../core/contracts/design-key.js";
 import { getConfigsWithPreset, RULE_CONFIGS } from "../../core/rules/rule-config.js";
 import { loadConfigFile, mergeConfigs } from "../../core/rules/config-loader.js";
 import { generateHtmlReport } from "../../core/report-html/index.js";
@@ -165,7 +166,7 @@ export function registerAnalyze(cli: CAC): void {
 
         // JSON output mode — only JSON goes to stdout; exit code still applies
         if (options.json) {
-          console.log(JSON.stringify(buildResultJson(file.name, result, scores, { fileKey: file.fileKey }), null, 2));
+          console.log(JSON.stringify(buildResultJson(file.name, result, scores, { fileKey: file.fileKey, designKey: computeDesignKey(input) }), null, 2));
           if (scores.overall.grade === "F") {
             process.exitCode = 1;
           }

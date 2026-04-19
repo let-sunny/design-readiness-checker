@@ -98,14 +98,15 @@ After collecting all answers, **upsert** this design's section into the `# Colle
 
 This file goes in the **user's project** (current working directory), NOT in the canicode repo. The Workflow region above **must never be modified** — only the `# Collected Gotchas` region below is touched.
 
-#### Step 4a: Compute `designKey`
+#### Step 4a: Use the `designKey` from the survey response
 
-`designKey` uniquely identifies the design so re-running on the same URL replaces the existing section in place. Parse it from the survey input:
+`designKey` uniquely identifies the design so re-running on the same URL replaces the existing section in place. The survey response carries it on `survey.designKey` — read it directly. Do **not** parse the input URL in prose.
 
-- **Figma URL** — extract `fileKey` and `nodeId` from the URL and join them as `<fileKey>#<nodeId>`. Example: `https://figma.com/design/abc123XYZ/My-File?node-id=42-100` → `designKey = "abc123XYZ#42:100"` (convert `-` to `:` in nodeId, the same normalization the Figma MCP uses). Drop any other query-string parameters — only `node-id` matters for the key.
-- **Fixture path** — use the absolute path, e.g. `/Users/me/project/fixtures/simple.json`.
+The `core/contracts/design-key.ts` helper (`computeDesignKey`) handles every shape with vitest coverage so the SKILL stays ADR-303-compliant (PR #303):
 
-Do **not** use the raw survey input URL as the key: trailing query parameters (`?t=...`, `?mode=...`) break string matching on re-runs.
+- **Figma URL** → `<fileKey>#<nodeId>` with `-` → `:` normalization on the nodeId. Example: `https://figma.com/design/abc123XYZ/My-File?node-id=42-100&t=ref` → `designKey = "abc123XYZ#42:100"`. Trailing query parameters (`?t=...`, `?mode=...`) are dropped.
+- **Figma URL without `node-id`** → just `<fileKey>` (file-level key).
+- **Fixture path / JSON file** → absolute path.
 
 #### Step 4b: Read the existing file and locate the target section
 
@@ -154,7 +155,7 @@ Each per-design section in the `# Collected Gotchas` region has this exact shape
 | `designName` | Figma file name or fixture name from the input |
 | `YYYY-MM-DD` | Today's date (the day you are running the survey) |
 | `figmaUrl` | The input URL or fixture path provided by the user |
-| `designKey` | `<fileKey>#<nodeId>` for Figma URLs, absolute path for fixtures (see Step 4a) |
+| `designKey` | `survey.designKey` from the gotcha-survey response (see Step 4a) |
 | `designGrade` | `designGrade` from gotcha-survey response |
 | `analyzedAt` | Current timestamp (ISO 8601) |
 | `ruleId` | `ruleId` from each question |
