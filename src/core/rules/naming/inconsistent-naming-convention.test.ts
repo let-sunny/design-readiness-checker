@@ -113,6 +113,26 @@ describe("inconsistent-naming-convention", () => {
     expect(result!.suggestedName).toBe("my-url-parser");
   });
 
+  // #372 regression: single-character names like "X" detect as
+  // SCREAMING_SNAKE_CASE but the case-conversion to PascalCase produces "X"
+  // — the same string. Pre-fix the rule fired and the apply step wrote
+  // `target.name = "X"` over `X`, then reported it as a "✅ resolved
+  // (auto-fix renames)" entry in the wrap-up despite changing nothing.
+  // Suppress no-op renames at the rule level so the misleading wrap-up
+  // line never gets emitted.
+  it("does not flag when the suggested rename equals the current name (#372)", () => {
+    // Three siblings — two PascalCase establish the dominant convention.
+    // "X" detects as SCREAMING_SNAKE_CASE but converts to "X" under PascalCase.
+    const sibA = makeNode({ id: "2:1", name: "ProductCard" });
+    const sibB = makeNode({ id: "2:2", name: "ReviewCard" });
+    const node = makeNode({ id: "1:1", name: "X" });
+    const siblings = [node, sibA, sibB];
+
+    expect(
+      inconsistentNamingConvention.check(node, makeContext({ siblings })),
+    ).toBeNull();
+  });
+
   it("still flags multi-word PascalCase in Title Case context", () => {
     const sibA = makeNode({ id: "2:1", name: "Card Grid" }); // Title Case
     const sibB = makeNode({ id: "2:2", name: "Review Card" }); // Title Case
