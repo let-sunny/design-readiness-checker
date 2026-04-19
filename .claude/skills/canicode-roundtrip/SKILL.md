@@ -292,6 +292,8 @@ The probe is read-only and idempotent; running it before the picker adds one rou
    - `applyPropertyMod(question, answerValue, { categories, allowDefinitionWrite, telemetry })` — Strategy A entry point. Branches on `targetProperty` (single vs array) and answer shape (scalar, per-property object, `{ variable: "name" }` binding). Uses `setBoundVariableForPaint` for `fills` / `strokes` and `setBoundVariable` for scalar fields. Passes the full context through to `applyWithInstanceFallback`.
    - `resolveVariableByName(name)` — local-variable exact-name lookup; returns `null` for remote library variables not imported into this file.
    - `probeDefinitionWritability(questions)` — async pre-flight (#357). Returns `{ totalCount, unwritableCount, unwritableSourceNames, allUnwritable, partiallyUnwritable }`. Use BEFORE the Definition write picker so the picker can drop the opt-in branch when every candidate is in an external library / unresolved (saves the user a wasted "I opted in, why did I get annotations?" decision). Read-only probe, dedupes by `sourceChildId`.
+   - `extractAcknowledgmentsFromNode(node, canicodeCategoryIds?)` — synchronous pure helper (#371). Reads one node's annotations and returns `{ nodeId, ruleId }[]` for entries gated by canicode `categoryId` plus a recognisable `— *<ruleId>*` footer (or legacy `**[canicode] <ruleId>**` prefix). When `canicodeCategoryIds` is omitted, footer-text matching alone is sufficient (test mode).
+   - `readCanicodeAcknowledgments(rootNodeId, categories?)` — async tree walker (#371). Loads `rootNodeId` via `figma.getNodeByIdAsync`, recurses through `children`, and accumulates one acknowledgment per recognised entry. Used at the top of Step 5a to harvest the side channel that lets the analysis pipeline distinguish "still broken" from "the designer has a plan" — pass the result straight to `analyze({ acknowledgments })`. Errors on individual nodes are swallowed so locked / external nodes don't abort the sweep.
 
 Keep each `writeFn` small so a throw does not abort unrelated writes. Experiment 08 findings informed every branch in the bundled helpers, and the batch-level confirmation contract still applies *when opting in*: if the orchestrator passes `allowDefinitionWrite: true`, it must have already collected one confirmation covering every potential definition write in the batch. Under the default, no confirmation is needed — the helper annotates the scene instead of propagating.
 
@@ -454,13 +456,44 @@ Applied {N} changes to the Figma design:
 
 ### Step 5: Re-analyze and report what the roundtrip addressed
 
-Run `analyze` again on the same Figma URL:
+#### Step 5a: Harvest canicode-authored annotations as acknowledgments (#371)
+
+Before re-running `analyze`, collect every `(nodeId, ruleId)` pair that Step 4 wrote as a Figma annotation. The REST API does not expose annotations, so this side channel is the only way the analysis pipeline learns that a roundtrip-touched issue is "the designer has a plan" rather than "still broken". Without it the grade and issue count look identical to the pre-roundtrip state — `32 → 32` — even when every gotcha has been captured per ADR-012.
+
+Run a short `use_figma` batch that walks the same subtree the original `analyze` covered (`targetNodeId` if you used one, else `figma.root.id`), reads canicode-categorised annotations, and serialises the result:
+
+```javascript
+// Inside a use_figma batch:
+const categories = await CanICodeRoundtrip.ensureCanicodeCategories();
+const acknowledgments = await CanICodeRoundtrip.readCanicodeAcknowledgments(
+  targetNodeId ?? figma.root.id,
+  categories
+);
+return { events: [], acknowledgments };
+```
+
+`readCanicodeAcknowledgments` walks `node.children` recursively, gates on the `canicode:gotcha` / `canicode:flag` / `canicode:fallback` (and legacy `canicode:auto-fix`) category ids, and extracts the ruleId from the annotation footer (`— *<ruleId>*`) or the legacy `**[canicode] <ruleId>**` prefix. The categoryId guard keeps user-authored notes that happen to end in italic kebab-case from being mistaken for canicode acknowledgments.
+
+#### Step 5b: Re-analyze with acknowledgments
+
+Pass the harvested array straight into `analyze` so the engine flags matching issues as `acknowledged: true` and the density score gives them half weight:
 
 ```
-analyze({ input: "<figma-url>" })
+analyze({ input: "<figma-url>", acknowledgments })
 ```
 
-Under ADR-012's annotate-by-default policy, most instance-child gotchas route to 📝 annotations and do **not** move the numeric grade — so the headline for this step is the **issues-delta** (what the roundtrip captured), not a grade comparison. Grade is kept as a footnote so the Row 8 regression guardrail still applies.
+**Without canicode MCP** — the CLI accepts the same input via `--acknowledgments <path>` (JSON file containing the array). Write the array to a temp file from the `use_figma` return, then:
+
+```bash
+npx canicode analyze "<figma-url>" --json --acknowledgments /tmp/canicode-acks.json
+```
+
+The response now carries:
+- `acknowledgedCount` (top level) — how many issues matched an acknowledgment.
+- `issues[i].acknowledged: true` (per matched issue) — survives into the report and downstream skills.
+- `summary` text — when `acknowledgedCount > 0`, the Total line reads `Total: N (A acknowledged via canicode annotations / N-A unaddressed)`.
+
+Under ADR-012's annotate-by-default policy, most instance-child gotchas route to 📝 annotations and do **not** move the numeric grade — but the half-weight density now produces a small visible movement when annotations are recognised. The headline for this step remains the **issues-delta** (what the roundtrip captured); grade movement is a secondary signal.
 
 **Tally inputs** — derive the counts from the data you already have:
 - `X` (✅ resolved): count of ✅ + 🔧 + 🔗 markers from the Step 4 report block you just emitted (scene/instance-child writes, auto-fix renames, and variable bindings all successfully landed the value).
@@ -468,11 +501,13 @@ Under ADR-012's annotate-by-default policy, most instance-child gotchas route to
 - `Z` (🌐 definition writes): count of 🌐 markers from Step 4 — only non-zero when the orchestrator opted in with `allowDefinitionWrite: true` (helper context option, not a CLI flag).
 - `W` (⏭️ skipped): count of ⏭️ markers from Step 4 plus any Step 3 questions the user answered with `skip` or `n/a`.
 - `V` (remaining): `issues.length` from the re-analyze response — unresolved gotchas plus non-actionable rules still flagged by the design.
+- `V_ack` (acknowledged remaining): `acknowledgedCount` from the same response — issues that the design still surfaces but that carry a canicode annotation per Step 5a.
+- `V_open` (unaddressed remaining): `V - V_ack` — issues with no canicode annotation; the user's actual follow-up backlog.
 - `N` (addressed) = `X + Y + Z + W`.
 
-If Step 4 produced no report block (e.g. user skipped every question, or no gotcha survey ran), all four counts are zero — that is a legitimate outcome; report the breakdown with zeros rather than treating it as an error.
+If Step 4 produced no report block (e.g. user skipped every question, or no gotcha survey ran), all four counts are zero, `V_ack = 0`, and `V_open = V` — report the breakdown with zeros rather than treating it as an error. (Skipping Step 5a and passing no `acknowledgments` argument is also valid in this case — the response simply has `acknowledgedCount: 0`.)
 
-**All gotcha issues resolved** (`V == 0`, i.e. re-analyze surfaces no remaining issues — note this is independent of grade since ADR-012 annotations do not move the score):
+**All gotcha issues resolved** (`V == 0`, i.e. re-analyze surfaces no remaining issues — note this is mostly independent of grade since ADR-012 annotations only move the score by the half-weight reduction enabled in Step 5b):
 - Tell the user (fill in the counts from the tally above):
 
   ```
@@ -505,7 +540,7 @@ for (const id of nodeIds) {
 - Proceed to **Step 6**.
 
 **Some issues remain** (`V > 0`):
-- Show the same breakdown and ask whether to proceed:
+- Show the same breakdown and ask whether to proceed. When `V_ack > 0`, expand the remaining line into the acknowledged/unaddressed split surfaced by the re-analyze (#371) so the user can see how much of `V` is "captured for code-gen" vs "still on the user's plate":
 
   ```
   Roundtrip complete — N issues addressed:
@@ -514,10 +549,14 @@ for (const id of nodeIds) {
     🌐  Z definition writes propagated (only when allowDefinitionWrite: true)
     ⏭️  W skipped (user declined or "skip")
     —
-    V issues remaining (unresolved gotchas + non-actionable rules)
+    V issues remaining
+       ↳ V_ack acknowledged via canicode annotations (carried into code-gen)
+       ↳ V_open unaddressed (no annotation — your follow-up backlog)
 
   Grade: {oldGrade} → {newGrade}. Proceed to code generation with remaining context?
   ```
+
+  When `V_ack == 0` (re-analyze returned `acknowledgedCount: 0`), keep the single `V issues remaining (unresolved gotchas + non-actionable rules)` line.
 - If yes → proceed to **Step 6** with remaining gotcha context.
 - If no → stop and emit the **Stop wrap-up** below; do **not** restate the grade as the lead.
 
@@ -531,11 +570,15 @@ Stopped — N issues addressed, V remaining for manual follow-up:
   📝  Y annotated on Figma (carried into code-gen via canicode-gotchas)
   🌐  Z definition writes propagated
   ⏭️  W skipped
+   —
+  V remaining
+     ↳ V_ack acknowledged via canicode annotations
+     ↳ V_open unaddressed
 
 Grade: {oldGrade} → {newGrade}.
 ```
 
-Anti-pattern (do **not** lead with a grade-only sentence like "Grade: C → C+. Most size-constraint gotchas are now annotations…"). Lead with the delta block; mention grade once, on its own footnote line, plain prose only.
+When `V_ack == 0`, drop the `↳` lines and leave a single `V remaining` row. Anti-pattern (do **not** lead with a grade-only sentence like "Grade: C → C+. Most size-constraint gotchas are now annotations…"). Lead with the delta block; mention grade once, on its own footnote line, plain prose only.
 
 ### Step 6: Implement with Figma MCP
 
@@ -562,10 +605,14 @@ Roundtrip complete — N issues addressed, code generated:
   ⏭️  W skipped
   —
   V issues remaining
+     ↳ V_ack acknowledged via canicode annotations
+     ↳ V_open unaddressed
 
 Grade: {oldGrade} → {newGrade}.
 Code: <files generated / next-step pointer from figma-implement-design>
 ```
+
+(Drop the `↳` lines when `V_ack == 0`.)
 
 ## Edge Cases
 

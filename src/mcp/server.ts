@@ -19,6 +19,7 @@ import type { RuleConfig, RuleId } from "../core/contracts/rule.js";
 import { initMonitoring, trackEvent, trackError, shutdownMonitoring, EVENTS } from "../core/monitoring/index.js";
 import { POSTHOG_API_KEY as BUILTIN_PH_KEY, SENTRY_DSN as BUILTIN_SENTRY_DSN } from "../core/monitoring/keys.js";
 import { getTelemetryEnabled, getPosthogApiKey, getSentryDsn, getDeviceId } from "../core/engine/config-store.js";
+import { AcknowledgmentSchema } from "../core/contracts/acknowledgment.js";
 
 // Load .env for FIGMA_TOKEN (quiet: suppress dotenv's stdout banner — MCP uses stdout for JSON-RPC)
 config({ quiet: true });
@@ -46,6 +47,7 @@ Provide a Figma URL or fixture path via the input parameter. Requires FIGMA_TOKE
     targetNodeId: z.string().optional().describe("Scope analysis to a specific node ID"),
     configPath: z.string().optional().describe("Path to config JSON file for rule overrides"),
     openReport: z.boolean().optional().describe("Open the generated HTML report in the user's browser. Defaults to false — opt in only when a visible report is the explicit user request (#365). The HTML file is always written to disk regardless."),
+    acknowledgments: z.array(AcknowledgmentSchema).optional().describe("(#371) Pre-resolved [{ nodeId, ruleId }] pairs harvested from canicode-authored Figma annotations (e.g. via the `readCanicodeAcknowledgments` Plugin helper inside a use_figma batch). Matching issues are flagged `acknowledged: true` and contribute half weight to the density score so re-analyze surfaces movement after a roundtrip even under ADR-012's annotate-by-default policy."),
   },
   {
     readOnlyHint: false,
@@ -53,7 +55,7 @@ Provide a Figma URL or fixture path via the input parameter. Requires FIGMA_TOKE
     openWorldHint: true,
     title: "Analyze Figma Design",
   },
-  async ({ input, token, preset, targetNodeId, configPath, openReport }) => {
+  async ({ input, token, preset, targetNodeId, configPath, openReport, acknowledgments }) => {
     trackEvent(EVENTS.MCP_TOOL_CALLED, { tool: "analyze" });
     try {
       // Fetch via REST API or load from fixture
@@ -73,6 +75,9 @@ Provide a Figma URL or fixture path via the input parameter. Requires FIGMA_TOKE
       const result = analyzeFile(file, {
         configs: configs as Record<RuleId, RuleConfig>,
         ...(effectiveNodeId ? { targetNodeId: effectiveNodeId } : {}),
+        ...(acknowledgments && acknowledgments.length > 0
+          ? { acknowledgments }
+          : {}),
       });
 
       const scores = calculateScores(result, configs as Record<RuleId, RuleConfig>);

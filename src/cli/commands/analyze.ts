@@ -1,5 +1,5 @@
 import { existsSync, mkdirSync } from "node:fs";
-import { writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { resolve, dirname } from "node:path";
 import type { CAC } from "cac";
 import { z } from "zod";
@@ -7,6 +7,10 @@ import { z } from "zod";
 import type { RuleConfig, RuleId } from "../../core/contracts/rule.js";
 import { analyzeFile } from "../../core/engine/rule-engine.js";
 import { loadFile, isJsonFile, isFixtureDir } from "../../core/engine/loader.js";
+import {
+  AcknowledgmentListSchema,
+  type Acknowledgment,
+} from "../../core/contracts/acknowledgment.js";
 import {
   getFigmaToken, getReportsDir, ensureReportsDir,
 } from "../../core/engine/config-store.js";
@@ -26,6 +30,7 @@ const AnalyzeOptionsSchema = z.object({
   config: z.string().optional(),
   noOpen: z.boolean().optional(),
   json: z.boolean().optional(),
+  acknowledgments: z.string().optional(),
 });
 
 
@@ -40,6 +45,7 @@ export function registerAnalyze(cli: CAC): void {
     .option("--config <path>", "Path to config JSON file (override rule scores/settings)")
     .option("--no-open", "Don't open report in browser after analysis")
     .option("--json", "Output JSON results to stdout (same format as MCP)")
+    .option("--acknowledgments <path>", "(#371) Path to a JSON file containing [{ nodeId, ruleId }] pairs harvested from canicode-authored Figma annotations. Matching issues are flagged acknowledged and contribute half weight to density.")
     .example("  canicode analyze https://www.figma.com/design/ABC123/MyDesign")
     .example("  canicode analyze https://www.figma.com/design/ABC123/MyDesign --api --token YOUR_TOKEN")
     .example("  canicode analyze ./fixtures/my-design --output report.html")
@@ -127,12 +133,27 @@ export function registerAnalyze(cli: CAC): void {
           log(`Config loaded: ${options.config}`);
         }
 
+        let acknowledgments: Acknowledgment[] | undefined;
+        if (options.acknowledgments) {
+          const ackPath = resolve(options.acknowledgments);
+          const raw = await readFile(ackPath, "utf-8");
+          const parsed = AcknowledgmentListSchema.safeParse(JSON.parse(raw));
+          if (!parsed.success) {
+            throw new Error(
+              `Invalid --acknowledgments file at ${ackPath}: ${parsed.error.issues.map(i => `${i.path.join(".")}: ${i.message}`).join("; ")}`
+            );
+          }
+          acknowledgments = parsed.data;
+          log(`Acknowledgments loaded: ${acknowledgments.length} entries from ${ackPath}`);
+        }
+
         // Build analysis options
         const analyzeOptions = {
           configs: configs as Record<RuleId, RuleConfig>,
           ...(effectiveNodeId && { targetNodeId: effectiveNodeId }),
           ...(excludeNodeNames && { excludeNodeNames }),
           ...(excludeNodeTypes && { excludeNodeTypes }),
+          ...(acknowledgments && { acknowledgments }),
         };
 
         // Run analysis

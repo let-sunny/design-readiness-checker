@@ -41,6 +41,15 @@ export interface ScoreReport {
     missingInfo: number;
     suggestion: number;
     nodeCount: number;
+    /**
+     * Number of issues marked `acknowledged` by an upstream
+     * acknowledgments list (#371). Acknowledged issues are still counted in
+     * `totalIssues` and the per-severity tallies — the count here is purely
+     * additive context so consumers can render
+     * `N issues — A acknowledged / N-A unaddressed`. They contribute half
+     * weight to the density score upstream.
+     */
+    acknowledgedCount: number;
   };
 }
 
@@ -205,9 +214,15 @@ export function calculateScores(
     categoryScores[category].bySeverity[severity]++;
     uniqueRulesPerCategory.get(category)!.add(ruleId);
     ruleScorePerCategory.get(category)!.set(ruleId, Math.abs(issue.config.score));
-    // Accumulate per-rule issue count (using |calculatedScore| as weight unit)
+    // Accumulate per-rule issue count using a per-issue weight: 1.0 for
+    // unacknowledged issues, 0.5 for acknowledged ones (#371). The sqrt
+    // damping below treats this sum as the "occurrence count" so the
+    // half-weight flows through to density without changing the formula.
+    // Diversity is left untouched — acknowledgment is per-issue, not
+    // per-rule, and the rule still represents a kind of problem.
     const ruleCountMap = ruleIssueCountPerCategory.get(category)!;
-    ruleCountMap.set(ruleId, (ruleCountMap.get(ruleId) ?? 0) + 1);
+    const weight = issue.acknowledged === true ? 0.5 : 1;
+    ruleCountMap.set(ruleId, (ruleCountMap.get(ruleId) ?? 0) + weight);
   }
 
   // Compute weightedIssueCount with sqrt damping per rule (#226).
@@ -286,6 +301,7 @@ export function calculateScores(
     missingInfo: 0,
     suggestion: 0,
     nodeCount,
+    acknowledgedCount: 0,
   };
 
   for (const issue of result.issues) {
@@ -303,6 +319,7 @@ export function calculateScores(
         summary.suggestion++;
         break;
     }
+    if (issue.acknowledged === true) summary.acknowledgedCount++;
   }
 
   return {
@@ -367,7 +384,15 @@ export function formatScoreSummary(report: ScoreReport): string {
   lines.push(`  Risk: ${report.summary.risk}`);
   lines.push(`  Missing Info: ${report.summary.missingInfo}`);
   lines.push(`  Suggestion: ${report.summary.suggestion}`);
-  lines.push(`  Total: ${report.summary.totalIssues}`);
+  if (report.summary.acknowledgedCount > 0) {
+    const unaddressed =
+      report.summary.totalIssues - report.summary.acknowledgedCount;
+    lines.push(
+      `  Total: ${report.summary.totalIssues} (${report.summary.acknowledgedCount} acknowledged via canicode annotations / ${unaddressed} unaddressed)`
+    );
+  } else {
+    lines.push(`  Total: ${report.summary.totalIssues}`);
+  }
 
   return lines.join("\n");
 }
@@ -430,6 +455,7 @@ export function buildResultJson(
       ...(applyContext.sourceChildId !== undefined
         ? { sourceChildId: applyContext.sourceChildId }
         : {}),
+      ...(issue.acknowledged === true ? { acknowledged: true as const } : {}),
     };
   });
 
@@ -441,6 +467,7 @@ export function buildResultJson(
     nodeCount: result.nodeCount,
     maxDepth: result.maxDepth,
     issueCount: result.issues.length,
+    acknowledgedCount: scores.summary.acknowledgedCount,
     isReadyForCodeGen: isReadyForCodeGen(scores.overall.grade),
     blockingIssueCount: scores.summary.blocking,
     scores: {
