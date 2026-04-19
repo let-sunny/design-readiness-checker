@@ -15,6 +15,13 @@ export {
   readCanicodeAcknowledgments,
 } from "./read-acknowledgments.js";
 export { computeRoundtripTally } from "./compute-roundtrip-tally.js";
+export { applyAutoFix, applyAutoFixes } from "./apply-auto-fix.js";
+export type {
+  ApplyAutoFixContext,
+  AutoFixIssueInput,
+  AutoFixOutcome,
+  AutoFixOutcomeIcon,
+} from "./apply-auto-fix.js";
 export {
   isCanicodeAnnotation,
   removeCanicodeAnnotations,

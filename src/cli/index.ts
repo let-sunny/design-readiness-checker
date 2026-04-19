@@ -19,6 +19,7 @@ import "../core/rules/index.js";
 // User-facing commands
 import { registerAnalyze } from "./commands/analyze.js";
 import { registerGotchaSurvey } from "./commands/gotcha-survey.js";
+import { registerUpsertGotchaSection } from "./commands/upsert-gotcha-section.js";
 import { registerDesignTree } from "./commands/design-tree.js";
 import { registerVisualCompare } from "./commands/visual-compare.js";
 import { registerInit } from "./commands/init.js";
@@ -70,6 +71,7 @@ process.on("beforeExit", () => {
 // ============================================
 registerAnalyze(cli);
 registerGotchaSurvey(cli);
+registerUpsertGotchaSection(cli);
 registerDesignTree(cli);
 registerVisualCompare(cli);
 registerInit(cli);

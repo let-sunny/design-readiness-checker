@@ -396,6 +396,90 @@ ${footer}`;
     };
   }
 
+  // src/core/roundtrip/apply-auto-fix.ts
+  function pickNodeName(issue, resolved) {
+    if (resolved && typeof resolved.name === "string" && resolved.name.length > 0) {
+      return resolved.name;
+    }
+    if (typeof issue.nodePath === "string" && issue.nodePath.length > 0) {
+      const segments = issue.nodePath.split(/\s*[›>/]\s*/);
+      const tail = segments[segments.length - 1];
+      if (tail && tail.length > 0) return tail;
+    }
+    return issue.nodeId;
+  }
+  function mapInstanceFallbackIcon(result) {
+    if (result.icon === "\u2705") return "\u{1F527}";
+    return result.icon;
+  }
+  async function applyAutoFix(issue, context) {
+    const { categories } = context;
+    const ruleId = issue.ruleId;
+    if (issue.targetProperty === "name" && typeof issue.suggestedName === "string") {
+      const suggestedName = issue.suggestedName;
+      const question = {
+        nodeId: issue.nodeId,
+        ruleId,
+        ...issue.sourceChildId ? { sourceChildId: issue.sourceChildId } : {}
+      };
+      const result = await applyWithInstanceFallback(
+        question,
+        (target) => {
+          if (target) {
+            target.name = suggestedName;
+          }
+        },
+        {
+          categories,
+          ...context.allowDefinitionWrite !== void 0 ? { allowDefinitionWrite: context.allowDefinitionWrite } : {},
+          ...context.telemetry !== void 0 ? { telemetry: context.telemetry } : {}
+        }
+      );
+      const sceneAfter = await figma.getNodeByIdAsync(issue.nodeId);
+      return {
+        outcome: mapInstanceFallbackIcon(result),
+        nodeId: issue.nodeId,
+        nodeName: pickNodeName(issue, sceneAfter),
+        ruleId,
+        label: result.label
+      };
+    }
+    const scene = await figma.getNodeByIdAsync(issue.nodeId);
+    const markdown = issue.message ?? `Auto-flagged: ${ruleId}`;
+    if (scene) {
+      upsertCanicodeAnnotation(scene, {
+        ruleId,
+        markdown,
+        categoryId: categories.flag,
+        ...issue.annotationProperties && issue.annotationProperties.length > 0 ? { properties: issue.annotationProperties } : {}
+      });
+    }
+    return {
+      outcome: "\u{1F4DD}",
+      nodeId: issue.nodeId,
+      nodeName: pickNodeName(issue, scene),
+      ruleId,
+      label: scene ? `annotation added to canicode:flag \u2014 ${ruleId}` : `missing node (annotation skipped) \u2014 ${ruleId}`
+    };
+  }
+  async function applyAutoFixes(issues, context) {
+    const out = [];
+    for (const issue of issues) {
+      if (issue.applyStrategy !== "auto-fix") {
+        out.push({
+          outcome: "\u23ED\uFE0F",
+          nodeId: issue.nodeId,
+          nodeName: pickNodeName(issue, null),
+          ruleId: issue.ruleId,
+          label: `skipped \u2014 applyStrategy is ${issue.applyStrategy ?? "absent"}`
+        });
+        continue;
+      }
+      out.push(await applyAutoFix(issue, context));
+    }
+    return out;
+  }
+
   // src/core/roundtrip/remove-canicode-annotations.ts
   var LEGACY_CANICODE_PREFIX = "**[canicode]";
   function isCanicodeAnnotation(annotation, categories) {
@@ -419,6 +503,8 @@ ${footer}`;
     return annotations.filter((a) => !isCanicodeAnnotation(a, categories));
   }
 
+  exports.applyAutoFix = applyAutoFix;
+  exports.applyAutoFixes = applyAutoFixes;
   exports.applyPropertyMod = applyPropertyMod;
   exports.applyWithInstanceFallback = applyWithInstanceFallback;
   exports.computeRoundtripTally = computeRoundtripTally;

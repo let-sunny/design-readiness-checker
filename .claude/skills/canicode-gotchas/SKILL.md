@@ -108,17 +108,25 @@ The `core/contracts/design-key.ts` helper (`computeDesignKey`) handles every sha
 - **Figma URL without `node-id`** → just `<fileKey>` (file-level key).
 - **Fixture path / JSON file** → absolute path.
 
-#### Step 4b: Read the existing file and locate the target section
+#### Step 4b: Upsert via the canicode CLI
 
-1. Read `.claude/skills/canicode-gotchas/SKILL.md` if it exists.
-2. Detect the file's state using the two structural markers that uniquely identify each case — the YAML frontmatter (present on every `canicode init` install) and the `# Collected Gotchas` heading (present on every post-#340 install):
-   - **File missing** → tell the user to run `canicode init` first, then re-invoke this skill. Stop here.
-   - **File has YAML frontmatter AND a `# Collected Gotchas` heading** (the default shipped shape since #340) → proceed to step 3 below.
-   - **File has YAML frontmatter but no `# Collected Gotchas` heading** (an older workflow install, or a user-edited workflow that dropped the trailing heading) → preserve everything above unchanged and append a new `# Collected Gotchas` heading at the bottom, then proceed to step 3.
-   - **File missing the YAML frontmatter** (a pre-#340 single-design clobber — the old overwrite rewrote the frontmatter's `description` to the per-design variant, so a well-formed canicode frontmatter is the cleanest discriminator) → **do not attempt to reconstruct the workflow inline**. Tell the user: "Your gotchas SKILL.md looks like the pre-#340 single-design format. Run `canicode init --force` to restore the workflow, then re-run this survey — your answers will land in a clean numbered section." Stop here.
-3. Walk the existing `## #NNN — ...` sections under `# Collected Gotchas` and look for one whose `- **Design key**:` bullet matches the `designKey` from Step 4a. Substring match against the bullet value is sufficient.
-   - **Found** → replace that section in place. **Preserve its `#NNN` number** so external references (downstream skills, user notes) remain stable.
-   - **Not found** → append a new section at the bottom of the region. `#NNN = (highest existing number) + 1`, zero-padded to three digits. Never reuse a number that appeared earlier and was deleted; numbering is monotonic.
+File-state detection (4-way: missing / valid / missing-heading / clobbered) and section walking (find existing `## #NNN — ...` by `Design key` substring, otherwise compute the next monotonic zero-padded NNN) are deterministic markdown operations and live in `core/gotcha/upsert-gotcha-section.ts` with vitest coverage — the SKILL never re-implements them in prose (per ADR-303 / PR #303).
+
+Render the per-design section markdown using the **Output Template** below with the literal string `{{SECTION_NUMBER}}` in the header (the CLI substitutes the right NNN for you — preserves it on replace, computes the next monotonic value on append). Then invoke:
+
+```bash
+npx canicode upsert-gotcha-section \
+  --file .claude/skills/canicode-gotchas/SKILL.md \
+  --design-key "<designKey from Step 4a>" \
+  --section -   # then pipe the rendered section markdown through stdin
+```
+
+The CLI prints a JSON result `{ state, action, sectionNumber, wrote, userMessage }`:
+
+- `wrote: true` → success. `action` is `"replace"` (preserved `sectionNumber`) or `"append"` (next monotonic `sectionNumber`).
+- `wrote: false` with `state: "missing"` → tell the user: *"Your gotchas SKILL.md is not installed yet. Run `canicode init` first, then re-invoke this skill."* Stop here.
+- `wrote: false` with `state: "clobbered"` → tell the user: *"Your gotchas SKILL.md is missing the canicode YAML frontmatter (pre-#340 single-design clobber). Run `canicode init --force` to restore the workflow, then re-run this survey — your answers will land in a clean numbered section."* Stop here.
+- `wrote: true` with `state: "missing-heading"` → silent recovery. The CLI injected the `# Collected Gotchas` heading and appended the section; the workflow region above is untouched.
 
 The Workflow region above must never be touched. Do NOT copy Workflow prose into the per-design section; the section only carries metadata + gotcha answers.
 
