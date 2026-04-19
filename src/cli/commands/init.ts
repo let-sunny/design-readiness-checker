@@ -5,6 +5,7 @@ import {
   initAiready, getConfigPath, getReportsDir,
 } from "../../core/engine/config-store.js";
 import { installSkills } from "../skill-installer.js";
+import { trackEvent, EVENTS } from "../../core/monitoring/index.js";
 
 const InitOptionsSchema = z.object({
   token: z.string().optional(),
@@ -38,6 +39,7 @@ export function registerInit(cli: CAC): void {
           console.log(`  Reports will be saved to: ${getReportsDir()}/`);
 
           let skillStepOk = true;
+          let skillSummary: { installed: number; overwritten: number; skipped: number } | undefined;
           if (options.skills !== false) {
             try {
               const summary = await installSkills({
@@ -51,6 +53,11 @@ export function registerInit(cli: CAC): void {
               if (summary.skipped.length > 0) {
                 console.log(`  (Re-run with --force to overwrite skipped files.)`);
               }
+              skillSummary = {
+                installed: summary.installed.length,
+                overwritten: summary.overwritten.length,
+                skipped: summary.skipped.length,
+              };
             } catch (skillError) {
               console.error(
                 `\n  Skill install failed: ${skillError instanceof Error ? skillError.message : String(skillError)}`,
@@ -59,6 +66,14 @@ export function registerInit(cli: CAC): void {
               skillStepOk = false;
             }
           }
+
+          trackEvent(EVENTS.CLI_INIT, {
+            skillsRequested: options.skills !== false,
+            skillStepOk,
+            target: options.global ? "global" : "project",
+            force: options.force ?? false,
+            ...(skillSummary ?? {}),
+          });
 
           if (skillStepOk) {
             console.log(`\n  Next: canicode analyze "https://www.figma.com/design/..."`);
