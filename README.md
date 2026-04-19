@@ -10,7 +10,7 @@
   <a href="https://github.com/let-sunny/canicode/actions/workflows/release.yml"><img src="https://github.com/let-sunny/canicode/actions/workflows/release.yml/badge.svg" alt="Release"></a>
 </p>
 
-<p align="center"><strong>Stop explaining your designs. Get scored by AI-calibrated rules.</strong></p>
+<p align="center"><strong>Make your Figma file information-complete — so AI generates code that actually works.</strong></p>
 
 <p align="center">
   <strong><a href="https://let-sunny.github.io/canicode/">Try it in your browser</a></strong> — no install needed.
@@ -22,28 +22,30 @@
 
 ---
 
-## Why CanICode
+## How it works
 
-AI can turn Figma designs into code — but the quality depends heavily on **how the design is structured**. Missing Auto Layout drops pixel accuracy from 95% to 63% at different viewports. Raw JSON input wastes 5× more tokens for 15%p worse results.
+AI can turn Figma designs into code — but the quality depends heavily on **how the design is structured**. CanICode runs a **roundtrip** over your Figma file: analyze the design, surface the gotchas it can't answer on its own, apply fixes back to Figma, re-analyze until the design is clean, then hand off to Figma's `figma-implement-design` skill for code generation. canicode does the design augmentation; code generation lives downstream (see [ADR-013](.claude/docs/ADR.md) for the scope boundary).
 
-CanICode solves this:
-
-1. **Analyzes** your Figma design for patterns that hurt AI implementation quality
-2. **Generates a design-tree** — a curated, CSS-ready representation that AI implements more accurately and efficiently than raw Figma data
-3. **Scores** responsive readiness, so you fix the design before generating code
+### How the analyzer knows what to fix
 
 - **16 rules** across 6 categories: Pixel Critical, Responsive Critical, Code Quality, Token Management, Interaction, Semantic
 - **Deterministic** — no AI tokens consumed per analysis, runs in milliseconds
-- **Validated** — [ablation experiments](https://github.com/let-sunny/canicode/wiki) confirmed design-tree achieves 94% pixel accuracy with 5× fewer tokens than raw JSON
+- **Ablation-validated** — [experiments](https://github.com/let-sunny/canicode/wiki) confirmed the curated design-tree achieves 94% pixel accuracy with 5× fewer tokens than raw JSON
 
-### Scores You Can Trust
+Rule scores aren't guesswork. The calibration pipeline converts real Figma designs to HTML, measures pixel-level similarity (via `visual-compare`), and adjusts scores based on actual implementation difficulty — hard-to-implement patterns get a higher penalty, easy ones get demoted. The pipeline runs on community fixtures, not on every analysis. See the [Calibration wiki](https://github.com/let-sunny/canicode/wiki/Calibration).
 
-Rule scores aren't guesswork. The calibration pipeline converts real Figma designs to HTML, measures pixel-level similarity (via `visual-compare`), and adjusts scores based on actual implementation difficulty.
+---
 
-- Design that's hard to implement accurately → rule score goes **up**
-- Design that's easy despite the flag → rule score goes **down**
+## The Roundtrip Workflow
 
-The pipeline runs on community fixtures, not on every analysis. Strip ablation uses six `DESIGN_TREE_INFO_TYPES` passes (including `size-constraints` for responsive sizing rules — see [`CLAUDE.md`](CLAUDE.md)). See the [Calibration wiki](https://github.com/let-sunny/canicode/wiki/Calibration).
+1. **Analyze** — run the 16 rules against the Figma design and grade it.
+2. **Surface gotchas** — the analyzer emits questions for design information it can't infer (missing states, unclear variants, responsive intent).
+3. **Apply fixes to Figma** — the `/canicode-roundtrip` skill writes answers back via `use_figma`. Each write shows up in the summary with one of three outcome markers:
+   - ✅ **scene write succeeded** — the property was written directly to the scene node or instance override.
+   - 📝 **annotated the scene node** — the skill left a structured annotation instead of writing the property. This is the [ADR-012](.claude/docs/ADR.md) default for instance-child layout writes, because propagating a property to the component definition (and therefore every instance of it) is almost never what the user wants. **A summary full of 📝 markers is correct behavior, not failure.**
+   - 🌐 **definition write propagated** — the property was written to the component definition and every instance inherited it. Only happens when the user opted in up front with `allowDefinitionWrite`.
+4. **Re-analyze** — verify the grade improved. Repeat step 2 if new gotchas surface.
+5. **Hand off** to `figma-implement-design` — canicode's scope ends here ([ADR-013](.claude/docs/ADR.md)). Figma's official code-generation skill takes the now-clean design and produces code.
 
 ---
 
@@ -51,7 +53,19 @@ The pipeline runs on community fixtures, not on every analysis. Strip ablation u
 
 **Quickest way:** **[Open the web app](https://let-sunny.github.io/canicode/)** — paste a Figma URL, get a report.
 
-**For your workflow:**
+**Design-to-code in Claude Code (recommended):**
+
+```bash
+# 1. Save your Figma token AND install the /canicode-roundtrip skill
+canicode init --token figd_xxxxxxxxxxxxx
+
+# 2. Run the roundtrip on a Figma URL
+/canicode-roundtrip https://www.figma.com/design/ABC123/MyDesign?node-id=1-234
+```
+
+> **Prerequisite:** the roundtrip skill calls the Figma MCP server to read and write the design. Install it once with `claude mcp add -s project -t http figma https://mcp.figma.com/mcp` — see the **MCP Server** install section below.
+
+**If you only want analysis (no writes back to Figma):**
 
 ```bash
 # CLI — one command
@@ -69,7 +83,8 @@ claude mcp add canicode -- npx -y -p canicode canicode-mcp
 | **[Web App](https://let-sunny.github.io/canicode/)** | Quick check, no install |
 | **[Figma Plugin](https://www.figma.com/community/plugin/1617144221046795292/canicode)** | Analyze inside Figma (under review) |
 | **MCP Server** | Claude Code / Cursor / Claude Desktop integration |
-| **Claude Code Skill** | Lightweight, no MCP install |
+| **`/canicode-roundtrip` Skill** | Full design-to-code roundtrip via Claude Code (analyze → fix → re-analyze → handoff) |
+| **`/canicode` Skill** | Lightweight analyze-only skill, no MCP install |
 | **CLI** | Full control, CI/CD, offline analysis |
 | **[GitHub Action](https://github.com/marketplace/actions/canicode-action)** | PR gate with score threshold |
 
