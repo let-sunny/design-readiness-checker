@@ -309,7 +309,7 @@ Applied {N} changes to the Figma design:
 - 📝 {nodeName}: annotation added to canicode:auto-fix — raw color needs token binding (raw-value)
 ```
 
-### Step 5: Re-analyze and verify
+### Step 5: Re-analyze and report what the roundtrip addressed
 
 Run `analyze` again on the same Figma URL:
 
@@ -317,10 +317,32 @@ Run `analyze` again on the same Figma URL:
 analyze({ input: "<figma-url>" })
 ```
 
-Compare the new grade with the original:
+Under ADR-012's annotate-by-default policy, most instance-child gotchas route to 📝 annotations and do **not** move the numeric grade — so the headline for this step is the **issues-delta** (what the roundtrip captured), not a grade comparison. Grade is kept as a footnote so the Row 8 regression guardrail still applies.
 
-**All gotcha issues resolved** (new grade is S, A+, or A):
-- Tell the user: "Design improved from **{oldGrade}** to **{newGrade}** — all gotcha issues resolved. Ready for code generation."
+**Tally inputs** — derive the counts from the data you already have:
+- `X` (✅ resolved): count of ✅ + 🔧 + 🔗 markers from the Step 4 report block you just emitted (scene/instance-child writes, auto-fix renames, and variable bindings all successfully landed the value).
+- `Y` (📝 annotated): count of 📝 markers from Step 4 — gotcha answers captured as Figma annotations for code-gen reference.
+- `Z` (🌐 definition writes): count of 🌐 markers from Step 4 — only non-zero when the orchestrator opted in with `allowDefinitionWrite: true` (helper context option, not a CLI flag).
+- `W` (⏭️ skipped): count of ⏭️ markers from Step 4 plus any Step 3 questions the user answered with `skip` or `n/a`.
+- `V` (remaining): `issues.length` from the re-analyze response — unresolved gotchas plus non-actionable rules still flagged by the design.
+- `N` (addressed) = `X + Y + Z + W`.
+
+If Step 4 produced no report block (e.g. user skipped every question, or no gotcha survey ran), all four counts are zero — that is a legitimate outcome; report the breakdown with zeros rather than treating it as an error.
+
+**All gotcha issues resolved** (`V == 0`, i.e. re-analyze surfaces no remaining issues — note this is independent of grade since ADR-012 annotations do not move the score):
+- Tell the user (fill in the counts from the tally above):
+
+  ```
+  Roundtrip complete — N issues addressed:
+    ✅  X resolved (auto-fix or property write succeeded)
+    📝  Y annotated on Figma (gotcha answers captured for code-gen)
+    🌐  Z definition writes propagated (only when allowDefinitionWrite: true)
+    ⏭️  W skipped (user declined or "skip")
+    —
+    V issues remaining (unresolved gotchas + non-actionable rules)
+
+  Grade: {oldGrade} → {newGrade}. Ready for code generation.
+  ```
 - Clean up canicode annotations: remove annotations with `[canicode]` prefix from fixed nodes via `use_figma`. Apply `stripAnnotations` to avoid the D1 mutex:
 ```javascript
 const nodeIds = ["id1", "id2"]; // nodes that now pass
@@ -335,9 +357,20 @@ for (const id of nodeIds) {
 ```
 - Proceed to **Step 6**.
 
-**Some issues remain**:
-- Show what improved and what still needs attention.
-- Ask: "Design improved from **{oldGrade}** to **{newGrade}**. {remainingCount} issues remain. Proceed to code generation?"
+**Some issues remain** (`V > 0`):
+- Show the same breakdown and ask whether to proceed:
+
+  ```
+  Roundtrip complete — N issues addressed:
+    ✅  X resolved (auto-fix or property write succeeded)
+    📝  Y annotated on Figma (gotcha answers captured for code-gen)
+    🌐  Z definition writes propagated (only when allowDefinitionWrite: true)
+    ⏭️  W skipped (user declined or "skip")
+    —
+    V issues remaining (unresolved gotchas + non-actionable rules)
+
+  Grade: {oldGrade} → {newGrade}. Proceed to code generation with remaining context?
+  ```
 - If yes → proceed to **Step 6** with remaining gotcha context.
 - If no → stop and let the user address remaining issues manually.
 
