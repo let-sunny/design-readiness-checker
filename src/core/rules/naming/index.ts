@@ -177,6 +177,12 @@ const inconsistentNamingConventionCheck: RuleCheckFn = (node, context) => {
     if (isCompatible(nodeConvention, dominantConvention, node.name)) return null;
 
     const suggested = convertName(node.name, dominantConvention);
+    // #372: suppress when the case-conversion produces the same string as
+    // the current name. Single-character names ("X"), all-numeric names, and
+    // any input whose every word maps to itself across cases all fall into
+    // this bucket — flagging them produces a no-op rename, an empty diff
+    // visible as a misleading "✅ resolved" wrap-up entry.
+    if (suggested === node.name) return null;
     return {
       ruleId: inconsistentNamingConventionDef.id,
       nodeId: node.id,
