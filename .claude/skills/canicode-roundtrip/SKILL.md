@@ -329,7 +329,7 @@ Under ADR-012's annotate-by-default policy, most instance-child gotchas route to
 
 If Step 4 produced no report block (e.g. user skipped every question, or no gotcha survey ran), all four counts are zero — that is a legitimate outcome; report the breakdown with zeros rather than treating it as an error.
 
-**All gotcha issues resolved** (new grade is S, A+, or A):
+**All gotcha issues resolved** (`V == 0`, i.e. re-analyze surfaces no remaining issues — note this is independent of grade since ADR-012 annotations do not move the score):
 - Tell the user (fill in the counts from the tally above):
 
   ```
@@ -357,7 +357,7 @@ for (const id of nodeIds) {
 ```
 - Proceed to **Step 6**.
 
-**Some issues remain**:
+**Some issues remain** (`V > 0`):
 - Show the same breakdown and ask whether to proceed:
 
   ```
