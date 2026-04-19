@@ -151,3 +151,17 @@ Core decisions that shape every session. ADRs are listed by ADR number; chronolo
 - `canicode-roundtrip` is now reachable by end users via the default `canicode init` flow (previously, only the lightweight `canicode` wrapper skill was documented; `canicode-roundtrip` was effectively install-only-for-developers).
 
 **References**: ADR-009 (skill auto-discovery clarification), ADR-013 (scope boundary), #318 (implementation — CLI, build, README, bundled skill files), [README install section](https://github.com/let-sunny/canicode#installation), [Wiki Setup](https://github.com/let-sunny/canicode/wiki/Setup).
+
+## ADR-016: Gotchas SKILL.md lifecycle — workflow at top, accumulating per-design sections
+
+**Decision**: `.claude/skills/canicode-gotchas/SKILL.md` is a single file with two regions. The `# Workflow` region (skill loader contract — installed by `canicode init`) is written once and never modified by `/canicode-gotchas` or `/canicode-roundtrip` runs. Per-design gotcha answers live in numbered sections under a trailing `# Collected Gotchas` heading, identified by a `Design key` bullet (`<fileKey>#<nodeId>` for Figma URLs; absolute fixture path otherwise). Re-running on the same design replaces that section in place (preserving its `#NNN` number); a different design appends a new section. No auto-prune — history grows until a user manually edits it.
+
+**Why**: The previous "always overwrite" contract destroyed the Workflow region after every run, so `/canicode-gotchas <new-url>` re-invocation broke (Claude loaded stale per-design answers as the workflow — live repro on #340) and the second design's answers silently clobbered the first. Per-design folders were rejected as too heavy (install-time noise, folder enumeration in `canicode init`, no obvious audit surface). Mirroring `.claude/docs/ADR.md`'s own "history-as-numbered-sections" shape gives a familiar lookup pattern — `figma-implement-design` greps for the `Design key` line — and one file the user can audit, diff, and hand-prune.
+
+**Impact**:
+- `canicode-gotchas` SKILL.md Step 4 prose changes from overwrite to upsert-by-designKey (this PR).
+- `canicode-roundtrip` SKILL.md Step 3 follows the same upsert contract. Step 6 hands the Figma URL (or `designKey`) to `figma-implement-design` so it can grep the matching `## #NNN — …` section instead of reading the whole file (this PR).
+- `canicode init --force` is the recovery path for users whose SKILL.md was clobbered by the pre-#340 overwrite — no separate restore command is needed (see ADR-014). Pre-#340 single-design content cannot be auto-migrated into a `## #001` section; the user re-runs the survey after restoring the Workflow region, and the new section lands cleanly.
+- History grows unbounded; pruning is a manual user action. Revisit only if the file size starts causing load-time problems.
+
+**References**: ADR-009 (gotcha delivery via orchestration skill — original skill-file shape), ADR-014 (skill distribution + `canicode init` as recovery path), [#340](https://github.com/let-sunny/canicode/issues/340).

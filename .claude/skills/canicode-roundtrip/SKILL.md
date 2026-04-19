@@ -106,7 +106,7 @@ Wait for the user's answer before moving to the next question. The user may:
 - Say "skip" to skip a question
 - Say "n/a" if the question is not applicable
 
-After all questions are answered, **save gotcha answers to file** at `.claude/skills/canicode-gotchas/SKILL.md` in the user's project. Always overwrite any existing file — each run produces a fresh file. Follow the format from the `/canicode-gotchas` skill.
+After all questions are answered, **upsert this design's gotcha section** into `.claude/skills/canicode-gotchas/SKILL.md` in the user's project. Read the existing file, then either replace the section whose `Design key` matches this run (same Figma URL → fileKey+nodeId) or append a new numbered section under `# Collected Gotchas`. Never modify the `# Workflow` region at the top. See the `/canicode-gotchas` skill's "Upsert the gotcha section" step (Step 4) for the exact section format and matching rule.
 
 Then proceed to **Step 4** to apply answers to the Figma design.
 
@@ -395,6 +395,7 @@ Follow the **figma-implement-design** skill workflow to generate code from the F
 - Gotchas with severity **blocking** MUST be addressed — the design cannot be implemented correctly without this information
 - Gotchas with severity **risk** SHOULD be addressed — they indicate potential issues that will surface later
 - Reference the specific node IDs from gotcha answers to locate the affected elements in the design
+- Pass the Figma URL (or `designKey` = `<fileKey>#<nodeId>`) to `figma-implement-design` so it can grep the matching `## #NNN — …` section in `.claude/skills/canicode-gotchas/SKILL.md` instead of reading the whole accumulated file
 
 **If all issues were resolved in Steps 4-5**, no additional gotcha context is needed — the design speaks for itself.
 
