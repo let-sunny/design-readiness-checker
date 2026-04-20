@@ -225,6 +225,39 @@ function estimateTokens(text: string): number {
   return Math.ceil(Buffer.byteLength(text, "utf-8") / 4);
 }
 
+/**
+ * #404: Resolve the analysis scope for a calibration run.
+ *
+ * Policy (single source of truth, intentionally owned by the
+ * orchestrator rather than the rule engine):
+ * 1. If the fixture directory contains a `.scope` file, its trimmed
+ *    content is used (must be `page` or `component`). This is the
+ *    per-fixture escape hatch for the rare case a fixture really is a
+ *    standalone component audit.
+ * 2. Otherwise, default to `page`. All `fixtures/done/*` ship today as
+ *    `COMPONENT` variants ("Platform=Desktop") that represent full
+ *    screens — auto-detection would classify them as component scope
+ *    and once #403 lands (scope-aware `missing-size-constraint`) that
+ *    would flip grades across every baseline. Forcing `page` here keeps
+ *    baselines stable until a fixture is explicitly re-classified.
+ *
+ * This runs in `scripts/calibrate.ts`, not in library code, because
+ * scope-for-calibration is an orchestration policy. The CLI
+ * `calibrate-analyze --scope` flag stays a neutral pass-through so ad-hoc
+ * runs (without the orchestrator) can still opt in to auto-detection.
+ */
+function resolveCalibrationScope(fixturePath: string): "page" | "component" {
+  const scopeFile = join(resolve(fixturePath), ".scope");
+  if (existsSync(scopeFile)) {
+    const raw = readFileSync(scopeFile, "utf-8").trim();
+    if (raw === "page" || raw === "component") return raw;
+    throw new Error(
+      `Invalid .scope file at ${scopeFile}: expected "page" or "component", got ${JSON.stringify(raw)}`,
+    );
+  }
+  return "page";
+}
+
 // ---------------------------------------------------------------------------
 // Strip types
 // ---------------------------------------------------------------------------
@@ -455,8 +488,9 @@ async function runPipeline(index: CalibrationRunIndex): Promise<void> {
   if (shouldRun(STEP_NAMES.ANALYZE)) {
     markRunning(index, STEP_NAMES.ANALYZE);
     try {
+      const scope = resolveCalibrationScope(fixturePath);
       runCli(
-        `${CANICODE_CLI} calibrate-analyze ${shellEscape(fixturePath)} --run-dir ${shellEscape(runDir)}`,
+        `${CANICODE_CLI} calibrate-analyze ${shellEscape(fixturePath)} --run-dir ${shellEscape(runDir)} --scope ${scope}`,
         "calibrate-analyze",
       );
       const analysis = readJson<Record<string, unknown>>(join(runDir, "analysis.json"));

@@ -1,5 +1,8 @@
 import type { AnalysisFile } from "../core/contracts/figma-node.js";
-import { runCalibrationEvaluate } from "./calibration-compute.js";
+import {
+  runCalibrationAnalyze,
+  runCalibrationEvaluate,
+} from "./calibration-compute.js";
 
 // Register rules so RULE_CONFIGS is populated
 import "../core/rules/index.js";
@@ -233,6 +236,41 @@ describe("runCalibrationEvaluate", () => {
     expect(result.report).toContain("# Calibration Report");
     expect(result.report).toContain("Test File");
     expect(result.report).toContain("test-key");
+  });
+});
+
+// ─── #404 scope plumbing through runCalibrationAnalyze ────────────────────────
+
+describe("runCalibrationAnalyze — scope option (#404)", () => {
+  // These tests drive `loadFile` through a real fixture directory. The
+  // `fixtures/done/*` fixtures all have COMPONENT roots, which means
+  // auto-detect gives `component` — so passing `scope: "page"` is the
+  // exact override path `scripts/calibrate.ts` relies on to keep
+  // calibration baselines stable once #403 lands.
+  const FIXTURE = "./fixtures/done/desktop-home-page";
+
+  it("threads explicit scope: 'page' override into the AnalysisResult", async () => {
+    const { analysisOutput } = await runCalibrationAnalyze({
+      input: FIXTURE,
+      scope: "page",
+    });
+    expect(analysisOutput.analysisResult.scope).toBe("page");
+  });
+
+  it("threads explicit scope: 'component' override into the AnalysisResult", async () => {
+    const { analysisOutput } = await runCalibrationAnalyze({
+      input: FIXTURE,
+      scope: "component",
+    });
+    expect(analysisOutput.analysisResult.scope).toBe("component");
+  });
+
+  it("falls back to auto-detection when scope is omitted — confirms the flag is opt-in, not forced", async () => {
+    const { analysisOutput } = await runCalibrationAnalyze({ input: FIXTURE });
+    // fixtures/done/desktop-home-page has a COMPONENT root → auto →
+    // component. If this ever flips, the orchestrator's `--scope page`
+    // policy becomes the only thing preventing calibration drift.
+    expect(analysisOutput.analysisResult.scope).toBe("component");
   });
 });
 

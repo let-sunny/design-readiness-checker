@@ -14,6 +14,7 @@ interface CalibrateAnalyzeOptions {
   runDir?: string;
   token?: string;
   targetNodeId?: string;
+  scope?: "page" | "component";
 }
 
 export function registerCalibrateAnalyze(cli: CAC): void {
@@ -26,6 +27,7 @@ export function registerCalibrateAnalyze(cli: CAC): void {
     .option("--run-dir <path>", "Run directory (overrides --output, writes to <run-dir>/analysis.json)")
     .option("--token <token>", "Figma API token (or use FIGMA_TOKEN env var)")
     .option("--target-node-id <nodeId>", "Scope analysis to a specific node")
+    .option("--scope <scope>", "(#404) Override analysis scope (`page` | `component`). Pass-through to the rule engine; `scripts/calibrate.ts` normally sets this to `page` for fixtures/done/* because they are conceptually pages packaged as COMPONENT variants.")
     .action(async (input: string, options: CalibrateAnalyzeOptions) => {
       try {
         console.log("Running calibration analysis...");
@@ -37,6 +39,7 @@ export function registerCalibrateAnalyze(cli: CAC): void {
           outputPath: "logs/calibration/calibration-report.md",
           ...(options.token && { token: options.token }),
           ...(options.targetNodeId && { targetNodeId: options.targetNodeId }),
+          ...(options.scope && { scope: options.scope }),
         };
 
         const { analysisOutput, ruleScores, fileKey } =
@@ -57,6 +60,14 @@ export function registerCalibrateAnalyze(cli: CAC): void {
           analyzedAt: analysisOutput.analysisResult.analyzedAt,
           nodeCount: analysisOutput.analysisResult.nodeCount,
           issueCount: analysisOutput.analysisResult.issues.length,
+          /**
+           * #404: Resolved analysis scope for this calibration run —
+           * surfaced in analysis.json so downstream diff/tuning agents
+           * and post-hoc grade comparisons can see whether a run used
+           * page or component scope (critical once #403 introduces
+           * scope-dependent rule behavior).
+           */
+          scope: analysisOutput.analysisResult.scope,
           calibrationTier,
           scoreReport: analysisOutput.scoreReport,
           nodeIssueSummaries: filteredSummaries,
