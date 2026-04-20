@@ -45,6 +45,7 @@ function makeContext(overrides?: Partial<RuleContext>): RuleContext {
     ancestorTypes: [],
     analysisState,
     scope: "page",
+    rootNodeType: "FRAME",
     ...overrides,
   };
 }

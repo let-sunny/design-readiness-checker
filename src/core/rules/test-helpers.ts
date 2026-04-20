@@ -28,6 +28,7 @@ export function makeContext(overrides?: Partial<RuleContext>): RuleContext {
     ancestorTypes: [],
     analysisState: new Map(),
     scope: "page",
+    rootNodeType: "FRAME",
     ...overrides,
   };
 }

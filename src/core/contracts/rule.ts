@@ -56,6 +56,19 @@ export interface RuleContext {
    * `componentDepth`, not by re-deriving scope per node.
    */
   scope: AnalysisScope;
+  /**
+   * #403: Figma node type of the analysis root, captured once in
+   * `RuleEngine.analyze`. This is an *axis orthogonal to* `scope`:
+   * `scope === "component"` does not tell a rule whether the root is a
+   * `COMPONENT`/`COMPONENT_SET` (component being audited) or an
+   * `INSTANCE` (component being used, possibly with overrides). The
+   * `missing-size-constraint` redesign needs that distinction so the
+   * gotcha question can ask the right thing — "intentionally
+   * non-responsive?" vs "override intended? original may be FILL". The
+   * value is the raw Figma node type string (no new enum) so it stays in
+   * sync with `AnalysisNode.type` without a translation layer.
+   */
+  rootNodeType: string;
 }
 
 /**
