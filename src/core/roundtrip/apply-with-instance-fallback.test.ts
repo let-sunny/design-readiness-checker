@@ -267,7 +267,7 @@ describe("applyWithInstanceFallback", () => {
       expect(annotations).toHaveLength(1);
       expect(annotations[0]?.labelMarkdown).toContain("**Card**");
       expect(annotations[0]?.labelMarkdown).toContain(
-        "share across all instances"
+        "every instance picks it up"
       );
       expect(annotations[0]?.labelMarkdown).toContain("allowDefinitionWrite");
       expect(annotations[0]?.categoryId).toBe("cat-fallback");

@@ -96,7 +96,7 @@ ${footer}`;
       if (ctx.categories) {
         upsertCanicodeAnnotation(ctx.scene, {
           ruleId: ctx.question.ruleId,
-          markdown: `Apply this fix on the source component **${componentName}** to share across all instances. This instance kept its current value to avoid unintended fan-out. Re-run with \`allowDefinitionWrite: true\` to propagate.`,
+          markdown: `The fix below could not be applied on this instance child \u2014 the property silently ignored the write or the override was rejected. Apply it on the source component **${componentName}** so every instance picks it up. Re-run with \`allowDefinitionWrite: true\` to let canicode propagate automatically.`,
           categoryId: ctx.categories.fallback
         });
       }
