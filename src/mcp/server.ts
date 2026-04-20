@@ -49,6 +49,7 @@ Provide a Figma URL or fixture path via the input parameter. Requires FIGMA_TOKE
     configPath: z.string().optional().describe("Path to config JSON file for rule overrides"),
     openReport: z.boolean().optional().describe("Open the generated HTML report in the user's browser. Defaults to false — opt in only when a visible report is the explicit user request (#365). The HTML file is always written to disk regardless."),
     acknowledgments: z.array(AcknowledgmentSchema).optional().describe("(#371) Pre-resolved [{ nodeId, ruleId }] pairs harvested from canicode-authored Figma annotations (e.g. via the `readCanicodeAcknowledgments` Plugin helper inside a use_figma batch). Matching issues are flagged `acknowledged: true` and contribute half weight to the density score so re-analyze surfaces movement after a roundtrip even under ADR-012's annotate-by-default policy."),
+    scope: z.enum(["page", "component"]).optional().describe("(#404) Override analysis scope — `page` (screen/section where container bounds are required) or `component` (standalone reusable unit where root FILL is the design contract). Defaults to auto-detection from the root node type: `COMPONENT` / `COMPONENT_SET` / `INSTANCE` roots resolve to `component`, everything else to `page`."),
   },
   {
     readOnlyHint: false,
@@ -56,7 +57,7 @@ Provide a Figma URL or fixture path via the input parameter. Requires FIGMA_TOKE
     openWorldHint: true,
     title: "Analyze Figma Design",
   },
-  async ({ input, token, preset, targetNodeId, configPath, openReport, acknowledgments }) => {
+  async ({ input, token, preset, targetNodeId, configPath, openReport, acknowledgments, scope }) => {
     trackEvent(EVENTS.MCP_TOOL_CALLED, { tool: "analyze" });
     try {
       // Fetch via REST API or load from fixture
@@ -79,6 +80,7 @@ Provide a Figma URL or fixture path via the input parameter. Requires FIGMA_TOKE
         ...(acknowledgments && acknowledgments.length > 0
           ? { acknowledgments }
           : {}),
+        ...(scope ? { scope } : {}),
       });
 
       const scores = calculateScores(result, configs as Record<RuleId, RuleConfig>);
@@ -160,6 +162,7 @@ Provide a Figma URL or fixture path via the input parameter. Requires FIGMA_TOKE
     preset: z.enum(["relaxed", "dev-friendly", "ai-ready", "strict"]).optional().describe("Analysis preset"),
     targetNodeId: z.string().optional().describe("Scope analysis to a specific node ID"),
     configPath: z.string().optional().describe("Path to config JSON file for rule overrides"),
+    scope: z.enum(["page", "component"]).optional().describe("(#404) Override analysis scope — `page` or `component`. Defaults to auto-detection from the root node type."),
   },
   {
     readOnlyHint: false,
@@ -167,7 +170,7 @@ Provide a Figma URL or fixture path via the input parameter. Requires FIGMA_TOKE
     openWorldHint: true,
     title: "Gotcha Survey",
   },
-  async ({ input, token, preset, targetNodeId, configPath }) => {
+  async ({ input, token, preset, targetNodeId, configPath, scope }) => {
     trackEvent(EVENTS.MCP_TOOL_CALLED, { tool: "gotcha-survey" });
     try {
       const { file, nodeId } = await loadFile(input, token);
@@ -186,6 +189,7 @@ Provide a Figma URL or fixture path via the input parameter. Requires FIGMA_TOKE
       const result = analyzeFile(file, {
         configs: configs as Record<RuleId, RuleConfig>,
         ...(effectiveNodeId ? { targetNodeId: effectiveNodeId } : {}),
+        ...(scope ? { scope } : {}),
       });
 
       const scores = calculateScores(result, configs as Record<RuleId, RuleConfig>);

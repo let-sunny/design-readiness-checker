@@ -46,7 +46,11 @@ function makeIssue(opts: {
   };
 }
 
-function makeResult(issues: AnalysisIssue[], nodeCount = 100): AnalysisResult {
+function makeResult(
+  issues: AnalysisIssue[],
+  nodeCount = 100,
+  overrides?: Partial<AnalysisResult>,
+): AnalysisResult {
   const doc: AnalysisNode = { id: "0:1", name: "Document", type: "DOCUMENT", visible: true };
   const file: AnalysisFile = {
     fileKey: "test",
@@ -57,7 +61,16 @@ function makeResult(issues: AnalysisIssue[], nodeCount = 100): AnalysisResult {
     components: {},
     styles: {},
   };
-  return { file, issues, failedRules: [], maxDepth: 5, nodeCount, analyzedAt: new Date().toISOString() };
+  return {
+    file,
+    issues,
+    failedRules: [],
+    maxDepth: 5,
+    nodeCount,
+    analyzedAt: new Date().toISOString(),
+    scope: "page",
+    ...overrides,
+  };
 }
 
 // ─── calculateScores ──────────────────────────────────────────────────────────
@@ -463,6 +476,21 @@ describe("buildResultJson", () => {
     expect(json.scores).toBeDefined();
     expect(json.summary).toBeDefined();
     expect(typeof json.summary).toBe("string");
+    // #404: scope is surfaced at the top level so downstream consumers
+    // (report HTML, figma-implement-design) can branch on page vs
+    // component without re-walking the tree.
+    expect(json.scope).toBe("page");
+  });
+
+  it("propagates component scope into the JSON output (#404)", () => {
+    const result = makeResult(
+      [makeIssue({ ruleId: "no-auto-layout", category: "pixel-critical", severity: "blocking" })],
+      100,
+      { scope: "component" },
+    );
+    const scores = calculateScores(result);
+    const json = buildResultJson("TestFile", result, scores);
+    expect(json.scope).toBe("component");
   });
 
   it("aggregates issuesByRule correctly", () => {

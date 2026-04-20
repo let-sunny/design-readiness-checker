@@ -16,6 +16,15 @@ class RuleRegistry {
   }
 
   /**
+   * Remove a rule by ID. Primarily used by tests that register a
+   * throwaway rule and need to restore the registry afterwards. Returns
+   * `true` if the rule was present.
+   */
+  unregister(id: RuleId): boolean {
+    return this.rules.delete(id);
+  }
+
+  /**
    * Get a rule by ID
    */
   get(id: RuleId): Rule | undefined {

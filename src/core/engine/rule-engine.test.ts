@@ -525,3 +525,110 @@ describe("RuleEngine.analyze — acknowledgments", () => {
     expect(anyAcked).toBe(false);
   });
 });
+
+// ─── #404 analysis scope ──────────────────────────────────────────────────────
+
+describe("RuleEngine.analyze — scope detection and injection (#404)", () => {
+  it("auto-detects `page` scope for a FRAME root analyzed directly", () => {
+    const frame = makeNode({ id: "10:1", name: "Screen", type: "FRAME" });
+    const file = makeFile({ document: frame });
+
+    const result = analyzeFile(file);
+    expect(result.scope).toBe("page");
+  });
+
+  it("auto-detects `component` scope when targetNodeId resolves to a COMPONENT", () => {
+    const comp = makeNode({ id: "20:1", name: "Button", type: "COMPONENT" });
+    const doc = makeNode({
+      id: "0:1",
+      name: "Document",
+      type: "DOCUMENT",
+      children: [comp],
+    });
+    const file = makeFile({ document: doc });
+
+    const result = analyzeFile(file, { targetNodeId: "20:1" });
+    // Scope is derived from the resolved root after targetNodeId — not the
+    // file's document — so analyzing a component via node-id yields
+    // component scope even when the file is a full page.
+    expect(result.scope).toBe("component");
+  });
+
+  it("auto-detects `component` scope for COMPONENT_SET and INSTANCE roots", () => {
+    const compSetFile = makeFile({
+      document: makeNode({ id: "30:1", name: "Icon-set", type: "COMPONENT_SET" }),
+    });
+    const instanceFile = makeFile({
+      document: makeNode({ id: "31:1", name: "Button/Primary", type: "INSTANCE" }),
+    });
+
+    expect(analyzeFile(compSetFile).scope).toBe("component");
+    expect(analyzeFile(instanceFile).scope).toBe("component");
+  });
+
+  it("explicit scope option overrides auto-detection in both directions", () => {
+    const frame = makeNode({ id: "10:1", name: "Screen", type: "FRAME" });
+    const comp = makeNode({ id: "20:1", name: "Button", type: "COMPONENT" });
+
+    // FRAME root normally detects as page → force component
+    expect(
+      analyzeFile(makeFile({ document: frame }), { scope: "component" }).scope
+    ).toBe("component");
+    // COMPONENT root normally detects as component → force page
+    // (rare, but supported — e.g. a "design-system demo page" packaged as a
+    // top-level COMPONENT that the user wants audited like a screen).
+    expect(
+      analyzeFile(makeFile({ document: comp }), { scope: "page" }).scope
+    ).toBe("page");
+  });
+
+  it("threads scope into every RuleContext a rule receives", () => {
+    const captured: string[] = [];
+
+    ruleRegistry.register({
+      definition: {
+        id: "capture-scope-test" as RuleId,
+        category: "code-quality",
+        label: "Capture scope for test",
+        description: "",
+      },
+      check: (_node, ctx) => {
+        captured.push(ctx.scope);
+        return null;
+      },
+    });
+
+    const cfg: Record<string, RuleConfig> = {
+      ...RULE_CONFIGS,
+      "capture-scope-test": { severity: "suggestion", score: 0, enabled: true },
+    };
+
+    try {
+      const comp = makeNode({ id: "40:1", name: "Card", type: "COMPONENT" });
+      const file = makeFile({
+        document: makeNode({
+          id: "0:1",
+          name: "Document",
+          type: "DOCUMENT",
+          children: [
+            comp,
+            makeNode({ id: "40:2", name: "Inner", type: "FRAME" }),
+          ],
+        }),
+      });
+
+      analyzeFile(file, {
+        targetNodeId: "40:1",
+        configs: cfg as Record<RuleId, RuleConfig>,
+        enabledRules: ["capture-scope-test" as RuleId],
+      });
+
+      expect(captured.length).toBeGreaterThan(0);
+      // Scope is constant per analysis — every visited node must see the
+      // same value (derived from the analysis root, not the current node).
+      expect(new Set(captured)).toEqual(new Set(["component"]));
+    } finally {
+      ruleRegistry.unregister("capture-scope-test" as RuleId);
+    }
+  });
+});

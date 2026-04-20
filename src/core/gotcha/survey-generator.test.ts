@@ -94,6 +94,7 @@ function makeResult(
     maxDepth: 5,
     nodeCount: 100,
     analyzedAt: new Date().toISOString(),
+    scope: "page",
   };
 }
 

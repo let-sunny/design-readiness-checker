@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { AnalysisScope } from "./analysis-scope.js";
 import { CategorySchema, type Category } from "./category.js";
 import { SeveritySchema } from "./severity.js";
 import type { AnalysisFile, AnalysisNode } from "./figma-node.js";
@@ -46,6 +47,15 @@ export interface RuleContext {
   siblings?: AnalysisNode[] | undefined;
   /** Per-analysis shared state. Created fresh for each analysis run, eliminating module-level mutable state. */
   analysisState: Map<string, unknown>;
+  /**
+   * #404: Scope of the analysis root (`page` vs `component`). Rules use
+   * this to decide whether expectations like "container must define
+   * bounds" or "repetition should become a component" apply. Constant for
+   * all nodes in a single analysis — whether the CURRENT node happens to
+   * be a `COMPONENT` descendant of a page root is already signalled by
+   * `componentDepth`, not by re-deriving scope per node.
+   */
+  scope: AnalysisScope;
 }
 
 /**

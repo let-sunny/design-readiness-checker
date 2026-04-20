@@ -471,6 +471,7 @@ export function buildResultJson(
     fileName,
     nodeCount: result.nodeCount,
     maxDepth: result.maxDepth,
+    scope: result.scope,
     issueCount: result.issues.length,
     acknowledgedCount: scores.summary.acknowledgedCount,
     isReadyForCodeGen: isReadyForCodeGen(scores.overall.grade),

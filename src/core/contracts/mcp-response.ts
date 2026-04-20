@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { SeveritySchema } from "./severity.js";
 import { CategorySchema } from "./category.js";
+import { AnalysisScopeSchema } from "./analysis-scope.js";
 import {
   DetectionSchema,
   OutputChannelSchema,
@@ -58,6 +59,14 @@ export const McpAnalyzeResponseSchema = z.object({
   fileName: z.string(),
   nodeCount: z.number().int().min(0),
   maxDepth: z.number().int().min(0),
+  /**
+   * #404: Resolved analysis scope (`page` vs `component`). Downstream
+   * consumers (e.g. `figma-implement-design`, gotcha UI) branch on this
+   * the same way rules do — a component-scope result should not be
+   * treated as if container bounds are missing, and repetition detection
+   * on a component-scope result is not meaningful.
+   */
+  scope: AnalysisScopeSchema,
   issueCount: z.number().int().min(0),
   isReadyForCodeGen: z.boolean(),
   blockingIssueCount: z.number().int().min(0),

@@ -13,6 +13,10 @@ import {
   normalizeNodeId,
   type Acknowledgment,
 } from "../contracts/acknowledgment.js";
+import {
+  detectAnalysisScope,
+  type AnalysisScope,
+} from "../contracts/analysis-scope.js";
 
 /**
  * Analysis issue with calculated score and metadata.
@@ -55,6 +59,13 @@ export interface AnalysisResult {
   maxDepth: number;
   nodeCount: number;
   analyzedAt: string;
+  /**
+   * #404: Resolved analysis scope (`page` vs `component`). Either detected
+   * from the root node type or taken from the caller's explicit override.
+   * Propagated to MCP / JSON output so downstream consumers (code-gen,
+   * reports) can branch the same way rules do.
+   */
+  scope: AnalysisScope;
 }
 
 /**
@@ -75,6 +86,15 @@ export interface RuleEngineOptions {
    * (`123-456`) or Plugin-API form (`123:456`) — both normalize to `:`.
    */
   acknowledgments?: Acknowledgment[];
+  /**
+   * #404: Explicit scope override. When omitted, the engine auto-detects
+   * from the analysis root's node type via `detectAnalysisScope`. Supply
+   * this when the caller knows the heuristic would mis-detect — e.g. a
+   * FRAME that happens to be a design-system demo (component scope) or a
+   * COMPONENT_SET being audited as part of a full page inventory (page
+   * scope).
+   */
+  scope?: AnalysisScope;
 }
 
 /**
@@ -158,6 +178,7 @@ export class RuleEngine {
   private excludeNamePattern: RegExp | null;
   private excludeNodeTypes: Set<string> | null;
   private acknowledgments: ReadonlySet<string>;
+  private scopeOverride: AnalysisScope | undefined;
 
   constructor(options: RuleEngineOptions = {}) {
     this.configs = options.configs ?? RULE_CONFIGS;
@@ -177,6 +198,7 @@ export class RuleEngine {
         (a) => `${normalizeNodeId(a.nodeId)}::${a.ruleId}`
       )
     );
+    this.scopeOverride = options.scope;
   }
 
   /**
@@ -200,6 +222,12 @@ export class RuleEngine {
     const maxDepth = calculateMaxDepth(rootNode);
     const nodeCount = countNodes(rootNode);
 
+    // #404: resolve scope once per analysis. Caller override wins over
+    // type-based detection so CLI/MCP users can correct false positives
+    // (e.g. design-system demo frames classified as page scope).
+    const scope: AnalysisScope =
+      this.scopeOverride ?? detectAnalysisScope(rootNode);
+
     const issues: AnalysisIssue[] = [];
     const failedRules: RuleFailure[] = [];
     const enabledRules = this.getEnabledRules();
@@ -217,6 +245,7 @@ export class RuleEngine {
       [],
       0,
       analysisState,
+      scope,
       undefined,
       undefined
     );
@@ -237,6 +266,7 @@ export class RuleEngine {
       maxDepth,
       nodeCount,
       analyzedAt: new Date().toISOString(),
+      scope,
     };
   }
 
@@ -274,6 +304,7 @@ export class RuleEngine {
     ancestorTypes: string[],
     componentDepth: number,
     analysisState: Map<string, unknown>,
+    scope: AnalysisScope,
     parent?: AnalysisNode,
     siblings?: AnalysisNode[]
   ): void {
@@ -302,6 +333,7 @@ export class RuleEngine {
       ancestorTypes,
       siblings,
       analysisState,
+      scope,
     };
 
     // Run each rule on this node
@@ -361,6 +393,7 @@ export class RuleEngine {
           childAncestorTypes,
           currentComponentDepth + 1,
           analysisState,
+          scope,
           node,
           node.children
         );
