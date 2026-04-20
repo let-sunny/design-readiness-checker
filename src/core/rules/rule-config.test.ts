@@ -174,7 +174,9 @@ describe("rule-config sync", () => {
     });
 
     it("getRulePurpose falls back to 'violation' for unknown rule ids", () => {
-      expect(getRulePurpose("made-up-rule" as RuleId)).toBe("violation");
+      // Signature intentionally accepts `string` so custom-rule ids from the
+      // config loader don't need a caller-side `as RuleId` cast.
+      expect(getRulePurpose("made-up-rule")).toBe("violation");
     });
   });
 

@@ -47,7 +47,7 @@ export function generateGotchaSurvey(
     const severity = issue.config.severity;
     if (severity === "blocking" || severity === "risk") return true;
     if (severity === "missing-info") {
-      return getRulePurpose(issue.violation.ruleId as RuleId) === "info-collection";
+      return getRulePurpose(issue.violation.ruleId) === "info-collection";
     }
     return false;
   });
@@ -195,7 +195,7 @@ function mapToQuestion(
     detection: template.detection,
     outputChannel: template.outputChannel,
     persistenceIntent: template.persistenceIntent,
-    purpose: getRulePurpose(ruleId),
+    purpose: getRulePurpose(issue.violation.ruleId),
     severity: issue.config.severity,
     question: template.question.replace("{nodeName}", nodeName),
     hint: template.hint,

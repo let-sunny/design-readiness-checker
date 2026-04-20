@@ -168,7 +168,7 @@ Each per-design section in the `# Collected Gotchas` region has this exact shape
 | `analyzedAt` | Current timestamp (ISO 8601) |
 | `ruleId` | `ruleId` from each question |
 | `nodeName` | `nodeName` from each question |
-| `severity` | `severity` from each question (blocking / risk) |
+| `severity` | `severity` from each question (blocking / risk / missing-info — the last surfaces only for info-collection rules per #406) |
 | `nodeId` | `nodeId` from each question |
 | `instanceContext` | When present on the question, copy `parentInstanceNodeId`, `sourceNodeId`, `sourceComponentId`, `sourceComponentName` into the bullet above (roundtrip / Plugin apply) |
 | `question` | `question` from each question |

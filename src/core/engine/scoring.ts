@@ -441,7 +441,7 @@ export function buildResultJson(
       detection: "rule-based" as const,
       outputChannel: "score" as const,
       persistenceIntent: "transient" as const,
-      purpose: getRulePurpose(issue.violation.ruleId as RuleId),
+      purpose: getRulePurpose(issue.violation.ruleId),
       ...(issue.violation.subType && { subType: issue.violation.subType }),
       severity: issue.config.severity,
       nodeId: issue.violation.nodeId,

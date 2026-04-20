@@ -80,11 +80,15 @@ export const RULE_PURPOSE: Record<RuleId, RulePurpose> = {
 };
 
 /**
- * Resolve a rule's purpose. Defaults to `"violation"` for unknown ids so
- * this stays safe for out-of-tree custom rules added via config loader.
+ * Resolve a rule's purpose. Accepts `string` (not `RuleId`) because the
+ * purpose concept must work for out-of-tree custom rules added via the
+ * config loader — callers pass `issue.violation.ruleId` which is a plain
+ * string. Defaults to `"violation"` for unknown ids. Keeping the cast
+ * inside this helper (rather than forcing every caller to do `as RuleId`)
+ * makes the fallback semantically honest.
  */
-export function getRulePurpose(ruleId: RuleId): RulePurpose {
-  return RULE_PURPOSE[ruleId] ?? "violation";
+export function getRulePurpose(ruleId: string): RulePurpose {
+  return RULE_PURPOSE[ruleId as RuleId] ?? "violation";
 }
 
 /**

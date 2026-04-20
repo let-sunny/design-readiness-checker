@@ -402,7 +402,7 @@ Notes:
 
 #### Strategy D: Auto-fix lower-severity issues from analysis
 
-The gotcha survey covers only blocking/risk severity. Lower-severity rules appear in `analyzeResult.issues[]` without a survey question. Each issue carries the same pre-computed fields (`applyStrategy`, `targetProperty`, `annotationProperties`, `suggestedName`, `isInstanceChild`, `sourceChildId`). The bundled helper handles the loop, the filter (`applyStrategy === "auto-fix"`), the naming-vs-annotation branch, and the per-issue outcome accumulator in one call:
+The gotcha survey covers blocking/risk severity plus `missing-info` severity from info-collection rules (#406 — currently `missing-prototype`, `missing-interaction-state`). All other lower-severity rules appear in `analyzeResult.issues[]` without a survey question. Each issue carries the same pre-computed fields (`applyStrategy`, `targetProperty`, `annotationProperties`, `suggestedName`, `isInstanceChild`, `sourceChildId`). The bundled helper handles the loop, the filter (`applyStrategy === "auto-fix"`), the naming-vs-annotation branch, and the per-issue outcome accumulator in one call:
 
 ```javascript
 const outcomes = await CanICodeRoundtrip.applyAutoFixes(analyzeResult.issues, { categories });
@@ -577,6 +577,7 @@ Follow the **figma-implement-design** skill workflow to generate code from the F
 
 - Gotchas with severity **blocking** MUST be addressed — the design cannot be implemented correctly without this information
 - Gotchas with severity **risk** SHOULD be addressed — they indicate potential issues that will surface later
+- Gotchas with severity **missing-info** from info-collection rules (`purpose === "info-collection"`, e.g. `missing-prototype`, `missing-interaction-state`) are annotation-primary (#406): the answer describes implementation context Figma cannot encode (click target, state variants). Treat them as code-generation context rather than violations to fix — the rule's score impact is minimal by design
 - Reference the specific node IDs from gotcha answers to locate the affected elements in the design
 - Pass the Figma URL or `survey.designKey` to `figma-implement-design` so it can grep the matching `## #NNN — …` section in `.claude/skills/canicode-gotchas/SKILL.md` instead of reading the whole accumulated file
 
@@ -613,5 +614,5 @@ Code: <files generated / next-step pointer from figma-implement-design>
 - **Partial gotcha answers**: Apply only the answered questions. Skipped/n/a questions are neither applied nor annotated.
 - **use_figma call fails for a node**: Report the error for that specific node, continue with other nodes. Failed property modifications become annotations so the context is not lost.
 - **Re-analyze shows new issues**: Only address issues from the original gotcha survey. New issues may appear due to structural changes — report them but do not re-enter the gotcha loop.
-- **Very large design (many gotchas)**: The gotcha survey already deduplicates sibling nodes and filters to blocking/risk severity only. If there are still many questions, ask the user if they want to focus on blocking issues only.
+- **Very large design (many gotchas)**: The gotcha survey already deduplicates sibling nodes and filters to blocking/risk plus `missing-info` from info-collection rules (#406). If there are still many questions, ask the user if they want to focus on blocking issues only.
 - **External library components**: Applies only when the orchestrator has set `allowDefinitionWrite: true`. Experiment 10's observed case is `getMainComponentAsync()` resolving with `mainComponent.remote === true` — writes then throw *"Cannot write to internal and read-only node"*. The `mainComponent === null` case is documented in the Plugin API but was not reproduced live in Experiment 10; Experiment 11 (#309) unit-test-covers the helper's routing for that branch (override-error + no `sourceChildId` → annotate with `could not apply automatically:` markdown — see ADR-011 Verification), so the code path is regression-locked while live Figma reproduction remains a manual fixture-seeding follow-up. Under the default (`allowDefinitionWrite: false`), the definition write never fires and this throw cannot surface. **The pre-flight `probeDefinitionWritability` (#357) detects both branches up-front** so the Definition write picker can drop the opt-in option entirely when every candidate is unwritable, saving the user a wasted decision before the runtime fallback kicks in.
