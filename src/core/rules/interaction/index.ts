@@ -71,6 +71,24 @@ function hasStateInComponentMaster(
 }
 
 /**
+ * Master names that look like a single variant of a SET (e.g. `State=Default`,
+ * `Variant=Primary, State=Default, Size=Medium`). When a fetched COMPONENT
+ * carries this naming AND has no own `componentPropertyDefinitions`, the
+ * variant axes live on the parent COMPONENT_SET — which the loader does not
+ * fetch today (#397). Treat as undeterminable rather than asserting a missing
+ * variant we cannot actually see.
+ */
+const VARIANT_POSITION_NAME_RE = /^[\w ]+=[^,]+(,\s*[\w ]+=[^,]+)*$/;
+
+function hasUsablePropDefs(propDefs: unknown): boolean {
+  // `undefined` = not fetched; `null` = REST returned blank (e.g. variant
+  // INSIDE a SET — axes live on the SET parent, not here). Both are
+  // non-evidence. `{}` (fetched-and-empty) IS positive evidence the master
+  // truly has no axes — must keep firing per the test for #354.
+  return propDefs != null && typeof propDefs === "object";
+}
+
+/**
  * Decide whether we have enough source data to assert a state variant is missing.
  *
  * The Figma REST API does not consistently mirror `componentPropertyDefinitions`
@@ -80,18 +98,28 @@ function hasStateInComponentMaster(
  * we cannot tell whether the master defines the variant or not — treat that as
  * "unknown" (return false here) rather than asserting a missing variant.
  *
+ * The fetched master may also be a single variant of a SET (name like
+ * `State=Default`); the variant axes live on the SET parent which we do not
+ * fetch. Detect this via name pattern and treat as undeterminable too (#397).
+ *
  * COMPONENT nodes are special: a COMPONENT IS the master, so the absence of
  * `componentPropertyDefinitions` on a COMPONENT is itself meaningful evidence
- * (standalone master with no variant axis at all). Always treat COMPONENTs as
- * determinable so the rule still catches the "designer never added variants"
- * case the rule is supposed to flag.
+ * (standalone master with no variant axis at all) — UNLESS the COMPONENT name
+ * follows the variant-position pattern, in which case the SET parent holds the
+ * axes and we cannot decide.
  */
 function canDetermineVariants(node: AnalysisNode, context: RuleContext): boolean {
-  if (node.type === "COMPONENT") return true;
-  if (node.componentPropertyDefinitions !== undefined) return true;
+  if (hasUsablePropDefs(node.componentPropertyDefinitions)) return true;
+  if (node.type === "COMPONENT") {
+    return !VARIANT_POSITION_NAME_RE.test(node.name);
+  }
   if (node.componentId !== undefined) {
     const defs = context.file.componentDefinitions;
-    if (defs && defs[node.componentId] !== undefined) return true;
+    const master = defs?.[node.componentId];
+    if (master) {
+      if (hasUsablePropDefs(master.componentPropertyDefinitions)) return true;
+      return !VARIANT_POSITION_NAME_RE.test(master.name);
+    }
   }
   return false;
 }

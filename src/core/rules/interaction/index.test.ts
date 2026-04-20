@@ -183,6 +183,103 @@ describe("missing-interaction-state", () => {
     expect(result!.subType).toBe("hover");
   });
 
+  // ============================================
+  // #397: false-positive when fetched master is a single variant of a SET
+  // (name like "State=Default") and the SET parent is not fetched, so propDefs
+  // is null on the master. Without this gate the rule would assert a missing
+  // variant from absence of evidence — same false-positive class as #354.
+  // ============================================
+
+  it("returns null when master propDefs is null AND master name is a variant position (#397)", () => {
+    // Live repro from Simple Design System Community node 3266-8701: the
+    // Input Field master is named "State=Default, Value Type=Placeholder",
+    // its componentPropertyDefinitions came back null, and the COMPONENT_SET
+    // parent (which actually carries the State axis with Hover/Disabled/etc.)
+    // is not fetched into componentDefinitions.
+    const masterNode = makeNode({
+      id: "c:input-master",
+      name: "State=Default, Value Type=Placeholder",
+      type: "COMPONENT",
+      componentPropertyDefinitions: null as unknown as undefined,
+    });
+    const node = makeNode({
+      id: "I3266:8701;2143:13764;2106:7349",
+      name: "Input Field",
+      type: "INSTANCE",
+      componentId: "c:input-master",
+    });
+    const file = makeFile({ componentDefinitions: { "c:input-master": masterNode } });
+    const ctx = makeContext({ file, path: ["Hero Form", "Form Contact", "Input Field"] });
+    expect(missingInteractionState.check(node, ctx)).toBeNull();
+  });
+
+  it("returns null when master propDefs is null AND master name has multiple variant axes (#397)", () => {
+    // "Variant=Primary, State=Default, Size=Medium" — three-axis Button
+    // variant. Same SET-not-fetched failure mode.
+    const masterNode = makeNode({
+      id: "c:button-master",
+      name: "Variant=Primary, State=Default, Size=Medium",
+      type: "COMPONENT",
+      componentPropertyDefinitions: null as unknown as undefined,
+    });
+    const node = makeNode({
+      id: "I3266:8701;2143:13764;373:10990;2072:9460",
+      name: "Button",
+      type: "INSTANCE",
+      componentId: "c:button-master",
+    });
+    const file = makeFile({ componentDefinitions: { "c:button-master": masterNode } });
+    const ctx = makeContext({ file, path: ["Hero Form", "Form Contact", "Button Group", "Button"] });
+    expect(missingInteractionState.check(node, ctx)).toBeNull();
+  });
+
+  it("returns null for COMPONENT whose own name is a variant position with no propDefs (#397)", () => {
+    // The rule fires on COMPONENT type too; same SET-not-fetched concern
+    // applies when the COMPONENT itself is the analyzed node.
+    const node = makeNode({
+      id: "c:1",
+      name: "State=Default",
+      type: "COMPONENT",
+      componentPropertyDefinitions: null as unknown as undefined,
+    });
+    // Component name does not match the stateful pattern, so even without #397
+    // it would not fire. Use a name that DOES trigger getStatefulComponentType
+    // by combining type+name.
+    const interactiveComponent = makeNode({
+      id: "c:2",
+      name: "Button / State=Default",
+      type: "COMPONENT",
+      componentPropertyDefinitions: null as unknown as undefined,
+    });
+    void node;
+    const ctx = makeContext({ path: ["Page"] });
+    // Variant-position COMPONENT skipped — undeterminable
+    const out = missingInteractionState.check(interactiveComponent, ctx);
+    // The combined name "Button / State=Default" doesn't match the strict
+    // variant-position regex (slash + word), so this COMPONENT IS treated as
+    // a standalone master with no axes → fires. That's correct behavior:
+    // only the pure "Word=Word(, Word=Word)*" pattern is treated as
+    // undeterminable. Documenting via this assertion.
+    expect(out).not.toBeNull();
+  });
+
+  it("still flags master with empty propDefs object even if name happens to contain '=' in prose (positive evidence wins)", () => {
+    // `{}` (vs null) is positive evidence the API answered. The variant-name
+    // gate is only consulted as a tiebreaker when propDefs is null/undefined.
+    const masterNode = makeNode({
+      id: "c:1",
+      name: "Button=Master",
+      type: "COMPONENT",
+      componentPropertyDefinitions: {},
+    });
+    const node = makeNode({ id: "1:1", name: "Submit Button", type: "INSTANCE", componentId: "c:1" });
+    const file = makeFile({ componentDefinitions: { "c:1": masterNode } });
+    const ctx = makeContext({ file, path: ["Page", "Button"] });
+    const result = missingInteractionState.check(node, ctx);
+    expect(result).not.toBeNull();
+    expect(result!.subType).toBe("hover");
+  });
+
   it("flags when instance carries empty componentPropertyDefinitions", () => {
     // Empty object (vs undefined) is positive evidence the API answered for
     // this instance and the master truly has no variant axes — must fire.

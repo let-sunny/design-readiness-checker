@@ -1,6 +1,6 @@
 {
   "name": "canicode",
-  "version": "0.10.4",
+  "version": "0.10.5",
   "mcpName": "io.github.let-sunny/canicode",
   "description": "Lint Figma designs for AI code-gen and roundtrip the answers back into the file. CLI + MCP server.",
   "type": "module",

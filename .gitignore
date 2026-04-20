@@ -58,3 +58,4 @@ fixtures/report.html
 
 # Stale roundtrip build artifact (pre-outExtension config)
 .claude/skills/canicode-roundtrip/helpers.global.js
+.pnpm-store/
