@@ -198,9 +198,9 @@ This rule was originally established in [PR #303](https://github.com/let-sunny/c
 
 **References**: PR #303 (origin of the rule), PR #381 (response-field channel pattern: `groupedQuestions`), PR #387 (helpers.js channel + half-extraction lesson: `computeRoundtripTally`, `removeCanicodeAnnotations`), PR #391 (`upsertGotchaSection` extraction, closes [#385](https://github.com/let-sunny/canicode/issues/385)), PR #392 (`applyAutoFix` Strategy D extraction, closes [#386](https://github.com/let-sunny/canicode/issues/386)), [#388](https://github.com/let-sunny/canicode/issues/388) (this ADR), [#389](https://github.com/let-sunny/canicode/issues/389) (grep CI), [#390](https://github.com/let-sunny/canicode/issues/390) (PR template + audit cadence).
 
-## ADR-017: Rule/Gotcha output channels — rule-first trigger, score-second signal
+## ADR-017: Rule/Gotcha output channels — rule-based best-practice detection; gotcha as annotation output
 
-**Decision**: Define rules first as the trigger layer for gotcha collection, and second as the score-signal layer. Keep gotchas rule-triggered, and make output channels explicit. A rule firing on a node emits two independent outputs:
+**Decision**: Define rules as a rule-based best-practice detection layer, with gotcha as annotation output from the same detection pass. Keep gotchas rule-triggered, and make output channels explicit. A rule firing on a node emits two independent outputs:
 - **Rule output (score channel)**: best-practice signal for readiness scoring
 - **Gotcha output (annotation channel)**: missing context that Figma cannot encode natively, written for downstream implementation
 

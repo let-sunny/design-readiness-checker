@@ -25,7 +25,7 @@
 - Workflow: calls gotcha-survey → presents questions to user → collects answers → writes `.claude/skills/canicode-gotchas/SKILL.md` in the user's project
 - Output: skill file with design gotcha Q&A pairs (nodeId, ruleId, severity, question, answer)
 - Purpose: collect implementation context that Figma cannot encode natively and persist it as annotation-ready gotcha answers for downstream `figma-implement-design`
-- Trigger model: rules are the primary gotcha trigger layer; scoring is a secondary signal from the same detection pass. Triggering rules may be violation rules (score-primary) or info-collection rules (annotation-primary), per ADR-017
+- Trigger model: rules run as rule-based best-practice detection, and gotcha is emitted as annotation output from the same detection pass. Triggering rules may be violation rules (score-primary) or info-collection rules (annotation-primary), per ADR-017
 - **Augmentation handoff**: Auto-discovery of a separate skill file cannot reach `figma-implement-design` (Figma skills only support explicit cross-references). The `canicode-roundtrip` orchestration skill (#277) connects analyze → gotcha survey → apply to Figma in a single flow; the user then invokes `figma-implement-design` for code generation (ADR-009, ADR-013).
 
 **3b. Claude Code Skill (`/canicode-roundtrip`)**
