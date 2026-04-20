@@ -2,6 +2,7 @@
 
 export * from "./severity.js";
 export * from "./channels.js";
+export * from "./analysis-scope.js";
 export * from "./category.js";
 export * from "./figma-node.js";
 export * from "./rule.js";

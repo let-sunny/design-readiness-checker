@@ -80,6 +80,7 @@ function makeResult(issues: AnalysisIssue[]): AnalysisResult {
     maxDepth: 5,
     nodeCount: 100,
     analyzedAt: new Date().toISOString(),
+    scope: "page",
   };
 }
 

@@ -44,6 +44,7 @@ function makeContext(overrides?: Partial<RuleContext>): RuleContext {
     path: ["Page", "Section"],
     ancestorTypes: [],
     analysisState,
+    scope: "page",
     ...overrides,
   };
 }

@@ -31,4 +31,22 @@ describe("runGotchaSurvey", () => {
     expect(GotchaSurveySchema.safeParse(strict).success).toBe(true);
     expect(GotchaSurveySchema.safeParse(relaxed).success).toBe(true);
   });
+
+  it("accepts --scope override and still produces a valid survey (#404)", async () => {
+    // Fixture root is COMPONENT → auto-detect would be `component`.
+    // Passing `scope: "page"` exercises the same override path the
+    // orchestrator uses for calibration runs and must not break the
+    // downstream survey pipeline (no rule currently branches on scope,
+    // so the question list should remain stable across both overrides).
+    const asPage = await runGotchaSurvey(FIXTURE, { scope: "page", json: true });
+    const asComponent = await runGotchaSurvey(FIXTURE, { scope: "component", json: true });
+
+    expect(GotchaSurveySchema.safeParse(asPage).success).toBe(true);
+    expect(GotchaSurveySchema.safeParse(asComponent).success).toBe(true);
+    // Infrastructure-only wiring: both overrides must produce the same
+    // set of question ruleIds until a rule in a follow-up PR (#403)
+    // actually consumes `ctx.scope`.
+    const ruleIds = (s: typeof asPage) => s.questions.map((q) => q.ruleId).sort();
+    expect(ruleIds(asPage)).toEqual(ruleIds(asComponent));
+  });
 });

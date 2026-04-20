@@ -222,7 +222,10 @@ export async function runCalibrationAnalyze(
   const parsed = CalibrationConfigSchema.parse(config);
   const { file, fileKey, nodeId } = await loadFile(parsed.input, parsed.token);
 
-  const analyzeOptions = nodeId ? { targetNodeId: nodeId } : {};
+  const analyzeOptions = {
+    ...(nodeId ? { targetNodeId: nodeId } : {}),
+    ...(parsed.scope ? { scope: parsed.scope } : {}),
+  };
   const analysisResult = analyzeFile(file, analyzeOptions);
 
   const analysisOutput = runAnalysisAgent({ analysisResult });

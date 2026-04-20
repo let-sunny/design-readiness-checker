@@ -19,6 +19,7 @@ const GotchaSurveyOptionsSchema = z.object({
   config: z.string().optional(),
   targetNodeId: z.string().optional(),
   json: z.boolean().optional(),
+  scope: z.enum(["page", "component"]).optional(),
 });
 
 export type GotchaSurveyOptions = z.infer<typeof GotchaSurveyOptionsSchema>;
@@ -47,6 +48,7 @@ export async function runGotchaSurvey(
   const result = analyzeFile(file, {
     configs: configs as Record<RuleId, RuleConfig>,
     ...(effectiveNodeId ? { targetNodeId: effectiveNodeId } : {}),
+    ...(options.scope ? { scope: options.scope } : {}),
   });
 
   const scores = calculateScores(result, configs as Record<RuleId, RuleConfig>);
@@ -73,6 +75,7 @@ export function registerGotchaSurvey(cli: CAC): void {
     .option("--token <token>", "Figma API token (or use FIGMA_TOKEN env var)")
     .option("--config <path>", "Path to config JSON file (override rule scores/settings)")
     .option("--target-node-id <id>", "Scope analysis to a specific node ID")
+    .option("--scope <scope>", "(#404) Override analysis scope: `page` or `component`. Defaults to auto-detection from the root node type.")
     .option("--json", "Output GotchaSurvey JSON to stdout (same format as MCP)")
     .example("  canicode gotcha-survey https://www.figma.com/design/ABC123/MyDesign --json")
     .example("  canicode gotcha-survey ./fixtures/my-design --json")

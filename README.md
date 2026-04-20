@@ -200,6 +200,7 @@ Posts analysis as a PR comment. Fails if score is below threshold. See [**canico
 |------|-----|
 | **Presets** | `--preset relaxed \| dev-friendly \| ai-ready \| strict` |
 | **Config overrides** | `--config ./config.json` — adjust scores, severity, exclude nodes |
+| **Analysis scope** | `--scope page \| component` — override auto-detection when a `COMPONENT`-rooted design should be analyzed as a page (or vice versa) |
 
 See [`docs/CUSTOMIZATION.md`](docs/CUSTOMIZATION.md) for the full guide, examples, and all available options.
 

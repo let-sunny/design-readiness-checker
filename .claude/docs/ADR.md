@@ -219,3 +219,17 @@ Gotcha answers do not retroactively erase the rule score. Scores represent desig
 - Documentation and skills should frame gotchas as annotation completion for `figma-implement-design`, not only as violation remediation prompts.
 
 **References**: ADR-004 (score framing), ADR-013 (scope boundary), [Round-Trip Integration wiki](https://github.com/let-sunny/canicode/wiki/Round-Trip-Integration), #402, #405, #406.
+
+## ADR-018: Analysis scope selection — `page` vs `component`
+
+**Decision**: Resolve a single `AnalysisScope` (`"page"` or `"component"`) per analysis run and thread it through every `RuleContext`. Detection is deterministic from the analysis root's node type — `COMPONENT`, `COMPONENT_SET`, and `INSTANCE` roots resolve to `component`; everything else (`FRAME`, `SECTION`, `CANVAS`, `DOCUMENT`, `GROUP`, …) resolves to `page`. An explicit `--scope` CLI flag and MCP `scope` parameter let callers override the heuristic when it mis-detects (e.g. a design-system screen packaged as a top-level `COMPONENT` that the user wants audited like a page). Multi-scope analysis is explicitly out of scope — one run, one scope.
+
+**Why**: Responsive-critical rules need to distinguish "this FRAME should define its own bounds because it's a screen container" from "this COMPONENT must stay FILL because it's a reusable unit whose bounds are the parent's responsibility". Without scope context, such rules either over-fire on standalone components (false positives) or under-fire on pages (missed responsive bugs). Option A (interactive prompt) was rejected because CLI/MCP flows are machine-driven; Option B (auto-detection) with an override covers the ambiguous cases without adding friction.
+
+**Impact**:
+- `RuleContext.scope` is now part of the rule contract and is constant for the entire traversal. Whether the *current* node happens to descend from a `COMPONENT` is already signalled by `componentDepth` — rules should not re-derive scope per node.
+- `AnalysisResult.scope`, `buildResultJson(...).scope`, and `McpAnalyzeResponseSchema.scope` surface the resolved value so downstream consumers (report HTML, `figma-implement-design`, gotcha UI) can branch the same way rules do.
+- Rules are intentionally not modified in this step — scope consumption lands in follow-up PRs (first consumer: `missing-size-constraint` redesign, #403). The contract lets those redesigns ship without a second round of plumbing.
+- Calibration fixtures captured from design-system pages frequently have `COMPONENT` roots ("pages packaged as component variants"). Because no rule currently branches on scope, baselines are unchanged; the override (`--scope page`) is the prescribed path if/when #403-style rule redesigns would shift grades on those fixtures.
+
+**References**: ADR-017 (detection-channel split — this ADR extends the rule-context vocabulary), [#404](https://github.com/let-sunny/canicode/issues/404), #403 (first consumer).
