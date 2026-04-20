@@ -9,6 +9,7 @@ import type {
 import type { AnalysisFile, AnalysisNode } from "../contracts/figma-node.js";
 import type { RuleId } from "../contracts/rule.js";
 import { GOTCHA_QUESTIONS } from "../rules/gotcha-questions.js";
+import { getRulePurpose } from "../rules/rule-config.js";
 import {
   isInstanceChildNodeId,
   parseInstanceChildNodeId,
@@ -33,10 +34,23 @@ export function generateGotchaSurvey(
 ): GotchaSurvey {
   const grade = scores.overall.grade;
 
-  // Step 1: Filter to blocking and risk severity only
-  const relevantIssues = result.issues.filter(
-    (issue) => issue.config.severity === "blocking" || issue.config.severity === "risk",
-  );
+  // Step 1: Filter to gotcha-relevant issues.
+  // - `blocking` + `risk`: violation rules where the user needs to describe
+  //   how to resolve the violation (existing behavior).
+  // - `missing-info` + purpose `info-collection` (#406): annotation-primary
+  //   rules like `missing-prototype` / `missing-interaction-state` where the
+  //   gotcha IS the output. Without this, info-collection rules would never
+  //   reach the survey because their penalty is intentionally minimal.
+  // `suggestion` severity still stays out — it's prose-level advice, not an
+  // implementation gap Figma can't encode.
+  const relevantIssues = result.issues.filter((issue) => {
+    const severity = issue.config.severity;
+    if (severity === "blocking" || severity === "risk") return true;
+    if (severity === "missing-info") {
+      return getRulePurpose(issue.violation.ruleId) === "info-collection";
+    }
+    return false;
+  });
 
   // Step 2: Deduplicate — same ruleId on siblings (same parent path) → keep first
   const deduped = deduplicateSiblingIssues(relevantIssues);
@@ -131,22 +145,27 @@ function getNodeName(nodePath: string): string {
 }
 
 /**
- * Stable sort: blocking before risk, preserving original array order within
- * each severity group.
+ * Stable sort: blocking → risk → missing-info, preserving original array
+ * order within each group. `missing-info` is surfaced only for
+ * info-collection rules (#406), placed last because their penalty is
+ * minimal; fix-describe questions for actual violations take priority.
  */
 function stableSortBySeverity(issues: AnalysisIssue[]): AnalysisIssue[] {
   const blocking: AnalysisIssue[] = [];
   const risk: AnalysisIssue[] = [];
+  const missingInfo: AnalysisIssue[] = [];
 
   for (const issue of issues) {
     if (issue.config.severity === "blocking") {
       blocking.push(issue);
+    } else if (issue.config.severity === "missing-info") {
+      missingInfo.push(issue);
     } else {
       risk.push(issue);
     }
   }
 
-  return [...blocking, ...risk];
+  return [...blocking, ...risk, ...missingInfo];
 }
 
 /**
@@ -176,6 +195,7 @@ function mapToQuestion(
     detection: template.detection,
     outputChannel: template.outputChannel,
     persistenceIntent: template.persistenceIntent,
+    purpose: getRulePurpose(issue.violation.ruleId),
     severity: issue.config.severity,
     question: template.question.replace("{nodeName}", nodeName),
     hint: template.hint,

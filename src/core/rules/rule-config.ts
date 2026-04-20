@@ -1,4 +1,5 @@
 import type { Category } from "../contracts/category.js";
+import type { RulePurpose } from "../contracts/channels.js";
 import type { RuleConfig, RuleId } from "../contracts/rule.js";
 import type { AnnotationProperty } from "../roundtrip/types.js";
 
@@ -35,6 +36,60 @@ export const RULE_ID_CATEGORY: Record<RuleId, Category> = {
   "non-semantic-name": "semantic",
   "inconsistent-naming-convention": "semantic",
 };
+
+/**
+ * #406: Classifies each rule by primary output channel.
+ *
+ * - `violation` (default): score-primary. Rule fires when a best-practice
+ *   expectation is broken; the score penalty is the main signal, gotcha
+ *   questions are secondary context on how to resolve the violation.
+ * - `info-collection`: annotation-primary. Rule fires on nodes that need
+ *   implementation context Figma cannot encode natively (click target,
+ *   state variants). The gotcha annotation IS the output; score impact is
+ *   kept minimal (-1 range) so presence/absence of the annotation — not
+ *   the penalty — differentiates designs.
+ *
+ * Sibling map (mirrors `RULE_ID_CATEGORY`) so existing `RuleDefinition`
+ * call sites don't need to be touched. Look up via `getRulePurpose`.
+ */
+export const RULE_PURPOSE: Record<RuleId, RulePurpose> = {
+  // Pixel Critical
+  "no-auto-layout": "violation",
+  "absolute-position-in-auto-layout": "violation",
+  "non-layout-container": "violation",
+  // Responsive Critical
+  "fixed-size-in-auto-layout": "violation",
+  "missing-size-constraint": "violation",
+  // Code Quality
+  "missing-component": "violation",
+  "detached-instance": "violation",
+  "variant-structure-mismatch": "violation",
+  "deep-nesting": "violation",
+  // Token Management
+  "raw-value": "violation",
+  "irregular-spacing": "violation",
+  // Interaction — gotcha-primary: Figma cannot encode "what happens on
+  // click" or "which states exist" in a way downstream code generation can
+  // consume. Rules fire to trigger the annotation, not to flag a violation.
+  "missing-interaction-state": "info-collection",
+  "missing-prototype": "info-collection",
+  // Semantic
+  "non-standard-naming": "violation",
+  "non-semantic-name": "violation",
+  "inconsistent-naming-convention": "violation",
+};
+
+/**
+ * Resolve a rule's purpose. Accepts `string` (not `RuleId`) because the
+ * purpose concept must work for out-of-tree custom rules added via the
+ * config loader — callers pass `issue.violation.ruleId` which is a plain
+ * string. Defaults to `"violation"` for unknown ids. Keeping the cast
+ * inside this helper (rather than forcing every caller to do `as RuleId`)
+ * makes the fallback semantically honest.
+ */
+export function getRulePurpose(ruleId: string): RulePurpose {
+  return RULE_PURPOSE[ruleId as RuleId] ?? "violation";
+}
 
 /**
  * Central configuration for all rules.
@@ -127,15 +182,20 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
   },
 
   // ── Interaction ──
+  // #406: both rules are `info-collection` — primary output is the gotcha
+  // annotation, not the score. Severity is `missing-info` so they surface in
+  // the gotcha survey (see `generateGotchaSurvey`) even though the penalty
+  // is minimal. Score stays at -1 so re-enabling `missing-prototype` on
+  // fixtures that lack `interactionDestinations` (#139) cannot swing grades.
   "missing-interaction-state": {
-    severity: "suggestion",
+    severity: "missing-info",
     score: -1, // uncalibrated: no metric to validate score (#210), kept at -1 to preserve category visibility
     enabled: true,
   },
   "missing-prototype": {
     severity: "missing-info",
-    score: -3,
-    enabled: false, // disabled: interactionDestinations data missing from fixtures (#139)
+    score: -1, // #406: info-collection — annotation is primary output; score kept minimal so #139 fixtures don't skew calibration
+    enabled: true,
   },
 
   // ── Semantic ──

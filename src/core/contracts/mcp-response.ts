@@ -5,6 +5,7 @@ import {
   DetectionSchema,
   OutputChannelSchema,
   PersistenceIntentSchema,
+  RulePurposeSchema,
 } from "./channels.js";
 
 const GradeSchema = z.enum(["S", "A+", "A", "B+", "B", "C+", "C", "D", "F"]);
@@ -32,6 +33,13 @@ const McpIssueSchema = z.object({
   detection: DetectionSchema,
   outputChannel: OutputChannelSchema.extract(["score"]),
   persistenceIntent: PersistenceIntentSchema.extract(["transient"]),
+  /**
+   * #406: Whether the triggering rule's primary output is a score penalty
+   * (`violation`) or a gotcha annotation (`info-collection`). MCP consumers
+   * use this to decide whether the issue is actionable ("fix this") or
+   * annotation-seeking ("tell us what you meant here").
+   */
+  purpose: RulePurposeSchema,
   subType: z.string().optional(),
   severity: SeveritySchema,
   nodeId: z.string(),

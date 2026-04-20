@@ -134,8 +134,8 @@ Override score, severity, or enable/disable individual rules:
 
 | Rule ID | Default Score | Default Severity |
 |---------|--------------|-----------------|
-| `missing-interaction-state` | -1 | suggestion |
-| `missing-prototype` *(disabled)* | -3 | missing-info |
+| `missing-interaction-state` | -1 | missing-info |
+| `missing-prototype` | -1 | missing-info |
 <!-- RULE_TABLE_END -->
 
 ### Example Configs

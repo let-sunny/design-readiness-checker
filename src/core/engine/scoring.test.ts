@@ -497,6 +497,7 @@ describe("buildResultJson", () => {
       detection: "rule-based",
       outputChannel: "score",
       persistenceIntent: "transient",
+      purpose: "violation",
       severity: "blocking",
       nodeId: expect.any(String),
       nodePath: expect.any(String),
@@ -507,6 +508,26 @@ describe("buildResultJson", () => {
       ruleId: "raw-value",
       subType: "color",
       severity: "missing-info",
+      purpose: "violation",
+    });
+  });
+
+  it("tags info-collection rules with purpose 'info-collection' (#406)", () => {
+    const result = makeResult([
+      makeIssue({
+        ruleId: "missing-prototype",
+        category: "interaction",
+        severity: "missing-info",
+      }),
+    ]);
+    const scores = calculateScores(result);
+    const json = buildResultJson("TestFile", result, scores);
+    const issues = json.issues as Array<Record<string, unknown>>;
+
+    expect(issues[0]).toMatchObject({
+      ruleId: "missing-prototype",
+      purpose: "info-collection",
+      outputChannel: "score",
     });
   });
 

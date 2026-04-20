@@ -156,7 +156,7 @@ describe("generateGotchaSurvey", () => {
     expect(survey.designKey).toBe("");
   });
 
-  it("includes only blocking and risk severity issues", () => {
+  it("includes only blocking and risk severity issues for violation rules", () => {
     const issues = [
       makeIssue({
         ruleId: "no-auto-layout",
@@ -197,6 +197,102 @@ describe("generateGotchaSurvey", () => {
     expect(survey.questions.map((q) => q.ruleId)).toEqual([
       "no-auto-layout",
       "fixed-size-in-auto-layout",
+    ]);
+  });
+
+  it("includes missing-info severity issues from info-collection rules (#406)", () => {
+    const issues = [
+      makeIssue({
+        ruleId: "missing-prototype",
+        category: "interaction",
+        severity: "missing-info",
+        nodeId: "10:1",
+        nodePath: "Root > Button",
+      }),
+      makeIssue({
+        ruleId: "missing-interaction-state",
+        category: "interaction",
+        severity: "missing-info",
+        nodeId: "10:2",
+        nodePath: "Root > IconButton",
+      }),
+      makeIssue({
+        ruleId: "raw-value",
+        category: "token-management",
+        severity: "missing-info",
+        nodeId: "10:3",
+        nodePath: "Root > Label",
+      }),
+    ];
+
+    const survey = generateGotchaSurvey(
+      makeResult(issues),
+      makeScoreReport("C"),
+    );
+
+    const ruleIds = survey.questions.map((q) => q.ruleId);
+    expect(ruleIds).toContain("missing-prototype");
+    expect(ruleIds).toContain("missing-interaction-state");
+    // raw-value is a violation rule — missing-info severity still filtered out.
+    expect(ruleIds).not.toContain("raw-value");
+  });
+
+  it("tags each question with its rule purpose (#406)", () => {
+    const issues = [
+      makeIssue({
+        ruleId: "no-auto-layout",
+        category: "pixel-critical",
+        severity: "blocking",
+        nodeId: "11:1",
+        nodePath: "Root > Hero",
+      }),
+      makeIssue({
+        ruleId: "missing-prototype",
+        category: "interaction",
+        severity: "missing-info",
+        nodeId: "11:2",
+        nodePath: "Root > Hero > CTA",
+      }),
+    ];
+
+    const survey = generateGotchaSurvey(
+      makeResult(issues),
+      makeScoreReport("D"),
+    );
+
+    const byRule = Object.fromEntries(
+      survey.questions.map((q) => [q.ruleId, q.purpose]),
+    );
+    expect(byRule["no-auto-layout"]).toBe("violation");
+    expect(byRule["missing-prototype"]).toBe("info-collection");
+  });
+
+  it("places missing-info info-collection questions after risk questions (#406)", () => {
+    const issues = [
+      makeIssue({
+        ruleId: "missing-prototype",
+        category: "interaction",
+        severity: "missing-info",
+        nodeId: "12:1",
+        nodePath: "Root > Button",
+      }),
+      makeIssue({
+        ruleId: "fixed-size-in-auto-layout",
+        category: "responsive-critical",
+        severity: "risk",
+        nodeId: "12:2",
+        nodePath: "Root > Card",
+      }),
+    ];
+
+    const survey = generateGotchaSurvey(
+      makeResult(issues),
+      makeScoreReport("D"),
+    );
+
+    expect(survey.questions.map((q) => q.severity)).toEqual([
+      "risk",
+      "missing-info",
     ]);
   });
 

@@ -3,7 +3,7 @@ import { CATEGORIES, CATEGORY_LABELS } from "../contracts/category.js";
 import type { RuleId, RuleConfig } from "../contracts/rule.js";
 import type { Severity } from "../contracts/severity.js";
 import type { AnalysisResult } from "./rule-engine.js";
-import { RULE_CONFIGS, RULE_ID_CATEGORY } from "../rules/rule-config.js";
+import { RULE_CONFIGS, RULE_ID_CATEGORY, getRulePurpose } from "../rules/rule-config.js";
 import { computeApplyContext } from "../gotcha/apply-context.js";
 import { version as VERSION } from "../../../package.json";
 
@@ -441,6 +441,7 @@ export function buildResultJson(
       detection: "rule-based" as const,
       outputChannel: "score" as const,
       persistenceIntent: "transient" as const,
+      purpose: getRulePurpose(issue.violation.ruleId),
       ...(issue.violation.subType && { subType: issue.violation.subType }),
       severity: issue.config.severity,
       nodeId: issue.violation.nodeId,

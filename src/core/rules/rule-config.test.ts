@@ -1,7 +1,12 @@
 import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { RULE_CONFIGS, getAnnotationProperties } from "./rule-config.js";
+import {
+  RULE_CONFIGS,
+  RULE_PURPOSE,
+  getAnnotationProperties,
+  getRulePurpose,
+} from "./rule-config.js";
 import { ruleRegistry } from "./rule-registry.js";
 import type { RuleId } from "../contracts/rule.js";
 
@@ -130,6 +135,48 @@ describe("rule-config sync", () => {
       expect(
         getAnnotationProperties("fixed-size-in-auto-layout", "horizontal")
       ).toEqual([{ type: "width" }, { type: "height" }, { type: "layoutMode" }]);
+    });
+  });
+
+  describe("RULE_PURPOSE (#406)", () => {
+    it("covers every RULE_CONFIGS entry", () => {
+      for (const id of Object.keys(RULE_CONFIGS)) {
+        expect(RULE_PURPOSE[id as RuleId]).toBeDefined();
+      }
+    });
+
+    it("marks both interaction rules as info-collection", () => {
+      expect(RULE_PURPOSE["missing-prototype"]).toBe("info-collection");
+      expect(RULE_PURPOSE["missing-interaction-state"]).toBe("info-collection");
+    });
+
+    it("keeps all non-interaction rules as violation", () => {
+      for (const [id, purpose] of Object.entries(RULE_PURPOSE)) {
+        if (
+          id === "missing-prototype" ||
+          id === "missing-interaction-state"
+        ) {
+          continue;
+        }
+        expect(purpose).toBe("violation");
+      }
+    });
+
+    it("info-collection rules are enabled and use missing-info severity", () => {
+      for (const [id, purpose] of Object.entries(RULE_PURPOSE)) {
+        if (purpose !== "info-collection") continue;
+        const config = RULE_CONFIGS[id as RuleId];
+        expect(config.enabled).toBe(true);
+        expect(config.severity).toBe("missing-info");
+        // Score kept minimal — annotation is primary output, not score penalty.
+        expect(config.score).toBeGreaterThanOrEqual(-1);
+      }
+    });
+
+    it("getRulePurpose falls back to 'violation' for unknown rule ids", () => {
+      // Signature intentionally accepts `string` so custom-rule ids from the
+      // config loader don't need a caller-side `as RuleId` cast.
+      expect(getRulePurpose("made-up-rule")).toBe("violation");
     });
   });
 

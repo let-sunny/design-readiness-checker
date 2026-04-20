@@ -4,6 +4,7 @@ import {
   DetectionSchema,
   OutputChannelSchema,
   PersistenceIntentSchema,
+  RulePurposeSchema,
 } from "./channels.js";
 
 const GradeSchema = z.enum(["S", "A+", "A", "B+", "B", "C+", "C", "D", "F"]);
@@ -60,6 +61,14 @@ export const GotchaSurveyQuestionSchema = z.object({
   detection: GotchaDetectionSchema,
   outputChannel: GotchaOutputChannelSchema,
   persistenceIntent: GotchaPersistenceIntentSchema,
+  /**
+   * #406: Classifies the triggering rule as `violation` (score-primary,
+   * gotcha secondary) or `info-collection` (annotation-primary, score
+   * minimal). Consumers use this to prioritize answers that collect durable
+   * implementation context over answers that merely describe how to fix a
+   * violation the rule will stop firing for.
+   */
+  purpose: RulePurposeSchema,
   severity: SeveritySchema,
   question: z.string(),
   hint: z.string(),
