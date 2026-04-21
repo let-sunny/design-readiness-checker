@@ -26,6 +26,8 @@
 
 AI can turn Figma designs into code — but the quality depends heavily on **how the design is structured**. CanICode runs a **roundtrip** over your Figma file: analyze the design, surface the gotchas it can't answer on its own, apply fixes back to Figma, re-analyze until the design is clean, then hand off to Figma's `figma-implement-design` skill for code generation. canicode does the design augmentation; code generation lives downstream (see [ADR-013](.claude/docs/ADR.md) for the scope boundary).
 
+![Role diagram: gotchas (memo) vs roundtrip (canvas) vs code-gen](docs/images/roles.svg)
+
 ### How the analyzer knows what to fix
 
 - **16 rules** across 6 categories: Pixel Critical, Responsive Critical, Code Quality, Token Management, Interaction, Semantic

@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 300" role="img" aria-labelledby="rolesTitle rolesDesc">
+  <title id="rolesTitle">CanICode roles: gotchas, roundtrip, figma-implement-design</title>
+  <desc id="rolesDesc">Data flow from a Figma URL through memo-only gotchas, canvas-writing roundtrip, to downstream code generation.</desc>
+  <defs>
+    <style><![CDATA[
+      .box { fill: #f6f8fa; stroke: #1f2328; stroke-width: 1.5; rx: 8; }
+      .title { font: 600 14px system-ui, sans-serif; fill: #1f2328; }
+      .body { font: 12px system-ui, sans-serif; fill: #24292f; }
+      .edge { stroke: #57606a; stroke-width: 1.5; fill: none; marker-end: url(#arrow); }
+      .muted { font: 11px system-ui, sans-serif; fill: #57606a; }
+    ]]></style>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 z" fill="#57606a"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="760" height="300" fill="#ffffff"/>
+  <text x="380" y="28" text-anchor="middle" class="title" font-size="16">Who reads / writes what (one page)</text>
+
+  <rect class="box" x="40" y="52" width="160" height="56"/>
+  <text x="120" y="78" text-anchor="middle" class="title">Figma file URL</text>
+  <text x="120" y="98" text-anchor="middle" class="muted">input</text>
+
+  <rect class="box" x="260" y="44" width="200" height="88"/>
+  <text x="360" y="72" text-anchor="middle" class="title">canicode-gotchas</text>
+  <text x="360" y="92" text-anchor="middle" class="body">writes answers to</text>
+  <text x="360" y="110" text-anchor="middle" class="body">local SKILL.md (memo)</text>
+
+  <rect class="box" x="260" y="156" width="200" height="88"/>
+  <text x="360" y="184" text-anchor="middle" class="title">canicode-roundtrip</text>
+  <text x="360" y="204" text-anchor="middle" class="body">writes / annotates</text>
+  <text x="360" y="222" text-anchor="middle" class="body">Figma canvas</text>
+
+  <rect class="box" x="520" y="100" width="200" height="88"/>
+  <text x="620" y="128" text-anchor="middle" class="title">figma-implement-design</text>
+  <text x="620" y="148" text-anchor="middle" class="body">reads design + gotchas</text>
+  <text x="620" y="166" text-anchor="middle" class="body">outputs code</text>
+
+  <path class="edge" d="M200 80 L260 88"/>
+  <path class="edge" d="M200 80 L260 200"/>
+  <path class="edge" d="M460 200 L520 144"/>
+  <path class="edge" d="M460 88 L520 144"/>
+
+  <text x="380" y="276" text-anchor="middle" class="muted">Boundary: canicode ends at a clean, annotated design; codegen is downstream (ADR-013).</text>
+</svg>
