@@ -80,6 +80,12 @@ ${footer}`;
 
   // src/core/roundtrip/apply-with-instance-fallback.ts
   var DEFINITION_WRITE_SKIPPED_EVENT = "cic_roundtrip_definition_write_skipped";
+  function formatDefinitionWriteSkippedMarkdown(args) {
+    const { componentName, reason, errorMessage, replicaCount } = args;
+    const cause = reason === "silent-ignore" ? "The write ran, but the property value did not change on this instance (silent-ignore)." : `Figma rejected an instance-level change${errorMessage ? `: ${errorMessage}` : ""}.`;
+    const fanOutHint = typeof replicaCount === "number" && replicaCount >= 2 ? ` This batched question covers ${replicaCount} instance scenes \u2014 changing **${componentName}** at the definition still affects every inheriting instance, not just one row in the batch.` : "";
+    return `${cause} Canicode's safer default (ADR-012) is to skip writing the source component **${componentName}** without explicit opt-in, because that write propagates to every non-overridden instance of **${componentName}** in the file.${fanOutHint} Prefer a manual override on **this** instance when you only need a local fix. Use \`allowDefinitionWrite: true\` only when you intend to change **${componentName}** for all inheriting instances \u2014 it is not a neutral shortcut for a single-instance tweak.`;
+  }
   function resolveSourceComponentName(definition, question) {
     if (definition && typeof definition.name === "string" && definition.name) {
       return definition.name;
@@ -93,10 +99,17 @@ ${footer}`;
   async function routeToDefinitionOrAnnotate(definition, writeFn, ctx) {
     if (definition && !ctx.allowDefinitionWrite && ctx.reason !== "non-override-error") {
       const componentName = resolveSourceComponentName(definition, ctx.question);
+      const replicaRaw = ctx.question["replicas"];
+      const replicaCount = typeof replicaRaw === "number" && Number.isInteger(replicaRaw) ? replicaRaw : void 0;
       if (ctx.categories) {
         upsertCanicodeAnnotation(ctx.scene, {
           ruleId: ctx.question.ruleId,
-          markdown: `The fix below could not be applied on this instance child \u2014 the property silently ignored the write or the override was rejected. Apply it on the source component **${componentName}** so every instance picks it up. Re-run with \`allowDefinitionWrite: true\` to let canicode propagate automatically.`,
+          markdown: formatDefinitionWriteSkippedMarkdown({
+            componentName,
+            reason: ctx.reason,
+            errorMessage: ctx.errorMessage,
+            replicaCount
+          }),
           categoryId: ctx.categories.fallback
         });
       }

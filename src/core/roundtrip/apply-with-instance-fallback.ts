@@ -42,6 +42,37 @@ interface RouteContext {
     | undefined;
 }
 
+/**
+ * ADR-012 default path: scene annotation when the orchestrator has not opted
+ * into definition writes. Names the cause (silent-ignore vs override-error),
+ * explains why definition writes are gated, and warns that
+ * `allowDefinitionWrite` is fan-out — not a neutral retry (#443).
+ */
+function formatDefinitionWriteSkippedMarkdown(args: {
+  componentName: string;
+  reason: "silent-ignore" | "override-error";
+  errorMessage?: string;
+  replicaCount?: number;
+}): string {
+  const { componentName, reason, errorMessage, replicaCount } = args;
+
+  const cause =
+    reason === "silent-ignore"
+      ? "The write ran, but the property value did not change on this instance (silent-ignore)."
+      : `Figma rejected an instance-level change${errorMessage ? `: ${errorMessage}` : ""}.`;
+
+  const fanOutHint =
+    typeof replicaCount === "number" && replicaCount >= 2
+      ? ` This batched question covers ${replicaCount} instance scenes — changing **${componentName}** at the definition still affects every inheriting instance, not just one row in the batch.`
+      : "";
+
+  return (
+    `${cause} Canicode's safer default (ADR-012) is to skip writing the source component **${componentName}** without explicit opt-in, because that write propagates to every non-overridden instance of **${componentName}** in the file.${fanOutHint} ` +
+    `Prefer a manual override on **this** instance when you only need a local fix. ` +
+    `Use \`allowDefinitionWrite: true\` only when you intend to change **${componentName}** for all inheriting instances — it is not a neutral shortcut for a single-instance tweak.`
+  );
+}
+
 function resolveSourceComponentName(
   definition: FigmaNode | null,
   question: RoundtripQuestion
@@ -77,16 +108,24 @@ async function routeToDefinitionOrAnnotate(
     ctx.reason !== "non-override-error"
   ) {
     const componentName = resolveSourceComponentName(definition, ctx.question);
+    const replicaRaw = ctx.question["replicas"] as unknown;
+    const replicaCount =
+      typeof replicaRaw === "number" && Number.isInteger(replicaRaw)
+        ? replicaRaw
+        : undefined;
     if (ctx.categories) {
-      // Generic phrasing: the helper does not have easy access to the resolved
-      // answer value at this site. Reviewers may push for exact-value inlining;
-      // a follow-up can thread the value through RouteContext if needed.
+      const markdownArgs: Parameters<typeof formatDefinitionWriteSkippedMarkdown>[0] =
+        {
+          componentName,
+          reason: ctx.reason,
+          ...(ctx.errorMessage !== undefined
+            ? { errorMessage: ctx.errorMessage }
+            : {}),
+          ...(replicaCount !== undefined ? { replicaCount } : {}),
+        };
       upsertCanicodeAnnotation(ctx.scene, {
         ruleId: ctx.question.ruleId,
-        markdown:
-          `The fix below could not be applied on this instance child — the property silently ignored the write or the override was rejected. ` +
-          `Apply it on the source component **${componentName}** so every instance picks it up. ` +
-          `Re-run with \`allowDefinitionWrite: true\` to let canicode propagate automatically.`,
+        markdown: formatDefinitionWriteSkippedMarkdown(markdownArgs),
         categoryId: ctx.categories.fallback,
       });
     }
