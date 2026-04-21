@@ -83,7 +83,9 @@ export function formatNextSteps(opts: {
 const InitOptionsSchema = z.object({
   token: z.string().optional(),
   global: z.boolean().optional(),
-  // cac maps `--no-skills` to `skills: false` (mirrors `--no-telemetry`).
+  // Declared positively as `--skills`; mri's built-in `--no-` prefix handling
+  // still maps `--no-skills` to `skills: false`. Declaring the option
+  // positively avoids cac's `(default: true)` artifact on negated flags.
   skills: z.boolean().optional(),
   /** Install `skills/cursor/*` into `.cursor/skills/` (canicode, gotchas, roundtrip — issue #407). */
   cursorSkills: z.boolean().optional(),
@@ -95,7 +97,7 @@ export function registerInit(cli: CAC): void {
     .command("init", "Set up canicode with Figma API token")
     .option("--token <token>", "Save Figma API token and install Claude Code skills to .claude/skills/")
     .option("--global", "Install skills to ~/.claude/skills/ instead of ./.claude/skills/")
-    .option("--no-skills", "Skip skill installation (token only)")
+    .option("--skills", "Install Claude Code skills into .claude/skills/ (default: on — pass --no-skills to opt out)")
     .option("--cursor-skills", "Also install Cursor copies of canicode / canicode-gotchas / canicode-roundtrip under .cursor/skills/")
     .option("--force", "Overwrite existing skill files without prompting (also for non-TTY/CI)")
     .action(async (rawOptions: Record<string, unknown>) => {

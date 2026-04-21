@@ -3,7 +3,9 @@ import { rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { figmaMcpRegistered, formatNextSteps } from "./init.js";
+import cac from "cac";
+
+import { figmaMcpRegistered, formatNextSteps, registerInit } from "./init.js";
 
 let tempRoot: string;
 
@@ -113,5 +115,43 @@ describe("formatNextSteps", () => {
     });
     expect(out).toContain(".cursor/mcp.json");
     expect(out).not.toContain("claude mcp add");
+  });
+});
+
+describe("registerInit --help rendering", () => {
+  // Guards against the cac `(default: true)` artifact from issue #432.
+  // cac auto-injects `config.default = true` on any option whose rawName
+  // begins with `--no-`, which then renders as `(default: true)` in help.
+  it("declares the skills option positively so cac does not inject a default", () => {
+    const cli = cac("canicode");
+    registerInit(cli);
+    const initCommand = cli.commands.find(c => c.name === "init");
+    expect(initCommand).toBeDefined();
+    const skillsOption = initCommand!.options.find(o => o.name === "skills");
+    expect(skillsOption).toBeDefined();
+    expect(skillsOption!.rawName).toBe("--skills");
+    expect(skillsOption!.negated).toBe(false);
+    expect(skillsOption!.config.default).toBeUndefined();
+  });
+
+  it("renders init --help without a misleading (default: true) on the skills line", () => {
+    const cli = cac("canicode");
+    registerInit(cli);
+    const initCommand = cli.commands.find(c => c.name === "init")!;
+    const logs: string[] = [];
+    const originalInfo = console.info;
+    console.info = (...args: unknown[]) => {
+      logs.push(args.map(String).join(" "));
+    };
+    try {
+      initCommand.outputHelp();
+    } finally {
+      console.info = originalInfo;
+    }
+    const output = logs.join("\n");
+    const skillsLine = output.split("\n").find(line => /--skills\b/.test(line));
+    expect(skillsLine).toBeDefined();
+    expect(skillsLine!).not.toContain("(default: true)");
+    expect(output).toContain("--no-skills");
   });
 });
