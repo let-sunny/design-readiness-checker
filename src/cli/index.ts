@@ -25,6 +25,7 @@ import { registerVisualCompare } from "./commands/visual-compare.js";
 import { registerInit } from "./commands/init.js";
 import { registerConfig } from "./commands/config.js";
 import { registerListRules } from "./commands/list-rules.js";
+import { registerRoundtripTally } from "./commands/roundtrip-tally.js";
 
 import { INTERNAL_COMMANDS } from "./internal-commands.js";
 
@@ -77,6 +78,7 @@ registerVisualCompare(cli);
 registerInit(cli);
 registerConfig(cli);
 registerListRules(cli);
+registerRoundtripTally(cli);
 
 // ============================================
 // Internal commands (calibration & fixtures)
@@ -143,6 +145,7 @@ cli.help((sections) => {
         `  $ canicode analyze "https://www.figma.com/design/..." --preset strict`,
         `  $ canicode analyze "https://www.figma.com/design/..." --config ./my-config.json`,
         `  $ canicode gotcha-survey "https://www.figma.com/design/..." --json`,
+        `  $ canicode roundtrip-tally --analyze ./reanalyze.json --step4 ./step4.json`,
       ].join("\n"),
     },
     {

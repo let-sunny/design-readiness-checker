@@ -41,6 +41,7 @@ describe.skipIf(!existsSync(CLI_PATH))("CLI --help", () => {
       "init",
       "config",
       "list-rules",
+      "roundtrip-tally",
       "docs",
     ];
 
