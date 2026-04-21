@@ -113,6 +113,17 @@ export async function readCanicodeAcknowledgments(
   return out;
 }
 
+// Plugin API exposes `children` as a throwing getter on TEXT/VECTOR and other
+// leaf nodes (issue #421) — isolate the access so the walk doesn't crash.
+function safeChildren(node: FigmaNode): readonly FigmaNode[] {
+  try {
+    const c = (node as { children?: unknown }).children;
+    return Array.isArray(c) ? (c as FigmaNode[]) : [];
+  } catch {
+    return [];
+  }
+}
+
 function walk(
   node: FigmaNode,
   canicodeCategoryIds: ReadonlySet<string> | undefined,
@@ -125,10 +136,7 @@ function walk(
     // Annotation reads can throw on locked / external nodes; swallow so the
     // sweep covers as much of the subtree as possible.
   }
-  const children = (node as { children?: unknown }).children;
-  if (Array.isArray(children)) {
-    for (const child of children) {
-      if (child && typeof child === "object") walk(child as FigmaNode, canicodeCategoryIds, out);
-    }
+  for (const child of safeChildren(node)) {
+    if (child && typeof child === "object") walk(child, canicodeCategoryIds, out);
   }
 }

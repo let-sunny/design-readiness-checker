@@ -360,17 +360,22 @@ ${footer}`;
     walk(root, canicodeCategoryIds, out);
     return out;
   }
+  function safeChildren(node) {
+    try {
+      const c = node.children;
+      return Array.isArray(c) ? c : [];
+    } catch {
+      return [];
+    }
+  }
   function walk(node, canicodeCategoryIds, out) {
     try {
       const local = extractAcknowledgmentsFromNode(node, canicodeCategoryIds);
       for (const a of local) out.push(a);
     } catch {
     }
-    const children = node.children;
-    if (Array.isArray(children)) {
-      for (const child of children) {
-        if (child && typeof child === "object") walk(child, canicodeCategoryIds, out);
-      }
+    for (const child of safeChildren(node)) {
+      if (child && typeof child === "object") walk(child, canicodeCategoryIds, out);
     }
   }
 

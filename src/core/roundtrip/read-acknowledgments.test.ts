@@ -187,6 +187,27 @@ describe("readCanicodeAcknowledgments", () => {
     );
   });
 
+  it("skips children of nodes whose `children` getter throws (TEXT/VECTOR leaves, #421)", async () => {
+    const throwingChild = makeNode("4:4", []);
+    Object.defineProperty(throwingChild, "children", {
+      get: () => {
+        throw new Error("cannot access children of TEXT node");
+      },
+    });
+    const goodSibling = makeNode("5:5", [
+      { labelMarkdown: "ok — *raw-value*", categoryId: "cat-gotcha" },
+    ]);
+    const root = makeNode("1:1", [], [throwingChild, goodSibling]);
+
+    const figma = {
+      getNodeByIdAsync: async () => root,
+    };
+    (globalThis as { figma?: unknown }).figma = figma;
+
+    const acks = await readCanicodeAcknowledgments("1:1", CATEGORIES);
+    expect(acks).toEqual([{ nodeId: "5:5", ruleId: "raw-value" }]);
+  });
+
   it("swallows per-node read errors so the rest of the sweep proceeds", async () => {
     const noisyChild = makeNode("4:4", []);
     Object.defineProperty(noisyChild, "annotations", {
