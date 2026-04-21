@@ -97,6 +97,10 @@ export interface RoundtripQuestion {
   sourceChildId?: string;
   targetProperty?: string | string[];
   instanceContext?: RoundtripInstanceContext;
+  // #356: when this question collapses N instance-child issues that share the
+  // same (sourceComponentId, sourceNodeId, ruleId) tuple. Schema guarantees >=2
+  // (see GotchaSurveyQuestionSchema.replicas); single-instance questions omit.
+  replicas?: number;
   [key: string]: unknown;
 }
 

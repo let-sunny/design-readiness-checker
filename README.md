@@ -51,12 +51,15 @@ Rule scores aren't guesswork. The calibration pipeline converts real Figma desig
 
 ## Getting Started
 
+> **Token safety:** Do **not** paste your Figma token into Claude, Cursor, or other agent chats — session logs can retain it. Use `FIGMA_TOKEN=figd_… npx canicode init`, or run `npx canicode init` and enter the token **only** at the CLI prompt.
+
 **Quickest way:** **[Open the web app](https://let-sunny.github.io/canicode/)** — paste a Figma URL, get a report.
 
 **Design-to-code in Claude Code (recommended):**
 
 ```bash
 # 1. Save your Figma token AND install the /canicode-roundtrip skill
+#    (never paste the token into chat — env var or CLI prompt only)
 npx canicode init --token figd_xxxxxxxxxxxxx
 
 # 2. Run the roundtrip on a Figma URL
@@ -68,7 +71,7 @@ npx canicode init --token figd_xxxxxxxxxxxxx
 **CanICode in Cursor (no Claude Code required):**
 
 1. Add **canicode** and **Figma** MCPs — [Cursor MCP](docs/CUSTOMIZATION.md#cursor-mcp-canicode) for `npx` → `canicode-mcp`; Figma MCP is required for **`use_figma`** if you run **roundtrip** (design writes), not for analyze-only.
-2. `npx canicode init --token figd_xxxxxxxxxxxxx --cursor-skills` — installs the same three skills as Claude under `.cursor/skills/` (`canicode`, `canicode-gotchas`, `canicode-roundtrip` + `helpers.js`) plus the shared `.claude/skills/canicode-gotchas/SKILL.md` answer file when needed.
+2. `npx canicode init --token figd_xxxxxxxxxxxxx --cursor-skills` (use `FIGMA_TOKEN=…` or the CLI prompt — not chat) — installs the same three skills as Claude under `.cursor/skills/` (`canicode`, `canicode-gotchas`, `canicode-roundtrip` + `helpers.js`) plus the shared `.claude/skills/canicode-gotchas/SKILL.md` answer file when needed.
 3. In Agent chat, @-mention **canicode-gotchas** (survey) or **canicode-roundtrip** (full roundtrip) and pass a Figma URL — same tool names and JSON as Claude Code (`gotcha-survey`, `analyze`, etc.).
 
 **If you only want analysis (no writes back to Figma):**
@@ -131,6 +134,7 @@ Each row below is a **complete** install. Don't run more than one — they cover
 <summary><strong>Claude Code Skills</strong> — install details</summary>
 
 ```bash
+# Token: env or CLI prompt only — do not paste into agent chat
 npx canicode init --token figd_xxxxxxxxxxxxx
 ```
 

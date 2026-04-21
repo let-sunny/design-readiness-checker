@@ -94,8 +94,14 @@ const InitOptionsSchema = z.object({
 
 export function registerInit(cli: CAC): void {
   cli
-    .command("init", "Set up canicode with Figma API token")
-    .option("--token <token>", "Save Figma API token and install Claude Code skills to .claude/skills/")
+    .command(
+      "init",
+      "Set up canicode with Figma API token (never paste a token into agent chat — use FIGMA_TOKEN=… or the interactive prompt)",
+    )
+    .option(
+      "--token <token>",
+      "Save Figma API token (use env/CLI only — not agent chat) and install Claude Code skills to .claude/skills/",
+    )
     .option("--global", "Install skills to ~/.claude/skills/ instead of ./.claude/skills/")
     .option("--skills", "Install Claude Code skills into .claude/skills/ (default: on — pass --no-skills to opt out)")
     .option("--cursor-skills", "Also install Cursor copies of canicode / canicode-gotchas / canicode-roundtrip under .cursor/skills/")
@@ -211,6 +217,9 @@ export function registerInit(cli: CAC): void {
 
         // No flags: show setup guide
         console.log(`CANICODE SETUP\n`);
+        console.log(
+          `  Never paste your token into Claude/Cursor chat — use FIGMA_TOKEN=… npx canicode init or this prompt only.\n`,
+        );
         console.log(`  canicode init --token YOUR_FIGMA_TOKEN`);
         console.log(`  Get token: figma.com > Settings > Personal access tokens\n`);
         console.log(`Skills:`);

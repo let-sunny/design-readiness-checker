@@ -26,6 +26,11 @@ export function printDocsSetup(): void {
   console.log(`
 CANICODE SETUP GUIDE
 
+  Token safety: Do NOT paste your Figma token into Claude, Cursor, or other
+  agent chats — transcripts can retain it. Use:
+    FIGMA_TOKEN=figd_… npx canicode init
+  or run \`npx canicode init\` and enter the token only at the CLI prompt.
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  1. CLI (REST API)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -52,6 +57,8 @@ CANICODE SETUP GUIDE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  2. CLAUDE CODE SKILLS (requires FIGMA_TOKEN)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  (Same token safety as above — env var or interactive prompt, not chat.)
 
   Setup:
     canicode init --token figd_xxxxxxxxxxxxx
