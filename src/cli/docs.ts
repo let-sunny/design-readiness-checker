@@ -80,6 +80,35 @@ CANICODE SETUP GUIDE
     /canicode-roundtrip <url>    Analyze, fix gotchas in Figma, re-analyze
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 3. CURSOR SKILLS (requires FIGMA_TOKEN)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  (Same token safety as above — env var or interactive prompt, not chat.)
+
+  Setup:
+    canicode init --token figd_xxxxxxxxxxxxx --cursor-skills
+    (installs Cursor copies of the three skills into ./.cursor/skills/)
+
+  Installed skills:
+    canicode             Lightweight CLI wrapper
+    canicode-gotchas     Standalone gotcha survey
+    canicode-roundtrip   Full analyze -> gotcha -> apply roundtrip
+
+  Flags:
+    --cursor-skills   Install Cursor copies of all three skills into .cursor/skills/
+    --no-skills       Skip Claude Code skills (with --cursor-skills, still installs
+                      the Cursor bundle plus the shared gotchas answer file)
+    --force           Overwrite existing skill files without prompting
+
+  Use (in Cursor Agent chat):
+    @canicode <figma-url>
+    @canicode-gotchas <figma-url>      Run a gotcha survey
+    @canicode-roundtrip <figma-url>    Analyze, fix gotchas in Figma, re-analyze
+
+  See also: docs/CUSTOMIZATION.md#cursor-mcp-canicode (Figma MCP required for roundtrip
+  writes; analyze-only works without it).
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  TOKEN PRIORITY
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -94,6 +123,7 @@ CANICODE SETUP GUIDE
   CI/CD, automation        -> CLI + FIGMA_TOKEN env var
   Claude Code (full)       -> canicode MCP server + FIGMA_TOKEN
   Claude Code (light)      -> /canicode skill + FIGMA_TOKEN
+  Cursor Agent             -> canicode init --cursor-skills + Figma MCP
   In Figma                 -> Figma Plugin
   Browser                  -> Web App (GitHub Pages)
   Quick trial, offline     -> CLI + JSON fixtures
