@@ -37,6 +37,21 @@ describe.skipIf(!existsSync(CLI_PATH))("CLI --help", () => {
     }
   });
 
+  it("should show product tagline above Usage in --help output", () => {
+    const output = execFileSync("node", [CLI_PATH, "--help"], {
+      encoding: "utf-8",
+    });
+
+    const taglineAnchor = "Lint Figma designs for AI code-gen";
+    expect(output).toContain(taglineAnchor);
+
+    const taglineIndex = output.indexOf(taglineAnchor);
+    const usageIndex = output.indexOf("Usage:");
+    expect(taglineIndex).toBeGreaterThan(-1);
+    expect(usageIndex).toBeGreaterThan(-1);
+    expect(taglineIndex).toBeLessThan(usageIndex);
+  });
+
   it("should allow direct invocation of internal commands", () => {
     const output = execFileSync(
       "node",

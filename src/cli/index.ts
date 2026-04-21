@@ -43,7 +43,7 @@ import { registerCalibrateImplement } from "./commands/internal/calibrate-implem
 import { registerCodeMetrics } from "./commands/internal/code-metrics.js";
 
 const require = createRequire(import.meta.url);
-const pkg = require("../../package.json") as { version: string };
+const pkg = require("../../package.json") as { version: string; description: string };
 
 const cli = cac("canicode");
 
@@ -115,6 +115,10 @@ cli.help((sections) => {
         .join("\n");
     }
   }
+
+  // Insert product tagline between the `canicode/<version>` banner (sections[0])
+  // and the Usage block, so first-touch users see what the tool does.
+  sections.splice(1, 0, { body: `  ${pkg.description}` });
 
   sections.push(
     {
