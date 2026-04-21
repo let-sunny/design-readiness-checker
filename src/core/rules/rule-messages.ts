@@ -99,25 +99,35 @@ export const fixedSizeMsg = {
 };
 
 // ── missing-size-constraint ──────────────────────────────────────────────────
+//
+// #403: Subtypes are case-of-firing rather than property-of-fix. Each
+// subtype's gotcha question is a pure function of the subtype — the
+// message function does not need to read `rootNodeType` or `scope`
+// again. This keeps gotcha rendering simple at the cost of a slightly
+// longer subtype list (4 instead of 1).
 
-export type MissingSizeConstraintSubType = "max-width" | "min-width" | "wrap" | "grid";
+export type MissingSizeConstraintSubType =
+  | "page-container-unbound"
+  | "page-instance-fixed"
+  | "component-fixed-by-design"
+  | "component-fixed-by-override";
 
 export const missingSizeConstraintMsg = {
-  maxWidth: (name: string, currentWidth: string): ViolationMsg => ({
-    message: `"${name}" uses FILL width (currently ${currentWidth}) without max-width`,
-    suggestion: `Add maxWidth to prevent stretching on large screens`,
+  pageContainerUnbound: (name: string, currentWidth: string): ViolationMsg => ({
+    message: `Container "${name}" uses FILL width (currently ${currentWidth}) and no ancestor defines a width bound`,
+    suggestion: `Decide whether this area should stretch with the screen, or set min/max-width here so the responsive behavior is explicit`,
   }),
-  minWidth: (name: string, currentWidth: string): ViolationMsg => ({
-    message: `"${name}" uses FILL width (currently ${currentWidth}) without min-width`,
-    suggestion: `Add minWidth to prevent collapsing on small screens`,
+  pageInstanceFixed: (name: string, currentWidth: string): ViolationMsg => ({
+    message: `Instance "${name}" has fixed width (${currentWidth}) inside an Auto Layout parent`,
+    suggestion: `Confirm whether this fixed width is intentional — if not, set the instance to FILL so it follows the parent's layout`,
   }),
-  wrap: (name: string): ViolationMsg => ({
-    message: `"${name}" is in a wrap container without min-width`,
-    suggestion: `Add minWidth to control when wrapping occurs`,
+  componentFixedByDesign: (name: string, currentWidth: string): ViolationMsg => ({
+    message: `Component "${name}" has fixed width (${currentWidth}) at its root`,
+    suggestion: `Confirm whether this component is intentionally non-responsive — otherwise switch root sizing to FILL or set min/max bounds`,
   }),
-  grid: (name: string): ViolationMsg => ({
-    message: `"${name}" is in a grid layout without size constraints`,
-    suggestion: `Add min/max-width for proper column sizing`,
+  componentFixedByOverride: (name: string, currentWidth: string): ViolationMsg => ({
+    message: `Instance "${name}" overrides root width to fixed (${currentWidth}); the original component may be FILL`,
+    suggestion: `Confirm whether the fixed-width override is intentional — if not, restore root sizing to inherit from the component definition`,
   }),
 };
 

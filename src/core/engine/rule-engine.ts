@@ -228,6 +228,13 @@ export class RuleEngine {
     const scope: AnalysisScope =
       this.scopeOverride ?? detectAnalysisScope(rootNode);
 
+    // #403: capture root node type as a separate axis from `scope`. Rules
+    // that branch on whether a component-scope root is the component
+    // itself vs an INSTANCE of one need this even when `scope` already
+    // resolves to "component". Captured once here, threaded read-only
+    // through every `RuleContext` in this analysis.
+    const rootNodeType = rootNode.type;
+
     const issues: AnalysisIssue[] = [];
     const failedRules: RuleFailure[] = [];
     const enabledRules = this.getEnabledRules();
@@ -246,6 +253,7 @@ export class RuleEngine {
       0,
       analysisState,
       scope,
+      rootNodeType,
       undefined,
       undefined
     );
@@ -305,6 +313,7 @@ export class RuleEngine {
     componentDepth: number,
     analysisState: Map<string, unknown>,
     scope: AnalysisScope,
+    rootNodeType: string,
     parent?: AnalysisNode,
     siblings?: AnalysisNode[]
   ): void {
@@ -334,6 +343,7 @@ export class RuleEngine {
       siblings,
       analysisState,
       scope,
+      rootNodeType,
     };
 
     // Run each rule on this node
@@ -394,6 +404,7 @@ export class RuleEngine {
           currentComponentDepth + 1,
           analysisState,
           scope,
+          rootNodeType,
           node,
           node.children
         );

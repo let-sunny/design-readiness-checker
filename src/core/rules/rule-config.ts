@@ -59,7 +59,13 @@ export const RULE_PURPOSE: Record<RuleId, RulePurpose> = {
   "non-layout-container": "violation",
   // Responsive Critical
   "fixed-size-in-auto-layout": "violation",
-  "missing-size-constraint": "violation",
+  // #403: missing-size-constraint reframed as info-collection. The rule
+  // fires on width chains whose intent is structurally undecidable
+  // (FILL container with no chain-bound ancestor; FIXED component or
+  // instance root). The gotcha question is the primary signal; the
+  // -1 score is just enough to keep the rule visible in
+  // diversity scoring without driving grade swings on its own.
+  "missing-size-constraint": "info-collection",
   // Code Quality
   "missing-component": "violation",
   "detached-instance": "violation",
@@ -131,8 +137,12 @@ export const RULE_CONFIGS: Record<RuleId, RuleConfig> = {
     enabled: true,
   },
   "missing-size-constraint": {
-    severity: "risk",
-    score: -8,
+    // #403: severity downgraded `risk → missing-info` and score from
+    // -8 → -1 to match the new info-collection purpose. Keeping the
+    // rule enabled (not disabled) so its gotchas still surface in the
+    // survey — see RULE_PURPOSE entry above for the full rationale.
+    severity: "missing-info",
+    score: -1,
     enabled: true,
   },
 
@@ -303,7 +313,11 @@ export const RULE_ANNOTATION_PROPERTIES: Partial<
   >
 > = {
   "missing-size-constraint": {
-    default: [{ type: "width" }, { type: "height" }],
+    // #403: width-only — the redesigned rule does not evaluate the
+    // height axis (deferred follow-up). Emitting a `height` annotation
+    // here would mark properties the rule never inspected and confuse
+    // downstream Dev Mode hints.
+    default: [{ type: "width" }],
   },
   "irregular-spacing": {
     bySubType: {

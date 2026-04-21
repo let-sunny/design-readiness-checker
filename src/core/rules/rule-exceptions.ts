@@ -1,5 +1,4 @@
 import type { AnalysisNode } from "../contracts/figma-node.js";
-import type { RuleContext } from "../contracts/rule.js";
 import { isVisualLeafType, isVisualOnlyNode, isExcludedName } from "./node-semantics.js";
 
 // ============================================
@@ -34,20 +33,13 @@ export function isAbsolutePositionExempt(node: AnalysisNode): boolean {
 // ============================================
 // Size-constraint exceptions
 // ============================================
-
-/** Nodes that don't need maxWidth even with FILL sizing */
-export function isSizeConstraintExempt(node: AnalysisNode, context: RuleContext): boolean {
-  // Already has maxWidth
-  if (node.maxWidth !== undefined) return true;
-
-  // Parent already has maxWidth — parent constrains the stretch
-  if (context.parent?.maxWidth !== undefined) return true;
-
-  // Root-level frames — they represent the screen itself
-  if (context.depth <= 1) return true;
-
-  return false;
-}
+//
+// `isSizeConstraintExempt` was removed in #403 (commit
+// `feat(rules): missing-size-constraint scope-aware…`). The new rule
+// walks the full ancestor chain to determine whether any container
+// already establishes a width bound, which strictly subsumes the old
+// "parent has maxWidth OR depth <= 1" heuristic. Keeping the helper
+// would produce two divergent definitions of "bound" in the codebase.
 
 // ============================================
 // Fixed-size exceptions

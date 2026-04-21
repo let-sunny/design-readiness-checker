@@ -231,5 +231,21 @@ Gotcha answers do not retroactively erase the rule score. Scores represent desig
 - `AnalysisResult.scope`, `buildResultJson(...).scope`, and `McpAnalyzeResponseSchema.scope` surface the resolved value so downstream consumers (report HTML, `figma-implement-design`, gotcha UI) can branch the same way rules do.
 - Rules are intentionally not modified in this step — scope consumption lands in follow-up PRs (first consumer: `missing-size-constraint` redesign, #403). The contract lets those redesigns ship without a second round of plumbing.
 - Calibration fixtures captured from design-system pages frequently have `COMPONENT` roots ("pages packaged as component variants"). Because no rule currently branches on scope, baselines are unchanged; the override (`--scope page`) is the prescribed path if/when #403-style rule redesigns would shift grades on those fixtures.
+- `RuleContext.rootNodeType` (added during the #403 prep step) is an orthogonal axis to `scope`. `scope === "component"` does not say whether the root is a `COMPONENT`/`COMPONENT_SET` (the component being audited) or an `INSTANCE` (a placement, possibly with overrides). Rules that care about that distinction (e.g. asking "intentionally non-responsive?" vs "override intended?") read `rootNodeType` directly. Neither axis implies the other; both are captured once at the analysis root and threaded read-only through every `RuleContext`.
 
-**References**: ADR-017 (detection-channel split — this ADR extends the rule-context vocabulary), [#404](https://github.com/let-sunny/canicode/issues/404), #403 (first consumer).
+### Amendment — first scope consumer landed (#403)
+
+The "baselines unchanged" clause above refers specifically to the scope-field addition in #411: because no rule branched on `scope` at that time, scores could not move. That claim still stands for the `#411` step itself.
+
+**#403 is the first consumer and introduces intentional drift.** Redesigning `missing-size-constraint` (violation -8 → info-collection -1, chain-bound walker, subtype dispatch) reshapes the baseline across the 24 calibration fixtures:
+
+- 12 fixtures improve by one letter grade (C+ → B, B → B+, B+ → A)
+- 12 fixtures keep the same grade with a +3% to +4% percentage bump
+- 0 reverse transitions
+- Aggregate `missing-size-constraint` fires: 837 → 1 (one genuine `page-instance-fixed` in `desktop-slot > Footer`)
+
+The uplift is the pre-committed correction for a rule that had a large false-positive rate on well-structured design-system pages (the walker now verifies that an ancestor establishes the width bound before firing). It is not a regression of the scoring model and does not warrant a re-tune of category weights.
+
+**Policy going forward.** The post-#403 grade table (captured in PR #403's body) is the new reference point for calibration drift assessments. Future scope-aware rules should measure their drift against the post-#403 baseline, not the pre-#411 one. Re-establish the baseline on demand by running `pnpm calibrate --all` (or the cheaper analysis-only sweep via `calibrate-analyze --scope page` on each `fixtures/done/*`) and diffing against the PR body table.
+
+**References**: ADR-017 (detection-channel split — this ADR extends the rule-context vocabulary), [#404](https://github.com/let-sunny/canicode/issues/404), #403 (first consumer — grade uplift evidence in PR body).

@@ -632,3 +632,109 @@ describe("RuleEngine.analyze — scope detection and injection (#404)", () => {
     }
   });
 });
+
+// ─── #403 root node type axis ─────────────────────────────────────────────────
+
+describe("RuleEngine.analyze — rootNodeType injection (#403)", () => {
+  // `rootNodeType` is intentionally a different axis from `scope`. A
+  // `scope === "component"` analysis can have either a COMPONENT root
+  // (the component being audited) or an INSTANCE root (a placement of a
+  // component, possibly with overrides) — rules like the
+  // `missing-size-constraint` redesign branch on that distinction.
+
+  it("captures the root's Figma node type and threads it into every RuleContext", () => {
+    const captured: string[] = [];
+
+    ruleRegistry.register({
+      definition: {
+        id: "capture-root-type-test" as RuleId,
+        category: "code-quality",
+        label: "Capture rootNodeType for test",
+        description: "",
+      } as never,
+      check: (_node, ctx) => {
+        captured.push(ctx.rootNodeType);
+        return null;
+      },
+    });
+
+    const cfg: Record<string, RuleConfig> = {
+      ...RULE_CONFIGS,
+      "capture-root-type-test": { severity: "suggestion", score: 0, enabled: true },
+    };
+
+    try {
+      const instance = makeNode({
+        id: "50:1",
+        name: "Card/Default",
+        type: "INSTANCE",
+        children: [
+          makeNode({ id: "50:2", name: "Inner", type: "FRAME" }),
+          makeNode({ id: "50:3", name: "Label", type: "TEXT" }),
+        ],
+      });
+      const file = makeFile({
+        document: makeNode({
+          id: "0:1",
+          name: "Document",
+          type: "DOCUMENT",
+          children: [instance],
+        }),
+      });
+
+      analyzeFile(file, {
+        targetNodeId: "50:1",
+        configs: cfg as Record<RuleId, RuleConfig>,
+        enabledRules: ["capture-root-type-test" as RuleId],
+      });
+
+      expect(captured.length).toBeGreaterThan(0);
+      // rootNodeType is constant per analysis — INSTANCE root, even
+      // though the current node may be the inner FRAME or TEXT child.
+      expect(new Set(captured)).toEqual(new Set(["INSTANCE"]));
+    } finally {
+      ruleRegistry.unregister("capture-root-type-test" as RuleId);
+    }
+  });
+
+  it("captures rootNodeType for FRAME, COMPONENT, and COMPONENT_SET roots", () => {
+    const captured: Record<string, string[]> = {};
+
+    ruleRegistry.register({
+      definition: {
+        id: "capture-root-type-multi-test" as RuleId,
+        category: "code-quality",
+        label: "Capture rootNodeType across roots",
+        description: "",
+      } as never,
+      check: (_node, ctx) => {
+        const bucket = captured[ctx.rootNodeType] ?? [];
+        bucket.push(ctx.rootNodeType);
+        captured[ctx.rootNodeType] = bucket;
+        return null;
+      },
+    });
+
+    const cfg: Record<string, RuleConfig> = {
+      ...RULE_CONFIGS,
+      "capture-root-type-multi-test": { severity: "suggestion", score: 0, enabled: true },
+    };
+
+    try {
+      for (const type of ["FRAME", "COMPONENT", "COMPONENT_SET"] as const) {
+        analyzeFile(
+          makeFile({
+            document: makeNode({ id: `${type}:1`, name: type, type }),
+          }),
+          {
+            configs: cfg as Record<RuleId, RuleConfig>,
+            enabledRules: ["capture-root-type-multi-test" as RuleId],
+          },
+        );
+      }
+      expect(Object.keys(captured).sort()).toEqual(["COMPONENT", "COMPONENT_SET", "FRAME"]);
+    } finally {
+      ruleRegistry.unregister("capture-root-type-multi-test" as RuleId);
+    }
+  });
+});

@@ -104,7 +104,7 @@ Override score, severity, or enable/disable individual rules:
 | Rule ID | Default Score | Default Severity |
 |---------|--------------|-----------------|
 | `fixed-size-in-auto-layout` | -6 | risk |
-| `missing-size-constraint` | -8 | risk |
+| `missing-size-constraint` | -1 | missing-info |
 
 **Code Quality (4 rules)**
 

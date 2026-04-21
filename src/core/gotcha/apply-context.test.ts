@@ -183,14 +183,11 @@ describe("computeApplyContext", () => {
       expect(ctx.annotationProperties).toEqual([{ type: "itemSpacing" }]);
     });
 
-    it("missing-size-constraint wrap → default hint (subType falls back)", () => {
+    it("missing-size-constraint page-container-unbound → default hint (subType falls back)", () => {
       const ctx = computeApplyContext(
-        makeViolation("missing-size-constraint", { subType: "wrap" }),
+        makeViolation("missing-size-constraint", { subType: "page-container-unbound" }),
       );
-      expect(ctx.annotationProperties).toEqual([
-        { type: "width" },
-        { type: "height" },
-      ]);
+      expect(ctx.annotationProperties).toEqual([{ type: "width" }]);
     });
 
     it("absolute-position-in-auto-layout → layoutMode hint", () => {
