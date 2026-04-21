@@ -1,9 +1,7 @@
 import type { AnalysisNode } from "../contracts/figma-node.js";
-import type { RuleContext } from "../contracts/rule.js";
 import {
   isAutoLayoutExempt,
   isAbsolutePositionExempt,
-  isSizeConstraintExempt,
   isFixedSizeExempt,
 } from "./rule-exceptions.js";
 import { isVisualOnlyNode } from "./node-semantics.js";
@@ -16,21 +14,6 @@ function makeNode(overrides: Partial<AnalysisNode> = {}): AnalysisNode {
     visible: true,
     ...overrides,
   } as AnalysisNode;
-}
-
-function makeContext(overrides: Partial<RuleContext> = {}): RuleContext {
-  return {
-    file: {} as RuleContext["file"],
-    depth: 2,
-    componentDepth: 0,
-    maxDepth: 10,
-    path: ["Root", "Test"],
-    ancestorTypes: [],
-    analysisState: new Map(),
-    scope: "page",
-    rootNodeType: "FRAME",
-    ...overrides,
-  };
 }
 
 describe("isVisualOnlyNode", () => {
@@ -128,40 +111,6 @@ describe("isAbsolutePositionExempt", () => {
   it("does not exempt plain frame", () => {
     const node = makeNode({ fills: [{ type: "SOLID" }] });
     expect(isAbsolutePositionExempt(node)).toBe(false);
-  });
-});
-
-describe("isSizeConstraintExempt", () => {
-  it("exempts when node has maxWidth", () => {
-    const node = makeNode({ maxWidth: 800 });
-    expect(isSizeConstraintExempt(node, makeContext())).toBe(true);
-  });
-
-  it("exempts when parent has maxWidth", () => {
-    const parent = makeNode({ maxWidth: 1200 });
-    const node = makeNode({});
-    expect(isSizeConstraintExempt(node, makeContext({ parent }))).toBe(true);
-  });
-
-  it("exempts root-level frames (depth <= 1)", () => {
-    const node = makeNode({});
-    expect(isSizeConstraintExempt(node, makeContext({ depth: 1 }))).toBe(true);
-  });
-
-  it("does not exempt inside GRID layout", () => {
-    const parent = makeNode({ layoutMode: "GRID" as any });
-    const node = makeNode({
-      absoluteBoundingBox: { x: 0, y: 0, width: 400, height: 100 },
-    });
-    expect(isSizeConstraintExempt(node, makeContext({ parent }))).toBe(false);
-  });
-
-  it("does not exempt inside flex wrap", () => {
-    const parent = makeNode({ layoutWrap: "WRAP" as any });
-    const node = makeNode({
-      absoluteBoundingBox: { x: 0, y: 0, width: 400, height: 100 },
-    });
-    expect(isSizeConstraintExempt(node, makeContext({ parent }))).toBe(false);
   });
 });
 

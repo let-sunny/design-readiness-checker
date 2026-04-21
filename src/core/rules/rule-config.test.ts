@@ -88,13 +88,14 @@ describe("rule-config sync", () => {
     });
 
     it("falls back to default when subType has no bySubType entry", () => {
-      // missing-size-constraint has only a default — any subType resolves to it.
+      // missing-size-constraint has only a default — any subType resolves to
+      // it. Width-only since the #403 redesign deferred the height axis.
       expect(
-        getAnnotationProperties("missing-size-constraint", "wrap")
-      ).toEqual([{ type: "width" }, { type: "height" }]);
+        getAnnotationProperties("missing-size-constraint", "page-container-unbound")
+      ).toEqual([{ type: "width" }]);
       expect(
         getAnnotationProperties("missing-size-constraint")
-      ).toEqual([{ type: "width" }, { type: "height" }]);
+      ).toEqual([{ type: "width" }]);
     });
 
     it("returns undefined when subType does not match bySubType and no default exists", () => {
@@ -150,14 +151,22 @@ describe("rule-config sync", () => {
       expect(RULE_PURPOSE["missing-interaction-state"]).toBe("info-collection");
     });
 
-    it("keeps all non-interaction rules as violation", () => {
+    it("marks missing-size-constraint as info-collection (#403)", () => {
+      // The redesigned rule fires only on structurally undecidable sizing
+      // (FILL container with no chain-bound ancestor; FIXED component or
+      // instance root) — gotcha is the primary signal, score penalty is
+      // intentionally minimal. See `RULE_CONFIGS["missing-size-constraint"]`.
+      expect(RULE_PURPOSE["missing-size-constraint"]).toBe("info-collection");
+    });
+
+    it("keeps all other non-interaction rules as violation", () => {
+      const infoCollectionRules = new Set([
+        "missing-prototype",
+        "missing-interaction-state",
+        "missing-size-constraint",
+      ]);
       for (const [id, purpose] of Object.entries(RULE_PURPOSE)) {
-        if (
-          id === "missing-prototype" ||
-          id === "missing-interaction-state"
-        ) {
-          continue;
-        }
+        if (infoCollectionRules.has(id)) continue;
         expect(purpose).toBe("violation");
       }
     });

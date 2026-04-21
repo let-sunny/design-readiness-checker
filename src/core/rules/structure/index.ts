@@ -1,9 +1,11 @@
-import type { RuleCheckFn, RuleDefinition } from "../../contracts/rule.js";
+import type { AnalysisNode } from "../../contracts/figma-node.js";
+import type { RuleCheckFn, RuleContext, RuleDefinition, RuleViolation } from "../../contracts/rule.js";
+import { getAnalysisState } from "../../contracts/rule.js";
 import { defineRule } from "../rule-registry.js";
 import { getRuleOption } from "../rule-config.js";
-import { isAutoLayoutExempt, isAbsolutePositionExempt, isSizeConstraintExempt, isFixedSizeExempt } from "../rule-exceptions.js";
+import { isAutoLayoutExempt, isAbsolutePositionExempt, isFixedSizeExempt } from "../rule-exceptions.js";
 import { noAutoLayoutMsg, absolutePositionMsg, fixedSizeMsg, missingSizeConstraintMsg, nonLayoutContainerMsg, deepNestingMsg } from "../rule-messages.js";
-import { isContainerNode, hasAutoLayout, hasTextContent, hasOverlappingBounds } from "../node-semantics.js";
+import { isContainerNode, hasAutoLayout, hasOverlappingBounds } from "../node-semantics.js";
 
 // ============================================
 // no-auto-layout (merged: absorbs ambiguous-structure + missing-layout-hint)
@@ -201,63 +203,210 @@ export const fixedSizeInAutoLayout = defineRule({
 });
 
 // ============================================
-// missing-size-constraint (merged: missing-min-width + missing-max-width)
+// missing-size-constraint (#403 redesign — scope-aware, info-collection)
 // ============================================
+//
+// Pre-#403 this rule fired on every FILL container with no max-width
+// regardless of whether an ancestor already established a bound, and
+// scored -8/risk. The redesign narrows it to genuinely ambiguous sizing
+// situations and reframes the output as a gotcha rather than a
+// violation (per ADR-017 channel separation):
+//
+//   page scope:
+//     - container FRAME/SECTION with FILL width AND no chain-bound
+//       ancestor (chain-bound = FIXED width OR FILL/HUG with explicit
+//       min/max). Fires `page-container-unbound` — designer intent
+//       (stretch with screen vs. cap at content) is structurally
+//       undecidable.
+//     - INSTANCE with FIXED width inside an Auto Layout parent. Fires
+//       `page-instance-fixed` — could be intentional override or a stale
+//       size carried over from the component definition.
+//
+//   component scope:
+//     - the analysis root (and only the root — internal nodes pass)
+//       with FIXED width. Fires `component-fixed-by-design` for
+//       COMPONENT/COMPONENT_SET roots, `component-fixed-by-override`
+//       for INSTANCE roots — same shape, different gotcha framing.
+//
+// Deliberately scoped out (see PR body):
+//   - INSTANCE FIXED outside Auto Layout — `no-auto-layout` already
+//     owns the score channel on the non-auto-layout parent. Firing
+//     here too would double-penalize one structural concern.
+//   - Nodes inside an INSTANCE — Plugin API silently ignores min/max
+//     overrides on instance internal nodes, so the gotcha would be
+//     un-actionable.
+//   - Height axis — width is the dominant responsive concern; height
+//     redesign deferred to a follow-up issue.
 
 const missingSizeConstraintDef: RuleDefinition = {
   id: "missing-size-constraint",
   name: "Missing Size Constraint",
   category: "responsive-critical",
-  why: "Without min/max-width, AI has no bounds — generated code may collapse or stretch indefinitely",
-  impact: "Content becomes unreadable or invisible at extreme screen sizes",
-  fix: "Set min-width and/or max-width so AI can generate proper size constraints",
+  why: "Width sizing without explicit bounds (FIXED root or FILL chained to a bounded ancestor) is structurally indistinguishable from missing information — AI cannot tell whether the designer intended responsive stretching, a fixed cap, or simply forgot to set min/max",
+  impact: "Generated code either guesses hard-coded widths or omits responsive constraints; either way the runtime layout drifts from the design intent at viewports the designer never explicitly considered",
+  fix: "Answer the gotcha to declare intent (responsive vs. fixed-by-design vs. instance override), then encode the answer in Figma sizing — FILL/HUG with min/max for responsive bounds, FIXED only when intentionally non-responsive",
 };
 
-const missingSizeConstraintCheck: RuleCheckFn = (node, context) => {
-  // Only check containers and text-containing nodes
-  if (!isContainerNode(node) && !hasTextContent(node)) return null;
-  // Skip if not in Auto Layout context
+// ── Chain-bound walker (memoized via analysisState) ──────────────────────
+//
+// "Chain-bound" = some ancestor in the analysis tree (root included)
+// resolves the width chain by either fixing the width or capping a
+// FILL with min/max. Computed lazily as the rule visits each node:
+// because traverseAndCheck runs the check fn parent-first, by the time
+// a child asks `parentChainBound(child)` the parent's entry is already
+// in the cache. The side-effect MUST run for every visited node — see
+// `recordChainBound` call placement below.
+
+type ChainBoundCache = Map<string, boolean>;
+const CHAIN_BOUND_KEY = "missing-size-constraint:chain-bound";
+
+function getChainBoundCache(context: RuleContext): ChainBoundCache {
+  return getAnalysisState(context, CHAIN_BOUND_KEY, () => new Map<string, boolean>());
+}
+
+function establishesOwnWidthBound(node: AnalysisNode): boolean {
+  if (node.layoutSizingHorizontal === "FIXED") return true;
+  if (node.minWidth !== undefined || node.maxWidth !== undefined) return true;
+  return false;
+}
+
+function recordChainBound(context: RuleContext, node: AnalysisNode): boolean {
+  const cache = getChainBoundCache(context);
+  const cached = cache.get(node.id);
+  if (cached !== undefined) return cached;
+  const own = establishesOwnWidthBound(node);
+  const parent = context.parent;
+  const inherited = parent ? cache.get(parent.id) ?? false : false;
+  const result = own || inherited;
+  cache.set(node.id, result);
+  return result;
+}
+
+function parentChainBound(context: RuleContext): boolean {
+  if (!context.parent) return false;
+  return getChainBoundCache(context).get(context.parent.id) ?? false;
+}
+
+// ── Subtype dispatchers ──────────────────────────────────────────────────
+
+const PAGE_CONTAINER_FRAME_TYPES = new Set(["FRAME", "SECTION"]);
+
+function formatWidth(node: AnalysisNode): string {
+  return node.absoluteBoundingBox ? `${node.absoluteBoundingBox.width}px` : "unknown";
+}
+
+function buildViolation(
+  subType: "page-container-unbound" | "page-instance-fixed" | "component-fixed-by-design" | "component-fixed-by-override",
+  node: AnalysisNode,
+  context: RuleContext,
+  msg: { message: string; suggestion: string; guide?: string }
+): RuleViolation {
+  return {
+    ruleId: missingSizeConstraintDef.id,
+    subType,
+    nodeId: node.id,
+    nodePath: context.path.join(" > "),
+    ...msg,
+  };
+}
+
+function checkComponentScopeRoot(
+  node: AnalysisNode,
+  context: RuleContext
+): RuleViolation | null {
+  // Only the analysis root in component scope — internal nodes pass.
+  // Variants of a COMPONENT_SET sit at depth=1 and are intentionally
+  // skipped; variant-level sizing is the variant-structure-mismatch
+  // rule's concern, not this one.
+  if (context.depth !== 0) return null;
+  if (node.layoutSizingHorizontal !== "FIXED") return null;
+
+  const currentWidth = formatWidth(node);
+  if (context.rootNodeType === "INSTANCE") {
+    return buildViolation(
+      "component-fixed-by-override",
+      node,
+      context,
+      missingSizeConstraintMsg.componentFixedByOverride(node.name, currentWidth),
+    );
+  }
+  // COMPONENT, COMPONENT_SET, or scope-overridden FRAME treated as a
+  // component definition. The gotcha framing is identical — "is this
+  // intentionally non-responsive?" — so they share the subtype.
+  return buildViolation(
+    "component-fixed-by-design",
+    node,
+    context,
+    missingSizeConstraintMsg.componentFixedByDesign(node.name, currentWidth),
+  );
+}
+
+function checkPageInstanceFixed(
+  node: AnalysisNode,
+  context: RuleContext
+): RuleViolation | null {
+  if (node.type !== "INSTANCE") return null;
+  if (node.layoutSizingHorizontal !== "FIXED") return null;
+
+  // Scope-out (#403): when the parent is not Auto Layout,
+  // `no-auto-layout` already fires on that parent and owns the score
+  // channel for the structural problem. Adding a sizing gotcha on top
+  // double-counts one underlying issue. The leak case
+  // (INSTANCE direct child of a SECTION page-root, where
+  // no-auto-layout's behavior on SECTION is ambiguous) will surface in
+  // Phase 4's fire-rate gate; revisit then if it actually appears.
   if (!context.parent || !hasAutoLayout(context.parent)) return null;
 
-  const nodePath = context.path.join(" > ");
+  const currentWidth = formatWidth(node);
+  return buildViolation(
+    "page-instance-fixed",
+    node,
+    context,
+    missingSizeConstraintMsg.pageInstanceFixed(node.name, currentWidth),
+  );
+}
 
-  // Check 1: wrap parent → FILL children need min-width
-  if (context.parent.layoutWrap === "WRAP" && node.layoutSizingHorizontal === "FILL" && node.minWidth === undefined) {
-    return {
-      ruleId: missingSizeConstraintDef.id,
-      subType: "wrap" as const,
-      nodeId: node.id,
-      nodePath,
-      ...missingSizeConstraintMsg.wrap(node.name),
-    };
+function checkPageContainerUnbound(
+  node: AnalysisNode,
+  context: RuleContext
+): RuleViolation | null {
+  if (!PAGE_CONTAINER_FRAME_TYPES.has(node.type)) return null;
+  if (node.layoutSizingHorizontal !== "FILL") return null;
+  // Some ancestor already establishes the width bound for this chain —
+  // the FILL here will resolve to a finite range, no ambiguity.
+  if (parentChainBound(context)) return null;
+
+  const currentWidth = formatWidth(node);
+  return buildViolation(
+    "page-container-unbound",
+    node,
+    context,
+    missingSizeConstraintMsg.pageContainerUnbound(node.name, currentWidth),
+  );
+}
+
+const missingSizeConstraintCheck: RuleCheckFn = (node, context) => {
+  // Side-effect: record this node's chain-bound status for descendants.
+  // MUST run for every visited node BEFORE any early return, otherwise
+  // `parentChainBound` lookups on children will miss and silently
+  // default to `false`. Co-locating the recorder with the only consumer
+  // (this rule) keeps the cache contract local.
+  recordChainBound(context, node);
+
+  // Actionability filter (#403, D6): the Figma Plugin API silently
+  // ignores min/max writes targeting nodes inside an INSTANCE, so any
+  // gotcha generated here would be un-actionable. We exclude INSTANCE
+  // descendants (but keep the INSTANCE node itself in scope — that's
+  // the page-instance-fixed case, where the override IS actionable).
+  if (context.ancestorTypes.includes("INSTANCE")) return null;
+
+  if (context.scope === "component") {
+    return checkComponentScopeRoot(node, context);
   }
 
-  // Check 2: grid parent → FILL children need size constraints
-  if (context.parent.layoutMode === "GRID" && node.layoutSizingHorizontal === "FILL" && node.minWidth === undefined && node.maxWidth === undefined) {
-    return {
-      ruleId: missingSizeConstraintDef.id,
-      subType: "grid" as const,
-      nodeId: node.id,
-      nodePath,
-      ...missingSizeConstraintMsg.grid(node.name),
-    };
-  }
-
-  // Check 3: FILL containers need max-width
-  if (node.layoutSizingHorizontal === "FILL") {
-    if (isSizeConstraintExempt(node, context)) return null;
-
-    const currentWidth = node.absoluteBoundingBox ? `${node.absoluteBoundingBox.width}px` : "unknown";
-    return {
-      ruleId: missingSizeConstraintDef.id,
-      subType: "max-width" as const,
-      nodeId: node.id,
-      nodePath,
-      ...missingSizeConstraintMsg.maxWidth(node.name, currentWidth),
-    };
-  }
-
-  return null;
+  // page scope — at most one of these fires per node by construction
+  // (different node-type predicates), so order does not matter.
+  return checkPageInstanceFixed(node, context) ?? checkPageContainerUnbound(node, context);
 };
 
 export const missingSizeConstraint = defineRule({

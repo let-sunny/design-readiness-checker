@@ -735,10 +735,10 @@ describe("generateGotchaSurvey", () => {
         makeIssue({
           ruleId: "missing-size-constraint",
           category: "responsive-critical",
-          severity: "risk",
+          severity: "missing-info",
           nodeId: "1:1",
           nodePath: "Root > Banner",
-          subType: "wrap",
+          subType: "page-container-unbound",
         }),
       ];
 
@@ -749,7 +749,6 @@ describe("generateGotchaSurvey", () => {
 
       expect(survey.questions[0]!.annotationProperties).toEqual([
         { type: "width" },
-        { type: "height" },
       ]);
     });
 
