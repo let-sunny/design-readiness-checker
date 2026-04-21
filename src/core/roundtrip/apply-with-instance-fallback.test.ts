@@ -266,13 +266,9 @@ describe("applyWithInstanceFallback", () => {
       const annotations = scene.annotations as AnnotationEntry[];
       expect(annotations).toHaveLength(1);
       expect(annotations[0]?.labelMarkdown).toContain("**Card**");
-      expect(annotations[0]?.labelMarkdown).toContain(
-        "silently ignored the write or the override was rejected"
-      );
-      expect(annotations[0]?.labelMarkdown).toContain(
-        "every instance picks it up"
-      );
-      expect(annotations[0]?.labelMarkdown).toContain("allowDefinitionWrite");
+      expect(annotations[0]?.labelMarkdown).toContain("rejected an instance-level");
+      expect(annotations[0]?.labelMarkdown).toContain("ADR-012");
+      expect(annotations[0]?.labelMarkdown).toContain("allowDefinitionWrite: true");
       expect(annotations[0]?.categoryId).toBe("cat-fallback");
     });
 
@@ -288,6 +284,8 @@ describe("applyWithInstanceFallback", () => {
       expect(writeFn).toHaveBeenCalledTimes(1);
       const annotations = scene.annotations as AnnotationEntry[];
       expect(annotations[0]?.labelMarkdown).toContain("**Card**");
+      expect(annotations[0]?.labelMarkdown).toContain("did not change");
+      expect(annotations[0]?.labelMarkdown).toContain("ADR-012");
     });
 
     it("external read-only + flag false → annotates with Q3 phrasing (short-circuits before the read-only branch)", async () => {
