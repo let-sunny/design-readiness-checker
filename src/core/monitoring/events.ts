@@ -34,6 +34,8 @@ export const EVENTS = {
   // caller-supplied callback. Define the typed name here so a future consumer
   // has a single place to wire it up.
   ROUNDTRIP_DEFINITION_WRITE_SKIPPED: `${EVENT_PREFIX}roundtrip_definition_write_skipped`,
+  /** CLI `canicode roundtrip-tally` completed successfully. */
+  ROUNDTRIP_TALLY: `${EVENT_PREFIX}roundtrip_tally`,
 } as const;
 
 export type EventName = (typeof EVENTS)[keyof typeof EVENTS];
