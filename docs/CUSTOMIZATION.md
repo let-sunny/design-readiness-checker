@@ -197,6 +197,13 @@ Create or merge into `.cursor/mcp.json` in your repository root:
 
 Use long-form `--package` (short `-p` can confuse some parsers). Set your Figma token once with `npx canicode init --token figd_…` — the MCP server reads `~/.canicode/config.json`; you do not need `FIGMA_TOKEN` in the MCP block unless your team prefers env injection.
 
+### Figma MCP server id and tool names in Cursor (#437)
+
+Cursor may show an MCP **server id** in the UI that is **not** literally the key you typed in `mcpServers` (for example a workspace or project prefix). Skills and docs often say “the `figma` MCP” or “call `use_figma`” as shorthand — **your session’s truth is the live tool list** after MCP reload (Cursor: MCP / Tools panel), not the string `figma` or `use_figma` read from a config file alone.
+
+- If roundtrip fails with “cannot find `use_figma`” but Figma MCP shows as connected, open the tool list and note the **exact** tool identifier Cursor exposes (it may be namespaced).
+- Keep the Figma MCP entry in `.cursor/mcp.json` (or `~/.cursor/mcp.json`) per [Figma’s MCP docs](https://developers.figma.com/docs/figma-mcp-server/) — then rely on the host-reported tool name when wiring skills or debugging.
+
 ### Gotcha survey in Cursor
 
 1. Add the MCP config above and restart Cursor (or reload MCP).
