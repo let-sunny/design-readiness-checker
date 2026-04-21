@@ -1,11 +1,23 @@
 import { execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
+import { createRequire } from "node:module";
+
 import { INTERNAL_COMMANDS } from "./internal-commands.js";
 
 const CLI_PATH = resolve(import.meta.dirname, "../../dist/cli/index.js");
+const require = createRequire(import.meta.url);
+const pkg = require("../../package.json") as { description: string };
 
 describe.skipIf(!existsSync(CLI_PATH))("CLI --help", () => {
+
+  it("should print the product description from package.json (first-touch tagline)", () => {
+    const output = execFileSync("node", [CLI_PATH, "--help"], {
+      encoding: "utf-8",
+    });
+    expect(pkg.description.length).toBeGreaterThan(10);
+    expect(output).toContain(pkg.description);
+  });
 
   it("should not show internal commands in --help output", () => {
     const output = execFileSync("node", [CLI_PATH, "--help"], {
