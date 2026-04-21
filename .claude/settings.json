@@ -18,6 +18,10 @@
           {
             "type": "command",
             "command": "[ \"$DEVELOP_SUBAGENT\" = \"1\" ] && exit 0; OUT=$({ pnpm lint && pnpm build; } 2>&1); [ $? -eq 0 ] || { echo '[stop-hook] pnpm lint/build FAILED'; echo \"$OUT\"; exit 1; }"
+          },
+          {
+            "type": "command",
+            "command": "[ \"$DEVELOP_SUBAGENT\" = \"1\" ] && exit 0; CHANGES=$({ git diff --name-only HEAD~1 HEAD; git diff --name-only; git diff --cached --name-only; } 2>/dev/null | sort -u); if echo \"$CHANGES\" | grep -qE '^src/core/(rules/|engine/scoring)'; then printf '%s\\n' '{\"systemMessage\": \"[rule-docs reminder] Rule/scoring files changed. Rule-Reference wiki auto-syncs via sync-rule-docs PostToolUse hook. Check Scoring-Model wiki page (manual) and ADR if scoring philosophy changed.\"}'; fi; exit 0"
           }
         ]
       }
