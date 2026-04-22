@@ -40,13 +40,15 @@ Rule scores aren't guesswork. The calibration pipeline converts real Figma desig
 
 ## The Roundtrip Workflow
 
-1. **Analyze** — run the 16 rules against the Figma design and grade it.
+**Skills:** **`canicode-gotchas`** = survey answers saved **locally** in SKILL.md only (memo). **`canicode-roundtrip`** = same analysis path plus **writes to Figma** (annotations / properties). Pick gotchas for capture-only; pick roundtrip when the design file should change.
+
+1. **Analyze** — run the 16 rules against the Figma design (report includes grade).
 2. **Surface gotchas** — the analyzer emits questions for design information it can't infer (missing states, unclear variants, responsive intent).
 3. **Apply fixes to Figma** — the `/canicode-roundtrip` skill writes answers back via `use_figma`. Each write shows up in the summary with one of three outcome markers:
    - ✅ **scene write succeeded** — the property was written directly to the scene node or instance override.
    - 📝 **annotated the scene node** — the skill left a structured annotation instead of writing the property. This is the [ADR-012](.claude/docs/ADR.md) default for instance-child layout writes, because propagating a property to the component definition (and therefore every instance of it) is almost never what the user wants. **A summary full of 📝 markers is correct behavior, not failure.**
    - 🌐 **definition write propagated** — the property was written to the component definition and every instance inherited it. Only happens when the user opted in up front with `allowDefinitionWrite`.
-4. **Re-analyze** — verify the gotchas were addressed (grade movement is a side-effect). Repeat step 2 if new gotchas surface.
+4. **Re-analyze** — verify gotchas were captured (annotations / acks); repeat step 2 if new gotchas surface.
 5. **Hand off** to `figma-implement-design` — canicode's scope ends here ([ADR-013](.claude/docs/ADR.md)). Figma's official code-generation skill takes the now-clean design and produces code.
 
 ---

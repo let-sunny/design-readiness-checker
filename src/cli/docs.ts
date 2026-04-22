@@ -26,6 +26,9 @@ export function printDocsSetup(): void {
   console.log(`
 CANICODE SETUP GUIDE
 
+  Skills at a glance: canicode-gotchas = survey answers saved locally (memo-only).
+  canicode-roundtrip = same flow plus writes to Figma via use_figma (canvas).
+
   Token safety: Do NOT paste your Figma token into Claude, Cursor, or other
   agent chats — transcripts can retain it. Use:
     FIGMA_TOKEN=figd_… npx canicode init

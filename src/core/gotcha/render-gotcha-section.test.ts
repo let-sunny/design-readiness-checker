@@ -61,24 +61,67 @@ describe("renderGotchaSection", () => {
     }).success).toBe(true);
   });
 
-  it("renders skipped answer as _(skipped)_", () => {
+  it("compacts skipped-only answers into rule counts (#425)", () => {
     const q = baseQuestion();
     const md = renderGotchaSection({
       questions: [q],
       answers: { "42:99": { skipped: true } },
       ...meta,
     });
-    expect(md).toContain("- **Answer**: _(skipped)_");
+    expect(md).toContain("#### Skipped (1)");
+    expect(md).toContain("`missing-size-constraint` × 1");
+    expect(md).not.toContain("- **Answer**: _(skipped)_");
   });
 
-  it("renders missing answer key as _(skipped)_", () => {
+  it("compacts missing answer keys as skipped (#425)", () => {
     const q = baseQuestion();
     const md = renderGotchaSection({
       questions: [q],
       answers: {},
       ...meta,
     });
-    expect(md).toContain("- **Answer**: _(skipped)_");
+    expect(md).toContain("#### Skipped (1)");
+    expect(md).toContain("`missing-size-constraint` × 1");
+  });
+
+  it("aggregates multiple skips by ruleId (#425)", () => {
+    const q1 = baseQuestion({ nodeId: "1:1", nodeName: "A" });
+    const q2 = baseQuestion({ nodeId: "2:2", nodeName: "B" });
+    const q3 = baseQuestion({
+      nodeId: "3:3",
+      nodeName: "C",
+      ruleId: "no-auto-layout",
+    });
+    const md = renderGotchaSection({
+      questions: [q1, q2, q3],
+      answers: {
+        "1:1": { skipped: true },
+        "2:2": { skipped: true },
+        "3:3": { skipped: true },
+      },
+      ...meta,
+    });
+    expect(md).toContain("#### Skipped (3)");
+    expect(md).toContain("`missing-size-constraint` × 2");
+    expect(md).toContain("`no-auto-layout` × 1");
+  });
+
+  it("renders answered blocks before compact skipped section (#425)", () => {
+    const q1 = baseQuestion({ nodeId: "1:1", nodeName: "A" });
+    const q2 = baseQuestion({ nodeId: "2:2", nodeName: "B" });
+    const md = renderGotchaSection({
+      questions: [q1, q2],
+      answers: {
+        "1:1": { answer: "320px" },
+        "2:2": { skipped: true },
+      },
+      ...meta,
+    });
+    expect(md).toContain("- **Answer**: 320px");
+    expect(md).toContain("#### Skipped (1)");
+    const idxAns = md.indexOf("320px");
+    const idxSkip = md.indexOf("#### Skipped");
+    expect(idxAns).toBeLessThan(idxSkip);
   });
 
   it("includes instance-context bullet only when question has instanceContext", () => {

@@ -38,14 +38,39 @@ export type RenderGotchaSectionInput = z.infer<
   typeof RenderGotchaSectionInputSchema
 >;
 
-function formatAnswerLine(
+function isSkippedAnswer(
   nodeId: string,
   answers: RenderGotchaSectionInput["answers"],
-): string {
+): boolean {
   const v = answers[nodeId];
-  if (v === undefined) return "_(skipped)_";
-  if ("skipped" in v && v.skipped === true) return "_(skipped)_";
-  return "answer" in v ? v.answer : "_(skipped)_";
+  if (v === undefined) return true;
+  if ("skipped" in v && v.skipped === true) return true;
+  if ("answer" in v) return false;
+  return true;
+}
+
+/** Count skips per ruleId — used for compact persisted section (#425). */
+function skippedCountsByRule(
+  skippedQs: GotchaSurveyQuestion[],
+): Map<string, number> {
+  const m = new Map<string, number>();
+  for (const q of skippedQs) {
+    m.set(q.ruleId, (m.get(q.ruleId) ?? 0) + 1);
+  }
+  return m;
+}
+
+function renderSkippedCompact(skippedQs: GotchaSurveyQuestion[]): string {
+  const n = skippedQs.length;
+  const counts = skippedCountsByRule(skippedQs);
+  const lines = [`#### Skipped (${n})`, ""];
+  const sortedRules = [...counts.keys()].sort((a, b) => a.localeCompare(b));
+  for (const ruleId of sortedRules) {
+    const c = counts.get(ruleId) ?? 0;
+    lines.push(`- \`${ruleId}\` × ${c}`);
+  }
+  lines.push("");
+  return lines.join("\n");
 }
 
 function renderInstanceContextBullet(q: GotchaSurveyQuestion): string | null {
@@ -83,8 +108,23 @@ export function renderGotchaSection(raw: RenderGotchaSectionInput): string {
     "",
   ].join("\n");
 
-  const blocks: string[] = [];
+  const answered: GotchaSurveyQuestion[] = [];
+  const skippedList: GotchaSurveyQuestion[] = [];
   for (const q of input.questions) {
+    if (isSkippedAnswer(q.nodeId, input.answers)) skippedList.push(q);
+    else answered.push(q);
+  }
+
+  const blocks: string[] = [];
+  for (const q of answered) {
+    const v = input.answers[q.nodeId];
+    if (v === undefined || !("answer" in v)) {
+      throw new Error(
+        `renderGotchaSection: expected answer for nodeId ${q.nodeId} (answered set)`,
+      );
+    }
+    const answerLine = v.answer;
+
     const lines: string[] = [
       `#### ${q.ruleId} — ${q.nodeName}`,
       "",
@@ -99,10 +139,14 @@ export function renderGotchaSection(raw: RenderGotchaSectionInput): string {
 
     lines.push(
       `- **Question**: ${q.question}`,
-      `- **Answer**: ${formatAnswerLine(q.nodeId, input.answers)}`,
+      `- **Answer**: ${answerLine}`,
       "",
     );
     blocks.push(lines.join("\n"));
+  }
+
+  if (skippedList.length > 0) {
+    blocks.push(renderSkippedCompact(skippedList));
   }
 
   return `${header}${blocks.join("")}`.replace(/\s+$/, "") + "\n";
