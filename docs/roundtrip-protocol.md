@@ -1,6 +1,6 @@
 # Roundtrip protocol reference (extracted from the skill)
 
-This document holds **override matrices, annotation enum tables, write-policy tiers, pre-flight probe branches, and the bundled-helper catalogue** so \`canicode-roundtrip/SKILL.md\` can stay protocol-focused. The canonical source lives in the repo: edit here or the skill — keep them aligned when changing behaviour.
+This document holds **override matrices, annotation enum tables, write-policy tiers, pre-flight probe branches, and the bundled-helper catalogue** so `canicode-roundtrip/SKILL.md` can stay protocol-focused. The canonical source lives in the repo: edit here or the skill — keep them aligned when changing behaviour.
 
 ---
 
