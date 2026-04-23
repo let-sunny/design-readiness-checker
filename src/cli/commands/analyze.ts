@@ -26,7 +26,6 @@ const AnalyzeOptionsSchema = z.object({
   preset: z.enum(["relaxed", "dev-friendly", "ai-ready", "strict"]).optional(),
   output: z.string().optional(),
   token: z.string().optional(),
-  api: z.boolean().optional(),
   screenshot: z.boolean().optional(),
   config: z.string().optional(),
   noOpen: z.boolean().optional(),
@@ -42,7 +41,6 @@ export function registerAnalyze(cli: CAC): void {
     .option("--preset <preset>", "Analysis preset (relaxed | dev-friendly | ai-ready | strict)")
     .option("--output <path>", "HTML report output path")
     .option("--token <token>", "Figma API token (or use FIGMA_TOKEN env var)")
-    .option("--api", "Load via Figma REST API (requires FIGMA_TOKEN)")
     .option("--screenshot", "Include screenshot comparison in report (requires ANTHROPIC_API_KEY)")
     .option("--config <path>", "Path to config JSON file (override rule scores/settings)")
     .option("--no-open", "Don't open report in browser after analysis")
@@ -50,7 +48,6 @@ export function registerAnalyze(cli: CAC): void {
     .option("--acknowledgments <path>", "(#371 / ADR-019) Path to JSON acknowledgments from canicode Figma annotations (nodeId, ruleId; optional intent / sceneWriteOutcome / codegenDirective per #444). Matching issues are flagged acknowledged and contribute half weight to density.")
     .option("--scope <scope>", "(#404) Override analysis scope: `page` (screen/section — container bounds are required) or `component` (standalone reusable unit — root FILL is the design contract). Defaults to auto-detection from the root node type.")
     .example("  canicode analyze https://www.figma.com/design/ABC123/MyDesign")
-    .example("  canicode analyze https://www.figma.com/design/ABC123/MyDesign --api --token YOUR_TOKEN")
     .example("  canicode analyze ./fixtures/my-design --output report.html")
     .example("  canicode analyze ./fixtures/my-design --config ./my-config.json")
     .action(async (input: string, rawOptions: Record<string, unknown>) => {

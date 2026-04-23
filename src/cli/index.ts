@@ -129,10 +129,7 @@ cli.help((sections) => {
     },
     {
       title: "\nData source",
-      body: [
-        `  --api                   Load via Figma REST API (needs FIGMA_TOKEN)`,
-        `  --token <token>         Figma API token (or use FIGMA_TOKEN env var)`,
-      ].join("\n"),
+      body: `  --token <token>         Figma API token (or use FIGMA_TOKEN env var)`,
     },
     {
       title: "\nCustomization",
@@ -141,7 +138,6 @@ cli.help((sections) => {
     {
       title: "\nExamples",
       body: [
-        `  $ canicode analyze "https://www.figma.com/design/..." --api`,
         `  $ canicode analyze "https://www.figma.com/design/..." --preset strict`,
         `  $ canicode analyze "https://www.figma.com/design/..." --config ./my-config.json`,
         `  $ canicode gotcha-survey "https://www.figma.com/design/..." --json`,
