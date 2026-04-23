@@ -234,6 +234,33 @@ Cursor may show an MCP **server id** in the UI that is **not** literally the key
 - [ ] After the Q&A loop, `npx canicode upsert-gotcha-section --file … --design-key … --input=-` (JSON payload on stdin per `canicode-gotchas` Step 4b) succeeds and updates `.claude/skills/canicode-gotchas/SKILL.md`.
 - [ ] Optional: @ **canicode-roundtrip** — Step 4 reads `helpers.js` from `.cursor/skills/canicode-roundtrip/helpers.js` after `canicode init --cursor-skills`.
 
+### Troubleshooting: MCP not available or roundtrip Step 4 fails
+
+Work through these checks in order before concluding that an MCP server is broken.
+
+1. **Cursor host — ensure the server is enabled and the tools appear in the live session.**
+   MCP servers are not always active immediately after install. Open **Settings → MCP** and verify the server shows a connected status. If the entry is present but the tools are missing from the active tool list, use the reload MCP action (or restart Cursor). The live tool list — not the on-disk JSON — is what the model can actually call.
+
+2. **Two separate servers — identify which step failed before attributing blame.**
+   canicode (provides `analyze` and `gotcha-survey`) and Figma (provides `use_figma`) are independent MCP servers. Step 1 (analyze) and Step 3 (gotcha-survey) use the canicode server. Step 4 (canvas write) uses the Figma server. A failure in Step 4 is a Figma MCP issue, not a canicode issue — and vice versa. Check which server exposes the missing tool before editing config.
+
+3. **Step 4 (canvas write) — `helpers.js` must be prepended to every `use_figma` `code` string.**
+   `CanICodeRoundtrip` is not a Figma built-in. It is the global registered by the bundled IIFE in `helpers.js` (at `.claude/skills/canicode-roundtrip/helpers.js` for Claude Code, or `.cursor/skills/canicode-roundtrip/helpers.js` after `canicode init --cursor-skills`). If the bundle is missing from the string, the first Plugin API call throws `ReferenceError: CanICodeRoundtrip is not defined`. This is **not** the same as "canicode MCP is missing" — the canicode server may be healthy; only the Step 4 `use_figma` script is incomplete. Smoke-check with:
+   ```javascript
+   // <contents of helpers.js prepended here>
+   return { ok: typeof CanICodeRoundtrip !== 'undefined' };
+   ```
+   See the Step 4 preflight block in [`docs/roundtrip-protocol.md`](https://github.com/let-sunny/canicode/blob/main/docs/roundtrip-protocol.md) and the corresponding preflight check in the `canicode-roundtrip` SKILL.md for the full prepend procedure.
+
+4. **Size / delivery — measure the code string before assuming a server bug.**
+   If the `use_figma` call silently fails, truncates, or the host reports the tool payload is too large, the `helpers.js` bundle combined with the apply script may exceed the host's per-message or per-tool-call limit. Measure with `Buffer.byteLength(code, "utf8")` (Node) or `wc -c` (shell). If the string is too large for the chat/tool input, write it to a file and paste it into the MCP `use_figma` UI directly instead of relying on the model to pass the full string inline. See also the delivery notes in [#462](https://github.com/let-sunny/canicode/issues/462) and [`docs/roundtrip-protocol.md`](https://github.com/let-sunny/canicode/blob/main/docs/roundtrip-protocol.md).
+
+5. **Common symptom → likely cause mapping:**
+   - `ReferenceError: CanICodeRoundtrip is not defined` → `helpers.js` was not prepended (check 3 above).
+   - Truncated response or no server round-trip returned → delivery size issue (check 4 above).
+   - Permission error or "cannot edit" → Figma file seat or edit access; a Viewer seat cannot write via Plugin API.
+   - Tools missing from live tool list despite on-disk config → MCP server not enabled or not restarted (check 1 above).
+
 ---
 
 ## Telemetry

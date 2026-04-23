@@ -102,6 +102,9 @@ The probe is read-only and idempotent; running it before the picker adds one rou
 
 1. Read `helpers.js` from the same directory as this skill once at the start of Step 4 — typically `.claude/skills/canicode-roundtrip/helpers.js` (Claude Code / default `canicode init`) or `.cursor/skills/canicode-roundtrip/helpers.js` (Cursor with `canicode init --cursor-skills`).
 2. Prepend its contents verbatim at the top of every `use_figma` batch body — it registers a single global `CanICodeRoundtrip`.
+
+See the "Mandatory preflight" block at the start of Step 4 in [`.claude/skills/canicode-roundtrip/SKILL.md`](https://github.com/let-sunny/canicode/blob/main/.claude/skills/canicode-roundtrip/SKILL.md#step-4-apply-gotcha-answers-to-figma-design) for the agent-facing checklist.
+
 3. Reference exposed globals as `CanICodeRoundtrip.*`:
    - `stripAnnotations(annotations)` — normalizes the D1 label/labelMarkdown mutex on readback.
    - `ensureCanicodeCategories()` — returns `{ gotcha, flag, fallback }` category id map (D4); idempotent, safe to call at the top of every batch. May also include `legacyAutoFix` when the file already carries the pre-#355 `canicode:auto-fix` category from earlier roundtrips — read-only on the canicode side, used only by Step 5 cleanup to sweep old annotations.
