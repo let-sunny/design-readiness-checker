@@ -237,6 +237,8 @@ After editing MCP JSON or running `canicode init`:
 2. Install skills: **`canicode init --token … --cursor-skills`** saves the Figma token and installs everything; or **`canicode init --cursor-skills`** without `--token` installs Claude skills plus Cursor copies — you still need **`canicode init --token …`** (or `FIGMA_TOKEN`) before REST **`analyze`** / **`gotcha-survey`** against a live URL. The shared gotchas answer file lives under `.claude/skills/canicode-gotchas/` when the gotchas skill is installed. Authoring is single-source under `.claude/skills/` in the repo; the npm build writes `skills/cursor/` (gotchas strip `# Collected Gotchas`; other skills are full copies).
 3. In chat, **@-mention** **canicode**, **canicode-gotchas**, or **canicode-roundtrip** when your Cursor setup uses Agent-attached skills. Some teams prefer **slash commands** or rules instead of `@` — use whichever your workspace enables; roundtrip still needs **`use_figma`** from the Figma MCP in that session.
 
+> **Deterministic invocation (both hosts):** the SKILL.md `description` fields advertise TRIGGER conditions so the model auto-routes Figma-URL prompts to the matching skill, but model routing is non-deterministic. When you want guaranteed routing, invoke explicitly — `/canicode <figma-url>`, `/canicode-gotchas <figma-url>`, or `/canicode-roundtrip <figma-url>` (Claude Code), or the equivalent slash-command path in Cursor where supported. Both `@`-mention and slash-command invocation skip the description-based router.
+
 ### Manual test checklist (#407)
 
 - [ ] MCP: Cursor shows `canicode` connected and the tools list includes `gotcha-survey` (and `analyze` if testing roundtrip Step 1).

@@ -1,6 +1,21 @@
 ---
 name: canicode-roundtrip
-description: Analyze Figma design, fix gotchas via Plugin API, re-analyze, then implement — true design-to-code roundtrip
+description: |
+  Run the full design-to-code roundtrip — analyze a Figma design, surface gotchas, write
+  designer answers back into the file via the Figma Plugin API (use_figma), re-analyze to
+  confirm the gotchas were captured, then hand off to figma-implement-design. Mutates the
+  Figma file: requires Figma full seat + edit access.
+
+  TRIGGER when: the user shares a figma.com/design/... URL and wants production-quality
+  code, or asks for "design-to-code roundtrip", "fix the gotchas", or "annotate the Figma
+  file" with implementation context; the user wants a single command for analyze → survey →
+  apply → implement; the user wants Figma annotations or property fixes written before code
+  generation.
+
+  SKIP when: the user only wants a one-shot readiness report (route to canicode); the user
+  only wants Q&A captured locally without touching the Figma file (route to
+  canicode-gotchas); the user has no Figma edit access; the Figma MCP `use_figma` tool is
+  not loaded in this session (Step 0 will halt anyway).
 disable-model-invocation: false
 ---
 
