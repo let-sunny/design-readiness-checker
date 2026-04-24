@@ -31,10 +31,25 @@ import "../core/rules/index.js";
 const require = createRequire(import.meta.url);
 const pkg = require("../../package.json") as { version: string };
 
-const server = new McpServer({
-  name: "canicode",
-  version: pkg.version,
-});
+const SERVER_INSTRUCTIONS = `canicode has three channels. The MCP tools below cover analysis only — design write-back is a separate channel.
+
+- **MCP tools** (this server): \`analyze\`, \`gotcha-survey\`, \`list-rules\`, \`docs\`, \`version\`, \`visual-compare\`. Use these for read-only analysis and reports.
+- **Skills** (slash commands, NOT MCP tools): \`/canicode\`, \`/canicode-gotchas\`, \`/canicode-roundtrip\`. Install with \`npx canicode init\` (Claude Code) or \`npx canicode init --cursor-skills\` (Cursor). The roundtrip skill is the only path that writes back to the Figma file via Plugin API.
+- **CLI**: \`npx canicode <command>\` — same JSON shape as MCP tools, useful for CI / scripting.
+
+If a user asks to "run the roundtrip" or "fix gotchas in Figma" and you don't see \`canicode-roundtrip\` as a slash command, the skill isn't installed yet — tell them to run \`npx canicode init\`. Don't try to compose roundtrip out of MCP tools; the write-back logic lives in the skill.
+
+Call \`docs\` with topic \`channels\` for the full matrix.`;
+
+const server = new McpServer(
+  {
+    name: "canicode",
+    version: pkg.version,
+  },
+  {
+    instructions: SERVER_INSTRUCTIONS,
+  },
+);
 
 server.tool(
   "analyze",
@@ -289,6 +304,7 @@ server.tool(
 
 Available topics:
 - setup: Installation and token configuration
+- channels: Which canicode features are MCP tools vs skills vs CLI — call this when a user asks for a feature you can't find as an MCP tool
 - scoring: Scoring model formula (density+diversity, severity weights, grades)
 - rules: All rule IDs with default scores and severity
 - config: Config overrides (scores, severity, node exclusions, thresholds)
@@ -298,7 +314,7 @@ Available topics:
 
 Use this when the user asks about how to use canicode, configuration, rules, visual comparison, or any feature.`,
   {
-    topic: z.enum(["all", "setup", "scoring", "rules", "config", "visual-compare", "design-tree"]).optional()
+    topic: z.enum(["all", "setup", "channels", "scoring", "rules", "config", "visual-compare", "design-tree"]).optional()
       .describe("Topic to retrieve. Default: all"),
   },
   {
@@ -312,6 +328,24 @@ Use this when the user asks about how to use canicode, configuration, rules, vis
 
     // Inline topics (not from CUSTOMIZATION.md)
     const inlineTopics: Record<string, string> = {
+      "channels": `# Channels — Where Each Feature Lives
+
+canicode is delivered through three channels. Knowing which is which prevents the common confusion where an agent searches the MCP tool list for a feature that actually lives in a skill.
+
+| Feature | Channel | How to invoke |
+|---------|---------|---------------|
+| Analyze a Figma design | MCP tool / CLI | \`analyze\` (this server) or \`npx canicode analyze <url>\` |
+| Generate gotcha questions | MCP tool / CLI | \`gotcha-survey\` or \`npx canicode gotcha-survey <url> --json\` |
+| List rules / get docs / version | MCP tool | \`list-rules\`, \`docs\`, \`version\` |
+| Pixel-compare Figma vs HTML | MCP tool / CLI | \`visual-compare\` |
+| Q&A workflow that saves answers locally | **Skill** (slash command) | \`/canicode-gotchas <url>\` — install with \`npx canicode init\` |
+| Roundtrip: analyze → gotcha → write back to Figma → re-analyze | **Skill** (slash command) | \`/canicode-roundtrip <url>\` — install with \`npx canicode init\` |
+| Lightweight analyze-only skill (no MCP install) | **Skill** (slash command) | \`/canicode <url>\` — install with \`npx canicode init\` |
+
+**Skills are NOT MCP tools.** They are slash commands installed under \`.claude/skills/\` (Claude Code) or \`.cursor/skills/\` (Cursor). If \`canicode-roundtrip\` is not in the slash-command list, the skill isn't installed — run \`npx canicode init\` (or \`--cursor-skills\` for Cursor).
+
+The roundtrip skill is the **only** path that writes back to the Figma file (via the Figma MCP server's \`use_figma\`). Don't try to compose roundtrip out of \`analyze\` + \`gotcha-survey\` MCP calls — the write-back orchestration lives inside the skill.`,
+
       "setup": `# Setup
 
 ## CLI
