@@ -69,14 +69,28 @@ Show the user a brief summary:
 Design grade: **{grade}** ({percentage}%) — {issueCount} issues found.
 ```
 
-### Step 2: Gate — check if gotchas are needed
+### Step 2: Surface grade as informational banner
 
-If `isReadyForCodeGen` is `true` (grade S, A+, or A):
-- Tell the user: "This design scored **{grade}** — ready for code generation with no gotchas needed."
-- Skip directly to **Step 6**.
+Show the grade as a preamble banner — it is informational only, not a flow gate:
 
-If `isReadyForCodeGen` is `false` (grade B+ or below):
-- Tell the user: "This design scored **{grade}** — running gotcha survey to identify implementation pitfalls."
+```
+Design scored **{grade}** ({percentage}%).
+```
+
+Then branch on `questions` (not on `isReadyForCodeGen`):
+
+**If `questions` is empty** (regardless of `isReadyForCodeGen`):
+- Tell the user: "No gotchas surfaced. Continue to code generation?"
+- If yes → proceed to **Step 6**.
+- If no → stop.
+
+**If `questions` is non-empty AND `isReadyForCodeGen` is `true`** (high-grade design with optional questions):
+- Tell the user: "**{N}** optional gotcha(s) surfaced. Would you like to review them, or skip to code generation?"
+- **review** → proceed to **Step 3**.
+- **skip** → proceed to **Step 6**.
+
+**If `questions` is non-empty AND `isReadyForCodeGen` is `false`** (grade B+ or below):
+- Tell the user: "Running gotcha survey to surface implementation pitfalls."
 - Proceed to **Step 3**.
 
 ### Step 3: Run gotcha survey and collect answers
@@ -92,8 +106,6 @@ gotcha-survey({ input: "<figma-url>" })
 ```bash
 npx canicode gotcha-survey "<figma-url>" --json
 ```
-
-If `questions` is empty, skip to **Step 6**.
 
 #### Step 3 — preamble: match the user's language
 
