@@ -19,6 +19,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
       - run: pnpm check:skill-determinism
+      - run: pnpm check:server-json
       - run: pnpm build
       - run: pnpm test:run
 
