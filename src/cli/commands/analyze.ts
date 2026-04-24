@@ -15,6 +15,7 @@ import {
   getFigmaToken, getReportsDir, ensureReportsDir,
 } from "../../core/engine/config-store.js";
 import { calculateScores, formatScoreSummary, buildResultJson } from "../../core/engine/scoring.js";
+import type { Grade } from "../../core/engine/scoring.js";
 import { computeDesignKey } from "../../core/contracts/design-key.js";
 import { getConfigsWithPreset, RULE_CONFIGS } from "../../core/rules/rule-config.js";
 import { loadConfigFile, mergeConfigs } from "../../core/rules/config-loader.js";
@@ -134,7 +135,7 @@ export function registerAnalyze(cli: CAC): void {
         let excludeNodeNames: string[] | undefined;
         let excludeNodeTypes: string[] | undefined;
 
-        let codegenReadyMinGrade: import("../../core/engine/scoring.js").Grade | undefined;
+        let codegenReadyMinGrade: Grade | undefined;
         if (options.config) {
           const configFile = await loadConfigFile(options.config);
           configs = mergeConfigs(configs, configFile);

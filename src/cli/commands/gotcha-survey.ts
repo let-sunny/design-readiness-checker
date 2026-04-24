@@ -7,6 +7,7 @@ import { analyzeFile } from "../../core/engine/rule-engine.js";
 import { loadFile, isJsonFile, isFixtureDir } from "../../core/engine/loader.js";
 import { getFigmaToken } from "../../core/engine/config-store.js";
 import { calculateScores } from "../../core/engine/scoring.js";
+import type { Grade } from "../../core/engine/scoring.js";
 import { generateGotchaSurvey } from "../../core/gotcha/survey-generator.js";
 import { computeDesignKey } from "../../core/contracts/design-key.js";
 import { getConfigsWithPreset, RULE_CONFIGS } from "../../core/rules/rule-config.js";
@@ -44,7 +45,7 @@ export async function runGotchaSurvey(
     ? { ...getConfigsWithPreset(options.preset) }
     : { ...RULE_CONFIGS };
 
-  let codegenReadyMinGrade: import("../../core/engine/scoring.js").Grade | undefined;
+  let codegenReadyMinGrade: Grade | undefined;
   if (options.config) {
     const configFile = await loadConfigFile(options.config);
     configs = mergeConfigs(configs, configFile);

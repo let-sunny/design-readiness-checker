@@ -1,0 +1,78 @@
+{
+  "summary": "isReadyForCodeGen(grade) currently hardcodes the pass threshold at grade A (≥85%). Issue #480 asks for a user-configurable codegenReadyMinGrade threshold, surfaced through: (1) the scoring.ts function signature gaining an optional minGrade parameter, (2) a new codegenReadyMinGrade field in the configPath JSON schema, (3) a --ready-min-grade CLI flag on gotcha-survey (and analyze), and (4) a codegenReadyMinGrade parameter on both MCP gotcha-survey and analyze tools. Default behaviour (A passes) is preserved by making minGrade optional with default 'A'. The implementation follows the existing gridBase precedent in ConfigFileSchema and the existing configPath/preset plumbing in both the CLI and MCP server.",
+
+  "tasks": [
+    {
+      "id": 1,
+      "title": "Export GRADE_ORDER + make isReadyForCodeGen accept optional minGrade",
+      "description": "In src/core/engine/scoring.ts: (1) export GRADE_ORDER as a const tuple ['S','A+','A','B+','B','C+','C','D','F'] (best-to-worst, lower index = better grade). (2) export DEFAULT_CODEGEN_READY_MIN_GRADE: Grade = 'A' as the canonical default. (3) Change isReadyForCodeGen(grade: Grade): boolean to isReadyForCodeGen(grade: Grade, minGrade?: Grade): boolean — when minGrade is omitted, use DEFAULT_CODEGEN_READY_MIN_GRADE; a grade passes when GRADE_ORDER.indexOf(grade) <= GRADE_ORDER.indexOf(minGrade). All existing call sites pass only grade and continue to work unchanged.",
+      "files": ["src/core/engine/scoring.ts"],
+      "approach": "Follow the Grade type already exported from this file. Add GRADE_ORDER directly above the calculateGrade function (they share the same grade enumeration). DEFAULT_CODEGEN_READY_MIN_GRADE = 'A' replaces the hardcoded string literals in isReadyForCodeGen. The ordinal comparison GRADE_ORDER.indexOf(grade) <= GRADE_ORDER.indexOf(minGrade) correctly handles all 9 grades — no magic percentages needed."
+    },
+    {
+      "id": 2,
+      "title": "Add codegenReadyMinGrade to ConfigFileSchema in config-loader.ts",
+      "description": "In src/core/rules/config-loader.ts: (1) Add codegenReadyMinGrade: z.enum(['S','A+','A','B+','B','C+','C','D','F']).optional() to ConfigFileSchema. (2) The ConfigFile type (z.infer<typeof ConfigFileSchema>) automatically picks this up — no manual type changes needed. No changes to mergeConfigs — this is a global threshold consumed directly by callers, not merged into per-rule configs.",
+      "files": ["src/core/rules/config-loader.ts"],
+      "approach": "Follows the exact same pattern as gridBase in ConfigFileSchema (line 19 of config-loader.ts). The Zod enum must list all 9 Grade values as string literals matching the Grade type in scoring.ts exactly: 'S', 'A+', 'A', 'B+', 'B', 'C+', 'C', 'D', 'F'."
+    },
+    {
+      "id": 3,
+      "title": "Thread codegenReadyMinGrade through generateGotchaSurvey and buildResultJson",
+      "description": "In src/core/gotcha/survey-generator.ts: add optional codegenReadyMinGrade?: Grade to the options parameter of generateGotchaSurvey, and pass it as isReadyForCodeGen(grade, options.codegenReadyMinGrade) at line 96. In src/core/engine/scoring.ts: add optional codegenReadyMinGrade?: Grade to the options parameter of buildResultJson, and pass it as isReadyForCodeGen(scores.overall.grade, options?.codegenReadyMinGrade) at line 477. Both surfaces output isReadyForCodeGen and must respect the threshold.",
+      "files": [
+        "src/core/gotcha/survey-generator.ts",
+        "src/core/engine/scoring.ts"
+      ],
+      "approach": "Import Grade from '../engine/scoring.js' in survey-generator.ts (it's already imported indirectly via isReadyForCodeGen). For buildResultJson, the existing options type is { fileKey?: string; designKey?: string } — extend it with codegenReadyMinGrade?: Grade. Use exactOptionalPropertyTypes-safe conditional spread when passing to isReadyForCodeGen (pass undefined is safe here since the function accepts optional). Undefined minGrade falls through to DEFAULT_CODEGEN_READY_MIN_GRADE inside isReadyForCodeGen."
+    },
+    {
+      "id": 4,
+      "title": "Surface --ready-min-grade on CLI and codegenReadyMinGrade on MCP tools",
+      "description": "In src/cli/commands/gotcha-survey.ts: (1) add readyMinGrade: z.enum([...]).optional() to GotchaSurveyOptionsSchema. (2) add .option('--ready-min-grade <grade>', '...') to CAC registration. (3) in runGotchaSurvey, resolve effective threshold as options.readyMinGrade ?? configFile?.codegenReadyMinGrade, pass to generateGotchaSurvey. In src/cli/commands/analyze.ts: apply same --ready-min-grade flag + pass to buildResultJson on line 176. In src/mcp/server.ts gotcha-survey tool: add codegenReadyMinGrade param to schema, resolve configPath?.codegenReadyMinGrade as fallback, pass to generateGotchaSurvey. In src/mcp/server.ts analyze tool: same pattern, pass to buildResultJson.",
+      "files": [
+        "src/cli/commands/gotcha-survey.ts",
+        "src/cli/commands/analyze.ts",
+        "src/mcp/server.ts"
+      ],
+      "approach": "Priority chain: CLI flag / MCP param > configPath codegenReadyMinGrade > default (A). This mirrors how preset + configPath interact today. CAC converts --ready-min-grade to rawOptions.readyMinGrade (camelCase) — the Zod schema key must be readyMinGrade. The configFile variable is only in scope when options.config is set; use optional chaining configFile?.codegenReadyMinGrade. The effective grade is passed directly — do not store it in a new variable unnecessarily."
+    },
+    {
+      "id": 5,
+      "title": "Add tests for the new threshold behaviour",
+      "description": "In src/core/engine/scoring.test.ts: extend the 'isReadyForCodeGen helper' describe block with parametric minGrade tests covering all boundary cases (S threshold, A+ threshold, B+ threshold, no-arg default). Also test buildResultJson respects codegenReadyMinGrade by passing minGrade:'S' for an S-grade result and asserting isReadyForCodeGen:true, then minGrade:'S' for an A-grade result and asserting false. In src/core/rules/config-loader.test.ts: add valid parse test for codegenReadyMinGrade:'S' and invalid parse test for 'Z'. In src/core/gotcha/survey-generator.test.ts: add test for A-grade result with codegenReadyMinGrade:'S' -> isReadyForCodeGen:false.",
+      "files": [
+        "src/core/engine/scoring.test.ts",
+        "src/core/rules/config-loader.test.ts",
+        "src/core/gotcha/survey-generator.test.ts"
+      ],
+      "approach": "Follow the existing test patterns in each file. The isReadyForCodeGen describe block (lines 719-734 in scoring.test.ts) tests the no-arg form — do NOT modify those tests, add new ones below them. For survey-generator tests, follow the mock scoreReport pattern already in use at line 841 (makeScoreReport helper). For config-loader tests, follow the existing loadConfigFile describe block pattern with tmpdir."
+    }
+  ],
+
+  "designDecisions": [
+    "Discrete Grade type over continuous percentage: the issue proposes both; codegenReadyMinGrade (discrete) is chosen because users think in grade terms (S, A+, A...) and the GotchaSurvey output already exposes designGrade as a Grade. Percentage would require users to know that B+ = 80%, adding lookup friction. GRADE_ORDER tuple makes ordinal comparison trivially correct without any percentage arithmetic.",
+    "GRADE_ORDER exported from scoring.ts: scoring.ts already owns the Grade type and calculateGrade function. Exporting GRADE_ORDER from the same file avoids duplicating grade order in config-loader, survey-generator, or CLI. All threshold comparisons use one canonical array via index lookup.",
+    "Optional minGrade on isReadyForCodeGen (not a breaking signature change): all existing call sites pass only grade and compile unchanged. The optional parameter with a default (DEFAULT_CODEGEN_READY_MIN_GRADE = 'A') is the minimal invasive change that satisfies the requirement without forcing updates to every caller.",
+    "codegenReadyMinGrade in ConfigFileSchema, not in RULE_CONFIGS: this is a global threshold, not a per-rule knob. The existing precedent is gridBase in ConfigFileSchema (config-loader.ts line 19). Per-rule configs live in RULE_CONFIGS/mergeConfigs; global thresholds are consumed directly by callers after loading the config file.",
+    "Priority chain: CLI flag / MCP param > configPath field > default: mirrors the existing preset + configPath interaction. The CLI flag is most specific; configPath persists team preferences; the default (A) ensures zero behaviour change when neither is supplied.",
+    "buildResultJson also gets the threshold: the analyze command/tool outputs isReadyForCodeGen at scoring.ts line 477. Threading only through generateGotchaSurvey would create an inconsistency where gotcha-survey and analyze gave different isReadyForCodeGen values for the same design.",
+    "Do NOT touch .claude/skills/ files: skill files (canicode-roundtrip/SKILL.md, canicode-gotchas/SKILL.md) are owned by issue #481. This PR only implements computation; #481 handles skill consumption of the flag.",
+    "docs/CUSTOMIZATION.md updated but not skills docs: the file is served by the MCP docs tool for the 'config' topic (read from disk at runtime). The inline 'scoring' topic in server.ts already lists grade boundaries. No new inline topic is needed for 'config' since the topic already falls through to the file."
+  ],
+
+  "testStrategy": "Run pnpm test:run after each task to catch regressions. New tests added to scoring.test.ts cover all 9 grades × multiple minGrade positions, plus buildResultJson with an explicit minGrade. config-loader.test.ts adds valid/invalid parse tests for the new field. survey-generator.test.ts adds an end-to-end thread test (A-grade + S threshold = false). All existing tests must pass without modification — the optional minGrade parameter and unchanged defaults ensure this.",
+
+  "risks": [
+    "exactOptionalPropertyTypes: when extending buildResultJson options type with codegenReadyMinGrade?: Grade, the implementer must not assign undefined explicitly. Use optional chaining and conditional spread throughout.",
+    "CAC camelCase conversion: --ready-min-grade becomes rawOptions.readyMinGrade — verify the Zod schema key matches exactly. A mismatch would silently ignore the flag.",
+    "MCP analyze tool also calls buildResultJson (server.ts line 141): easy to thread the param into gotcha-survey and forget analyze. Both MCP tools need the parameter.",
+    "configFile scoping: the configFile variable only exists inside the if (configPath) block in the MCP and CLI handlers. The resolution chain must use configFile?.codegenReadyMinGrade with optional chaining, not assume configFile is always defined.",
+    "Zod enum must exactly match Grade type: 9 values — 'S', 'A+', 'A', 'B+', 'B', 'C+', 'C', 'D', 'F'. A typo (e.g. space in 'A +') would cause silent validation failures.",
+    "survey-generator.test.ts existing isReadyForCodeGen test at line 841 mocks a full ScoreReport: adding codegenReadyMinGrade to generateGotchaSurvey options requires the test to pass the option explicitly — check the mock helper signature there."
+  ],
+
+  "split": false,
+  "remainingDescription": null,
+  "splitReason": null
+}

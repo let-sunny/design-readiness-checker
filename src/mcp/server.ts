@@ -9,6 +9,7 @@ import { exec } from "node:child_process";
 import { analyzeFile } from "../core/engine/rule-engine.js";
 import { loadFile, isJsonFile, isFixtureDir } from "../core/engine/loader.js";
 import { calculateScores, buildResultJson } from "../core/engine/scoring.js";
+import type { Grade } from "../core/engine/scoring.js";
 import { generateGotchaSurvey } from "../core/gotcha/survey-generator.js";
 import { generateHtmlReport } from "../core/report-html/index.js";
 import { getReportsDir, ensureReportsDir } from "../core/engine/config-store.js";
@@ -85,7 +86,7 @@ Provide a Figma URL or fixture path via the input parameter. Requires FIGMA_TOKE
         ? { ...getConfigsWithPreset(preset as Preset) }
         : { ...RULE_CONFIGS };
 
-      let configFileMinGrade: import("../core/engine/scoring.js").Grade | undefined;
+      let configFileMinGrade: Grade | undefined;
       if (configPath) {
         const configFile = await loadConfigFile(configPath);
         configs = mergeConfigs(configs, configFile);
@@ -202,14 +203,14 @@ Provide a Figma URL or fixture path via the input parameter. Requires FIGMA_TOKE
         ? { ...getConfigsWithPreset(preset as Preset) }
         : { ...RULE_CONFIGS };
 
-      let configFileMinGradeGs: import("../core/engine/scoring.js").Grade | undefined;
+      let configFileMinGrade: Grade | undefined;
       if (configPath) {
         const configFile = await loadConfigFile(configPath);
         configs = mergeConfigs(configs, configFile);
-        configFileMinGradeGs = configFile.codegenReadyMinGrade;
+        configFileMinGrade = configFile.codegenReadyMinGrade;
       }
       // MCP param takes priority over configPath field
-      const effectiveMinGradeGs = codegenReadyMinGrade ?? configFileMinGradeGs;
+      const effectiveMinGrade = codegenReadyMinGrade ?? configFileMinGrade;
 
       const result = analyzeFile(file, {
         configs: configs as Record<RuleId, RuleConfig>,
@@ -220,7 +221,7 @@ Provide a Figma URL or fixture path via the input parameter. Requires FIGMA_TOKE
       const scores = calculateScores(result, configs as Record<RuleId, RuleConfig>);
       const survey = generateGotchaSurvey(result, scores, {
         designKey: computeDesignKey(input),
-        ...(effectiveMinGradeGs ? { codegenReadyMinGrade: effectiveMinGradeGs } : {}),
+        ...(effectiveMinGrade ? { codegenReadyMinGrade: effectiveMinGrade } : {}),
       });
 
       trackEvent(EVENTS.ANALYSIS_COMPLETED, {
