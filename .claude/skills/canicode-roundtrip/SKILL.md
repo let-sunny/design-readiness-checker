@@ -122,6 +122,8 @@ Artifact paths:
 - **Claude Code / default `canicode init`:** `.claude/skills/canicode-roundtrip/helpers-installer.js`, `helpers-bootstrap.js`, and `helpers.js` (fallback).
 - **Cursor after `canicode init --cursor-skills`:** `.cursor/skills/canicode-roundtrip/helpers-installer.js`, `helpers-bootstrap.js`, and `helpers.js` (fallback).
 
+**Editor-only types (#473)** — `canicode-roundtrip-helpers.d.ts` (same directory) declares the `CanICodeRoundtrip` global for TypeScript-aware editors. It does not run in Figma. When drafting `use_figma` code in a `.ts` scratch file, add `/// <reference path="./canicode-roundtrip-helpers.d.ts" />` (adjust the relative path) so hover and completion match the bundled API surface.
+
 Optional smoke check — run this as the first `use_figma` call of Step 4 (with the appropriate artifact prepended) before any real apply batch. The return shape is unchanged from the single-artifact protocol:
 
 ```javascript

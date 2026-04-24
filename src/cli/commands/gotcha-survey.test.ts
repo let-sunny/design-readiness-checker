@@ -32,6 +32,11 @@ describe("runGotchaSurvey", () => {
     expect(GotchaSurveySchema.safeParse(relaxed).success).toBe(true);
   });
 
+  it("accepts optional --api flag as a no-op for fixtures (CLI parity #461)", async () => {
+    const survey = await runGotchaSurvey(FIXTURE, { api: true, json: true });
+    expect(GotchaSurveySchema.safeParse(survey).success).toBe(true);
+  });
+
   it("accepts --scope override and still produces a valid survey (#404)", async () => {
     // Fixture root is COMPONENT → auto-detect would be `component`.
     // Passing `scope: "page"` exercises the same override path the

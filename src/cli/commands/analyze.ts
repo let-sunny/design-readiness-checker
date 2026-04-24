@@ -26,6 +26,8 @@ const AnalyzeOptionsSchema = z.object({
   preset: z.enum(["relaxed", "dev-friendly", "ai-ready", "strict"]).optional(),
   output: z.string().optional(),
   token: z.string().optional(),
+  /** Accepted for CLI parity; Figma URL loads always use the REST API today (#461). */
+  api: z.boolean().optional(),
   screenshot: z.boolean().optional(),
   config: z.string().optional(),
   noOpen: z.boolean().optional(),
@@ -41,6 +43,10 @@ export function registerAnalyze(cli: CAC): void {
     .option("--preset <preset>", "Analysis preset (relaxed | dev-friendly | ai-ready | strict)")
     .option("--output <path>", "HTML report output path")
     .option("--token <token>", "Figma API token (or use FIGMA_TOKEN env var)")
+    .option(
+      "--api",
+      "No-op for Figma URL inputs (file data is always fetched via REST). Accepted for CLI parity with `gotcha-survey` (#461).",
+    )
     .option("--screenshot", "Include screenshot comparison in report (requires ANTHROPIC_API_KEY)")
     .option("--config <path>", "Path to config JSON file (override rule scores/settings)")
     .option("--no-open", "Don't open report in browser after analysis")
@@ -58,6 +64,7 @@ export function registerAnalyze(cli: CAC): void {
         process.exit(1);
       }
       const options = parseResult.data;
+      void options.api;
       const analysisStart = Date.now();
       trackEvent(EVENTS.ANALYSIS_STARTED, { source: isJsonFile(input) || isFixtureDir(input) ? "fixture" : "figma" });
       // In --json mode, send progress messages to stderr so stdout contains only valid JSON

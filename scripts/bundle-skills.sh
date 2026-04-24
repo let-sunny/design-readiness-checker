@@ -39,6 +39,7 @@ REQUIRED=(
   "$DEST/canicode-roundtrip/helpers.js"
   "$DEST/canicode-roundtrip/helpers-installer.js"
   "$DEST/canicode-roundtrip/helpers-bootstrap.js"
+  "$DEST/canicode-roundtrip/canicode-roundtrip-helpers.d.ts"
 )
 
 for f in "${REQUIRED[@]}"; do
@@ -65,6 +66,7 @@ CURSOR_REQUIRED=(
   "$DEST/cursor/canicode-roundtrip/helpers.js"
   "$DEST/cursor/canicode-roundtrip/helpers-installer.js"
   "$DEST/cursor/canicode-roundtrip/helpers-bootstrap.js"
+  "$DEST/cursor/canicode-roundtrip/canicode-roundtrip-helpers.d.ts"
 )
 for f in "${CURSOR_REQUIRED[@]}"; do
   if [ ! -f "$f" ]; then

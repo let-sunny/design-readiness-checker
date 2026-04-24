@@ -9,7 +9,6 @@ import {
 } from "../../core/engine/config-store.js";
 import {
   installSkills,
-  installClaudeGotchasSkillOnly,
   installCursorBundledSkills,
 } from "../skill-installer.js";
 import { trackEvent, EVENTS } from "../../core/monitoring/index.js";
@@ -87,14 +86,85 @@ export function formatNextSteps(opts: {
 const InitOptionsSchema = z.object({
   token: z.string().optional(),
   global: z.boolean().optional(),
-  // Declared positively as `--skills`; mri's built-in `--no-` prefix handling
-  // still maps `--no-skills` to `skills: false`. Declaring the option
-  // positively avoids cac's `(default: true)` artifact on negated flags.
-  skills: z.boolean().optional(),
   /** Install `skills/cursor/*` into `.cursor/skills/` (canicode, gotchas, roundtrip — issue #407). */
   cursorSkills: z.boolean().optional(),
   force: z.boolean().optional(),
 });
+
+type InitOptions = z.infer<typeof InitOptionsSchema>;
+
+type InitSkillSummary = {
+  installed: number;
+  overwritten: number;
+  skipped: number;
+};
+
+/** True when user asked for skill install without passing `--token` (#461). */
+function wantsSkillInstallWithoutToken(options: InitOptions): boolean {
+  return options.cursorSkills === true;
+}
+
+/**
+ * Install Claude skills, optional gotchas-only path, then optional Cursor bundle.
+ * Mirrors the `--token` branch so behavior stays aligned (#461).
+ */
+async function runInitSkillInstallSteps(
+  options: InitOptions,
+): Promise<{ skillStepOk: boolean; skillSummary?: InitSkillSummary }> {
+  let skillStepOk = true;
+  let skillSummary: InitSkillSummary | undefined;
+
+  try {
+    const summary = await installSkills({
+      target: options.global ? "global" : "project",
+      force: options.force ?? false,
+    });
+    console.log(`\n  Skills installed to: ${summary.targetDir}/`);
+    console.log(`    installed:   ${summary.installed.length}`);
+    console.log(`    overwritten: ${summary.overwritten.length}`);
+    console.log(`    skipped:     ${summary.skipped.length}`);
+    if (summary.skipped.length > 0) {
+      console.log(`  (Re-run with --force to overwrite skipped files.)`);
+    }
+    skillSummary = {
+      installed: summary.installed.length,
+      overwritten: summary.overwritten.length,
+      skipped: summary.skipped.length,
+    };
+  } catch (skillError) {
+    console.error(
+      `\n  Skill install failed: ${skillError instanceof Error ? skillError.message : String(skillError)}`,
+    );
+    process.exitCode = 1;
+    skillStepOk = false;
+  }
+
+  if (options.cursorSkills && skillStepOk) {
+    try {
+      const cSummary = await installCursorBundledSkills({
+        force: options.force ?? false,
+      });
+      console.log(`\n  Cursor skills installed to: ${cSummary.targetDir}/`);
+      console.log(`    installed:   ${cSummary.installed.length}`);
+      console.log(`    overwritten: ${cSummary.overwritten.length}`);
+      console.log(`    skipped:     ${cSummary.skipped.length}`);
+      if (cSummary.skipped.length > 0) {
+        console.log(`  (Re-run with --force to overwrite skipped files.)`);
+      }
+      console.log(`  Open a new chat and @-mention canicode, canicode-gotchas, or canicode-roundtrip if skills do not appear immediately.`);
+    } catch (cursorError) {
+      console.error(
+        `\n  Cursor skill install failed: ${cursorError instanceof Error ? cursorError.message : String(cursorError)}`,
+      );
+      process.exitCode = 1;
+      skillStepOk = false;
+    }
+  }
+
+  return skillSummary !== undefined
+    ? { skillStepOk, skillSummary }
+    : { skillStepOk };
+}
 
 export function registerInit(cli: CAC): void {
   cli
@@ -107,8 +177,7 @@ export function registerInit(cli: CAC): void {
       "Save Figma API token (use env/CLI only — not agent chat) and install Claude Code skills to .claude/skills/",
     )
     .option("--global", "Install skills to ~/.claude/skills/ instead of ./.claude/skills/")
-    .option("--skills", "Install Claude Code skills into .claude/skills/ (default: on — pass --no-skills to opt out)")
-    .option("--cursor-skills", "Also install Cursor copies of canicode / canicode-gotchas / canicode-roundtrip under .cursor/skills/")
+    .option("--cursor-skills", "Also install Cursor copies of canicode / canicode-gotchas / canicode-roundtrip under .cursor/skills/ (with `--token`, runs after Claude skills; without token, installs Claude skills + Cursor bundle)")
     .option("--force", "Overwrite existing skill files without prompting (also for non-TTY/CI)")
     .action(async (rawOptions: Record<string, unknown>) => {
       try {
@@ -126,80 +195,10 @@ export function registerInit(cli: CAC): void {
           console.log(`  Config saved: ${getConfigPath()}`);
           console.log(`  Reports will be saved to: ${getReportsDir()}/`);
 
-          let skillStepOk = true;
-          let skillSummary: { installed: number; overwritten: number; skipped: number } | undefined;
-          if (options.skills !== false) {
-            try {
-              const summary = await installSkills({
-                target: options.global ? "global" : "project",
-                force: options.force ?? false,
-              });
-              console.log(`\n  Skills installed to: ${summary.targetDir}/`);
-              console.log(`    installed:   ${summary.installed.length}`);
-              console.log(`    overwritten: ${summary.overwritten.length}`);
-              console.log(`    skipped:     ${summary.skipped.length}`);
-              if (summary.skipped.length > 0) {
-                console.log(`  (Re-run with --force to overwrite skipped files.)`);
-              }
-              skillSummary = {
-                installed: summary.installed.length,
-                overwritten: summary.overwritten.length,
-                skipped: summary.skipped.length,
-              };
-            } catch (skillError) {
-              console.error(
-                `\n  Skill install failed: ${skillError instanceof Error ? skillError.message : String(skillError)}`,
-              );
-              process.exitCode = 1;
-              skillStepOk = false;
-            }
-          } else if (options.cursorSkills) {
-            try {
-              const summary = await installClaudeGotchasSkillOnly({
-                force: options.force ?? false,
-              });
-              console.log(`\n  Gotchas store (Claude Code skills path) installed to: ${summary.targetDir}/`);
-              console.log(`    installed:   ${summary.installed.length}`);
-              console.log(`    overwritten: ${summary.overwritten.length}`);
-              console.log(`    skipped:     ${summary.skipped.length}`);
-              skillSummary = {
-                installed: summary.installed.length,
-                overwritten: summary.overwritten.length,
-                skipped: summary.skipped.length,
-              };
-            } catch (skillError) {
-              console.error(
-                `\n  Gotchas skill install failed: ${skillError instanceof Error ? skillError.message : String(skillError)}`,
-              );
-              process.exitCode = 1;
-              skillStepOk = false;
-            }
-          }
-
-          if (options.cursorSkills && skillStepOk) {
-            try {
-              const cSummary = await installCursorBundledSkills({
-                force: options.force ?? false,
-              });
-              console.log(`\n  Cursor skills installed to: ${cSummary.targetDir}/`);
-              console.log(`    installed:   ${cSummary.installed.length}`);
-              console.log(`    overwritten: ${cSummary.overwritten.length}`);
-              console.log(`    skipped:     ${cSummary.skipped.length}`);
-              if (cSummary.skipped.length > 0) {
-                console.log(`  (Re-run with --force to overwrite skipped files.)`);
-              }
-              console.log(`  Open a new chat and @-mention canicode, canicode-gotchas, or canicode-roundtrip if skills do not appear immediately.`);
-            } catch (cursorError) {
-              console.error(
-                `\n  Cursor skill install failed: ${cursorError instanceof Error ? cursorError.message : String(cursorError)}`,
-              );
-              process.exitCode = 1;
-              skillStepOk = false;
-            }
-          }
+          const { skillStepOk, skillSummary } = await runInitSkillInstallSteps(options);
 
           trackEvent(EVENTS.CLI_INIT, {
-            skillsRequested: options.skills !== false,
+            skillsRequested: true,
             cursorSkillsRequested: options.cursorSkills === true,
             skillStepOk,
             target: options.global ? "global" : "project",
@@ -211,9 +210,37 @@ export function registerInit(cli: CAC): void {
             console.log(
               formatNextSteps({
                 figmaMcpPresent: figmaMcpRegistered(),
-                skillsInstalled: options.skills !== false,
+                skillsInstalled: true,
                 cursorSkillsInstalled: options.cursorSkills === true,
               }),
+            );
+          }
+          return;
+        }
+
+        if (wantsSkillInstallWithoutToken(options)) {
+          const { skillStepOk, skillSummary } = await runInitSkillInstallSteps(options);
+
+          trackEvent(EVENTS.CLI_INIT, {
+            skillsRequested: true,
+            cursorSkillsRequested: options.cursorSkills === true,
+            skillStepOk,
+            target: options.global ? "global" : "project",
+            force: options.force ?? false,
+            skillOnlyInit: true,
+            ...(skillSummary ?? {}),
+          });
+
+          if (skillStepOk) {
+            console.log(
+              formatNextSteps({
+                figmaMcpPresent: figmaMcpRegistered(),
+                skillsInstalled: true,
+                cursorSkillsInstalled: options.cursorSkills === true,
+              }),
+            );
+            console.log(
+              "\n  Figma token not saved — run `canicode init --token …` when you need REST analyze or MCP against live files.",
             );
           }
           return;
@@ -230,8 +257,7 @@ export function registerInit(cli: CAC): void {
         console.log(`  --token also installs three Claude Code skills into ./.claude/skills/`);
         console.log(`  (canicode, canicode-gotchas, canicode-roundtrip).`);
         console.log(`  --global       Install to ~/.claude/skills/ instead`);
-        console.log(`  --no-skills    Skip skill install (token only)`);
-        console.log(`  --cursor-skills Also install Cursor copies of all three skills (.cursor/skills/); with --no-skills, still installs .claude gotcha store + Cursor bundle`);
+        console.log(`  --cursor-skills Install Claude skills under .claude/skills/ plus Cursor copies under .cursor/skills/ (no --token yet — add --token when ready for REST analyze)`);
         console.log(`  --force        Overwrite existing skill files without prompting\n`);
         console.log(`After setup:`);
         console.log(`  canicode analyze "https://www.figma.com/design/..."`);

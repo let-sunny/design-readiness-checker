@@ -8,7 +8,6 @@ import { vi } from "vitest";
 
 import {
   installSkills,
-  installClaudeGotchasSkillOnly,
   installCursorBundledSkills,
 } from "./skill-installer.js";
 
@@ -32,6 +31,7 @@ function preCreateAllStaleSkills(cwd: string): string[] {
     join(cwd, ".claude", "skills", "canicode-gotchas", "SKILL.md"),
     join(cwd, ".claude", "skills", "canicode-roundtrip", "SKILL.md"),
     join(cwd, ".claude", "skills", "canicode-roundtrip", "helpers.js"),
+    join(cwd, ".claude", "skills", "canicode-roundtrip", "canicode-roundtrip-helpers.d.ts"),
   ];
   for (const p of staleFiles) {
     mkdirSync(join(p, ".."), { recursive: true });
@@ -65,6 +65,11 @@ beforeEach(() => {
     "// helpers fresh\n",
     "utf-8",
   );
+  writeFileSync(
+    join(sourceDir, "canicode-roundtrip", "canicode-roundtrip-helpers.d.ts"),
+    "declare const CanICodeRoundtrip: unknown;\n",
+    "utf-8",
+  );
 });
 
 afterEach(async () => {
@@ -94,6 +99,7 @@ describe("installSkills", () => {
       join("canicode", "SKILL.md"),
       join("canicode-gotchas", "SKILL.md"),
       join("canicode-roundtrip", "SKILL.md"),
+      join("canicode-roundtrip", "canicode-roundtrip-helpers.d.ts"),
       join("canicode-roundtrip", "helpers.js"),
     ].sort());
     expect(summary.overwritten).toEqual([]);
@@ -101,6 +107,7 @@ describe("installSkills", () => {
 
     expect(existsSync(join(summary.targetDir, "canicode-roundtrip", "SKILL.md"))).toBe(true);
     expect(existsSync(join(summary.targetDir, "canicode-roundtrip", "helpers.js"))).toBe(true);
+    expect(existsSync(join(summary.targetDir, "canicode-roundtrip", "canicode-roundtrip-helpers.d.ts"))).toBe(true);
     expect(readFileSync(join(summary.targetDir, "canicode", "SKILL.md"), "utf-8"))
       .toBe("# canicode\nfresh\n");
   });
@@ -179,6 +186,7 @@ describe("installSkills", () => {
       .mockResolvedValueOnce("y")
       .mockResolvedValueOnce("y")
       .mockResolvedValueOnce("y")
+      .mockResolvedValueOnce("y")
       .mockResolvedValueOnce("y");
     const close = vi.fn();
     const createInterface = await getCreateInterfaceMock();
@@ -249,22 +257,6 @@ describe("installSkills", () => {
   });
 });
 
-describe("installClaudeGotchasSkillOnly", () => {
-  it("copies only canicode-gotchas into ./.claude/skills/", async () => {
-    const summary = await installClaudeGotchasSkillOnly({
-      force: false,
-      cwd,
-      sourceDir,
-    });
-
-    expect(summary.targetDir).toBe(join(cwd, ".claude", "skills"));
-    expect(summary.installed).toEqual([join("canicode-gotchas", "SKILL.md")]);
-    expect(existsSync(join(cwd, ".claude", "skills", "canicode", "SKILL.md"))).toBe(false);
-    expect(readFileSync(join(summary.targetDir, "canicode-gotchas", "SKILL.md"), "utf-8"))
-      .toBe("# canicode-gotchas\nfresh\n");
-  });
-});
-
 describe("installCursorBundledSkills", () => {
   it("copies every directory under skills/cursor into the target skills root", async () => {
     const cursorBundle = join(tempRoot, "cursor-bundle");
@@ -276,6 +268,11 @@ describe("installCursorBundledSkills", () => {
     mkdirSync(join(cursorBundle, "canicode-roundtrip"), { recursive: true });
     writeFileSync(join(cursorBundle, "canicode-roundtrip", "helpers.js"), "// h\n", "utf-8");
     writeFileSync(join(cursorBundle, "canicode-roundtrip", "SKILL.md"), "# rt\n", "utf-8");
+    writeFileSync(
+      join(cursorBundle, "canicode-roundtrip", "canicode-roundtrip-helpers.d.ts"),
+      "export {};\n",
+      "utf-8",
+    );
 
     const targetSkillsRoot = join(cwd, "cursor-skill-target");
     const summary = await installCursorBundledSkills({
@@ -290,6 +287,7 @@ describe("installCursorBundledSkills", () => {
       join("canicode", "SKILL.md"),
       join("canicode-gotchas", "SKILL.md"),
       join("canicode-roundtrip", "SKILL.md"),
+      join("canicode-roundtrip", "canicode-roundtrip-helpers.d.ts"),
       join("canicode-roundtrip", "helpers.js"),
     ].sort());
   });

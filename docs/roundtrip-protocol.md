@@ -105,6 +105,8 @@ The probe is read-only and idempotent; running it before the picker adds one rou
 
 **Shared helpers (bundled)** — the deterministic helpers live in TypeScript at `src/core/roundtrip/*.ts` and are bundled to a single IIFE shipped next to this skill as `helpers.js`. `use_figma` only accepts a self-contained JS string, so the source of truth is TypeScript (with vitest coverage) and the bundle is the delivery artifact.
 
+**TypeScript for editors (#473)** — `canicode-roundtrip-helpers.d.ts` ships beside the bundles (same paths as `helpers.js` after `canicode init`). It is for IDE autocomplete only; Figma ignores it. Optional `/// <reference path="…/canicode-roundtrip-helpers.d.ts" />` in a local scratch `.ts` file when authoring batch bodies.
+
 **Cached delivery (#424, ADR-020)** — the helpers IIFE is currently ~31KB. Prepending it on every `use_figma` batch crowds the ~50KB soft code-string budget and multiplies when the roundtrip splits across batches. Two sibling artifacts are emitted next to `helpers.js` to solve this:
 
 - **Install batch** — prepend `helpers-installer.js`. It registers `CanICodeRoundtrip` for the current batch (so the install batch can do real work) AND writes the helpers source onto `figma.root` via `setSharedPluginData`. Cache shape: namespace `"canicode"`, keys `"helpersSrc"` (verbatim helpers IIFE source — the same UTF-8 as `helpers.js`, not double-encoded JSON) and `"helpersVersion"` (canicode version baked in at build time). The **installer file** embeds that source once as a normal JavaScript string literal (the build uses `JSON.stringify` only to escape quotes/newlines for safe pasting into `use_figma`). The namespace + keys are centralised in `src/core/roundtrip/shared-plugin-data.ts`.

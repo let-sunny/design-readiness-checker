@@ -16,6 +16,8 @@ import { trackEvent, trackError, EVENTS } from "../../core/monitoring/index.js";
 const GotchaSurveyOptionsSchema = z.object({
   preset: z.enum(["relaxed", "dev-friendly", "ai-ready", "strict"]).optional(),
   token: z.string().optional(),
+  /** Accepted for CLI parity with `analyze`; Figma URL loads always use REST (#461). */
+  api: z.boolean().optional(),
   config: z.string().optional(),
   targetNodeId: z.string().optional(),
   json: z.boolean().optional(),
@@ -33,6 +35,7 @@ export async function runGotchaSurvey(
   input: string,
   options: GotchaSurveyOptions,
 ): Promise<GotchaSurvey> {
+  void options.api;
   const { file, nodeId } = await loadFile(input, options.token);
   const effectiveNodeId = options.targetNodeId ?? nodeId;
 
@@ -73,6 +76,10 @@ export function registerGotchaSurvey(cli: CAC): void {
     .command("gotcha-survey <input>", "Generate a gotcha survey from a Figma design analysis")
     .option("--preset <preset>", "Analysis preset (relaxed | dev-friendly | ai-ready | strict)")
     .option("--token <token>", "Figma API token (or use FIGMA_TOKEN env var)")
+    .option(
+      "--api",
+      "No-op for Figma URL inputs (file data is always fetched via REST). Accepted for CLI parity with `analyze` (#461).",
+    )
     .option("--config <path>", "Path to config JSON file (override rule scores/settings)")
     .option("--target-node-id <id>", "Scope analysis to a specific node ID")
     .option("--scope <scope>", "(#404) Override analysis scope: `page` or `component`. Defaults to auto-detection from the root node type.")

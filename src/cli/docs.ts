@@ -43,7 +43,11 @@ CANICODE SETUP GUIDE
 
   Setup:
     canicode init --token figd_xxxxxxxxxxxxx
-    (saves token + installs skills — see section 2 for --no-skills)
+    (saves token + installs Claude Code skills into ./.claude/skills/)
+
+  Skills only (no token yet):
+    canicode init --cursor-skills
+    (installs Claude skills + Cursor copies; run init --token … before live Figma REST URLs)
 
   Use:
     canicode analyze "https://www.figma.com/design/ABC123/MyDesign?node-id=1-234"
@@ -53,6 +57,7 @@ CANICODE SETUP GUIDE
     --preset strict|relaxed|dev-friendly|ai-ready
     --config ./my-config.json
     --no-open   Don't open report in browser
+    --api       No-op for Figma URLs (REST always); same flag as gotcha-survey (#461)
 
   Output:
     ~/.canicode/reports/report-YYYY-MM-DD-HH-mm-<filekey>.html
@@ -74,7 +79,7 @@ CANICODE SETUP GUIDE
 
   Flags:
     --global      Install to ~/.claude/skills/ instead of ./.claude/skills/
-    --no-skills   Skip skill install (token only — legacy behavior)
+    --cursor-skills  Also install Cursor copies (see §3)
     --force       Overwrite existing skill files without prompting
 
   Use (in Claude Code):
@@ -99,14 +104,22 @@ CANICODE SETUP GUIDE
 
   Flags:
     --cursor-skills   Install Cursor copies of all three skills into .cursor/skills/
-    --no-skills       Skip Claude Code skills (with --cursor-skills, still installs
-                      the Cursor bundle plus the shared gotchas answer file)
+                      (with --token, runs after full Claude skill install; without token,
+                      installs Claude skills under .claude/skills/ first, then Cursor copies)
     --force           Overwrite existing skill files without prompting
 
   Use (in Cursor Agent chat):
     @canicode <figma-url>
     @canicode-gotchas <figma-url>      Run a gotcha survey
     @canicode-roundtrip <figma-url>    Analyze, fix gotchas in Figma, re-analyze
+
+  Invocation: docs default to @-skills for Agent chat. If your team uses slash
+  commands or Cursor rules instead, use those — capability is the same once MCP
+  + skills load.
+
+  MCP files: Cursor reads .cursor/mcp.json (or ~/.cursor/mcp.json), not the
+  repo-root .mcp.json used by Claude Code — duplicate Figma + canicode entries
+  if you use both hosts (see docs/CUSTOMIZATION.md#cursor-mcp-canicode).
 
   See also: docs/CUSTOMIZATION.md#cursor-mcp-canicode (Figma MCP required for roundtrip
   writes; analyze-only works without it).
