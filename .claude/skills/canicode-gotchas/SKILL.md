@@ -42,15 +42,31 @@ npx canicode gotcha-survey "<figma-url-or-fixture-path>" --json
 
 Either channel returns:
 - `designGrade`: overall grade (S, A+, A, B+, B, C+, C, D, F)
-- `isReadyForCodeGen`: whether the design can be implemented without gotchas
+- `isReadyForCodeGen`: recommendation flag — `true` suggests the survey can be skipped, but the user always confirms
 - `questions`: array of gotcha questions (may be empty)
 
-### Step 2: Check if survey is needed
+### Step 2: Surface grade as informational banner
 
-If `isReadyForCodeGen` is `true` or `questions` is empty:
-- Tell the user: "This design scored **{designGrade}** and is ready for code generation — no gotchas to resolve."
+Show the grade as a preamble — it is informational only, not a flow gate:
+
+```
+Design scored **{designGrade}**.
+```
+
+Then branch on `questions`:
+
+**If `questions` is empty** (regardless of `isReadyForCodeGen`):
+- Tell the user: "No gotchas surfaced — nothing to write."
 - Do NOT write to `.claude/skills/canicode-gotchas/SKILL.md`.
 - Stop here.
+
+**If `questions` is non-empty AND `isReadyForCodeGen` is `true`** (high-grade design with optional questions):
+- Tell the user: "**{N}** optional gotcha(s) surfaced. Would you like to review them?"
+- **yes** → proceed to **Step 3**.
+- **no** → do NOT write to `.claude/skills/canicode-gotchas/SKILL.md`; stop here.
+
+**If `questions` is non-empty AND `isReadyForCodeGen` is `false`**:
+- Proceed to **Step 3** (no additional message needed; the banner grade already communicates urgency).
 
 ### Step 3 — preamble: match the user's language
 
@@ -214,7 +230,7 @@ The Workflow region above must never be touched.
 
 ## Edge Cases
 
-- **No questions returned**: The design is ready for code generation. Inform the user and stop (Step 2). Do not touch `.claude/skills/canicode-gotchas/SKILL.md`.
+- **No questions returned**: No gotchas surfaced. Inform the user and stop (Step 2). Do not touch `.claude/skills/canicode-gotchas/SKILL.md`.
 - **Re-run on the same design**: Replace that design's section in place (matched by `Design key`) — preserve the original `#NNN` number. Do NOT append a duplicate.
 - **Re-run on a different design**: Append a new section with the next `#NNN`. Prior designs' sections are untouched.
 - **Workflow region**: Never modified. If you notice the Workflow region has been edited by the user, leave their edits alone — only the `# Collected Gotchas` region is under skill control.
