@@ -197,3 +197,56 @@ describe("mergeConfigs", () => {
     expect(result["nonexistent-rule"]).toBeUndefined();
   });
 });
+
+// ─── codegenReadyMinGrade field ───────────────────────────────────────────────
+
+describe("ConfigFileSchema codegenReadyMinGrade field", () => {
+  let tempDir2: string;
+
+  beforeEach(() => {
+    tempDir2 = mkdtempSync(join(tmpdir(), "config-grade-test-"));
+  });
+
+  afterEach(async () => {
+    await rm(tempDir2, { recursive: true, force: true });
+  });
+
+  it("accepts a valid grade value (S)", async () => {
+    const config = { codegenReadyMinGrade: "S" };
+    const filePath = join(tempDir2, "config-s.json");
+    writeFileSync(filePath, JSON.stringify(config));
+    const result = await loadConfigFile(filePath);
+    expect(result.codegenReadyMinGrade).toBe("S");
+  });
+
+  it("accepts grade A+ value", async () => {
+    const config = { codegenReadyMinGrade: "A+" };
+    const filePath = join(tempDir2, "config-aplus.json");
+    writeFileSync(filePath, JSON.stringify(config));
+    const result = await loadConfigFile(filePath);
+    expect(result.codegenReadyMinGrade).toBe("A+");
+  });
+
+  it("accepts grade B+ value", async () => {
+    const config = { codegenReadyMinGrade: "B+" };
+    const filePath = join(tempDir2, "config-bplus.json");
+    writeFileSync(filePath, JSON.stringify(config));
+    const result = await loadConfigFile(filePath);
+    expect(result.codegenReadyMinGrade).toBe("B+");
+  });
+
+  it("rejects invalid grade value (Z)", async () => {
+    const invalid = { codegenReadyMinGrade: "Z" };
+    const filePath = join(tempDir2, "config-z.json");
+    writeFileSync(filePath, JSON.stringify(invalid));
+    await expect(loadConfigFile(filePath)).rejects.toThrow();
+  });
+
+  it("is optional — config without it parses fine", async () => {
+    const config = { gridBase: 4 };
+    const filePath = join(tempDir2, "config-no-grade.json");
+    writeFileSync(filePath, JSON.stringify(config));
+    const result = await loadConfigFile(filePath);
+    expect(result.codegenReadyMinGrade).toBeUndefined();
+  });
+});

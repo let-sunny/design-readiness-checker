@@ -59,6 +59,19 @@ export interface ScoreReport {
 export type Grade = "S" | "A+" | "A" | "B+" | "B" | "C+" | "C" | "D" | "F";
 
 /**
+ * Grade ordinal order from best to worst. Lower index = better grade.
+ * Used for ordinal comparison in isReadyForCodeGen.
+ */
+export const GRADE_ORDER: readonly Grade[] = ["S", "A+", "A", "B+", "B", "C+", "C", "D", "F"] as const;
+
+/**
+ * Default minimum grade for code-gen readiness. Designs at this grade or better
+ * are considered ready for code generation. User-configurable via --ready-min-grade
+ * CLI flag, codegenReadyMinGrade configPath field, or MCP param.
+ */
+export const DEFAULT_CODEGEN_READY_MIN_GRADE: Grade = "A";
+
+/**
  * Density weighting uses per-rule base |score| with sqrt damping (#226).
  *
  * Previously, each issue's |calculatedScore| was summed linearly — a rule
@@ -147,11 +160,14 @@ function calculateGrade(percentage: number): Grade {
 
 /**
  * Returns true if the design is ready for code generation.
- * S, A+, and A grades (percentage >= 85) indicate the design has minimal blockers
- * and can be implemented accurately by AI or developers.
+ * By default, S, A+, and A grades (percentage >= 85) pass. Users can tighten or
+ * loosen this threshold via the optional minGrade parameter (or codegenReadyMinGrade
+ * in config / --ready-min-grade CLI flag). A grade passes when its ordinal position
+ * in GRADE_ORDER is <= the minGrade position (lower index = better grade).
  */
-export function isReadyForCodeGen(grade: Grade): boolean {
-  return grade === "S" || grade === "A+" || grade === "A";
+export function isReadyForCodeGen(grade: Grade, minGrade?: Grade): boolean {
+  const threshold = minGrade ?? DEFAULT_CODEGEN_READY_MIN_GRADE;
+  return GRADE_ORDER.indexOf(grade) <= GRADE_ORDER.indexOf(threshold);
 }
 
 /**
@@ -425,7 +441,7 @@ export function buildResultJson(
   fileName: string,
   result: AnalysisResult,
   scores: ScoreReport,
-  options?: { fileKey?: string; designKey?: string },
+  options?: { fileKey?: string; designKey?: string; codegenReadyMinGrade?: Grade },
 ): Record<string, unknown> {
   const issuesByRule: Record<string, number> = {};
   for (const issue of result.issues) {
@@ -474,7 +490,7 @@ export function buildResultJson(
     scope: result.scope,
     issueCount: result.issues.length,
     acknowledgedCount: scores.summary.acknowledgedCount,
-    isReadyForCodeGen: isReadyForCodeGen(scores.overall.grade),
+    isReadyForCodeGen: isReadyForCodeGen(scores.overall.grade, options?.codegenReadyMinGrade),
     blockingIssueCount: scores.summary.blocking,
     scores: {
       overall: scores.overall,

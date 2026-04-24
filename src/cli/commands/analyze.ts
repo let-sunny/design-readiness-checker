@@ -15,6 +15,7 @@ import {
   getFigmaToken, getReportsDir, ensureReportsDir,
 } from "../../core/engine/config-store.js";
 import { calculateScores, formatScoreSummary, buildResultJson } from "../../core/engine/scoring.js";
+import type { Grade } from "../../core/engine/scoring.js";
 import { computeDesignKey } from "../../core/contracts/design-key.js";
 import { getConfigsWithPreset, RULE_CONFIGS } from "../../core/rules/rule-config.js";
 import { loadConfigFile, mergeConfigs } from "../../core/rules/config-loader.js";
@@ -34,6 +35,7 @@ const AnalyzeOptionsSchema = z.object({
   json: z.boolean().optional(),
   acknowledgments: z.string().optional(),
   scope: z.enum(["page", "component"]).optional(),
+  readyMinGrade: z.enum(["S", "A+", "A", "B+", "B", "C+", "C", "D", "F"]).optional(),
 });
 
 
@@ -53,6 +55,7 @@ export function registerAnalyze(cli: CAC): void {
     .option("--json", "Output JSON results to stdout (same format as MCP)")
     .option("--acknowledgments <path>", "(#371 / ADR-019) Path to JSON acknowledgments from canicode Figma annotations (nodeId, ruleId; optional intent / sceneWriteOutcome / codegenDirective per #444). Matching issues are flagged acknowledged and contribute half weight to density.")
     .option("--scope <scope>", "(#404) Override analysis scope: `page` (screen/section — container bounds are required) or `component` (standalone reusable unit — root FILL is the design contract). Defaults to auto-detection from the root node type.")
+    .option("--ready-min-grade <grade>", "Minimum grade for code-gen readiness (S | A+ | A | B+ | B | C+ | C | D | F). Overrides configPath codegenReadyMinGrade. Default: A")
     .example("  canicode analyze https://www.figma.com/design/ABC123/MyDesign")
     .example("  canicode analyze ./fixtures/my-design --output report.html")
     .example("  canicode analyze ./fixtures/my-design --config ./my-config.json")
@@ -132,13 +135,18 @@ export function registerAnalyze(cli: CAC): void {
         let excludeNodeNames: string[] | undefined;
         let excludeNodeTypes: string[] | undefined;
 
+        let codegenReadyMinGrade: Grade | undefined;
         if (options.config) {
           const configFile = await loadConfigFile(options.config);
           configs = mergeConfigs(configs, configFile);
           excludeNodeNames = configFile.excludeNodeNames;
           excludeNodeTypes = configFile.excludeNodeTypes;
+          codegenReadyMinGrade = configFile.codegenReadyMinGrade;
           log(`Config loaded: ${options.config}`);
         }
+
+        // CLI flag takes priority over configPath field
+        const effectiveMinGrade = options.readyMinGrade ?? codegenReadyMinGrade;
 
         let acknowledgments: Acknowledgment[] | undefined;
         if (options.acknowledgments) {
@@ -173,7 +181,7 @@ export function registerAnalyze(cli: CAC): void {
 
         // JSON output mode — only JSON goes to stdout; exit code still applies
         if (options.json) {
-          console.log(JSON.stringify(buildResultJson(file.name, result, scores, { fileKey: file.fileKey, designKey: computeDesignKey(input) }), null, 2));
+          console.log(JSON.stringify(buildResultJson(file.name, result, scores, { fileKey: file.fileKey, designKey: computeDesignKey(input), ...(effectiveMinGrade ? { codegenReadyMinGrade: effectiveMinGrade } : {}) }), null, 2));
           if (scores.overall.grade === "F") {
             process.exitCode = 1;
           }

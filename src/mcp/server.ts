@@ -9,6 +9,7 @@ import { exec } from "node:child_process";
 import { analyzeFile } from "../core/engine/rule-engine.js";
 import { loadFile, isJsonFile, isFixtureDir } from "../core/engine/loader.js";
 import { calculateScores, buildResultJson } from "../core/engine/scoring.js";
+import type { Grade } from "../core/engine/scoring.js";
 import { generateGotchaSurvey } from "../core/gotcha/survey-generator.js";
 import { generateHtmlReport } from "../core/report-html/index.js";
 import { getReportsDir, ensureReportsDir } from "../core/engine/config-store.js";
@@ -65,6 +66,7 @@ Provide a Figma URL or fixture path via the input parameter. Requires FIGMA_TOKE
     openReport: z.boolean().optional().describe("Open the generated HTML report in the user's browser. Defaults to false — opt in only when a visible report is the explicit user request (#365). The HTML file is always written to disk regardless."),
     acknowledgments: z.array(AcknowledgmentSchema).optional().describe("(#371 / ADR-019) Pre-resolved acknowledgments from canicode-authored Figma annotations (e.g. via readCanicodeAcknowledgments in a use_figma batch). Each entry includes nodeId and ruleId; newer annotations may also carry intent, sceneWriteOutcome, and codegenDirective from a canicode-json fenced block (#444). Matching issues are flagged acknowledged and contribute half weight to the density score."),
     scope: z.enum(["page", "component"]).optional().describe("(#404) Override analysis scope — `page` (screen/section where container bounds are required) or `component` (standalone reusable unit where root FILL is the design contract). Defaults to auto-detection from the root node type: `COMPONENT` / `COMPONENT_SET` / `INSTANCE` roots resolve to `component`, everything else to `page`."),
+    codegenReadyMinGrade: z.enum(["S", "A+", "A", "B+", "B", "C+", "C", "D", "F"]).optional().describe("Minimum grade for code-gen readiness. Overrides the codegenReadyMinGrade field in configPath. Default: A"),
   },
   {
     readOnlyHint: false,
@@ -72,7 +74,7 @@ Provide a Figma URL or fixture path via the input parameter. Requires FIGMA_TOKE
     openWorldHint: true,
     title: "Analyze Figma Design",
   },
-  async ({ input, token, preset, targetNodeId, configPath, openReport, acknowledgments, scope }) => {
+  async ({ input, token, preset, targetNodeId, configPath, openReport, acknowledgments, scope, codegenReadyMinGrade }) => {
     trackEvent(EVENTS.MCP_TOOL_CALLED, { tool: "analyze" });
     try {
       // Fetch via REST API or load from fixture
@@ -84,10 +86,14 @@ Provide a Figma URL or fixture path via the input parameter. Requires FIGMA_TOKE
         ? { ...getConfigsWithPreset(preset as Preset) }
         : { ...RULE_CONFIGS };
 
+      let configFileMinGrade: Grade | undefined;
       if (configPath) {
         const configFile = await loadConfigFile(configPath);
         configs = mergeConfigs(configs, configFile);
+        configFileMinGrade = configFile.codegenReadyMinGrade;
       }
+      // MCP param takes priority over configPath field
+      const effectiveMinGrade = codegenReadyMinGrade ?? configFileMinGrade;
 
       const result = analyzeFile(file, {
         configs: configs as Record<RuleId, RuleConfig>,
@@ -138,7 +144,7 @@ Provide a Figma URL or fixture path via the input parameter. Requires FIGMA_TOKE
         content: [
           {
             type: "text" as const,
-            text: JSON.stringify(buildResultJson(file.name, result, scores, { fileKey: file.fileKey, designKey: computeDesignKey(input) }), null, 2),
+            text: JSON.stringify(buildResultJson(file.name, result, scores, { fileKey: file.fileKey, designKey: computeDesignKey(input), ...(effectiveMinGrade ? { codegenReadyMinGrade: effectiveMinGrade } : {}) }), null, 2),
           },
         ],
       };
@@ -178,6 +184,7 @@ Provide a Figma URL or fixture path via the input parameter. Requires FIGMA_TOKE
     targetNodeId: z.string().optional().describe("Scope analysis to a specific node ID"),
     configPath: z.string().optional().describe("Path to config JSON file for rule overrides"),
     scope: z.enum(["page", "component"]).optional().describe("(#404) Override analysis scope — `page` or `component`. Defaults to auto-detection from the root node type."),
+    codegenReadyMinGrade: z.enum(["S", "A+", "A", "B+", "B", "C+", "C", "D", "F"]).optional().describe("Minimum grade for code-gen readiness. Overrides the codegenReadyMinGrade field in configPath. Default: A"),
   },
   {
     readOnlyHint: false,
@@ -185,7 +192,7 @@ Provide a Figma URL or fixture path via the input parameter. Requires FIGMA_TOKE
     openWorldHint: true,
     title: "Gotcha Survey",
   },
-  async ({ input, token, preset, targetNodeId, configPath, scope }) => {
+  async ({ input, token, preset, targetNodeId, configPath, scope, codegenReadyMinGrade }) => {
     trackEvent(EVENTS.MCP_TOOL_CALLED, { tool: "gotcha-survey" });
     try {
       const { file, nodeId } = await loadFile(input, token);
@@ -196,10 +203,14 @@ Provide a Figma URL or fixture path via the input parameter. Requires FIGMA_TOKE
         ? { ...getConfigsWithPreset(preset as Preset) }
         : { ...RULE_CONFIGS };
 
+      let configFileMinGrade: Grade | undefined;
       if (configPath) {
         const configFile = await loadConfigFile(configPath);
         configs = mergeConfigs(configs, configFile);
+        configFileMinGrade = configFile.codegenReadyMinGrade;
       }
+      // MCP param takes priority over configPath field
+      const effectiveMinGrade = codegenReadyMinGrade ?? configFileMinGrade;
 
       const result = analyzeFile(file, {
         configs: configs as Record<RuleId, RuleConfig>,
@@ -208,7 +219,10 @@ Provide a Figma URL or fixture path via the input parameter. Requires FIGMA_TOKE
       });
 
       const scores = calculateScores(result, configs as Record<RuleId, RuleConfig>);
-      const survey = generateGotchaSurvey(result, scores, { designKey: computeDesignKey(input) });
+      const survey = generateGotchaSurvey(result, scores, {
+        designKey: computeDesignKey(input),
+        ...(effectiveMinGrade ? { codegenReadyMinGrade: effectiveMinGrade } : {}),
+      });
 
       trackEvent(EVENTS.ANALYSIS_COMPLETED, {
         nodeCount: result.nodeCount,

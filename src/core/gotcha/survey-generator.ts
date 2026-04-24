@@ -1,6 +1,7 @@
 import type { AnalysisResult, AnalysisIssue } from "../engine/rule-engine.js";
 import type { ScoreReport } from "../engine/scoring.js";
 import { isReadyForCodeGen } from "../engine/scoring.js";
+import type { Grade } from "../engine/scoring.js";
 import type {
   GotchaSurvey,
   GotchaSurveyQuestion,
@@ -30,7 +31,7 @@ const NODE_PATH_SEPARATOR = " > ";
 export function generateGotchaSurvey(
   result: AnalysisResult,
   scores: ScoreReport,
-  options: { designKey?: string } = {},
+  options: { designKey?: string; codegenReadyMinGrade?: Grade } = {},
 ): GotchaSurvey {
   const grade = scores.overall.grade;
 
@@ -93,7 +94,7 @@ export function generateGotchaSurvey(
 
   return {
     designGrade: grade,
-    isReadyForCodeGen: isReadyForCodeGen(grade),
+    isReadyForCodeGen: isReadyForCodeGen(grade, options.codegenReadyMinGrade),
     questions,
     groupedQuestions,
     designKey: options.designKey ?? "",

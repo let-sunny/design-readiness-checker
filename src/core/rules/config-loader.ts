@@ -17,6 +17,7 @@ const ConfigFileSchema = z.object({
   excludeNodeTypes: z.array(z.string()).optional(),
   excludeNodeNames: z.array(z.string()).optional(),
   gridBase: z.number().int().positive().optional(),
+  codegenReadyMinGrade: z.enum(["S", "A+", "A", "B+", "B", "C+", "C", "D", "F"]).optional(),
   rules: z.record(z.string(), RuleOverrideSchema)
     .superRefine((rules, ctx) => {
       const unknown = Object.keys(rules).filter((id) => !VALID_RULE_IDS.has(id));

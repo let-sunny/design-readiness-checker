@@ -1507,3 +1507,51 @@ describe("generateGotchaSurvey", () => {
     });
   });
 });
+
+// ─── codegenReadyMinGrade threading ──────────────────────────────────────────
+
+describe("generateGotchaSurvey codegenReadyMinGrade option", () => {
+  it("returns isReadyForCodeGen:true for grade A with default threshold", () => {
+    // Grade A passes with default threshold (A)
+    const survey = generateGotchaSurvey(makeResult([]), makeScoreReport("A"));
+    expect(survey.isReadyForCodeGen).toBe(true);
+  });
+
+  it("returns isReadyForCodeGen:false for grade A when codegenReadyMinGrade is S", () => {
+    // Grade A does NOT pass when threshold is tightened to S-only
+    const survey = generateGotchaSurvey(
+      makeResult([]),
+      makeScoreReport("A"),
+      { codegenReadyMinGrade: "S" },
+    );
+    expect(survey.isReadyForCodeGen).toBe(false);
+  });
+
+  it("returns isReadyForCodeGen:true for grade S when codegenReadyMinGrade is S", () => {
+    const survey = generateGotchaSurvey(
+      makeResult([]),
+      makeScoreReport("S"),
+      { codegenReadyMinGrade: "S" },
+    );
+    expect(survey.isReadyForCodeGen).toBe(true);
+  });
+
+  it("returns isReadyForCodeGen:true for grade B+ when codegenReadyMinGrade is B+", () => {
+    // Loose threshold: B+ passes when threshold is B+
+    const survey = generateGotchaSurvey(
+      makeResult([]),
+      makeScoreReport("B+"),
+      { codegenReadyMinGrade: "B+" },
+    );
+    expect(survey.isReadyForCodeGen).toBe(true);
+  });
+
+  it("returns isReadyForCodeGen:false for grade B when codegenReadyMinGrade is B+", () => {
+    const survey = generateGotchaSurvey(
+      makeResult([]),
+      makeScoreReport("B"),
+      { codegenReadyMinGrade: "B+" },
+    );
+    expect(survey.isReadyForCodeGen).toBe(false);
+  });
+});

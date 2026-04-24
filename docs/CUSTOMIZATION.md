@@ -22,6 +22,7 @@ canicode analyze <url> --config ./my-config.json
   "excludeNodeTypes": ["VECTOR", "BOOLEAN_OPERATION", "SLICE"],
   "excludeNodeNames": ["chatbot", "ad-banner", "custom-widget"],
   "gridBase": 2,
+  "codegenReadyMinGrade": "A",
   "rules": {
     "no-auto-layout": { "score": -15, "severity": "blocking", "enabled": true },
     "raw-value": { "score": -5 },
@@ -37,6 +38,7 @@ canicode analyze <url> --config ./my-config.json
 | `excludeNodeTypes` | `string[]` | `[]` | Figma node types to skip entirely (node + children) |
 | `excludeNodeNames` | `string[]` | `[]` | Name patterns to skip (case-insensitive word match) |
 | `gridBase` | `number` | `2` | Spacing grid unit for `irregular-spacing` |
+| `codegenReadyMinGrade` | `Grade` | `"A"` | Minimum grade for `isReadyForCodeGen` (one of `S`, `A+`, `A`, `B+`, `B`, `C+`, `C`, `D`, `F`). CLI `--ready-min-grade` and MCP `codegenReadyMinGrade` param override this. |
 | `rules` | `object` | — | Per-rule overrides (see below) |
 
 ### Node Exclusions

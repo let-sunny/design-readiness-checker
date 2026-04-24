@@ -1,4 +1,4 @@
-import { calculateScores, formatScoreSummary, gradeToClassName, getCategoryLabel, getSeverityLabel, buildResultJson, isReadyForCodeGen } from "./scoring.js";
+import { calculateScores, formatScoreSummary, gradeToClassName, getCategoryLabel, getSeverityLabel, buildResultJson, isReadyForCodeGen, GRADE_ORDER, DEFAULT_CODEGEN_READY_MIN_GRADE } from "./scoring.js";
 import type { Grade } from "./scoring.js";
 import type { AnalysisIssue, AnalysisResult } from "./rule-engine.js";
 import type { AnalysisFile, AnalysisNode } from "../contracts/figma-node.js";
@@ -731,4 +731,125 @@ describe("isReadyForCodeGen helper", () => {
       expect(isReadyForCodeGen(grade)).toBe(false);
     });
   }
+});
+
+
+// ─── isReadyForCodeGen with minGrade parameter ────────────────────────────────
+
+describe("isReadyForCodeGen with minGrade parameter", () => {
+  it("GRADE_ORDER has all 9 grades in best-to-worst order", () => {
+    expect(GRADE_ORDER).toEqual(["S", "A+", "A", "B+", "B", "C+", "C", "D", "F"]);
+  });
+
+  it("DEFAULT_CODEGEN_READY_MIN_GRADE is A", () => {
+    expect(DEFAULT_CODEGEN_READY_MIN_GRADE).toBe("A");
+  });
+
+  it("no-arg call still uses default (A) threshold", () => {
+    expect(isReadyForCodeGen("A")).toBe(true);
+    expect(isReadyForCodeGen("B+")).toBe(false);
+  });
+
+  describe("minGrade = S (tightest threshold)", () => {
+    it("returns true only for S", () => {
+      expect(isReadyForCodeGen("S", "S")).toBe(true);
+    });
+
+    it("returns false for A+ (one below S)", () => {
+      expect(isReadyForCodeGen("A+", "S")).toBe(false);
+    });
+
+    it("returns false for A", () => {
+      expect(isReadyForCodeGen("A", "S")).toBe(false);
+    });
+
+    it("returns false for F", () => {
+      expect(isReadyForCodeGen("F", "S")).toBe(false);
+    });
+  });
+
+  describe("minGrade = A+ (second tier)", () => {
+    it("returns true for S (better than A+)", () => {
+      expect(isReadyForCodeGen("S", "A+")).toBe(true);
+    });
+
+    it("returns true for A+", () => {
+      expect(isReadyForCodeGen("A+", "A+")).toBe(true);
+    });
+
+    it("returns false for A (one below A+)", () => {
+      expect(isReadyForCodeGen("A", "A+")).toBe(false);
+    });
+  });
+
+  describe("minGrade = B+ (looser threshold)", () => {
+    it("returns true for S", () => {
+      expect(isReadyForCodeGen("S", "B+")).toBe(true);
+    });
+
+    it("returns true for A+", () => {
+      expect(isReadyForCodeGen("A+", "B+")).toBe(true);
+    });
+
+    it("returns true for A", () => {
+      expect(isReadyForCodeGen("A", "B+")).toBe(true);
+    });
+
+    it("returns true for B+", () => {
+      expect(isReadyForCodeGen("B+", "B+")).toBe(true);
+    });
+
+    it("returns false for B (one below B+)", () => {
+      expect(isReadyForCodeGen("B", "B+")).toBe(false);
+    });
+
+    it("returns false for F", () => {
+      expect(isReadyForCodeGen("F", "B+")).toBe(false);
+    });
+  });
+
+  describe("minGrade = F (most permissive threshold)", () => {
+    it("returns true for all grades", () => {
+      const allGrades: Grade[] = ["S", "A+", "A", "B+", "B", "C+", "C", "D", "F"];
+      for (const grade of allGrades) {
+        expect(isReadyForCodeGen(grade, "F")).toBe(true);
+      }
+    });
+  });
+});
+
+// ─── buildResultJson respects codegenReadyMinGrade ───────────────────────────
+
+describe("buildResultJson respects codegenReadyMinGrade option", () => {
+  it("uses default threshold (A) when codegenReadyMinGrade is not provided", () => {
+    // Zero issues → S grade → true with default threshold
+    const result = makeResult([]);
+    const scores = calculateScores(result);
+    const json = buildResultJson("TestFile", result, scores);
+    expect(json.isReadyForCodeGen).toBe(true);
+  });
+
+  it("returns false for grade A when minGrade is S", () => {
+    const result = makeResult([]);
+    const scores = calculateScores(result);
+    const mockScores = { ...scores, overall: { ...scores.overall, grade: "A" as Grade } };
+    const json = buildResultJson("TestFile", result, mockScores, { codegenReadyMinGrade: "S" });
+    expect(json.isReadyForCodeGen).toBe(false);
+  });
+
+  it("returns true for grade S when minGrade is S", () => {
+    const result = makeResult([]);
+    const scores = calculateScores(result);
+    const mockScores = { ...scores, overall: { ...scores.overall, grade: "S" as Grade } };
+    const json = buildResultJson("TestFile", result, mockScores, { codegenReadyMinGrade: "S" });
+    expect(json.isReadyForCodeGen).toBe(true);
+  });
+
+  it("returns true for grade A when minGrade is B+", () => {
+    const result = makeResult([]);
+    const scores = calculateScores(result);
+    const mockScores = { ...scores, overall: { ...scores.overall, grade: "A" as Grade } };
+    const json = buildResultJson("TestFile", result, mockScores, { codegenReadyMinGrade: "B+" });
+    expect(json.isReadyForCodeGen).toBe(true);
+  });
 });

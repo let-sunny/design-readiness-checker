@@ -1,0 +1,34 @@
+{
+  "filesChanged": [
+    "src/core/engine/scoring.ts",
+    "src/core/rules/config-loader.ts",
+    "src/core/gotcha/survey-generator.ts",
+    "src/cli/commands/gotcha-survey.ts",
+    "src/cli/commands/analyze.ts",
+    "src/mcp/server.ts",
+    "src/core/engine/scoring.test.ts",
+    "src/core/rules/config-loader.test.ts",
+    "src/core/gotcha/survey-generator.test.ts"
+  ],
+  "commits": [
+    "feat: make codegen-ready grade threshold user-configurable"
+  ],
+  "decisions": [
+    "Exported GRADE_ORDER as a readonly tuple from scoring.ts (best-to-worst). Ordinal comparison via GRADE_ORDER.indexOf() is trivially correct and eliminates percentage arithmetic or duplicated grade lists elsewhere.",
+    "DEFAULT_CODEGEN_READY_MIN_GRADE = 'A' exported from scoring.ts as a named constant — no magic string hardcoding, single source of truth for the default.",
+    "isReadyForCodeGen now takes optional second parameter minGrade?: Grade. All existing no-arg call sites continue to work unchanged; the optional parameter defaults to DEFAULT_CODEGEN_READY_MIN_GRADE inside the function.",
+    "codegenReadyMinGrade added to ConfigFileSchema following the exact gridBase precedent (line 19 of config-loader.ts). It is a global threshold, not per-rule, so it does NOT go into mergeConfigs. Callers read it directly from the loaded configFile.",
+    "Priority chain: CLI flag (readyMinGrade) > configPath codegenReadyMinGrade > default (A). Implemented with effectiveMinGrade = options.readyMinGrade ?? codegenReadyMinGrade. Same pattern for MCP.",
+    "Used separate effectiveMinGradeGs variable name in MCP gotcha-survey handler to avoid conflict with effectiveMinGrade in the analyze handler in the same file scope.",
+    "Grade import in survey-generator.ts uses 'import type { Grade }' as a separate import statement to follow the existing type-only import pattern in that file.",
+    "Conditional spread ...(effectiveMinGrade ? { codegenReadyMinGrade: effectiveMinGrade } : {}) used consistently to comply with exactOptionalPropertyTypes — no explicit undefined assignment.",
+    "Tests in scoring.test.ts added as new describe blocks BELOW the existing 'isReadyForCodeGen helper' block per plan — existing no-arg tests not modified.",
+    "config-loader.test.ts uses a tempDir2 variable for the new describe block to avoid conflict with the existing tempDir variable. Uses top-level ESM imports already present in the file.",
+    "Did NOT touch .claude/skills/ files per plan scope note (#481 owns those)."
+  ],
+  "knownRisks": [
+    "The MCP server uses two separate local variables (configFileMinGrade in analyze handler, configFileMinGradeGs in gotcha-survey handler). If refactored to a shared utility, watch for this duplication.",
+    "CAC flag --ready-min-grade maps to rawOptions.readyMinGrade (camelCase). Verified by pattern from existing flags (--target-node-id -> targetNodeId). If CAC changes this behavior, the flag would be silently ignored.",
+    "The analyze CLI command only threads effectiveMinGrade into the --json code path (buildResultJson call). The HTML report path does not pass effectiveMinGrade — the HTML report isReadyForCodeGen badge always uses the default threshold. This is consistent with JSON being the machine-readable output but could be surprising."
+  ]
+}
