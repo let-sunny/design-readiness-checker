@@ -79,12 +79,25 @@ export function generateGotchaSurvey(
   // logic in prose. ADR-016.
   const groupedQuestions = groupAndBatchSurveyQuestions(questions);
 
+  // Step 7 (#428): compute the threshold hint for the `allowDefinitionWrite`
+  // picker. Count questions that target instance children — these are the only
+  // candidates that benefit from definition-level writes. When fewer than 3
+  // propagation candidates exist, surfacing the picker is over-engineered;
+  // the skill silently uses the annotation default (ADR-012).
+  const PROPAGATION_CANDIDATE_THRESHOLD = 3;
+  const propagationCandidates = questions.filter(
+    (q) => q.isInstanceChild,
+  ).length;
+  const suggestedDefaultApply =
+    propagationCandidates >= PROPAGATION_CANDIDATE_THRESHOLD;
+
   return {
     designGrade: grade,
     isReadyForCodeGen: isReadyForCodeGen(grade),
     questions,
     groupedQuestions,
     designKey: options.designKey ?? "",
+    suggestedDefaultApply,
   };
 }
 

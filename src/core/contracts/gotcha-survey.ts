@@ -161,6 +161,20 @@ export const GotchaSurveySchema = z.object({
    * prose no longer parses URLs (per ADR-016).
    */
   designKey: z.string(),
+  /**
+   * #428 — threshold hint for the `allowDefinitionWrite` picker in the
+   * `canicode-roundtrip` skill. `true` when `propagationCandidates >= 3`
+   * (i.e. three or more questions target instance children that could
+   * benefit from definition-level writes). When `false`, the skill silently
+   * uses the annotation default (ADR-012) without surfacing the picker —
+   * the opt-in flow is over-engineered for tiny surveys.
+   *
+   * Computed server-side from `questions` so the skill doesn't have to
+   * count `isInstanceChild` manually; the skill may still override this
+   * hint when it has additional context (e.g. all candidates are
+   * read-only per probe result).
+   */
+  suggestedDefaultApply: z.boolean(),
 });
 
 export type GotchaSurvey = z.infer<typeof GotchaSurveySchema>;

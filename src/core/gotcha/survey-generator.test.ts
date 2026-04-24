@@ -1386,4 +1386,124 @@ describe("generateGotchaSurvey", () => {
       expect(result.success).toBe(true);
     });
   });
+
+  // ============================================
+  // #428 suggestedDefaultApply threshold
+  // ============================================
+
+  describe("suggestedDefaultApply (#428)", () => {
+    it("is false when there are no instance-child questions", () => {
+      const issues = [
+        makeIssue({
+          ruleId: "no-auto-layout",
+          category: "pixel-critical",
+          severity: "blocking",
+          nodeId: "1:1",
+          nodePath: "Root > Hero",
+        }),
+      ];
+
+      const survey = generateGotchaSurvey(makeResult(issues), makeScoreReport("D"));
+
+      expect(survey.suggestedDefaultApply).toBe(false);
+    });
+
+    it("is false when fewer than 3 instance-child questions are present", () => {
+      const issues = [
+        makeIssue({
+          ruleId: "missing-size-constraint",
+          category: "responsive-critical",
+          severity: "risk",
+          nodeId: "I100:1;2143:11111",
+          nodePath: "Root > Card A > Title",
+          subType: "wrap",
+        }),
+        makeIssue({
+          ruleId: "missing-size-constraint",
+          category: "responsive-critical",
+          severity: "risk",
+          nodeId: "I100:1;2143:22222",
+          nodePath: "Root > Card A > Subtitle",
+          subType: "wrap",
+        }),
+      ];
+
+      const survey = generateGotchaSurvey(makeResult(issues), makeScoreReport("D"));
+
+      // 2 instance-child questions — below the threshold of 3
+      expect(survey.suggestedDefaultApply).toBe(false);
+    });
+
+    it("is true when 3 or more instance-child questions are present", () => {
+      const document: AnalysisNode = {
+        id: "0:1",
+        name: "Document",
+        type: "DOCUMENT",
+        visible: true,
+        children: [
+          {
+            id: "100:1",
+            name: "Card A",
+            type: "INSTANCE",
+            visible: true,
+            componentId: "C:1",
+          },
+          {
+            id: "100:2",
+            name: "Card B",
+            type: "INSTANCE",
+            visible: true,
+            componentId: "C:1",
+          },
+        ],
+      };
+      const components = {
+        "C:1": { key: "k1", name: "Card", description: "" },
+      };
+      // Three distinct instance-child questions (different sourceNodeIds so
+      // source-component dedupe keeps them separate — each counts individually).
+      const issues = [
+        makeIssue({
+          ruleId: "missing-size-constraint",
+          category: "responsive-critical",
+          severity: "risk",
+          nodeId: "I100:1;2143:11111",
+          nodePath: "Root > Card A > Title",
+          subType: "wrap",
+        }),
+        makeIssue({
+          ruleId: "missing-size-constraint",
+          category: "responsive-critical",
+          severity: "risk",
+          nodeId: "I100:1;2143:22222",
+          nodePath: "Root > Card A > Subtitle",
+          subType: "wrap",
+        }),
+        makeIssue({
+          ruleId: "missing-size-constraint",
+          category: "responsive-critical",
+          severity: "risk",
+          nodeId: "I100:1;2143:33333",
+          nodePath: "Root > Card A > Body",
+          subType: "wrap",
+        }),
+      ];
+
+      const survey = generateGotchaSurvey(
+        makeResult(issues, { document, components }),
+        makeScoreReport("D"),
+      );
+
+      // 3 instance-child questions — meets the threshold
+      expect(survey.suggestedDefaultApply).toBe(true);
+    });
+
+    it("is included in the GotchaSurveySchema output for zero-issue surveys", () => {
+      const survey = generateGotchaSurvey(makeResult([]), makeScoreReport("S"));
+
+      expect(typeof survey.suggestedDefaultApply).toBe("boolean");
+      const result = GotchaSurveySchema.safeParse(survey);
+      expect(result.success).toBe(true);
+    });
+  });
 });

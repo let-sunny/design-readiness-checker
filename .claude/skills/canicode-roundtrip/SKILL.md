@@ -140,7 +140,7 @@ Every gotcha-survey question (and every entry in `analyzeResult.issues[]`) carri
 
 #### Instance-child matrix, annotation enum matrix, write tiers, probe, helpers
 
-Full tables, Experiment 08/09 references, definition-write probe branches, and the bundled `CanICodeRoundtrip` API catalogue live in [`docs/roundtrip-protocol.md`](https://github.com/let-sunny/canicode/blob/main/docs/roundtrip-protocol.md) on `main`. Open it when you need the matrices or helper list — do not re-derive write rules from memory (ADR-016).
+Full tables, Experiment 08/09 references, definition-write probe branches, the `suggestedDefaultApply` threshold heuristic for the picker (#428), and the bundled `CanICodeRoundtrip` API catalogue live in [`docs/roundtrip-protocol.md`](https://github.com/let-sunny/canicode/blob/main/docs/roundtrip-protocol.md) on `main`. Open it when you need the matrices or helper list — do not re-derive write rules from memory (ADR-016).
 
 #### Strategy A: Property Modification — apply directly
 

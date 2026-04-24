@@ -51,6 +51,13 @@ The helper walks the tiers in order; variable binding is an alternative writeFn 
 
 **Confirmation is a batch-level concern — and only needed when opting in.** A `use_figma` call runs one JavaScript batch and cannot pause mid-batch for user input. Under the ADR-012 default (`allowDefinitionWrite: false`), no propagation happens, so no confirmation is required — override-errors annotate and move on. The orchestrator sets `allowDefinitionWrite: true` only after enumerating the likely propagation set to the user up-front and collecting **one confirmation for the whole batch** that names the source component(s) and the affected instance set. When describing impact, note that the write reaches every **non-overridden** instance — any instance with a local override for the same property keeps its override. The helper below never prompts — it assumes that if the flag is on, confirmation already happened.
 
+**Threshold heuristic — when to surface the picker (#428).** The `allowDefinitionWrite` opt-in flow is over-engineered for tiny surveys. Use `survey.suggestedDefaultApply` (a boolean computed server-side by `generateGotchaSurvey`) to gate the picker:
+
+- **`survey.suggestedDefaultApply === false`** (fewer than 3 instance-child questions in the survey) — skip the picker entirely and call the helpers with the default `allowDefinitionWrite: false`. Every override-error routes to a scene annotation per ADR-012. Do not ask the user about propagation.
+- **`survey.suggestedDefaultApply === true`** (3 or more instance-child questions) — surface the pre-flight probe and picker as usual. The threshold is `propagationCandidates >= 3` where `propagationCandidates = questions.filter(q => q.isInstanceChild).length`.
+
+The skill may still override this hint — for example, when `probeDefinitionWritability` returns `allUnwritable === true`, drop to annotate-only regardless of `suggestedDefaultApply`.
+
 **Pre-flight writability probe (#357).** Before showing the user the Definition write picker, call `CanICodeRoundtrip.probeDefinitionWritability(questions)` inside a small `use_figma` batch. The probe loads every distinct `sourceChildId` once and classifies it as writable or unwritable using the same detection as the runtime fallback (Experiment 10 `remote === true` and Experiment 11 unresolved-`null`). The result decides which version of the picker to show:
 
 ```javascript
