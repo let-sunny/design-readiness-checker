@@ -28,6 +28,7 @@
     "build:plugin": "bash scripts/build-plugin.sh",
     "sync-docs": "tsx scripts/sync-rule-docs.ts",
     "check:skill-determinism": "tsx scripts/check-skill-determinism.ts",
+    "check:server-json": "tsx scripts/check-server-json.ts",
     "clean": "rm -rf dist skills"
   },
   "files": [

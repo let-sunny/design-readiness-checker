@@ -1,17 +1,17 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.let-sunny/canicode",
-  "description": "Analyze Figma designs for dev & AI readiness. 39 rules, scoring, HTML reports.",
+  "description": "Analyze Figma designs for dev & AI readiness. 16 rules, scoring, HTML reports.",
   "repository": {
     "url": "https://github.com/let-sunny/canicode",
     "source": "github"
   },
-  "version": "0.5.2",
+  "version": "0.11.2",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "canicode",
-      "version": "0.5.2",
+      "version": "0.11.2",
       "transport": {
         "type": "stdio"
       },
