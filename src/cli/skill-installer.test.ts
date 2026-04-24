@@ -8,7 +8,6 @@ import { vi } from "vitest";
 
 import {
   installSkills,
-  installClaudeGotchasSkillOnly,
   installCursorBundledSkills,
 } from "./skill-installer.js";
 
@@ -255,22 +254,6 @@ describe("installSkills", () => {
     for (const p of staleFiles) {
       expect(readFileSync(p, "utf-8")).toBe("# stale\n");
     }
-  });
-});
-
-describe("installClaudeGotchasSkillOnly", () => {
-  it("copies only canicode-gotchas into ./.claude/skills/", async () => {
-    const summary = await installClaudeGotchasSkillOnly({
-      force: false,
-      cwd,
-      sourceDir,
-    });
-
-    expect(summary.targetDir).toBe(join(cwd, ".claude", "skills"));
-    expect(summary.installed).toEqual([join("canicode-gotchas", "SKILL.md")]);
-    expect(existsSync(join(cwd, ".claude", "skills", "canicode", "SKILL.md"))).toBe(false);
-    expect(readFileSync(join(summary.targetDir, "canicode-gotchas", "SKILL.md"), "utf-8"))
-      .toBe("# canicode-gotchas\nfresh\n");
   });
 });
 

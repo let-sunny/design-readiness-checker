@@ -232,7 +232,7 @@ After editing MCP JSON or running `canicode init`:
 ### Gotcha survey in Cursor
 
 1. Add the MCP config above and restart Cursor (or reload MCP).
-2. Install skills: **`canicode init --token … --cursor-skills`** saves the Figma token and installs everything; or **`canicode init --cursor-skills`** (and/or **`--skills`**) without `--token` copies skills only — you still need **`canicode init --token …`** (or `FIGMA_TOKEN`) before REST **`analyze`** / **`gotcha-survey`** against a live URL. The shared gotchas answer file lives under `.claude/skills/canicode-gotchas/` when the gotchas skill is installed. Authoring is single-source under `.claude/skills/` in the repo; the npm build writes `skills/cursor/` (gotchas strip `# Collected Gotchas`; other skills are full copies).
+2. Install skills: **`canicode init --token … --cursor-skills`** saves the Figma token and installs everything; or **`canicode init --cursor-skills`** without `--token` installs Claude skills plus Cursor copies — you still need **`canicode init --token …`** (or `FIGMA_TOKEN`) before REST **`analyze`** / **`gotcha-survey`** against a live URL. The shared gotchas answer file lives under `.claude/skills/canicode-gotchas/` when the gotchas skill is installed. Authoring is single-source under `.claude/skills/` in the repo; the npm build writes `skills/cursor/` (gotchas strip `# Collected Gotchas`; other skills are full copies).
 3. In chat, **@-mention** **canicode**, **canicode-gotchas**, or **canicode-roundtrip** when your Cursor setup uses Agent-attached skills. Some teams prefer **slash commands** or rules instead of `@` — use whichever your workspace enables; roundtrip still needs **`use_figma`** from the Figma MCP in that session.
 
 ### Manual test checklist (#407)

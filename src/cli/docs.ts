@@ -43,11 +43,11 @@ CANICODE SETUP GUIDE
 
   Setup:
     canicode init --token figd_xxxxxxxxxxxxx
-    (saves token + installs skills — see section 2 for --no-skills)
+    (saves token + installs Claude Code skills into ./.claude/skills/)
 
   Skills only (no token yet):
     canicode init --cursor-skills
-    (and/or canicode init --skills — copies skills; run init --token … before live Figma URLs)
+    (installs Claude skills + Cursor copies; run init --token … before live Figma REST URLs)
 
   Use:
     canicode analyze "https://www.figma.com/design/ABC123/MyDesign?node-id=1-234"
@@ -79,8 +79,7 @@ CANICODE SETUP GUIDE
 
   Flags:
     --global      Install to ~/.claude/skills/ instead of ./.claude/skills/
-    --no-skills   Skip skill install (token only — legacy behavior)
-    --cursor-skills  Also install Cursor copies (see §3); can be combined with --no-skills
+    --cursor-skills  Also install Cursor copies (see §3)
     --force       Overwrite existing skill files without prompting
 
   Use (in Claude Code):
@@ -105,8 +104,8 @@ CANICODE SETUP GUIDE
 
   Flags:
     --cursor-skills   Install Cursor copies of all three skills into .cursor/skills/
-    --no-skills       Skip Claude Code skills (with --cursor-skills, still installs
-                      the Cursor bundle plus the shared gotchas answer file)
+                      (with --token, runs after full Claude skill install; without token,
+                      installs Claude skills under .claude/skills/ first, then Cursor copies)
     --force           Overwrite existing skill files without prompting
 
   Use (in Cursor Agent chat):

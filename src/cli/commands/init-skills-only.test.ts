@@ -7,13 +7,11 @@ import cac from "cac";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const installSkills = vi.hoisted(() => vi.fn());
-const installClaudeGotchasSkillOnly = vi.hoisted(() => vi.fn());
 const installCursorBundledSkills = vi.hoisted(() => vi.fn());
 const trackEvent = vi.hoisted(() => vi.fn());
 
 vi.mock("../skill-installer.js", () => ({
   installSkills,
-  installClaudeGotchasSkillOnly,
   installCursorBundledSkills,
 }));
 
@@ -39,7 +37,6 @@ beforeEach(() => {
   mkdirSync(tempCwd, { recursive: true });
   vi.clearAllMocks();
   installSkills.mockResolvedValue(mockSummary(join(tempCwd, ".claude", "skills")));
-  installClaudeGotchasSkillOnly.mockResolvedValue(mockSummary(join(tempCwd, ".claude", "skills")));
   installCursorBundledSkills.mockResolvedValue({
     installed: ["canicode-roundtrip/SKILL.md"],
     overwritten: [],
@@ -53,7 +50,7 @@ afterEach(async () => {
 });
 
 describe("registerInit skills without token (#461)", () => {
-  it("runs --cursor-skills without --token (full Claude skills + Cursor bundle)", async () => {
+  it("runs --cursor-skills without --token (Claude skills + Cursor bundle)", async () => {
     const prev = process.cwd();
     process.chdir(tempCwd);
     try {
@@ -66,32 +63,10 @@ describe("registerInit skills without token (#461)", () => {
     }
 
     expect(installSkills).toHaveBeenCalledTimes(1);
-    expect(installClaudeGotchasSkillOnly).not.toHaveBeenCalled();
     expect(installCursorBundledSkills).toHaveBeenCalledTimes(1);
     expect(trackEvent).toHaveBeenCalledWith(
       "cic_cli_init",
       expect.objectContaining({ skillOnlyInit: true, skillStepOk: true }),
-    );
-  });
-
-  it("runs --no-skills --cursor-skills without --token (gotchas store + Cursor only)", async () => {
-    const prev = process.cwd();
-    process.chdir(tempCwd);
-    try {
-      const cli = cac("canicode");
-      registerInit(cli);
-      cli.parse(["node", "canicode", "init", "--no-skills", "--cursor-skills"], { run: false });
-      await cli.runMatchedCommand();
-    } finally {
-      process.chdir(prev);
-    }
-
-    expect(installSkills).not.toHaveBeenCalled();
-    expect(installClaudeGotchasSkillOnly).toHaveBeenCalledTimes(1);
-    expect(installCursorBundledSkills).toHaveBeenCalledTimes(1);
-    expect(trackEvent).toHaveBeenCalledWith(
-      "cic_cli_init",
-      expect.objectContaining({ skillOnlyInit: true }),
     );
   });
 

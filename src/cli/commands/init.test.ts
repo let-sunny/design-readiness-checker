@@ -85,7 +85,7 @@ describe("formatNextSteps", () => {
     expect(out).not.toContain("canicode analyze");
   });
 
-  it("falls back to the analyze hint when --no-skills was passed", () => {
+  it("falls back to the analyze hint when skills were not installed", () => {
     const out = formatNextSteps({ figmaMcpPresent: false, skillsInstalled: false });
     expect(out).toContain(`Next: canicode analyze "https://www.figma.com/design/..."`);
     expect(out).not.toContain("Restart Claude Code");
@@ -93,7 +93,7 @@ describe("formatNextSteps", () => {
     expect(out).not.toContain("Optional — faster canicode MCP");
   });
 
-  it("falls back to the analyze hint when --no-skills was passed even if Figma MCP is present", () => {
+  it("falls back to the analyze hint when skills were not installed even if Figma MCP is present", () => {
     const out = formatNextSteps({ figmaMcpPresent: true, skillsInstalled: false });
     expect(out).toContain(`Next: canicode analyze`);
     expect(out).not.toContain("Restart Claude Code");
@@ -125,22 +125,7 @@ describe("formatNextSteps", () => {
 });
 
 describe("registerInit --help rendering", () => {
-  // Guards against the cac `(default: true)` artifact from issue #432.
-  // cac auto-injects `config.default = true` on any option whose rawName
-  // begins with `--no-`, which then renders as `(default: true)` in help.
-  it("declares the skills option positively so cac does not inject a default", () => {
-    const cli = cac("canicode");
-    registerInit(cli);
-    const initCommand = cli.commands.find(c => c.name === "init");
-    expect(initCommand).toBeDefined();
-    const skillsOption = initCommand!.options.find(o => o.name === "skills");
-    expect(skillsOption).toBeDefined();
-    expect(skillsOption!.rawName).toBe("--skills");
-    expect(skillsOption!.negated).toBe(false);
-    expect(skillsOption!.config.default).toBeUndefined();
-  });
-
-  it("renders init --help without a misleading (default: true) on the skills line", () => {
+  it("exposes --cursor-skills and does not document removed --no-skills", () => {
     const cli = cac("canicode");
     registerInit(cli);
     const initCommand = cli.commands.find(c => c.name === "init")!;
@@ -155,9 +140,8 @@ describe("registerInit --help rendering", () => {
       console.info = originalInfo;
     }
     const output = logs.join("\n");
-    const skillsLine = output.split("\n").find(line => /--skills\b/.test(line));
-    expect(skillsLine).toBeDefined();
-    expect(skillsLine!).not.toContain("(default: true)");
-    expect(output).toContain("--no-skills");
+    expect(output).toContain("--cursor-skills");
+    expect(output).not.toContain("--no-skills");
+    expect(initCommand.options.find(o => o.name === "skills")).toBeUndefined();
   });
 });

@@ -152,7 +152,7 @@ Drops three skills into `./.claude/skills/`:
 
 The skills shell out to `npx canicode …` for analyze / gotcha-survey when the canicode MCP server is not installed — both paths produce the same JSON shape. The Figma MCP server is still required for the apply step (Step 4 in `/canicode-roundtrip`); see the prereq note above.
 
-Flags: `--global` installs into `~/.claude/skills/` instead. `--no-skills` skips skill install (token only). `--force` overwrites existing skill files without prompting. Run `canicode docs setup` for the full setup guide.
+Flags: `--global` installs into `~/.claude/skills/` instead. `--cursor-skills` also installs Cursor copies under `.cursor/skills/`. `--force` overwrites existing skill files without prompting. Run `canicode docs setup` for the full setup guide.
 
 </details>
 
@@ -182,7 +182,7 @@ For Cursor / Claude Desktop config, see [`docs/CUSTOMIZATION.md`](docs/CUSTOMIZA
 npx canicode analyze "https://www.figma.com/design/ABC123/MyDesign?node-id=1-234"
 ```
 
-Setup: `npx canicode init --token figd_xxxxxxxxxxxxx` saves the token (and installs the Claude Code skills as a bonus — pass `--no-skills` to skip).
+Setup: `npx canicode init --token figd_xxxxxxxxxxxxx` saves the token and installs the Claude Code skills into `./.claude/skills/`.
 
 **Figma API Rate Limits** — Rate limits depend on **where the file lives**, not just your plan.
 
