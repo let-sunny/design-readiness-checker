@@ -45,6 +45,10 @@ CANICODE SETUP GUIDE
     canicode init --token figd_xxxxxxxxxxxxx
     (saves token + installs skills — see section 2 for --no-skills)
 
+  Skills only (no token yet):
+    canicode init --cursor-skills
+    (and/or canicode init --skills — copies skills; run init --token … before live Figma URLs)
+
   Use:
     canicode analyze "https://www.figma.com/design/ABC123/MyDesign?node-id=1-234"
     (opens report in browser automatically, use --no-open to disable)
@@ -53,6 +57,7 @@ CANICODE SETUP GUIDE
     --preset strict|relaxed|dev-friendly|ai-ready
     --config ./my-config.json
     --no-open   Don't open report in browser
+    --api       No-op for Figma URLs (REST always); same flag as gotcha-survey (#461)
 
   Output:
     ~/.canicode/reports/report-YYYY-MM-DD-HH-mm-<filekey>.html
@@ -75,6 +80,7 @@ CANICODE SETUP GUIDE
   Flags:
     --global      Install to ~/.claude/skills/ instead of ./.claude/skills/
     --no-skills   Skip skill install (token only — legacy behavior)
+    --cursor-skills  Also install Cursor copies (see §3); can be combined with --no-skills
     --force       Overwrite existing skill files without prompting
 
   Use (in Claude Code):
@@ -107,6 +113,14 @@ CANICODE SETUP GUIDE
     @canicode <figma-url>
     @canicode-gotchas <figma-url>      Run a gotcha survey
     @canicode-roundtrip <figma-url>    Analyze, fix gotchas in Figma, re-analyze
+
+  Invocation: docs default to @-skills for Agent chat. If your team uses slash
+  commands or Cursor rules instead, use those — capability is the same once MCP
+  + skills load.
+
+  MCP files: Cursor reads .cursor/mcp.json (or ~/.cursor/mcp.json), not the
+  repo-root .mcp.json used by Claude Code — duplicate Figma + canicode entries
+  if you use both hosts (see docs/CUSTOMIZATION.md#cursor-mcp-canicode).
 
   See also: docs/CUSTOMIZATION.md#cursor-mcp-canicode (Figma MCP required for roundtrip
   writes; analyze-only works without it).
