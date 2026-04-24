@@ -10,11 +10,13 @@
  * This script emits two sibling artifacts so the SKILL can drop the per-batch
  * payload from ~31KB to a few hundred bytes after the first batch:
  *
- *   - `helpers-installer.js` — the helpers IIFE + an auto-install trailer that
- *     persists the source (JSON.stringify'd) onto `figma.root` via
- *     `setSharedPluginData` and writes the canicode version. The installer
- *     also evals its own source so the global `CanICodeRoundtrip` is defined
- *     for the install batch itself.
+ *   - `helpers-installer.js` — stores the helpers IIFE once as a JSON.stringify'd
+ *     string and then (a) evals that string via indirect eval so the global
+ *     `CanICodeRoundtrip` is defined for the install batch itself and
+ *     (b) persists the source + canicode version onto `figma.root` via
+ *     `setSharedPluginData`. Only one copy of the ~31KB source ships in the
+ *     installer artifact so the install batch stays well under the use_figma
+ *     ~50KB soft budget.
  *   - `helpers-bootstrap.js` — a small loader that reads the cached source +
  *     version, version-checks against the constant baked in at build time,
  *     and evals to re-register `globalThis.CanICodeRoundtrip`. On cache-miss
@@ -71,9 +73,14 @@ export function bundleRoundtripCache(
     `// helpers-bootstrap.js instead of re-pasting ~31KB every call (#424, ADR-020).`,
     `var __CANICODE_HELPERS_SRC__ = ${srcLiteral};`,
     `var __CANICODE_HELPERS_VERSION__ = ${versionLiteral};`,
-    helpersSource,
-    `figma.root.setSharedPluginData(${namespaceLiteral}, ${helpersSrcKeyLiteral}, __CANICODE_HELPERS_SRC__);`,
-    `figma.root.setSharedPluginData(${namespaceLiteral}, ${helpersVersionKeyLiteral}, __CANICODE_HELPERS_VERSION__);`,
+    `(0, eval)(__CANICODE_HELPERS_SRC__);`,
+    `try {`,
+    `  figma.root.setSharedPluginData(${namespaceLiteral}, ${helpersSrcKeyLiteral}, __CANICODE_HELPERS_SRC__);`,
+    `  figma.root.setSharedPluginData(${namespaceLiteral}, ${helpersVersionKeyLiteral}, __CANICODE_HELPERS_VERSION__);`,
+    `  globalThis.__canicodeInstallResult = { cachePersisted: true };`,
+    `} catch (err) {`,
+    `  globalThis.__canicodeInstallResult = { cachePersisted: false, reason: String((err && err.message) || err) };`,
+    `}`,
     "",
   ].join("\n");
 

@@ -16,9 +16,15 @@ describe("bundleRoundtripCache", () => {
     );
   });
 
-  it("installer inlines the helpers source so the global is defined for the install batch", () => {
+  it("installer evals the stringified helpers source so the global is defined without duplicating the IIFE verbatim (#424 budget)", () => {
     const { installer } = bundleRoundtripCache({ helpersSource, version });
-    expect(installer).toContain(helpersSource);
+    expect(installer).toContain("(0, eval)(__CANICODE_HELPERS_SRC__)");
+    // Only the JSON.stringify'd copy of the source should ship — the raw
+    // (unescaped) IIFE must not also be inlined, or the install batch doubles
+    // in size and blows the ~50KB use_figma soft budget the PR is defending.
+    const stringified = JSON.stringify(helpersSource);
+    const withoutStringifiedCopy = installer.replace(stringified, "");
+    expect(withoutStringifiedCopy).not.toContain(helpersSource);
   });
 
   it("installer writes both setSharedPluginData keys using the shared constants", () => {
@@ -76,6 +82,14 @@ describe("bundleRoundtripCache", () => {
     expect(bootstrap).toContain(
       'throw new ReferenceError("canicode-bootstrap:cache-missing',
     );
+  });
+
+  it("installer surfaces a structured __canicodeInstallResult marker on read-only files", () => {
+    const { installer } = bundleRoundtripCache({ helpersSource, version });
+    expect(installer).toContain("globalThis.__canicodeInstallResult");
+    expect(installer).toContain("cachePersisted: true");
+    expect(installer).toContain("cachePersisted: false");
+    expect(installer).toMatch(/try\s*\{[\s\S]*setSharedPluginData[\s\S]*\}\s*catch/);
   });
 
   it("bootstrap surfaces a structured version-mismatch marker", () => {
