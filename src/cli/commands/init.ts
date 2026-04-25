@@ -120,9 +120,9 @@ async function runInitSkillInstallSteps(
       force: options.force ?? false,
     });
     console.log(`\n  Skills installed to: ${summary.targetDir}/`);
-    console.log(`    installed:   ${summary.installed.length}`);
-    console.log(`    overwritten: ${summary.overwritten.length}`);
-    console.log(`    skipped:     ${summary.skipped.length}`);
+    console.log(`    files installed:   ${summary.installed.length}`);
+    console.log(`    files overwritten: ${summary.overwritten.length}`);
+    console.log(`    files skipped:     ${summary.skipped.length}`);
     if (summary.skipped.length > 0) {
       console.log(`  (Re-run with --force to overwrite skipped files.)`);
     }
@@ -145,9 +145,9 @@ async function runInitSkillInstallSteps(
         force: options.force ?? false,
       });
       console.log(`\n  Cursor skills installed to: ${cSummary.targetDir}/`);
-      console.log(`    installed:   ${cSummary.installed.length}`);
-      console.log(`    overwritten: ${cSummary.overwritten.length}`);
-      console.log(`    skipped:     ${cSummary.skipped.length}`);
+      console.log(`    files installed:   ${cSummary.installed.length}`);
+      console.log(`    files overwritten: ${cSummary.overwritten.length}`);
+      console.log(`    files skipped:     ${cSummary.skipped.length}`);
       if (cSummary.skipped.length > 0) {
         console.log(`  (Re-run with --force to overwrite skipped files.)`);
       }
