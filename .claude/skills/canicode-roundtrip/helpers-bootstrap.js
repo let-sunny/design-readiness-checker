@@ -6,7 +6,7 @@
 // globalThis.__canicodeBootstrapResult and throws ReferenceError so the agent re-prepends the
 // installer on the next batch.
 (function __canicodeBootstrap() {
-  var expected = "0.11.3";
+  var expected = "0.11.4";
   var src = figma.root.getSharedPluginData("canicode", "helpersSrc");
   var actual = figma.root.getSharedPluginData("canicode", "helpersVersion");
   if (!src) {
