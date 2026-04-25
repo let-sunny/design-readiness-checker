@@ -278,7 +278,7 @@ Work through these checks in order before concluding that an MCP server is broke
 
 ## Other agents (manual install)
 
-CanICode ships three [AgentSkills](https://agentskills.io)-compatible skills via the npm package. For Claude Code and Cursor, `npx canicode init` (or `--cursor-skills`) handles install automatically. For other AgentSkills-compatible hosts, copy the skill folders into a directory your host scans.
+CanICode ships three AgentSkills-compatible skills via the npm package. For Claude Code and Cursor, `npx canicode init` (or `--cursor-skills`) handles install automatically. For other AgentSkills-compatible hosts, copy the skill folders into a directory your host scans.
 
 This is best-effort documentation, not a support commitment — hosts named below are listed by their published scan paths, not because canicode is tested against them.
 
