@@ -95,10 +95,10 @@ Restart Claude Code or reload MCP (Cursor) so canicode tools (`analyze`, `gotcha
 ```bash
 git clone https://github.com/let-sunny/canicode.git
 cd canicode && pnpm install && pnpm build
-npx canicode analyze ./fixtures/done/desktop-home-page
+canicode analyze ./fixtures/done/desktop-home-page
 ```
 
-Loads a bundled fixture (no Figma API call, no token), opens the HTML report in a browser. Use any directory under `fixtures/done/` — `desktop-*` are screen-scale, `mobile-*` are mobile viewports.
+Loads a bundled fixture (no Figma API call, no token), opens the HTML report in a browser (pass `--no-open` to skip auto-launch). Use any directory under `fixtures/done/` — `desktop-*` are screen-scale, `mobile-*` are mobile viewports.
 
 <details>
 <summary><strong>All channels</strong></summary>
@@ -142,9 +142,9 @@ Each row below is a **complete** install. Don't run more than one — they cover
 | **Cursor / Claude Desktop / other MCP host** | Add canicode to the host’s MCP config — see [`docs/CUSTOMIZATION.md`](docs/CUSTOMIZATION.md#cursor-mcp-canicode). Example (Cursor project file): `npx` + `canicode-mcp` via `--package=canicode`. |
 | **Just the CLI** (CI, scripts) | Nothing. `npx canicode analyze "<figma-url>"` works directly. Run `canicode init --token …` once if you want the token persisted to `~/.canicode/config.json`. |
 
-> **Get your token:** Figma → Settings → Security → Personal access tokens → Generate new token. See [Figma's PAT docs](https://help.figma.com/hc/en-us/articles/8085703771159-Manage-personal-access-tokens) for screenshots and scope details.
-> - **Scope:** read-only is sufficient for analyze and gotcha-survey. The roundtrip apply step writes via the **Figma MCP plugin** (separate auth), not via this REST token, so no write scope is needed here.
-> - **Expiry:** Figma defaults personal access tokens to **90-day expiry**. Pick a longer window (or note the renewal date) to avoid surprise revocations breaking CI/CD.
+> **Get your token:** Figma → Settings → Security → Personal access tokens → Generate new token. [Figma's PAT docs](https://help.figma.com/hc/en-us/articles/8085703771159-Manage-personal-access-tokens)
+> **Scope:** Read-only is sufficient for canicode.
+> **Expiry:** Tokens default to 90 days; check the dropdown when generating.
 
 > **Roundtrip prerequisite:** the `/canicode-roundtrip` skill calls the Figma MCP server to read and write the design. Install it once with `claude mcp add -s project -t http figma https://mcp.figma.com/mcp` and restart Claude Code so the new MCP tools load.
 
