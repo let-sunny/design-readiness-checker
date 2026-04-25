@@ -1,0 +1,13 @@
+{
+  "name": "canicode",
+  "owner": {
+    "name": "let-sunny"
+  },
+  "plugins": [
+    {
+      "name": "canicode",
+      "source": ".",
+      "description": "Lint Figma designs for AI code-gen and roundtrip the answers back into the file. CLI + MCP server."
+    }
+  ]
+}
