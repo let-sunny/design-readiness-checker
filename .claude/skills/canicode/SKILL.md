@@ -1,6 +1,19 @@
 ---
 name: canicode
-description: Analyze Figma designs for development-friendliness and AI-friendliness scores
+description: |
+  Analyze a Figma design for development-friendliness and AI-friendliness — produces a
+  graded readiness report listing rule-based issues with severity, affected nodes, and fix
+  suggestions. Read-only: this skill never modifies the Figma file.
+
+  TRIGGER when: the user shares a figma.com/design/... URL and asks to analyze, score, lint,
+  audit, or check readiness of a Figma design; the user asks "how AI-friendly is this design"
+  or "is this Figma file ready for code generation"; the user wants a one-shot readiness
+  report without a survey or write-back.
+
+  SKIP when: the user wants to capture designer/developer answers about implementation
+  context (route to canicode-gotchas); the user wants to fix or annotate the Figma file
+  itself (route to canicode-roundtrip); the user wants to generate code directly from the
+  design with no readiness analysis (route to figma-implement-design).
 ---
 
 # CanICode -- Figma Design Analysis

@@ -150,6 +150,8 @@ Drops three skills into `./.claude/skills/`:
 - **canicode-gotchas** — standalone gotcha survey (use `/canicode-gotchas <figma-url>`)
 - **canicode-roundtrip** — full analyze → gotcha → apply roundtrip (use `/canicode-roundtrip <figma-url>`)
 
+> **Explicit invocation:** the SKILL.md `description` fields advertise TRIGGER conditions so the model auto-routes Figma-URL prompts to the right skill, but routing is non-deterministic. For deterministic invocation, type `/canicode <figma-url>`, `/canicode-gotchas <figma-url>`, or `/canicode-roundtrip <figma-url>` directly — the slash command bypasses model-based routing.
+
 The skills shell out to `npx canicode …` for analyze / gotcha-survey when the canicode MCP server is not installed — both paths produce the same JSON shape. The Figma MCP server is still required for the apply step (Step 4 in `/canicode-roundtrip`); see the prereq note above.
 
 Flags: `--global` installs into `~/.claude/skills/` instead. `--cursor-skills` also installs Cursor copies under `.cursor/skills/`. `--force` overwrites existing skill files without prompting. Run `canicode docs setup` for the full setup guide.

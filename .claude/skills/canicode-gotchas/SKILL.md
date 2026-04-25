@@ -1,6 +1,21 @@
 ---
 name: canicode-gotchas
-description: Gotcha survey (Claude Code or Cursor) — Q&A workflow; answers accumulate in .claude/skills/canicode-gotchas/SKILL.md for figma-implement-design
+description: |
+  Run a gotcha survey on a Figma design — Q&A workflow that captures
+  designer/developer answers locally in .claude/skills/canicode-gotchas/SKILL.md so
+  figma-implement-design can read them at code-gen time. Memo-only: this skill never writes
+  to the Figma canvas.
+
+  TRIGGER when: the user shares a figma.com/design/... URL and asks to capture
+  implementation context, run a gotcha survey, collect design Q&A, or prepare context for
+  figma-implement-design without mutating the Figma file; the user wants to answer
+  implementation questions for a design before code generation; the user mentions "gotcha
+  survey" or "design Q&A".
+
+  SKIP when: the user wants the answers written back into the Figma file as annotations or
+  property fixes (route to canicode-roundtrip); the user only wants a one-shot readiness
+  report with no Q&A loop (route to canicode); the user wants to generate code directly
+  with no survey step (route to figma-implement-design).
 ---
 
 # CanICode Gotchas — Design Gotcha Survey
