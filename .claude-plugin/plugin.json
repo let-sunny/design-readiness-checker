@@ -1,6 +1,6 @@
 {
   "name": "canicode",
-  "version": "0.11.5",
+  "version": "0.12.0",
   "description": "Lint Figma designs for AI code-gen and roundtrip the answers back into the file. CLI + MCP server.",
   "skills": [
     "./skills/canicode",
