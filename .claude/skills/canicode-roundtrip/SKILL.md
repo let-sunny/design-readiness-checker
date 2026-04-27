@@ -155,6 +155,10 @@ Iterate `groupedQuestions.groups[].batches[]` and branch on `batch.batchMode` (`
 
 ### Step 4: Apply gotcha answers to Figma design
 
+#### Inline vs file staging (#531)
+
+When the apply commands themselves are short (~≤ 200 lines / ~10 KB), assemble the `use_figma` `code` string inline in the same call — read the helper artifact, concatenate with the apply commands, and pass directly. Three tool calls (Write apply.js + Read combined → use_figma) for a 2–3 gotcha apply is overhead with no debug benefit beyond what `use_figma`'s own error message already provides. Only stage to `/tmp/canicode-apply.js` when the apply payload is large enough to bloat the model's reply (e.g. dozens of replicas, definition-write fan-out, or any single batch nearing the ~50KB `use_figma` ceiling). The helpers artifact may still be a separate Read; the staging tradeoff is about the **apply** payload, not the helpers.
+
 #### Mandatory preflight — prepend one of the bundled helpers before any `CanICodeRoundtrip.*` call
 
 `CanICodeRoundtrip` is **not** a Figma or MCP built-in. It is the global registered by a bundled IIFE shipped next to this skill — it only exists after you read the right artifact and prepend its contents verbatim at the top of every `use_figma` script string. Skipping this step throws `ReferenceError: 'CanICodeRoundtrip' is not defined` on the first `use_figma` batch.
@@ -539,12 +543,19 @@ Call `get_code_connect_map` for the Figma component's node-id (from the original
 
 #### Step 7d: Register the mapping
 
-Call `add_code_connect_map` with the Figma node-id + generated code path, then `send_code_connect_mappings` to publish.
+Call `add_code_connect_map` with the Figma node-id + generated code path. In single-mapping roundtrips this publishes the mapping synchronously — the server-side persistence happens at this call.
 
-On success, print:
+`send_code_connect_mappings` is a batch flush primitive intended for sessions that build up multiple mappings before publishing them as a transaction. In the single-mapping flow this skill drives, calling it after `add_code_connect_map` returns a duplicate / "no pending mappings" error because the mapping is already live. Treat that follow-up call as **optional**:
+
+- **Recommended (single-mapping path):** skip `send_code_connect_mappings` entirely. `add_code_connect_map` is the publish point.
+- **If you call it anyway** (e.g. defensive habit, or a future multi-mapping flow batches multiple `add_*` first): tolerate the duplicate / already-registered error explicitly. Do **not** narrate it as a failure to the user — the mapping is live. Verify with `get_code_connect_map` if confirmation is needed before the wrap-up line.
+
+On success (i.e. `add_code_connect_map` returned without error), print:
 > "Code Connect mapping registered: `<figma-component>` → `<code-path>`. Future roundtrips on screens containing this component will reuse the code."
 
-On failure (Figma MCP returns an error), print the error verbatim and tell the user the rest of the roundtrip succeeded — the mapping can be added later via Figma CLI (`figma connect publish`) or by re-invoking the roundtrip.
+The success line is **unconditional** once `add_code_connect_map` succeeds. Do not gate it on `send_code_connect_mappings` returning OK.
+
+On failure of `add_code_connect_map` itself (Figma MCP returns an error), print the error verbatim and tell the user the rest of the roundtrip succeeded — the mapping can be added later via Figma CLI (`figma connect publish`) or by re-invoking the roundtrip. The most common cause is the Figma component not being in a published library; #532 tracks shifting that check earlier into Step 1.5.
 
 #### Wrap-up message rubric (with mapping outcome)
 
