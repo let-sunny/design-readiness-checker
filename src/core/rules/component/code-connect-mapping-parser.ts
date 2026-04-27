@@ -20,12 +20,30 @@ import { join, resolve, isAbsolute, sep } from "node:path";
  * non-fatal: the parser returns an empty set so the rule degrades to v1
  * behaviour (fire on every component) rather than blocking analysis.
  */
+/**
+ * Structured skip reasons. Consumers (e.g. coverage metric) branch on these
+ * rather than substring-matching the human message in `skippedReason`.
+ *
+ *   - `no-config`        — `figma.config.json` is absent in cwd. Signals "Code
+ *                          Connect not adopted" → coverage metric is suppressed.
+ *   - `malformed-config` — file exists but JSON.parse failed. Treated as
+ *                          adoption-with-misconfiguration: emit coverage as 0/N.
+ *   - `no-includes`      — config has no `codeConnect.include` paths. Same
+ *                          treatment as `malformed-config` (adopted but empty).
+ */
+export type CodeConnectSkipReason =
+  | "no-config"
+  | "malformed-config"
+  | "no-includes";
+
 export interface CodeConnectMappingResult {
   /** Set of Figma node IDs (canonical `:` form, e.g. `3384:3`) with a mapping declaration found. */
   mappedNodeIds: Set<string>;
   /** Files that were scanned. Useful for debugging "nothing matched" cases. */
   scannedFiles: string[];
-  /** Reason mapping discovery was skipped, if it was. */
+  /** Structured skip reason for branching logic. */
+  skipReason?: CodeConnectSkipReason;
+  /** Human-readable skip reason, mirrors `skipReason` but with file paths/details. */
   skippedReason?: string;
 }
 
@@ -47,6 +65,7 @@ export function parseCodeConnectMappings(cwd: string): CodeConnectMappingResult 
     return {
       mappedNodeIds: new Set(),
       scannedFiles: [],
+      skipReason: "no-config",
       skippedReason: `${FIGMA_CONFIG_FILENAME} not found at ${cwd}`,
     };
   }
@@ -58,6 +77,7 @@ export function parseCodeConnectMappings(cwd: string): CodeConnectMappingResult 
     return {
       mappedNodeIds: new Set(),
       scannedFiles: [],
+      skipReason: "malformed-config",
       skippedReason: `malformed ${FIGMA_CONFIG_FILENAME}: ${(err as Error).message}`,
     };
   }
@@ -67,6 +87,7 @@ export function parseCodeConnectMappings(cwd: string): CodeConnectMappingResult 
     return {
       mappedNodeIds: new Set(),
       scannedFiles: [],
+      skipReason: "no-includes",
       skippedReason: `${FIGMA_CONFIG_FILENAME} has no codeConnect.include paths`,
     };
   }

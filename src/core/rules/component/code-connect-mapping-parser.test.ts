@@ -56,23 +56,26 @@ describe("extractNodeIdsFromSource", () => {
 });
 
 describe("parseCodeConnectMappings", () => {
-  it("returns an empty set with a skippedReason when figma.config.json is absent", () => {
+  it("flags skipReason='no-config' when figma.config.json is absent", () => {
     const result = parseCodeConnectMappings(tmp);
     expect(result.mappedNodeIds.size).toBe(0);
+    expect(result.skipReason).toBe("no-config");
     expect(result.skippedReason).toMatch(/figma\.config\.json not found/);
   });
 
-  it("returns an empty set with a skippedReason when the config has no include paths", () => {
+  it("flags skipReason='no-includes' when the config has no include paths", () => {
     writeFileSync(join(tmp, "figma.config.json"), JSON.stringify({}));
     const result = parseCodeConnectMappings(tmp);
     expect(result.mappedNodeIds.size).toBe(0);
+    expect(result.skipReason).toBe("no-includes");
     expect(result.skippedReason).toMatch(/no codeConnect\.include/);
   });
 
-  it("returns an empty set with a skippedReason when the config is malformed JSON", () => {
+  it("flags skipReason='malformed-config' when the config is malformed JSON", () => {
     writeFileSync(join(tmp, "figma.config.json"), "{ broken");
     const result = parseCodeConnectMappings(tmp);
     expect(result.mappedNodeIds.size).toBe(0);
+    expect(result.skipReason).toBe("malformed-config");
     expect(result.skippedReason).toMatch(/malformed/);
   });
 
