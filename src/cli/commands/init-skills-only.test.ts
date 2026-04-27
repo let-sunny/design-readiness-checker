@@ -9,6 +9,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const installSkills = vi.hoisted(() => vi.fn());
 const installCursorBundledSkills = vi.hoisted(() => vi.fn());
 const trackEvent = vi.hoisted(() => vi.fn());
+const promptForFigmaToken = vi.hoisted(() => vi.fn());
+const initAiready = vi.hoisted(() => vi.fn());
+const getConfigPath = vi.hoisted(() => vi.fn(() => "/tmp/canicode-test/config.json"));
+const getReportsDir = vi.hoisted(() => vi.fn(() => "/tmp/canicode-test/reports"));
 
 vi.mock("../skill-installer.js", () => ({
   installSkills,
@@ -19,6 +23,24 @@ vi.mock("../../core/monitoring/index.js", () => ({
   trackEvent,
   trackError: vi.fn(),
   EVENTS: { CLI_INIT: "cic_cli_init" },
+}));
+
+vi.mock("../prompts.js", async () => {
+  // Keep NonInteractiveError as a real class so `instanceof` checks in init.ts
+  // continue to work against thrown errors from the mocked prompt.
+  class NonInteractiveError extends Error {
+    constructor(message = "Interactive prompt requires a TTY") {
+      super(message);
+      this.name = "NonInteractiveError";
+    }
+  }
+  return { promptForFigmaToken, NonInteractiveError };
+});
+
+vi.mock("../../core/engine/config-store.js", () => ({
+  initAiready,
+  getConfigPath,
+  getReportsDir,
 }));
 
 import { registerInit } from "./init.js";
@@ -42,6 +64,12 @@ beforeEach(() => {
     overwritten: [],
     skipped: [],
     targetDir: join(tempCwd, ".cursor", "skills"),
+  });
+  // Default: prompt rejects as non-interactive (matches vitest's stdin which
+  // is not a TTY). Individual tests can override with mockResolvedValueOnce.
+  promptForFigmaToken.mockImplementation(async () => {
+    const { NonInteractiveError } = await import("../prompts.js");
+    throw new NonInteractiveError();
   });
 });
 
@@ -70,7 +98,7 @@ describe("registerInit skills without token (#461)", () => {
     );
   });
 
-  it("prints setup guide when no token and no skill flags", async () => {
+  it("prints setup guide when no token, no skill flags, and stdin is not a TTY", async () => {
     const logs: string[] = [];
     const origLog = console.log;
     console.log = (...args: unknown[]) => {
@@ -91,5 +119,50 @@ describe("registerInit skills without token (#461)", () => {
     expect(installSkills).not.toHaveBeenCalled();
     expect(installCursorBundledSkills).not.toHaveBeenCalled();
     expect(logs.join("\n")).toContain("CANICODE SETUP");
+  });
+});
+
+describe("registerInit interactive (#505)", () => {
+  it("TTY + no flags: prompts for token, runs initAiready, installs skills", async () => {
+    promptForFigmaToken.mockResolvedValueOnce("figd_interactive_test");
+    const prev = process.cwd();
+    process.chdir(tempCwd);
+    try {
+      const cli = cac("canicode");
+      registerInit(cli);
+      cli.parse(["node", "canicode", "init"], { run: false });
+      await cli.runMatchedCommand();
+    } finally {
+      process.chdir(prev);
+    }
+
+    expect(promptForFigmaToken).toHaveBeenCalledTimes(1);
+    expect(initAiready).toHaveBeenCalledWith("figd_interactive_test");
+    expect(installSkills).toHaveBeenCalledTimes(1);
+    expect(trackEvent).toHaveBeenCalledWith(
+      "cic_cli_init",
+      expect.objectContaining({ interactive: true, skillStepOk: true }),
+    );
+  });
+
+  it("--token branch: emits telemetry with interactive: false", async () => {
+    const prev = process.cwd();
+    process.chdir(tempCwd);
+    try {
+      const cli = cac("canicode");
+      registerInit(cli);
+      cli.parse(["node", "canicode", "init", "--token", "figd_flag_test"], { run: false });
+      await cli.runMatchedCommand();
+    } finally {
+      process.chdir(prev);
+    }
+
+    expect(promptForFigmaToken).not.toHaveBeenCalled();
+    expect(initAiready).toHaveBeenCalledWith("figd_flag_test");
+    expect(installSkills).toHaveBeenCalledTimes(1);
+    expect(trackEvent).toHaveBeenCalledWith(
+      "cic_cli_init",
+      expect.objectContaining({ interactive: false, skillStepOk: true }),
+    );
   });
 });

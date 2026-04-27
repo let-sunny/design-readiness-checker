@@ -125,7 +125,11 @@ cli.help((sections) => {
   sections.push(
     {
       title: "\nSetup",
-      body: `  canicode init --token <token>   Save Figma token to ~/.canicode/`,
+      body: [
+        `  canicode init                   Interactive setup (prompts for token)`,
+        `  canicode init --token <token>   Non-interactive setup (CI / non-TTY)`,
+        `  canicode config set-token       Rotate token without reinstalling skills`,
+      ].join("\n"),
     },
     {
       title: "\nData source",
