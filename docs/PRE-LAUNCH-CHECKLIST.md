@@ -54,6 +54,11 @@ A green smoke pass does **not** imply a green onboarding E2E, and vice versa. Ke
 - [ ] `canicode --version` matches `package.json`
 - [ ] `canicode --help` lists all commands
 - [ ] `canicode init --token figd_xxx` prints expected counter lines (4 installed on fresh) — see #332 row 3
+- [ ] `canicode init` (no flags, in a TTY) prompts for the token and proceeds (#505)
+- [ ] `canicode init` (no flags, non-TTY) prints the setup guide and does **not** hang (#505)
+- [ ] `canicode config show` prints masked token + paths (#505)
+- [ ] `canicode config path` prints absolute config path on a single line (#505)
+- [ ] `canicode config set-token --token figd_xxx` rotates the token without re-copying skills (#505)
 - [ ] `canicode docs setup` topic renders
 - [ ] `canicode docs <other-topics>` no broken topics
 - [ ] `canicode analyze <figma-url>` against real token completes without crash, writes report
@@ -108,6 +113,7 @@ A green smoke pass does **not** imply a green onboarding E2E, and vice versa. Ke
 ## J. Telemetry / observability
 
 - [ ] `canicode init` telemetry events fire (per ADR-012)
+- [ ] `canicode config set-token` emits the `cli_config_set_token` event (#505)
 - [ ] No PII (tokens, file content) in logged events
 
 ## After the run

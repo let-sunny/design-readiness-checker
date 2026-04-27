@@ -63,8 +63,10 @@ Rule scores aren't guesswork. The calibration pipeline converts real Figma desig
 
 ```bash
 # 1. Save your Figma token AND install the /canicode-roundtrip skill
-#    (never paste the token into chat — env var or CLI prompt only)
-npx canicode init --token figd_xxxxxxxxxxxxx
+#    Interactive (TTY): npx canicode init        — prompts for the token
+#    Non-interactive:   npx canicode init --token figd_xxxxxxxxxxxxx
+#    (never paste the token into chat — use env var, the prompt, or --token only)
+npx canicode init
 
 # 2. Run the roundtrip on a Figma URL
 /canicode-roundtrip https://www.figma.com/design/ABC123/MyDesign?node-id=1-234
@@ -138,10 +140,10 @@ Each row below is a **complete** install. Don't run more than one — they cover
 
 | If you use… | Install |
 |-------------|---------|
-| **Claude Code** (recommended for the roundtrip workflow) | `npx canicode init --token figd_xxxxxxxxxxxxx` — saves the token AND drops `/canicode`, `/canicode-gotchas`, `/canicode-roundtrip` skills into `./.claude/skills/`. The skills already know how to call canicode via `npx canicode …`, so no **canicode** MCP install is needed; the **Figma** MCP is still required for the `/canicode-roundtrip` apply step — see the prereq below. |
+| **Claude Code** (recommended for the roundtrip workflow) | `npx canicode init` (interactive prompt for the token in a TTY) or `npx canicode init --token figd_xxxxxxxxxxxxx` (CI / non-TTY) — saves the token AND drops `/canicode`, `/canicode-gotchas`, `/canicode-roundtrip` skills into `./.claude/skills/`. The skills already know how to call canicode via `npx canicode …`, so no **canicode** MCP install is needed; the **Figma** MCP is still required for the `/canicode-roundtrip` apply step — see the prereq below. To rotate the token later without reinstalling skills: `npx canicode config set-token`. |
 | **Cursor / Claude Desktop / other MCP host** | Add canicode to the host’s MCP config — see [`docs/CUSTOMIZATION.md`](docs/CUSTOMIZATION.md#cursor-mcp-canicode). Example (Cursor project file): `npx` + `canicode-mcp` via `--package=canicode`. |
 | **OpenClaw / other AgentSkills-compatible host** | Manual skill copy — see [Other agents (manual install)](docs/CUSTOMIZATION.md#other-agents-manual-install). Best-effort docs, not a support commitment. |
-| **Just the CLI** (CI, scripts) | Nothing. `npx canicode analyze "<figma-url>"` works directly. Run `canicode init --token …` once if you want the token persisted to `~/.canicode/config.json`. |
+| **Just the CLI** (CI, scripts) | Nothing. `npx canicode analyze "<figma-url>"` works directly. Run `canicode init --token …` once if you want the token persisted to `~/.canicode/config.json`. To rotate the token later, use `canicode config set-token` (no skill reinstall). |
 
 > **Get your token:** Figma → Settings → Security → Personal access tokens → Generate new token. [Figma's PAT docs](https://help.figma.com/hc/en-us/articles/8085703771159-Manage-personal-access-tokens)
 > **Scope:** Read-only is sufficient for canicode.
@@ -153,7 +155,11 @@ Each row below is a **complete** install. Don't run more than one — they cover
 <summary><strong>Claude Code Skills</strong> — install details</summary>
 
 ```bash
-# Token: env or CLI prompt only — do not paste into agent chat
+# Interactive (TTY) — prompts for the token, never paste it into agent chat
+npx canicode init
+
+# Non-interactive (CI / non-TTY) — token via env or --token only
+FIGMA_TOKEN=figd_xxxxxxxxxxxxx npx canicode init
 npx canicode init --token figd_xxxxxxxxxxxxx
 ```
 
@@ -170,6 +176,14 @@ Drops three skills into `./.claude/skills/`:
 The skills shell out to `npx canicode …` for analyze / gotcha-survey, so installing the **canicode** MCP server is optional (both paths produce the same JSON shape). The **Figma** MCP server, however, is required for the apply step (Step 4 in `/canicode-roundtrip`); see the prereq note above.
 
 Flags: `--global` installs into `~/.claude/skills/` instead. `--cursor-skills` also installs Cursor copies under `.cursor/skills/`. `--force` overwrites existing skill files without prompting. Run `canicode docs setup` for the full setup guide.
+
+To manage saved configuration without reinstalling skills:
+
+```bash
+canicode config set-token   # rotate Figma token (interactive on TTY; --token for CI)
+canicode config show        # masked token + config + reports paths
+canicode config path        # absolute path to ~/.canicode/config.json
+```
 
 </details>
 
@@ -201,7 +215,7 @@ npx canicode analyze "https://www.figma.com/design/ABC123/MyDesign?node-id=1-234
 
 > Pass `--ready-min-grade <S|A+|A|B+|B|C+|C|D|F>` to override the codegen-readiness threshold (default: A).
 
-Setup: `npx canicode init --token figd_xxxxxxxxxxxxx` saves the token and installs the Claude Code skills into `./.claude/skills/`.
+Setup: `npx canicode init` (interactive prompt; TTY) or `npx canicode init --token figd_xxxxxxxxxxxxx` (CI / non-TTY) saves the token and installs the Claude Code skills into `./.claude/skills/`. Rotate later with `npx canicode config set-token`.
 
 **Figma API Rate Limits** — Rate limits depend on **where the file lives**, not just your plan.
 

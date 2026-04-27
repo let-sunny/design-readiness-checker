@@ -147,14 +147,19 @@ function printSetupGuide(): void {
   console.log(
     `  Never paste your token into Claude/Cursor chat — use FIGMA_TOKEN=… npx canicode init or this prompt only.\n`,
   );
-  console.log(`  canicode init --token YOUR_FIGMA_TOKEN`);
+  console.log(`  canicode init                    (interactive prompt; TTY only)`);
+  console.log(`  canicode init --token YOUR_FIGMA_TOKEN   (CI / non-TTY)`);
   console.log(`  Get token: figma.com > Settings > Personal access tokens\n`);
   console.log(`Skills:`);
-  console.log(`  --token also installs three Claude Code skills into ./.claude/skills/`);
-  console.log(`  (canicode, canicode-gotchas, canicode-roundtrip).`);
+  console.log(`  --token (or the interactive prompt) also installs three Claude Code skills`);
+  console.log(`  into ./.claude/skills/ (canicode, canicode-gotchas, canicode-roundtrip).`);
   console.log(`  --global       Install to ~/.claude/skills/ instead`);
   console.log(`  --cursor-skills Install Claude skills under .claude/skills/ plus Cursor copies under .cursor/skills/ (no --token yet — add --token when ready for REST analyze)`);
   console.log(`  --force        Overwrite existing skill files without prompting\n`);
+  console.log(`Manage saved config (no skill reinstall):`);
+  console.log(`  canicode config set-token   Rotate saved Figma token`);
+  console.log(`  canicode config show        Print masked token + paths`);
+  console.log(`  canicode config path        Print absolute config path\n`);
   console.log(`After setup:`);
   console.log(`  canicode analyze "https://www.figma.com/design/..."`);
 }
