@@ -466,9 +466,13 @@ Follow the **figma-implement-design** skill workflow to generate code from the F
 
 **If all issues were resolved in Steps 4-5**, no additional gotcha context is needed — the design speaks for itself.
 
-#### Wrap-up message rubric (post-handoff)
+After `figma-implement-design` returns, **proceed to Step 7** (Code Connect close-out). Step 7 also owns the final wrap-up message — do not print the post-handoff wrap-up here. The post-handoff wrap-up rubric below is only used when Step 7 is skipped at its entry condition (see Step 7 — Entry condition).
 
-After `figma-implement-design` returns, summarise the roundtrip in the same shape as the Step 5 / Stop wrap-up — issues-delta first, then code-gen outcome; grade at most one optional footline (#423).
+#### Wrap-up message rubric (post-handoff, fallback only)
+
+Used **only when Step 7 is skipped at its entry condition** (e.g., the user invoked the roundtrip on a screen-level node, not a single component). Otherwise the Step 7 wrap-up below replaces this one.
+
+Summarise the roundtrip in the same shape as the Step 5 / Stop wrap-up — issues-delta first, then code-gen outcome; grade at most one optional footline (#423).
 
 ```
 Roundtrip complete — N issues addressed, code generated:
@@ -489,7 +493,16 @@ Code: <files generated / next-step pointer from figma-implement-design>
 
 ### Step 7: Close out with a Code Connect mapping
 
-After `figma-implement-design` returns, register a Code Connect mapping pointing the roundtrip's Figma component at the just-generated code so future roundtrips on screens containing this component reuse the implementation instead of regenerating markup. **Only run this step when the user invoked the roundtrip on a single Figma component / main component**, not on a screen-level node — multi-component mapping is out of scope for v1 (#515).
+Final step of the roundtrip. Registers a Code Connect mapping pointing the Figma component at the just-generated code so future roundtrips on screens containing this component reuse the implementation instead of regenerating markup. Step 7 owns the final wrap-up — when this step runs (whether it ends in mapped, skipped, or failed), use the wrap-up rubric at the end of this section instead of the Step 6 fallback.
+
+#### Step 7 — Entry condition (single-component scope)
+
+v1 only fires Step 7 when the roundtrip was invoked against a **single Figma main component**. Multi-component mapping for screen-level roundtrips is out of scope (#515 calls this out as v1.5).
+
+To decide: read the analyze response from Step 1 — the top-level node's `type` (or equivalent in `get_design_context`) tells you whether it is `COMPONENT` / `COMPONENT_SET` (single-component scope, run Step 7) versus `FRAME` / `SECTION` / `INSTANCE` containing many descendants (screen-level, skip Step 7).
+
+- **Single-component (COMPONENT / COMPONENT_SET)** — proceed to Step 7a.
+- **Screen-level (anything else)** — print one line: "Roundtrip invoked on a screen-level node — Code Connect mapping is per-component. Re-invoke `/canicode-roundtrip` against an individual main component to register a mapping." Then fall back to the Step 6 post-handoff wrap-up rubric (the fallback rubric immediately above this section). Do not print the Step 7 wrap-up.
 
 #### Step 7a: Re-check prerequisites
 

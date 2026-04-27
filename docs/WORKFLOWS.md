@@ -38,7 +38,7 @@ These workflows compose. A new project typically starts at Workflow 3 (find the 
 **Prerequisites in your code repo**
 - `@figma/code-connect` installed (`pnpm add -D @figma/code-connect`)
 - `figma.config.json` configured at the repo root
-- A code component (or a planned slot) corresponding to the Figma component
+- A code component corresponding to the Figma component (existing — or one that `figma-implement-design` will generate during the roundtrip)
 
 > Run `canicode doctor` to verify the prerequisites in your repo (`@figma/code-connect` install + `figma.config.json` presence). It exits 0 when everything is in place, 1 with a remediation hint otherwise.
 
