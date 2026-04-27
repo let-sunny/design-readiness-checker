@@ -65,6 +65,15 @@ describe.skipIf(!existsSync(CLI_PATH))("CLI --help", () => {
     expect(taglineIndex).toBeLessThan(usageIndex);
   });
 
+  it("should advertise the interactive `canicode init` and `config set-token` lines in --help", () => {
+    const output = execFileSync("node", [CLI_PATH, "--help"], {
+      encoding: "utf-8",
+    });
+    expect(output).toContain("Interactive setup");
+    expect(output).toContain("canicode init --token <token>");
+    expect(output).toContain("canicode config set-token");
+  });
+
   it("should allow direct invocation of internal commands", () => {
     const output = execFileSync(
       "node",

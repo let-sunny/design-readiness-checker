@@ -42,12 +42,14 @@ CANICODE SETUP GUIDE
     npm install -g canicode
 
   Setup:
-    canicode init --token figd_xxxxxxxxxxxxx
+    canicode init                              (interactive prompt; TTY)
+    canicode init --token figd_xxxxxxxxxxxxx   (non-TTY / CI)
+    FIGMA_TOKEN=figd_xxx canicode init         (env-driven)
     (saves token + installs Claude Code skills into ./.claude/skills/)
 
   Skills only (no token yet):
     canicode init --cursor-skills
-    (installs Claude skills + Cursor copies; run init --token … before live Figma REST URLs)
+    (installs Claude skills + Cursor copies; run init or init --token … before live Figma REST URLs)
 
   Use:
     canicode analyze "https://www.figma.com/design/ABC123/MyDesign?node-id=1-234"
@@ -69,7 +71,8 @@ CANICODE SETUP GUIDE
   (Same token safety as above — env var or interactive prompt, not chat.)
 
   Setup:
-    canicode init --token figd_xxxxxxxxxxxxx
+    canicode init                              (interactive prompt; TTY)
+    canicode init --token figd_xxxxxxxxxxxxx   (non-TTY / CI)
     (installs three skills into ./.claude/skills/ alongside the token)
 
   Installed skills:
@@ -94,7 +97,8 @@ CANICODE SETUP GUIDE
   (Same token safety as above — env var or interactive prompt, not chat.)
 
   Setup:
-    canicode init --token figd_xxxxxxxxxxxxx --cursor-skills
+    canicode init --cursor-skills                              (interactive prompt; TTY)
+    canicode init --token figd_xxxxxxxxxxxxx --cursor-skills   (non-TTY / CI)
     (installs Cursor copies of the three skills into ./.cursor/skills/)
 
   Installed skills:
@@ -123,6 +127,14 @@ CANICODE SETUP GUIDE
 
   See also: docs/CUSTOMIZATION.md#cursor-mcp-canicode (Figma MCP required for roundtrip
   writes; analyze-only works without it).
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ MANAGE CONFIG
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  canicode config set-token   Rotate Figma token (no skill reinstall)
+  canicode config show        Print masked token + config + reports paths
+  canicode config path        Print absolute config path (script-friendly)
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  TOKEN PRIORITY

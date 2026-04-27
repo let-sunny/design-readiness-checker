@@ -12,6 +12,7 @@ import {
   installCursorBundledSkills,
 } from "../skill-installer.js";
 import { trackEvent, EVENTS } from "../../core/monitoring/index.js";
+import { promptForFigmaToken, NonInteractiveError } from "../prompts.js";
 
 function figmaEntryInMcpFile(filePath: string): boolean {
   try {
@@ -105,6 +106,60 @@ function wantsSkillInstallWithoutToken(options: InitOptions): boolean {
 }
 
 /**
+ * Save token, install skills, print next steps, emit telemetry. Shared between
+ * the `--token` and interactive (no-flag TTY) branches so they cannot drift.
+ */
+async function runFullInit(
+  token: string,
+  options: InitOptions,
+  interactive: boolean,
+): Promise<void> {
+  initAiready(token);
+
+  console.log(`  Config saved: ${getConfigPath()}`);
+  console.log(`  Reports will be saved to: ${getReportsDir()}/`);
+
+  const { skillStepOk, skillSummary } = await runInitSkillInstallSteps(options);
+
+  trackEvent(EVENTS.CLI_INIT, {
+    skillsRequested: true,
+    cursorSkillsRequested: options.cursorSkills === true,
+    skillStepOk,
+    target: options.global ? "global" : "project",
+    force: options.force ?? false,
+    interactive,
+    ...(skillSummary ?? {}),
+  });
+
+  if (skillStepOk) {
+    console.log(
+      formatNextSteps({
+        figmaMcpPresent: figmaMcpRegistered(),
+        skillsInstalled: true,
+        cursorSkillsInstalled: options.cursorSkills === true,
+      }),
+    );
+  }
+}
+
+function printSetupGuide(): void {
+  console.log(`CANICODE SETUP\n`);
+  console.log(
+    `  Never paste your token into Claude/Cursor chat — use FIGMA_TOKEN=… npx canicode init or this prompt only.\n`,
+  );
+  console.log(`  canicode init --token YOUR_FIGMA_TOKEN`);
+  console.log(`  Get token: figma.com > Settings > Personal access tokens\n`);
+  console.log(`Skills:`);
+  console.log(`  --token also installs three Claude Code skills into ./.claude/skills/`);
+  console.log(`  (canicode, canicode-gotchas, canicode-roundtrip).`);
+  console.log(`  --global       Install to ~/.claude/skills/ instead`);
+  console.log(`  --cursor-skills Install Claude skills under .claude/skills/ plus Cursor copies under .cursor/skills/ (no --token yet — add --token when ready for REST analyze)`);
+  console.log(`  --force        Overwrite existing skill files without prompting\n`);
+  console.log(`After setup:`);
+  console.log(`  canicode analyze "https://www.figma.com/design/..."`);
+}
+
+/**
  * Install Claude skills, optional gotchas-only path, then optional Cursor bundle.
  * Mirrors the `--token` branch so behavior stays aligned (#461).
  */
@@ -190,31 +245,7 @@ export function registerInit(cli: CAC): void {
         const options = parseResult.data;
 
         if (options.token) {
-          initAiready(options.token);
-
-          console.log(`  Config saved: ${getConfigPath()}`);
-          console.log(`  Reports will be saved to: ${getReportsDir()}/`);
-
-          const { skillStepOk, skillSummary } = await runInitSkillInstallSteps(options);
-
-          trackEvent(EVENTS.CLI_INIT, {
-            skillsRequested: true,
-            cursorSkillsRequested: options.cursorSkills === true,
-            skillStepOk,
-            target: options.global ? "global" : "project",
-            force: options.force ?? false,
-            ...(skillSummary ?? {}),
-          });
-
-          if (skillStepOk) {
-            console.log(
-              formatNextSteps({
-                figmaMcpPresent: figmaMcpRegistered(),
-                skillsInstalled: true,
-                cursorSkillsInstalled: options.cursorSkills === true,
-              }),
-            );
-          }
+          await runFullInit(options.token, options, false);
           return;
         }
 
@@ -246,21 +277,20 @@ export function registerInit(cli: CAC): void {
           return;
         }
 
-        // No flags: show setup guide
-        console.log(`CANICODE SETUP\n`);
-        console.log(
-          `  Never paste your token into Claude/Cursor chat — use FIGMA_TOKEN=… npx canicode init or this prompt only.\n`,
-        );
-        console.log(`  canicode init --token YOUR_FIGMA_TOKEN`);
-        console.log(`  Get token: figma.com > Settings > Personal access tokens\n`);
-        console.log(`Skills:`);
-        console.log(`  --token also installs three Claude Code skills into ./.claude/skills/`);
-        console.log(`  (canicode, canicode-gotchas, canicode-roundtrip).`);
-        console.log(`  --global       Install to ~/.claude/skills/ instead`);
-        console.log(`  --cursor-skills Install Claude skills under .claude/skills/ plus Cursor copies under .cursor/skills/ (no --token yet — add --token when ready for REST analyze)`);
-        console.log(`  --force        Overwrite existing skill files without prompting\n`);
-        console.log(`After setup:`);
-        console.log(`  canicode analyze "https://www.figma.com/design/..."`);
+        // No flags + TTY: prompt for token interactively. Non-TTY (CI without
+        // --token) falls through to the existing setup guide so we never hang.
+        try {
+          const token = await promptForFigmaToken();
+          await runFullInit(token, options, true);
+          return;
+        } catch (promptError) {
+          if (!(promptError instanceof NonInteractiveError)) {
+            throw promptError;
+          }
+          // fall through to setup guide
+        }
+
+        printSetupGuide();
       } catch (error) {
         console.error(
           "\nError:",

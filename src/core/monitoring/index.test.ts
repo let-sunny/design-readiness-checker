@@ -73,6 +73,7 @@ describe("monitoring module", () => {
       expect(EVENTS.MCP_TOOL_CALLED).toBe("cic_mcp_tool_called");
       expect(EVENTS.CLI_COMMAND).toBe("cic_cli_command");
       expect(EVENTS.CLI_INIT).toBe("cic_cli_init");
+      expect(EVENTS.CLI_CONFIG_SET_TOKEN).toBe("cic_cli_config_set_token");
       expect(EVENTS.ROUNDTRIP_DEFINITION_WRITE_SKIPPED).toBe(
         "cic_roundtrip_definition_write_skipped",
       );

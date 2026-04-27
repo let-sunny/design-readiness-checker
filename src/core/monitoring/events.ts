@@ -26,6 +26,7 @@ export const EVENTS = {
   // CLI
   CLI_COMMAND: `${EVENT_PREFIX}cli_command`,
   CLI_INIT: `${EVENT_PREFIX}cli_init`,
+  CLI_CONFIG_SET_TOKEN: `${EVENT_PREFIX}cli_config_set_token`,
 
   // Roundtrip (ADR-012)
   // Wiring point for the roundtrip helper's `telemetry` callback. No Node-side
