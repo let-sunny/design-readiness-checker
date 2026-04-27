@@ -4,7 +4,11 @@ import { join } from "node:path";
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { formatDoctorReport, runCodeConnectChecks } from "./doctor.js";
+import {
+  formatDoctorReport,
+  runCodeConnectChecks,
+  runFigmaPublishCheck,
+} from "./doctor.js";
 
 let tmp: string;
 
@@ -83,6 +87,25 @@ describe("formatDoctorReport", () => {
     expect(out).toContain("Some checks failed");
   });
 
+  it("renders ⚠️ for inconclusive checks and uses a softer summary line (#532)", () => {
+    const out = formatDoctorReport([
+      { name: "@figma/code-connect installed", pass: true, detail: "1.0.0" },
+      { name: "figma.config.json found at repo root", pass: true },
+      {
+        name: "Figma component published in a library",
+        pass: false,
+        inconclusive: true,
+        detail: "FIGMA_TOKEN not configured — skipping publish-status check",
+        remediation: "Set FIGMA_TOKEN.",
+      },
+    ]);
+    expect(out).toContain("⚠️ Figma component published in a library");
+    expect(out).toContain("Set FIGMA_TOKEN");
+    expect(out).toContain("Blocking checks passed; some checks were skipped");
+    expect(out).not.toContain("Some checks failed");
+    expect(out).not.toContain("All checks passed.");
+  });
+
   it("ends with all-pass summary when every check passes", () => {
     const out = formatDoctorReport([
       { name: "a", pass: true },
@@ -90,6 +113,83 @@ describe("formatDoctorReport", () => {
     ]);
     expect(out).toContain("All checks passed.");
     expect(out).not.toContain("Some checks failed");
+  });
+});
+
+describe("runFigmaPublishCheck (#532)", () => {
+  const validUrl =
+    "https://www.figma.com/design/PUNBNLflVnbxKwCSSb6BvK/test?node-id=3384-3";
+
+  it("returns ✅ when the parsed nodeId matches a component in the published-components list", async () => {
+    const result = await runFigmaPublishCheck({
+      figmaUrl: validUrl,
+      token: "tok",
+      fetchPublishedComponents: async () => [
+        { node_id: "3384:3", name: "Button" },
+      ],
+    });
+    expect(result.pass).toBe(true);
+    expect(result.inconclusive).toBeUndefined();
+    expect(result.detail).toContain("Button");
+  });
+
+  it("returns ❌ (not inconclusive) when the API responds but the nodeId is absent — Step 7d would fail with 'Published component not found'", async () => {
+    const result = await runFigmaPublishCheck({
+      figmaUrl: validUrl,
+      token: "tok",
+      fetchPublishedComponents: async () => [
+        { node_id: "9999:9", name: "Other" },
+      ],
+    });
+    expect(result.pass).toBe(false);
+    expect(result.inconclusive).toBeUndefined();
+    expect(result.remediation).toMatch(/Publish library/);
+  });
+
+  it("returns ⚠️ inconclusive when FIGMA_TOKEN is missing — issue #532 keeps doctor informational, not a hard gate", async () => {
+    const result = await runFigmaPublishCheck({
+      figmaUrl: validUrl,
+      token: undefined,
+      fetchPublishedComponents: undefined,
+    });
+    expect(result.pass).toBe(false);
+    expect(result.inconclusive).toBe(true);
+    expect(result.remediation).toMatch(/FIGMA_TOKEN/);
+  });
+
+  it("returns ⚠️ inconclusive when the Figma API call throws — Step 7d remains the authority", async () => {
+    const result = await runFigmaPublishCheck({
+      figmaUrl: validUrl,
+      token: "tok",
+      fetchPublishedComponents: async () => {
+        throw new Error("ECONNREFUSED");
+      },
+    });
+    expect(result.pass).toBe(false);
+    expect(result.inconclusive).toBe(true);
+    expect(result.detail).toMatch(/ECONNREFUSED/);
+  });
+
+  it("returns ⚠️ inconclusive when the URL has no node-id — Code Connect mapping is per-component", async () => {
+    const result = await runFigmaPublishCheck({
+      figmaUrl: "https://www.figma.com/design/abc/file",
+      token: "tok",
+      fetchPublishedComponents: async () => [],
+    });
+    expect(result.pass).toBe(false);
+    expect(result.inconclusive).toBe(true);
+    expect(result.detail).toContain("missing a node-id");
+  });
+
+  it("returns ⚠️ inconclusive when the URL is unparseable", async () => {
+    const result = await runFigmaPublishCheck({
+      figmaUrl: "not-a-figma-url",
+      token: "tok",
+      fetchPublishedComponents: async () => [],
+    });
+    expect(result.pass).toBe(false);
+    expect(result.inconclusive).toBe(true);
+    expect(result.detail).toMatch(/parse URL/);
   });
 });
 

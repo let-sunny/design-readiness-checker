@@ -88,23 +88,30 @@ Design grade: **{grade}** ({percentage}%) — {issueCount} issues found.
 
 ### Step 1.5: Code Connect prerequisite pre-check (soft warn)
 
-The closing step (Step 7) registers a Code Connect mapping for the just-implemented design, which requires the user's repo to have `@figma/code-connect` installed and `figma.config.json` present. Surfacing missing prerequisites *now* avoids the "spent 10 minutes on the survey, then found out I can't actually save the mapping" surprise.
+The closing step (Step 7) registers a Code Connect mapping for the just-implemented design, which requires three things:
 
-Run `canicode doctor` (added in #513). If the host is running the bundled CLI:
+1. The user's repo has `@figma/code-connect` installed.
+2. `figma.config.json` is present at the repo root.
+3. The target Figma component is published in a library (Figma UI: Assets panel → Publish library).
+
+The first two are repo-side; the third is Figma-side. Pass the Figma URL to `canicode doctor --figma-url <url>` (added in #532) so all three surface here, before the survey:
 
 ```bash
-npx canicode doctor
+npx canicode doctor --figma-url "<the-figma-url-the-user-passed>"
 ```
+
+Always quote the URL — zsh expands `?` in `?node-id=...` otherwise.
 
 Branch on exit code:
 
-- **Exit 0 (all checks pass)** — silent. Continue to Step 2.
+- **Exit 0 (no blocking failures)** — silent. Continue to Step 2.
+  - The Figma publish-status check may render as `⚠️ inconclusive` (e.g. `FIGMA_TOKEN` not configured, network error, URL has no node-id). Inconclusive is not a failure: doctor stays informational, and Step 7d's actual `add_code_connect_map` call remains the authority. Print the inconclusive line for visibility but do not prompt.
 - **Exit 1 (any check failed)** — print the doctor's remediation lines verbatim, then prompt:
   > "Code Connect is not configured in this repo. The roundtrip will still generate code, but the closing mapping step (Step 7) will be skipped. Continue anyway? (Y/n)"
   - **Y** (default) — proceed to Step 2. Remember the prereq state so Step 7 can short-circuit without re-explaining.
   - **n** — stop the whole roundtrip cleanly. Tell the user: "Set up Code Connect and re-invoke `/canicode-roundtrip` when ready."
 
-Default is `Y` because many users genuinely just want code generation today and have not chosen to adopt Code Connect yet — the soft warn informs without blocking.
+Default is `Y` because many users genuinely just want code generation today and have not chosen to adopt Code Connect yet — the soft warn informs without blocking. The publish-status check shifting the Figma-side prereq into this step (rather than discovering it after Step 7d's `add_code_connect_map` fails with "Published component not found") was the #532 motivation.
 
 ### Step 2: Surface grade as informational banner
 

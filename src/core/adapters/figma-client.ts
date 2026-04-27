@@ -134,6 +134,37 @@ export class FigmaClient {
     return Buffer.from(buffer).toString("base64");
   }
 
+  /**
+   * Get the components a file has published to a team library.
+   *
+   * `GET /v1/files/:file_key/components` returns only components that have
+   * been pushed via the Publish Library action — local-but-unpublished
+   * components are absent. This is the authoritative way to detect whether
+   * a Figma component is mappable via Code Connect (#532): `add_code_connect_map`
+   * requires a published component and otherwise fails with "Published
+   * component not found."
+   */
+  async getPublishedComponents(
+    fileKey: string,
+  ): Promise<Array<{ key: string; node_id: string; name: string }>> {
+    const url = `${FIGMA_API_BASE}/files/${fileKey}/components`;
+    const response = await fetch(url, {
+      headers: { "X-Figma-Token": this.token },
+    });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new FigmaClientError(
+        `Failed to fetch published components: ${response.status} ${response.statusText}`,
+        response.status,
+        error,
+      );
+    }
+    const data = (await response.json()) as {
+      meta?: { components?: Array<{ key: string; node_id: string; name: string }> };
+    };
+    return data.meta?.components ?? [];
+  }
+
   async getFileNodes(
     fileKey: string,
     nodeIds: string[]
