@@ -662,6 +662,26 @@ ${footer}`;
     }
   }
 
+  // src/core/roundtrip/apply-unmapped-component-opt-out.ts
+  async function applyUnmappedComponentOptOut(input, context) {
+    const { nodeId, ruleId } = input;
+    const { categories } = context;
+    const scene = await figma.getNodeByIdAsync(nodeId);
+    if (!scene) {
+      return { icon: "\u{1F4DD}", label: `missing node \u2014 ${ruleId}` };
+    }
+    const markdown = buildIntentionallyUnmappedAnnotationBody({
+      sceneNodeId: scene.id,
+      ruleId
+    });
+    upsertCanicodeAnnotation(scene, {
+      ruleId,
+      markdown,
+      categoryId: categories.gotcha
+    });
+    return { icon: "\u{1F4DD}", label: `opt-out annotation written \u2014 ${ruleId}` };
+  }
+
   // src/core/roundtrip/compute-roundtrip-tally.ts
   function computeRoundtripTally(args) {
     const { stepFourReport, reanalyzeResponse } = args;
@@ -794,6 +814,7 @@ ${footer}`;
   exports.applyAutoFix = applyAutoFix;
   exports.applyAutoFixes = applyAutoFixes;
   exports.applyPropertyMod = applyPropertyMod;
+  exports.applyUnmappedComponentOptOut = applyUnmappedComponentOptOut;
   exports.applyWithInstanceFallback = applyWithInstanceFallback;
   exports.buildIntentionallyUnmappedAnnotationBody = buildIntentionallyUnmappedAnnotationBody;
   exports.computeRoundtripTally = computeRoundtripTally;

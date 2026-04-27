@@ -282,6 +282,26 @@ Notes:
 - `label` and `labelMarkdown` are mutually exclusive on write, but Figma returns both on readback. Never spread `scene.annotations` directly; always call `CanICodeRoundtrip.upsertCanicodeAnnotation` (or `CanICodeRoundtrip.stripAnnotations` if you truly need the normalized array).
 - Prefer annotating the **scene** instance child so designers see the note where they work; mention in the markdown if the fix belongs on the source component but could not be applied (library/external).
 
+##### Strategy C opt-out branch — `unmapped-component`
+
+When `applyStrategy === "annotation"` AND `question.ruleId === "unmapped-component"` AND the user's answer expresses "intentionally unmapped" (LLM judgment on the prose — e.g. "skip permanently", "do not map", "intentionally unmapped"), call the dedicated opt-out helper instead of the standard `upsertCanicodeAnnotation` Q/A path:
+
+<!-- adr-016-ack: single-helper call; no fan-out, the opt-out is per main component -->
+```javascript
+await CanICodeRoundtrip.applyUnmappedComponentOptOut(
+  { nodeId: question.nodeId, ruleId: question.ruleId },
+  { categories }
+);
+```
+
+The helper writes a fenced canicode-json block with `kind: "rule-opt-out"` and `ruleId: "unmapped-component"` under `categories.gotcha`. The read-side pipeline (Step 5a + ADR-022 rule short-circuit) consumes this on subsequent analyze runs to suppress the rule for this node — see ADR-022 for the read-side pipeline that consumes this annotation.
+
+Notes:
+- **No prose body, no per-property intent.** The fence's `intent.kind` is the discriminator, not Q/A markdown.
+- **No replica fan-out.** `unmapped-component` only fires on `COMPONENT` / `COMPONENT_SET` nodes (parser-driven main check). These never carry the `I…;…` instance-child id format, so `question.replicaNodeIds` is absent for this rule — do **not** iterate it. Writing an opt-out on an instance scene would no-op because the rule looks up the main component id when matching the ack.
+- **Idempotent on re-apply.** The helper goes through `upsertCanicodeAnnotation`, so the footer-based dedup replaces an existing entry in place; running Step 4 twice yields one annotation, not two.
+- **Distinct from a Step 3 skip.** Skipping a gotcha (`answer === "skip"` / `"n/a"`) drops the question without touching the design; the opt-out path writes a *permanent* suppression marker that survives across analyze runs. Choose the opt-out only when the user truly means "this component should never be code-connected"; for "skip for now", drop the question.
+
 #### Strategy D: Auto-fix lower-severity issues from analysis
 
 The gotcha survey covers blocking/risk severity plus `missing-info` severity from info-collection rules (#406 — currently `missing-prototype`, `missing-interaction-state`). All other lower-severity rules appear in `analyzeResult.issues[]` without a survey question. Each issue carries the same pre-computed fields (`applyStrategy`, `targetProperty`, `annotationProperties`, `suggestedName`, `isInstanceChild`, `sourceChildId`). The bundled helper handles the loop, the filter (`applyStrategy === "auto-fix"`), the naming-vs-annotation branch, and the per-issue outcome accumulator in one call:
