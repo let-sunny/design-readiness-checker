@@ -29,7 +29,7 @@ These workflows compose. A new project typically starts at Workflow 3 (find the 
 
 ## Workflow 1 — Component-to-code mapping
 
-> 🚧 Partial — `analyze` and `roundtrip` ship today. Code Connect integration is the next milestone (epic #509).
+> 🚧 Partial — `analyze`, `roundtrip`, and `doctor` ship today. The roundtrip's closing Code Connect mapping step is the next milestone (epic #509, sub-issue #515).
 
 **You are**: a designer creating a single component (Button, Card, Input...) on purpose, knowing it should be reused in code.
 
@@ -44,16 +44,11 @@ These workflows compose. A new project typically starts at Workflow 3 (find the 
 
 **Today's flow**
 1. Finish the Figma main component (with variants if applicable).
-2. Run `canicode analyze <component-url>` to confirm the component itself has no blocking gotchas (missing names, off-grid spacing, etc.).
-3. Apply any answers via `/canicode-roundtrip` (Claude Code) or `@ canicode-roundtrip` (Cursor).
-4. Register the Code Connect mapping **manually** using the Figma CLI today (`figma connect create`, `figma connect publish`).
-
-**Planned flow (when #509 ships)**
-1. Same first three steps.
-2. Invoke `canicode componentize` (or the equivalent skill) on the selected component.
-3. canicode calls `get_code_connect_suggestions` to surface candidate code components, with rationale (name match, prop shape, file path).
-4. You confirm the right candidate (or pick "no match — generate one" → handoff to `figma-implement-design`).
-5. canicode registers the mapping via `add_code_connect_map` / `send_code_connect_mappings`.
+2. Run `canicode doctor` once per repo to confirm `@figma/code-connect` and `figma.config.json` are in place.
+3. Run `/canicode-roundtrip <component-url>` (Claude Code) or `@ canicode-roundtrip <component-url>` (Cursor). The roundtrip walks you through analyze → gotcha survey → apply → re-analyze → handoff to `figma-implement-design`, then closes with a Code Connect mapping prompt:
+   - If prerequisites are missing, the soft warn at the top tells you up front so you can stop and set them up — no time wasted on the survey.
+   - After `figma-implement-design` finishes, you confirm whether the generated code is satisfactory. On `y`, canicode calls `add_code_connect_map` + `send_code_connect_mappings` so the next roundtrip on a screen containing this component reuses the code instead of regenerating markup.
+4. (Optional) For an existing code component you want to map without regenerating, use Figma's CLI directly (`figma connect create`, `figma connect publish`) — canicode's mapping flow is currently scoped to fresh code from a roundtrip.
 
 **Outcome**: every Figma main component has a 1:1 Code Connect mapping. Downstream `figma-implement-design` calls reuse the mapped code component instead of regenerating markup.
 

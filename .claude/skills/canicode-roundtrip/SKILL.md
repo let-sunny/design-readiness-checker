@@ -3,8 +3,10 @@ name: canicode-roundtrip
 description: |
   Run the full design-to-code roundtrip — analyze a Figma design, surface gotchas, write
   designer answers back into the file via the Figma Plugin API (use_figma), re-analyze to
-  confirm the gotchas were captured, then hand off to figma-implement-design. Mutates the
-  Figma file: requires Figma full seat + edit access.
+  confirm the gotchas were captured, hand off to figma-implement-design, then optionally
+  register a Code Connect mapping pointing the Figma component at the just-generated code
+  so future roundtrips reuse the implementation. Mutates the Figma file: requires Figma
+  full seat + edit access.
 
   TRIGGER when: the user shares a figma.com/design/... URL and wants production-quality
   code, or asks for "design-to-code roundtrip", "fix the gotchas", or "annotate the Figma
@@ -83,6 +85,26 @@ Show the user a brief summary:
 ```
 Design grade: **{grade}** ({percentage}%) — {issueCount} issues found.
 ```
+
+### Step 1.5: Code Connect prerequisite pre-check (soft warn)
+
+The closing step (Step 7) registers a Code Connect mapping for the just-implemented design, which requires the user's repo to have `@figma/code-connect` installed and `figma.config.json` present. Surfacing missing prerequisites *now* avoids the "spent 10 minutes on the survey, then found out I can't actually save the mapping" surprise.
+
+Run `canicode doctor` (added in #513). If the host is running the bundled CLI:
+
+```bash
+npx canicode doctor
+```
+
+Branch on exit code:
+
+- **Exit 0 (all checks pass)** — silent. Continue to Step 2.
+- **Exit 1 (any check failed)** — print the doctor's remediation lines verbatim, then prompt:
+  > "Code Connect is not configured in this repo. The roundtrip will still generate code, but the closing mapping step (Step 7) will be skipped. Continue anyway? (Y/n)"
+  - **Y** (default) — proceed to Step 2. Remember the prereq state so Step 7 can short-circuit without re-explaining.
+  - **n** — stop the whole roundtrip cleanly. Tell the user: "Set up Code Connect and re-invoke `/canicode-roundtrip` when ready."
+
+Default is `Y` because many users genuinely just want code generation today and have not chosen to adopt Code Connect yet — the soft warn informs without blocking.
 
 ### Step 2: Surface grade as informational banner
 
@@ -464,6 +486,71 @@ Code: <files generated / next-step pointer from figma-implement-design>
 ```
 
 (Drop the `↳` lines when `V_ack == 0`.)
+
+### Step 7: Close out with a Code Connect mapping
+
+After `figma-implement-design` returns, register a Code Connect mapping pointing the roundtrip's Figma component at the just-generated code so future roundtrips on screens containing this component reuse the implementation instead of regenerating markup. **Only run this step when the user invoked the roundtrip on a single Figma component / main component**, not on a screen-level node — multi-component mapping is out of scope for v1 (#515).
+
+#### Step 7a: Re-check prerequisites
+
+Re-run `canicode doctor`. The pre-check in Step 1.5 may have failed and the user may have set up Code Connect mid-flow, or it may have passed and still pass — either way, this is the source of truth for the close-out branch.
+
+- **Exit 0** — proceed to 7b.
+- **Exit 1** — print the doctor's remediation, then exit cleanly with:
+  > "Roundtrip steps 1–6 succeeded. Code Connect mapping skipped because the prerequisites above are missing — set them up and re-invoke `/canicode-roundtrip` to register the mapping."
+
+This step's failure must not retroactively fail the earlier steps; their output is independently valuable.
+
+#### Step 7b: Confirm satisfaction with the generated code
+
+```
+figma-implement-design generated the code at <path>. Are you satisfied with this implementation? (y/N)
+```
+
+Default is `N` — the inverse of Step 1.5's default — because registering a mapping makes a permanent claim about which code represents this Figma component. Asking the user to opt in deliberately is the safer posture.
+
+- **N or skip** — exit cleanly: "Mapping not registered. You can re-invoke `/canicode-roundtrip` later if you want to map a future revision."
+- **y** — continue to 7c.
+
+If `figma-implement-design`'s output did not surface the generated code path in a structured way, prompt the user for it before proceeding. Do not try to scan for "recently modified files" — too fragile.
+
+#### Step 7c: Check existing mapping
+
+Call `get_code_connect_map` for the Figma component's node-id (from the original input URL).
+
+- If a mapping **exists** for this component, show the user the current mapping target and ask:
+  > "A Code Connect mapping already exists for this component, pointing at `<existing-path>`. Update it to `<new-path>`? (y/N)"
+  - **N** — exit cleanly, leaving the existing mapping intact.
+  - **y** — proceed to 7d.
+- If **no mapping exists**, proceed straight to 7d.
+
+#### Step 7d: Register the mapping
+
+Call `add_code_connect_map` with the Figma node-id + generated code path, then `send_code_connect_mappings` to publish.
+
+On success, print:
+> "Code Connect mapping registered: `<figma-component>` → `<code-path>`. Future roundtrips on screens containing this component will reuse the code."
+
+On failure (Figma MCP returns an error), print the error verbatim and tell the user the rest of the roundtrip succeeded — the mapping can be added later via Figma CLI (`figma connect publish`) or by re-invoking the roundtrip.
+
+#### Wrap-up message rubric (with mapping outcome)
+
+Extend the Step 6 wrap-up block with one final line describing the mapping outcome — `✅ mapped`, `⏭️ skipped (user)`, `⏭️ skipped (prereq)`, or `❌ failed`. Keep grade at most one optional footline (#423).
+
+```
+Roundtrip complete — N issues addressed, code generated, mapping <state>:
+  ✅  X resolved
+  📝  Y annotated on Figma (referenced during code-gen)
+  🌐  Z definition writes propagated
+  ⏭️  W skipped
+  —
+  V issues remaining
+     ↳ V_ack acknowledged via canicode annotations
+     ↳ V_open unaddressed
+
+Code: <files generated / next-step pointer from figma-implement-design>
+Code Connect: <mapping outcome line>
+```
 
 ## Edge cases
 
