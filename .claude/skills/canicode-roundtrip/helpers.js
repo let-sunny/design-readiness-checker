@@ -132,6 +132,7 @@ ${footer}`;
       intent
     } = args;
     const ackIntent = intent ? {
+      kind: "property",
       field: intent.field,
       value: intent.value,
       scope: intent.scope
@@ -164,7 +165,7 @@ ${footer}`;
   }
   function buildNoDefinitionFallbackBody(args) {
     const { ruleId, sceneNodeId, reason, errorMessage, intent } = args;
-    const ackIntent = intent ? { field: intent.field, value: intent.value, scope: intent.scope } : void 0;
+    const ackIntent = intent ? { kind: "property", field: intent.field, value: intent.value, scope: intent.scope } : void 0;
     const outcomeResult = reason === "silent-ignore" ? "silent-ignored" : reason === "override-error" ? "api-rejected" : "api-rejected";
     const sceneWriteOutcome = sceneOutcomeToAck(
       outcomeResult,
@@ -201,6 +202,7 @@ ${footer}`;
       nodeId: sceneNodeId,
       ...intent ? {
         intent: {
+          kind: "property",
           field: intent.field,
           value: intent.value,
           scope: intent.scope
@@ -231,6 +233,22 @@ ${jsonText}
 \`\`\`
 
 ${footer}`;
+  }
+  function buildIntentionallyUnmappedAnnotationBody(args) {
+    const { sceneNodeId, ruleId } = args;
+    const intent = {
+      kind: "rule-opt-out",
+      ruleId
+    };
+    const jsonBlock = {
+      v: 1,
+      ruleId,
+      nodeId: sceneNodeId,
+      intent,
+      sceneWriteOutcome: { result: "succeeded", reason: "rule-opt-out" }
+    };
+    const prose = "User marked this component as intentionally unmapped \u2014 canicode will skip the unmapped-component check for this node on subsequent analyze runs.";
+    return appendJsonFenceAndFooter(prose, jsonBlock, ruleId);
   }
   var FENCED_JSON_RE = new RegExp(
     `${CANICODE_JSON_FENCE.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*([\\s\\S]*?)\\s*\`\`\``,
@@ -644,6 +662,26 @@ ${footer}`;
     }
   }
 
+  // src/core/roundtrip/apply-unmapped-component-opt-out.ts
+  async function applyUnmappedComponentOptOut(input, context) {
+    const { nodeId, ruleId } = input;
+    const { categories } = context;
+    const scene = await figma.getNodeByIdAsync(nodeId);
+    if (!scene) {
+      return { icon: "\u{1F4DD}", label: `missing node \u2014 ${ruleId}` };
+    }
+    const markdown = buildIntentionallyUnmappedAnnotationBody({
+      sceneNodeId: scene.id,
+      ruleId
+    });
+    upsertCanicodeAnnotation(scene, {
+      ruleId,
+      markdown,
+      categoryId: categories.gotcha
+    });
+    return { icon: "\u{1F4DD}", label: `opt-out annotation written \u2014 ${ruleId}` };
+  }
+
   // src/core/roundtrip/compute-roundtrip-tally.ts
   function computeRoundtripTally(args) {
     const { stepFourReport, reanalyzeResponse } = args;
@@ -776,7 +814,9 @@ ${footer}`;
   exports.applyAutoFix = applyAutoFix;
   exports.applyAutoFixes = applyAutoFixes;
   exports.applyPropertyMod = applyPropertyMod;
+  exports.applyUnmappedComponentOptOut = applyUnmappedComponentOptOut;
   exports.applyWithInstanceFallback = applyWithInstanceFallback;
+  exports.buildIntentionallyUnmappedAnnotationBody = buildIntentionallyUnmappedAnnotationBody;
   exports.computeRoundtripTally = computeRoundtripTally;
   exports.ensureCanicodeCategories = ensureCanicodeCategories;
   exports.extractAcknowledgmentsFromNode = extractAcknowledgmentsFromNode;

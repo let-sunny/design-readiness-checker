@@ -29,6 +29,7 @@ export function makeContext(overrides?: Partial<RuleContext>): RuleContext {
     analysisState: new Map(),
     scope: "page",
     rootNodeType: "FRAME",
+    findAcknowledgment: () => undefined,
     ...overrides,
   };
 }

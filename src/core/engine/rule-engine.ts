@@ -178,6 +178,7 @@ export class RuleEngine {
   private excludeNamePattern: RegExp | null;
   private excludeNodeTypes: Set<string> | null;
   private acknowledgments: ReadonlySet<string>;
+  private acknowledgmentsByKey: ReadonlyMap<string, Acknowledgment>;
   private scopeOverride: AnalysisScope | undefined;
 
   constructor(options: RuleEngineOptions = {}) {
@@ -193,10 +194,15 @@ export class RuleEngine {
     this.excludeNodeTypes = options.excludeNodeTypes && options.excludeNodeTypes.length > 0
       ? new Set(options.excludeNodeTypes)
       : null;
+    const ackList = options.acknowledgments ?? [];
     this.acknowledgments = new Set(
-      (options.acknowledgments ?? []).map(
-        (a) => `${normalizeNodeId(a.nodeId)}::${a.ruleId}`
-      )
+      ackList.map((a) => `${normalizeNodeId(a.nodeId)}::${a.ruleId}`)
+    );
+    this.acknowledgmentsByKey = new Map(
+      ackList.map((a) => [
+        `${normalizeNodeId(a.nodeId)}::${a.ruleId}`,
+        a,
+      ])
     );
     this.scopeOverride = options.scope;
   }
@@ -332,6 +338,7 @@ export class RuleEngine {
     }
 
     // Build context for this node
+    const acknowledgmentsByKey = this.acknowledgmentsByKey;
     const context: RuleContext = {
       file,
       parent,
@@ -344,6 +351,8 @@ export class RuleEngine {
       analysisState,
       scope,
       rootNodeType,
+      findAcknowledgment: (nodeId, ruleId) =>
+        acknowledgmentsByKey.get(`${normalizeNodeId(nodeId)}::${ruleId}`),
     };
 
     // Run each rule on this node

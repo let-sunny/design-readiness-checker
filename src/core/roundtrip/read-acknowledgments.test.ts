@@ -162,6 +162,36 @@ describe("extractAcknowledgmentsFromNode", () => {
     ]);
   });
 
+  it("surfaces rule-opt-out intent intact when present (ADR-022 / #526 sub-task 2)", () => {
+    const fence = [
+      "User marked this component as intentionally unmapped — canicode will skip the unmapped-component check for this node on subsequent analyze runs.",
+      "",
+      "```canicode-json",
+      JSON.stringify({
+        v: 1,
+        ruleId: "unmapped-component",
+        nodeId: "10:1",
+        intent: { kind: "rule-opt-out", ruleId: "unmapped-component" },
+        sceneWriteOutcome: { result: "succeeded", reason: "rule-opt-out" },
+      }),
+      "```",
+      "",
+      "— *unmapped-component*",
+    ].join("\n");
+    const node = makeNode("10:1", [
+      { labelMarkdown: fence, categoryId: "cat-gotcha" },
+    ]);
+    const acks = extractAcknowledgmentsFromNode(
+      node,
+      new Set([CATEGORIES.gotcha]),
+    );
+    expect(acks).toHaveLength(1);
+    expect(acks[0]?.intent).toEqual({
+      kind: "rule-opt-out",
+      ruleId: "unmapped-component",
+    });
+  });
+
   it("merges ADR-019 canicode-json fence into the acknowledgment (#444)", () => {
     const fence = [
       "**User answered:** `FILL` for **layoutSizingHorizontal** (scope: instance).",

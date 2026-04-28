@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { Acknowledgment } from "./acknowledgment.js";
 import type { AnalysisScope } from "./analysis-scope.js";
 import { CategorySchema, type Category } from "./category.js";
 import { SeveritySchema } from "./severity.js";
@@ -69,6 +70,20 @@ export interface RuleContext {
    * sync with `AnalysisNode.type` without a translation layer.
    */
   rootNodeType: string;
+  /**
+   * ADR-022: lookup canicode-authored acknowledgments by `(nodeId, ruleId)`.
+   * The rule engine builds this from `RuleEngineOptions.acknowledgments` and
+   * exposes it to every rule so individual rules can short-circuit (suppress
+   * emission) when an acknowledgment carries a rule-opt-out intent. The
+   * existing density-half-weight semantic (#371) is unchanged — that path
+   * still flags `acknowledged: true` post-emit and is independent of this
+   * helper.
+   *
+   * Returns the matching acknowledgment, or `undefined` when there is no
+   * acknowledgment for the pair. Node ids are normalised by the engine, so
+   * callers can pass URL-style or Plugin-API-style ids interchangeably.
+   */
+  findAcknowledgment: (nodeId: string, ruleId: string) => Acknowledgment | undefined;
 }
 
 /**

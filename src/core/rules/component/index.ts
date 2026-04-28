@@ -386,6 +386,7 @@ import {
   parseCodeConnectMappings,
   type CodeConnectMappingResult,
 } from "./code-connect-mapping-parser.js";
+import { isRuleOptOutIntent } from "../../contracts/acknowledgment.js";
 
 const CODE_CONNECT_SETUP_KEY = "unmapped-component:setup-detected";
 const CODE_CONNECT_MAPPINGS_KEY = "unmapped-component:mappings";
@@ -422,6 +423,22 @@ const unmappedComponentCheck: RuleCheckFn = (node, context) => {
   // fires v1-style on every main.
   const mappings = codeConnectMappings(context);
   if (mappings.mappedNodeIds.has(node.id)) return null;
+
+  // ADR-022 / #526 sub-task 2: roundtrip-recorded opt-out short-circuit.
+  // When the user marked this component as intentionally unmapped, the
+  // canicode:intentionally-unmapped annotation arrives here as an
+  // Acknowledgment whose `intent.kind === "rule-opt-out"` and
+  // `intent.ruleId === "unmapped-component"`. The two skip paths are
+  // independent — parser handles standalone analyze, ack handles the
+  // roundtrip leg.
+  const ack = context.findAcknowledgment(node.id, unmappedComponentDef.id);
+  if (
+    ack &&
+    isRuleOptOutIntent(ack.intent) &&
+    ack.intent.ruleId === unmappedComponentDef.id
+  ) {
+    return null;
+  }
 
   return {
     ruleId: unmappedComponentDef.id,

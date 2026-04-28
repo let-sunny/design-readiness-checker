@@ -1,4 +1,7 @@
 import type { RuleContext } from "../../contracts/rule.js";
+import type {
+  Acknowledgment,
+} from "../../contracts/acknowledgment.js";
 import type { AnalysisFile, AnalysisNode } from "../../contracts/figma-node.js";
 import { unmappedComponent } from "./index.js";
 
@@ -31,6 +34,7 @@ function makeContext(
   setupDetected: boolean,
   overrides?: Partial<RuleContext>,
   mappedNodeIds: string[] = [],
+  acknowledgments: Acknowledgment[] = [],
 ): RuleContext {
   // Pre-seed the analysis state cache so the rule does not actually touch the
   // filesystem during the test. The cached value short-circuits the existsSync
@@ -42,6 +46,9 @@ function makeContext(
     mappedNodeIds: new Set(mappedNodeIds),
     scannedFiles: [],
   });
+  const ackByKey = new Map<string, Acknowledgment>(
+    acknowledgments.map((a) => [`${a.nodeId.replace(/-/g, ":")}::${a.ruleId}`, a]),
+  );
   return {
     file: makeFile(),
     depth: 1,
@@ -52,6 +59,8 @@ function makeContext(
     analysisState,
     scope: "page",
     rootNodeType: "FRAME",
+    findAcknowledgment: (nodeId, ruleId) =>
+      ackByKey.get(`${nodeId.replace(/-/g, ":")}::${ruleId}`),
     ...overrides,
   };
 }
@@ -123,6 +132,79 @@ describe("unmapped-component", () => {
     const result = unmappedComponent.check(node, makeContext(true, undefined, []));
     expect(result).not.toBeNull();
     expect(result?.nodeId).toBe("100:3");
+  });
+
+  it("does NOT fire when an ack with rule-opt-out intent matches the node (#526 sub-task 2 / ADR-022)", () => {
+    const node = makeNode({ id: "200:1", name: "Brand Hero", type: "COMPONENT" });
+    const result = unmappedComponent.check(
+      node,
+      makeContext(true, undefined, [], [
+        {
+          nodeId: "200:1",
+          ruleId: "unmapped-component",
+          intent: { kind: "rule-opt-out", ruleId: "unmapped-component" },
+        },
+      ]),
+    );
+    expect(result).toBeNull();
+  });
+
+  it("DOES fire when the ack uses property-style intent (only marks acknowledged elsewhere — not a suppressor)", () => {
+    const node = makeNode({ id: "200:2", name: "Brand Hero", type: "COMPONENT" });
+    const result = unmappedComponent.check(
+      node,
+      makeContext(true, undefined, [], [
+        {
+          nodeId: "200:2",
+          ruleId: "unmapped-component",
+          intent: { kind: "property", field: "x", value: 1, scope: "instance" },
+        },
+      ]),
+    );
+    expect(result).not.toBeNull();
+    expect(result?.nodeId).toBe("200:2");
+  });
+
+  it("DOES fire when the ack carries rule-opt-out intent for a DIFFERENT ruleId", () => {
+    const node = makeNode({ id: "200:3", name: "Brand Hero", type: "COMPONENT" });
+    const result = unmappedComponent.check(
+      node,
+      makeContext(true, undefined, [], [
+        {
+          nodeId: "200:3",
+          // Wrong ruleId on the ack itself — engine still indexes it under
+          // its declared ruleId, so findAcknowledgment("…", "unmapped-component")
+          // returns undefined and the rule still fires.
+          ruleId: "raw-value",
+          intent: { kind: "rule-opt-out", ruleId: "unmapped-component" },
+        },
+      ]),
+    );
+    expect(result).not.toBeNull();
+  });
+
+  it("parser mapping and ack opt-out are independent — either alone suffices", () => {
+    // Parser mapping suffices on its own (no ack provided).
+    const node = makeNode({ id: "200:4", type: "COMPONENT" });
+    const viaParser = unmappedComponent.check(
+      node,
+      makeContext(true, undefined, ["200:4"]),
+    );
+    expect(viaParser).toBeNull();
+
+    // Ack opt-out suffices on its own (parser mapping set is empty).
+    const node2 = makeNode({ id: "200:5", type: "COMPONENT" });
+    const viaAck = unmappedComponent.check(
+      node2,
+      makeContext(true, undefined, [], [
+        {
+          nodeId: "200:5",
+          ruleId: "unmapped-component",
+          intent: { kind: "rule-opt-out", ruleId: "unmapped-component" },
+        },
+      ]),
+    );
+    expect(viaAck).toBeNull();
   });
 
   it("caches the setup detection across calls within one analysis", () => {

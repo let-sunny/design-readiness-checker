@@ -465,6 +465,42 @@ export function formatCodeConnectCoverageLine(coverage: CodeConnectCoverage): st
 }
 
 /**
+ * ADR-022 / #526 sub-task 2: standalone analyze hint.
+ *
+ * `canicode analyze` and the MCP `analyze` tool cannot read Figma annotations
+ * directly — the REST `annotations` field is private beta. When the
+ * `unmapped-component` rule fires AND the caller did not supply an
+ * acknowledgments list, surface a one-line hint telling the user that any
+ * roundtrip-recorded opt-outs are invisible to standalone analyze and that
+ * `/canicode-roundtrip` will apply them.
+ *
+ * Returns `null` when:
+ * - no `unmapped-component` issue fired (nothing to explain), or
+ * - acknowledgments were supplied (roundtrip mode — opt-outs already applied
+ *   and any remaining issues are real). `acknowledgmentsProvided` MUST track
+ *   whether the caller passed an ack channel at all, NOT whether the array
+ *   was non-empty: a roundtrip on a clean file legitimately passes `[]` and
+ *   the hint would be misleading there.
+ *
+ * The hint is informational; it never moves the score, never bumps severity,
+ * and is independent of the count of `unmapped-component` issues.
+ */
+export const ROUNDTRIP_OPT_OUT_HINT =
+  "Some components may carry roundtrip-recorded opt-outs that this standalone analyze cannot see (Figma REST annotations field is in private beta). Run /canicode-roundtrip to apply opt-outs.";
+
+export function formatRoundtripOptOutHintLine(
+  issues: ReadonlyArray<{ violation: { ruleId: string } }>,
+  acknowledgmentsProvided: boolean,
+): string | null {
+  if (acknowledgmentsProvided) return null;
+  const hasUnmapped = issues.some(
+    (issue) => issue.violation.ruleId === "unmapped-component",
+  );
+  if (!hasUnmapped) return null;
+  return ROUNDTRIP_OPT_OUT_HINT;
+}
+
+/**
  * Build a JSON-serializable analysis result summary.
  * Shared by CLI (--json) and MCP server (analyze tool response).
  */
@@ -477,6 +513,15 @@ export function buildResultJson(
     designKey?: string;
     codegenReadyMinGrade?: Grade;
     codeConnectCoverage?: CodeConnectCoverage;
+    /**
+     * ADR-022 / #526 sub-task 2: when true, the engine was called WITHOUT
+     * an `acknowledgments` channel (standalone CLI / MCP `analyze`) and
+     * `unmapped-component` opt-outs recorded via roundtrip cannot be seen.
+     * Surfaces a `roundtripOptOutHint` field on the JSON response and
+     * appends a hint line to `summary` when at least one
+     * `unmapped-component` issue fired.
+     */
+    roundtripOptOutHintEligible?: boolean;
   },
 ): Record<string, unknown> {
   const issuesByRule: Record<string, number> = {};
@@ -515,6 +560,18 @@ export function buildResultJson(
     };
   });
 
+  const optOutHint = options?.roundtripOptOutHintEligible
+    ? formatRoundtripOptOutHintLine(result.issues, false)
+    : null;
+
+  const summaryParts = [formatScoreSummary(scores)];
+  if (options?.codeConnectCoverage) {
+    summaryParts.push(formatCodeConnectCoverageLine(options.codeConnectCoverage));
+  }
+  if (optOutHint) {
+    summaryParts.push(optOutHint);
+  }
+
   const json: Record<string, unknown> = {
     version: VERSION,
     analyzedAt: result.analyzedAt,
@@ -534,13 +591,15 @@ export function buildResultJson(
     },
     issuesByRule,
     issues,
-    summary: options?.codeConnectCoverage
-      ? `${formatScoreSummary(scores)}\n\n${formatCodeConnectCoverageLine(options.codeConnectCoverage)}`
-      : formatScoreSummary(scores),
+    summary: summaryParts.join("\n\n"),
   };
 
   if (options?.codeConnectCoverage) {
     json["codeConnectCoverage"] = options.codeConnectCoverage;
+  }
+
+  if (optOutHint) {
+    json["roundtripOptOutHint"] = optOutHint;
   }
 
   if (result.failedRules.length > 0) {

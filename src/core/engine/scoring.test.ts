@@ -1,4 +1,4 @@
-import { calculateScores, formatScoreSummary, gradeToClassName, getCategoryLabel, getSeverityLabel, buildResultJson, isReadyForCodeGen, GRADE_ORDER, DEFAULT_CODEGEN_READY_MIN_GRADE } from "./scoring.js";
+import { calculateScores, formatScoreSummary, gradeToClassName, getCategoryLabel, getSeverityLabel, buildResultJson, isReadyForCodeGen, formatRoundtripOptOutHintLine, ROUNDTRIP_OPT_OUT_HINT, GRADE_ORDER, DEFAULT_CODEGEN_READY_MIN_GRADE } from "./scoring.js";
 import type { Grade } from "./scoring.js";
 import type { AnalysisIssue, AnalysisResult } from "./rule-engine.js";
 import type { AnalysisFile, AnalysisNode } from "../contracts/figma-node.js";
@@ -889,3 +889,88 @@ describe("buildResultJson respects codegenReadyMinGrade option", () => {
     expect(json.isReadyForCodeGen).toBe(true);
   });
 });
+
+// ─── formatRoundtripOptOutHintLine (ADR-022 / #526 sub-task 2) ────────────────
+
+describe("formatRoundtripOptOutHintLine", () => {
+  it("returns null when there are no unmapped-component issues (nothing to explain)", () => {
+    const issue = makeIssue({
+      ruleId: "no-auto-layout",
+      category: "pixel-critical",
+      severity: "blocking",
+    });
+    expect(formatRoundtripOptOutHintLine([issue], false)).toBeNull();
+  });
+
+  it("returns null when acknowledgments were provided (roundtrip mode — opt-outs already applied)", () => {
+    const issue = makeIssue({
+      ruleId: "unmapped-component",
+      category: "code-quality",
+      severity: "note",
+    });
+    expect(formatRoundtripOptOutHintLine([issue], true)).toBeNull();
+  });
+
+  it("returns the ADR-022 hint when an unmapped-component issue fires and no ack channel was provided", () => {
+    const issue = makeIssue({
+      ruleId: "unmapped-component",
+      category: "code-quality",
+      severity: "note",
+    });
+    expect(formatRoundtripOptOutHintLine([issue], false)).toBe(ROUNDTRIP_OPT_OUT_HINT);
+  });
+
+  it("returns null on empty issues regardless of ack channel state", () => {
+    expect(formatRoundtripOptOutHintLine([], false)).toBeNull();
+    expect(formatRoundtripOptOutHintLine([], true)).toBeNull();
+  });
+});
+
+// ─── buildResultJson roundtripOptOutHint wiring (ADR-022) ─────────────────────
+
+describe("buildResultJson — roundtripOptOutHint", () => {
+  it("includes roundtripOptOutHint when eligible AND an unmapped-component issue fired", () => {
+    const issue = makeIssue({
+      ruleId: "unmapped-component",
+      category: "code-quality",
+      severity: "note",
+    });
+    const result = makeResult([issue]);
+    const scores = calculateScores(result);
+    const json = buildResultJson("TestFile", result, scores, {
+      roundtripOptOutHintEligible: true,
+    });
+    expect(json["roundtripOptOutHint"]).toBe(ROUNDTRIP_OPT_OUT_HINT);
+    expect(String(json["summary"])).toContain(ROUNDTRIP_OPT_OUT_HINT);
+  });
+
+  it("omits roundtripOptOutHint when ineligible (acknowledgments channel provided)", () => {
+    const issue = makeIssue({
+      ruleId: "unmapped-component",
+      category: "code-quality",
+      severity: "note",
+    });
+    const result = makeResult([issue]);
+    const scores = calculateScores(result);
+    const json = buildResultJson("TestFile", result, scores, {
+      roundtripOptOutHintEligible: false,
+    });
+    expect(json["roundtripOptOutHint"]).toBeUndefined();
+    expect(String(json["summary"])).not.toContain(ROUNDTRIP_OPT_OUT_HINT);
+  });
+
+  it("omits roundtripOptOutHint when eligible but no unmapped-component issue fired", () => {
+    const issue = makeIssue({
+      ruleId: "no-auto-layout",
+      category: "pixel-critical",
+      severity: "blocking",
+    });
+    const result = makeResult([issue]);
+    const scores = calculateScores(result);
+    const json = buildResultJson("TestFile", result, scores, {
+      roundtripOptOutHintEligible: true,
+    });
+    expect(json["roundtripOptOutHint"]).toBeUndefined();
+  });
+});
+

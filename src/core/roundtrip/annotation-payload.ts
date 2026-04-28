@@ -1,6 +1,8 @@
 import type {
   AcknowledgmentIntent,
   AcknowledgmentSceneWriteOutcome,
+  PropertyAcknowledgmentIntent,
+  RuleOptOutAcknowledgmentIntent,
 } from "../contracts/acknowledgment.js";
 
 /** Fenced JSON block marker — parsed by `extractAcknowledgmentsFromNode` (ADR-019 / #444). */
@@ -131,8 +133,9 @@ export function buildDefinitionWriteSkippedBody(args: {
     intent,
   } = args;
 
-  const ackIntent: AcknowledgmentIntent | undefined = intent
+  const ackIntent: PropertyAcknowledgmentIntent | undefined = intent
     ? {
+        kind: "property",
         field: intent.field,
         value: intent.value,
         scope: intent.scope,
@@ -187,8 +190,8 @@ export function buildNoDefinitionFallbackBody(args: {
 }): string {
   const { ruleId, sceneNodeId, reason, errorMessage, intent } = args;
 
-  const ackIntent: AcknowledgmentIntent | undefined = intent
-    ? { field: intent.field, value: intent.value, scope: intent.scope }
+  const ackIntent: PropertyAcknowledgmentIntent | undefined = intent
+    ? { kind: "property", field: intent.field, value: intent.value, scope: intent.scope }
     : undefined;
 
   const outcomeResult: AcknowledgmentSceneWriteOutcome["result"] =
@@ -259,6 +262,7 @@ export function buildDefinitionTierFailureBody(args: {
     ...(intent
       ? {
           intent: {
+            kind: "property" as const,
             field: intent.field,
             value: intent.value,
             scope: intent.scope,
@@ -298,6 +302,50 @@ function appendJsonFenceAndFooter(
   }
   const jsonText = JSON.stringify(jsonBlock, null, 0);
   return `${prose}\n\n${CANICODE_JSON_FENCE}\n${jsonText}\n\`\`\`\n\n${footer}`;
+}
+
+/**
+ * ADR-022 / #526 sub-task 2: build the body for a `canicode:intentionally-unmapped`
+ * annotation. The user marked this component as intentionally unmapped during
+ * a roundtrip gotcha — the annotation carries an opt-out signal that the
+ * `unmapped-component` rule reads on the next analyze pass and short-circuits
+ * on. There is no scene write or codegen directive: opt-out is a *don't-emit*
+ * marker, not a value override.
+ *
+ * Body shape: one explanatory sentence, the canicode-json fence with
+ * `intent.kind === "rule-opt-out"`, and the footer `— *<ruleId>*` so
+ * `extractAcknowledgmentsFromNode` recognises it as a canicode-authored
+ * annotation.
+ */
+export function buildIntentionallyUnmappedAnnotationBody(args: {
+  /** The Figma node id of the component being opted out (`COMPONENT` / `COMPONENT_SET`). */
+  sceneNodeId: string;
+  /**
+   * Rule the annotation opts out of. Currently always `"unmapped-component"`
+   * — kept as a parameter so downstream rule-level opt-outs can reuse the
+   * same builder without duplicating the body shape.
+   */
+  ruleId: string;
+}): string {
+  const { sceneNodeId, ruleId } = args;
+
+  const intent: RuleOptOutAcknowledgmentIntent = {
+    kind: "rule-opt-out",
+    ruleId,
+  };
+
+  const jsonBlock: CanicodeAnnotationJsonV1 = {
+    v: 1,
+    ruleId,
+    nodeId: sceneNodeId,
+    intent,
+    sceneWriteOutcome: { result: "succeeded", reason: "rule-opt-out" },
+  };
+
+  const prose =
+    "User marked this component as intentionally unmapped — canicode will skip the unmapped-component check for this node on subsequent analyze runs.";
+
+  return appendJsonFenceAndFooter(prose, jsonBlock, ruleId);
 }
 
 const FENCED_JSON_RE = new RegExp(

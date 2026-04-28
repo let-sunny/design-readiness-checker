@@ -46,6 +46,7 @@ function makeContext(overrides?: Partial<RuleContext>): RuleContext {
     analysisState,
     scope: "page",
     rootNodeType: "FRAME",
+    findAcknowledgment: () => undefined,
     ...overrides,
   };
 }
