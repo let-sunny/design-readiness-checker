@@ -363,3 +363,33 @@ The opt-out **only takes effect when analyze is invoked through the roundtrip pi
 **Why not config-based opt-out**: A `figma.config.json` `canicode.intentionallyUnmapped: ["3384:3"]` array would make standalone analyze work today without waiting for REST GA. Rejected because (a) it splits durable user-vetted intent across two surfaces (Figma file annotation + repo config) — the reconciliation cost across a team is not zero, (b) the maintenance burden falls on the developer hand-editing JSON rather than the designer who knows the design intent, and (c) the same UX gap (missing standalone-analyze visibility) would exist for every future ack-driven rule, so the config workaround would either grow into a parallel suppression registry or stay one-rule-only. Better to accept the standalone-analyze limitation as documented and lift it cleanly when REST GA arrives.
 
 **References**: ADR-012 (annotation-by-default — why annotations are the natural carrier for designer intent), ADR-015 (memo lifecycle — sibling channel for richer Q&A), ADR-017 (annotation as the durable channel and the file as source of truth), ADR-019 (annotation intent payload — the `intent` field this ADR extends), [#371](https://github.com/let-sunny/canicode/pull/371) (acknowledgment read-back pipeline this ADR piggybacks on), [#526](https://github.com/let-sunny/canicode/issues/526) sub-task 2 (the user-facing requirement this ADR answers), [Figma REST API changelog — annotations entry](https://developers.figma.com/docs/rest-api/changelog/) (gating timeline for the standalone-analyze limitation).
+
+## ADR-023: Phase 3 promote+swap design decisions (Workflow 3 / #508)
+
+**Decision**: When canicode bootstraps a design system from screens (Workflow 3, #508), the promote-and-swap loop locks in five upstream choices before any apply primitive ships:
+
+A. **Free-form parents (`layoutMode === "NONE"`) refuse promote+swap.** The promote primitive guards on `parent.layoutMode` and routes to a Strategy C `canicode:flag` annotation when absent. Auto Layout parents proceed normally.
+B. **No override-difference threshold.** Sibling FRAMEs are swapped to instances unconditionally; any post-swap style/structure mismatch surfaces naturally through the existing `variant-structure-mismatch` rule on re-analyze.
+C. **Naming collision auto-suffixes `-promoted`** (then `-promoted-2`, `-3`, …). The `nameCollisionResolved` field surfaces in both telemetry and the gotcha answer markdown so the rename is visible.
+D. **Forward (Stage 3, no main exists yet) and Reverse (Stage 1, main already in metadata) share one batched gotcha question UI.** The answer carries `mode: "promote-new" | "use-existing"` and the apply branch routes from there. There is no separate question shape per starting state.
+E. **Code Connect prerequisite absence is a silent skip + one-line pointer.** Phase 3 does not own onboarding — that lives in Workflow 1 (#509). When `figma.config.json` or `@figma/code-connect` is missing, the closing handoff step skips quietly and leaves a single hint pointing at Workflow 1, not a multi-step setup wall.
+
+**Why**: User and validator are not designers, so the project bias is "decide once on the most information-rich default and revisit only when a real-world issue surfaces." Each choice picks the option that keeps the most signal in the file:
+- A keeps coordinates-as-source-of-truth (manual carryover would silently corrupt them on free-form parents).
+- B avoids a magic threshold that would either mis-classify or proliferate config — re-analyze chain already exists as the natural surface for residual diffs.
+- C never silently overwrites an existing component name and never blocks the batch on a rename modal.
+- D mirrors the designer's mental model ("componentize this group") rather than exposing the internal Stage-1 vs Stage-3 distinction.
+- E ships value (promote+swap) even for users who have not adopted Code Connect yet; Workflow 1 (#509) is the right home for the onboarding wall.
+
+H base-rate audit (24 calibration fixtures, 2026-04-30) returned 0/24 Stage 3 firings. Calibration fixtures are intentionally already-componentized (16,163 COMPONENT vs 38 FRAME on `desktop-home-page`) so the audit is inconclusive on real-world base rate. The Stage 3 detection logic is unit-test-verified (`missing-component.test.ts:367`); real-world fixtures will be procured ad-hoc during live verification rather than blocking implementation.
+
+**Impact**:
+- **`apply-promote-component.ts`** (delta 1, this PR) implements guards A and the #368 instance-child guard plus the C name-collision resolver. The annotate-fallback uses the existing `canicode:flag` category — no new annotation kind is introduced.
+- **`apply-replace-with-instance.ts`** (delta 2, separate sub-issue) inherits A from this primitive: a free-form-parent rejection at the promote step short-circuits the replace step for the whole group.
+- **Batched gotcha question shape** (delta 4, separate sub-issue) carries the D `mode` field. Question generator emits one batch per fingerprint group, with per-frame `replace` opt-out and the auto-suffix preview from C in the question text.
+- **Code Connect handoff** (delta 5, separate sub-issue) implements E. The handoff is the existing Workflow 1 (#509) Step 7 prereq check — Phase 3 does not duplicate the doctor pre-check; it just skips quietly when the prereq fails.
+- **No score impact.** Phase 3 is gotcha + roundtrip + handoff only — Stage 3 already scores under `missing-component`. This ADR adds no new analyze-side rule and no new severity tier.
+
+**Why not** `figma.config.json`-based opt-out for "this group is intentionally a duplicate, do not promote": the same anti-pattern as ADR-022's rejection — splits user-vetted intent across two surfaces. The existing acknowledgment channel (annotation `intent.kind === "rule-opt-out"` with `ruleId: "missing-component"`) already covers this case for free.
+
+**References**: ADR-012 (annotate-by-default — why guard rejections fall to annotations), ADR-017 (file as source of truth — why decisions encode in the file, not in repo config), ADR-019 (annotation intent payload — the gotcha answer carrier this ADR's question shape feeds), ADR-022 (`unmapped-component` opt-out via ack channel — the precedent for E's silent-skip default), [#508](https://github.com/let-sunny/canicode/issues/508) (Phase 3 epic), [#509](https://github.com/let-sunny/canicode/issues/509) (Phase 1 — owns the Code Connect onboarding wall this ADR explicitly does not duplicate), [#552](https://github.com/let-sunny/canicode/issues/552) (delta 1 — promote primitive, this PR).

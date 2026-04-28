@@ -788,6 +788,151 @@ ${footer}`;
     return out;
   }
 
+  // src/core/roundtrip/apply-promote-component.ts
+  var PROMOTE_COMPONENT_EVENT = "cic_roundtrip_promote_component";
+  function isInsideInstance(node) {
+    let current = node.parent;
+    while (current) {
+      if (current.type === "INSTANCE") return true;
+      current = current.parent;
+    }
+    return false;
+  }
+  function isFreeFormParent(node) {
+    const parent = node.parent;
+    if (!parent) return true;
+    const layoutMode = parent["layoutMode"];
+    return layoutMode === void 0 || layoutMode === "NONE";
+  }
+  function resolveFinalName(desired, existing) {
+    if (!existing.has(desired)) {
+      return { finalName: desired, collisionResolved: false };
+    }
+    const base = `${desired}-promoted`;
+    if (!existing.has(base)) {
+      return { finalName: base, collisionResolved: true };
+    }
+    let counter = 2;
+    while (existing.has(`${base}-${counter}`)) counter++;
+    return { finalName: `${base}-${counter}`, collisionResolved: true };
+  }
+  function annotateFallback(node, ruleId, categories, body) {
+    if (!categories) return;
+    upsertCanicodeAnnotation(node, {
+      ruleId,
+      markdown: body,
+      categoryId: categories.flag
+    });
+  }
+  function applyPromoteComponent(options) {
+    const { node, existingComponentNames, ruleId, categories, telemetry } = options;
+    if (isInsideInstance(node)) {
+      annotateFallback(
+        node,
+        ruleId,
+        categories,
+        `**Promote skipped \u2014 node is inside an INSTANCE subtree.**
+
+Re-running ${ruleId} promote on a node inside an instance would either throw or destructively detach the surrounding instance (see roundtrip-protocol.md:286). Move the source frame outside the instance, or detach the parent instance intentionally before promoting.`
+      );
+      telemetry?.(PROMOTE_COMPONENT_EVENT, {
+        ruleId,
+        outcome: "skipped-inside-instance"
+      });
+      return {
+        icon: "\u{1F4DD}",
+        label: "promote skipped: inside instance",
+        outcome: "skipped-inside-instance"
+      };
+    }
+    if (isFreeFormParent(node)) {
+      annotateFallback(
+        node,
+        ruleId,
+        categories,
+        `**Promote skipped \u2014 parent has no Auto Layout.**
+
+Promoting and swapping siblings under a free-form parent would require manual coordinate carryover that can mangle layout silently (ADR-024 decision A). Wrap the duplicates in an Auto Layout frame first, or promote one of them manually.`
+      );
+      telemetry?.(PROMOTE_COMPONENT_EVENT, {
+        ruleId,
+        outcome: "skipped-free-form-parent"
+      });
+      return {
+        icon: "\u{1F4DD}",
+        label: "promote skipped: free-form parent",
+        outcome: "skipped-free-form-parent"
+      };
+    }
+    const desiredName = typeof node.name === "string" ? node.name : "Component";
+    const { finalName, collisionResolved } = resolveFinalName(
+      desiredName,
+      existingComponentNames
+    );
+    const create = figma.createComponentFromNode;
+    if (typeof create !== "function") {
+      annotateFallback(
+        node,
+        ruleId,
+        categories,
+        `**Promote skipped \u2014 \`figma.createComponentFromNode\` unavailable.**
+
+The Plugin API host did not expose the promote primitive in this session. The FRAME has been flagged so the next roundtrip can retry.`
+      );
+      telemetry?.(PROMOTE_COMPONENT_EVENT, {
+        ruleId,
+        outcome: "error",
+        reason: "createComponentFromNode-missing"
+      });
+      return {
+        icon: "\u{1F4DD}",
+        label: "promote skipped: createComponentFromNode unavailable",
+        outcome: "error"
+      };
+    }
+    try {
+      const promoted = create.call(figma, node);
+      try {
+        promoted.name = finalName;
+      } catch {
+      }
+      telemetry?.(PROMOTE_COMPONENT_EVENT, {
+        ruleId,
+        outcome: "promoted",
+        nameCollisionResolved: collisionResolved
+      });
+      const result = {
+        icon: "\u2705",
+        label: collisionResolved ? `promoted as "${finalName}" (renamed from collision)` : `promoted as "${finalName}"`,
+        outcome: "promoted",
+        newComponentId: promoted.id,
+        finalName
+      };
+      if (collisionResolved) result.nameCollisionResolved = true;
+      return result;
+    } catch (e) {
+      const msg = String(e?.message ?? e);
+      annotateFallback(
+        node,
+        ruleId,
+        categories,
+        `**Promote failed \u2014 \`createComponentFromNode\` threw.**
+
+Error: \`${msg}\`. The FRAME has been flagged so the designer can inspect the structure (locked layer, unsupported child mix, etc.) before the next roundtrip pass.`
+      );
+      telemetry?.(PROMOTE_COMPONENT_EVENT, {
+        ruleId,
+        outcome: "error",
+        reason: msg
+      });
+      return {
+        icon: "\u{1F4DD}",
+        label: `promote failed: ${msg}`,
+        outcome: "error"
+      };
+    }
+  }
+
   // src/core/roundtrip/remove-canicode-annotations.ts
   var LEGACY_CANICODE_PREFIX = "**[canicode]";
   function isCanicodeAnnotation(annotation, categories) {
@@ -813,6 +958,7 @@ ${footer}`;
 
   exports.applyAutoFix = applyAutoFix;
   exports.applyAutoFixes = applyAutoFixes;
+  exports.applyPromoteComponent = applyPromoteComponent;
   exports.applyPropertyMod = applyPropertyMod;
   exports.applyUnmappedComponentOptOut = applyUnmappedComponentOptOut;
   exports.applyWithInstanceFallback = applyWithInstanceFallback;
