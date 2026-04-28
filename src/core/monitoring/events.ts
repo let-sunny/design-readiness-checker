@@ -38,6 +38,14 @@ export const EVENTS = {
   ROUNDTRIP_DEFINITION_WRITE_SKIPPED: `${EVENT_PREFIX}roundtrip_definition_write_skipped`,
   /** CLI `canicode roundtrip-tally` completed successfully. */
   ROUNDTRIP_TALLY: `${EVENT_PREFIX}roundtrip_tally`,
+  /**
+   * Phase 3 (#508 / ADR-023): `applyComponentize` outcome — either a
+   * successful `createComponentFromNode` call or one of the guard rejections
+   * (instance-child, free-form parent, error) that route to the Strategy C
+   * annotate-fallback. Surfaces under `props.outcome` so a Node-side reader
+   * can split the funnel.
+   */
+  ROUNDTRIP_COMPONENTIZE: `${EVENT_PREFIX}roundtrip_componentize`,
 } as const;
 
 export type EventName = (typeof EVENTS)[keyof typeof EVENTS];

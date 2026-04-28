@@ -18,6 +18,12 @@ export { buildIntentionallyUnmappedAnnotationBody } from "./annotation-payload.j
 export { applyUnmappedComponentOptOut } from "./apply-unmapped-component-opt-out.js";
 export { computeRoundtripTally } from "./compute-roundtrip-tally.js";
 export { applyAutoFix, applyAutoFixes } from "./apply-auto-fix.js";
+export { applyComponentize } from "./apply-componentize.js";
+export type {
+  ComponentizeOptions,
+  ComponentizeResult,
+  ComponentizeOutcome,
+} from "./apply-componentize.js";
 export type {
   ApplyAutoFixContext,
   AutoFixIssueInput,

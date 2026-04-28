@@ -788,6 +788,144 @@ ${footer}`;
     return out;
   }
 
+  // src/core/roundtrip/apply-componentize.ts
+  var COMPONENTIZE_EVENT = "cic_roundtrip_componentize";
+  function isInsideInstance(node) {
+    let current = node.parent;
+    while (current) {
+      if (current.type === "INSTANCE") return true;
+      current = current.parent;
+    }
+    return false;
+  }
+  function isFreeFormParent(node) {
+    const parent = node.parent;
+    if (!parent) return true;
+    const layoutMode = parent["layoutMode"];
+    return layoutMode === void 0 || layoutMode === "NONE";
+  }
+  function resolveFinalName(desired, existing) {
+    if (!existing.has(desired)) {
+      return { finalName: desired, collisionResolved: false };
+    }
+    let counter = 2;
+    while (existing.has(`${desired} ${counter}`)) counter++;
+    return { finalName: `${desired} ${counter}`, collisionResolved: true };
+  }
+  function annotateFallback(node, ruleId, categories, body) {
+    if (!categories) return;
+    upsertCanicodeAnnotation(node, {
+      ruleId,
+      markdown: body,
+      categoryId: categories.flag
+    });
+  }
+  function applyComponentize(options) {
+    const { node, existingComponentNames, ruleId, categories, telemetry } = options;
+    if (isInsideInstance(node)) {
+      annotateFallback(
+        node,
+        ruleId,
+        categories,
+        `**Componentize skipped \u2014 node is inside an INSTANCE subtree.**
+
+Re-running ${ruleId} componentize on a node inside an instance would either throw or destructively detach the surrounding instance (see roundtrip-protocol.md:286). Move the source frame outside the instance, or detach the parent instance intentionally before componentizing.`
+      );
+      telemetry?.(COMPONENTIZE_EVENT, {
+        ruleId,
+        outcome: "skipped-inside-instance"
+      });
+      return {
+        icon: "\u{1F4DD}",
+        label: "componentize skipped: inside instance",
+        outcome: "skipped-inside-instance"
+      };
+    }
+    if (isFreeFormParent(node)) {
+      annotateFallback(
+        node,
+        ruleId,
+        categories,
+        `**Componentize skipped \u2014 parent has no Auto Layout.**
+
+Componentizing and swapping siblings under a free-form parent would require manual coordinate carryover that can mangle layout silently (ADR-023 decision A). Wrap the duplicates in an Auto Layout frame first, then re-run the roundtrip.`
+      );
+      telemetry?.(COMPONENTIZE_EVENT, {
+        ruleId,
+        outcome: "skipped-free-form-parent"
+      });
+      return {
+        icon: "\u{1F4DD}",
+        label: "componentize skipped: free-form parent",
+        outcome: "skipped-free-form-parent"
+      };
+    }
+    const desiredName = typeof node.name === "string" ? node.name : "Component";
+    const { finalName, collisionResolved } = resolveFinalName(
+      desiredName,
+      existingComponentNames
+    );
+    const create = figma.createComponentFromNode;
+    if (typeof create !== "function") {
+      annotateFallback(
+        node,
+        ruleId,
+        categories,
+        `**Componentize skipped \u2014 \`figma.createComponentFromNode\` unavailable.**
+
+The Plugin API host did not expose the Create component primitive in this session. The FRAME has been flagged so the next roundtrip can retry.`
+      );
+      telemetry?.(COMPONENTIZE_EVENT, {
+        ruleId,
+        outcome: "error",
+        reason: "createComponentFromNode-missing"
+      });
+      return {
+        icon: "\u{1F4DD}",
+        label: "componentize skipped: createComponentFromNode unavailable",
+        outcome: "error"
+      };
+    }
+    try {
+      const created = create.call(figma, node);
+      created.name = finalName;
+      telemetry?.(COMPONENTIZE_EVENT, {
+        ruleId,
+        outcome: "componentized",
+        nameCollisionResolved: collisionResolved
+      });
+      const result = {
+        icon: "\u2705",
+        label: collisionResolved ? `componentized as "${finalName}" (renamed from collision)` : `componentized as "${finalName}"`,
+        outcome: "componentized",
+        newComponentId: created.id,
+        finalName
+      };
+      if (collisionResolved) result.nameCollisionResolved = true;
+      return result;
+    } catch (e) {
+      const msg = String(e?.message ?? e);
+      annotateFallback(
+        node,
+        ruleId,
+        categories,
+        `**Componentize failed \u2014 \`createComponentFromNode\` threw.**
+
+Error: \`${msg}\`. The FRAME has been flagged so the designer can inspect the structure (locked layer, unsupported child mix, etc.) before the next roundtrip pass.`
+      );
+      telemetry?.(COMPONENTIZE_EVENT, {
+        ruleId,
+        outcome: "error",
+        reason: msg
+      });
+      return {
+        icon: "\u{1F4DD}",
+        label: `componentize failed: ${msg}`,
+        outcome: "error"
+      };
+    }
+  }
+
   // src/core/roundtrip/remove-canicode-annotations.ts
   var LEGACY_CANICODE_PREFIX = "**[canicode]";
   function isCanicodeAnnotation(annotation, categories) {
@@ -813,6 +951,7 @@ ${footer}`;
 
   exports.applyAutoFix = applyAutoFix;
   exports.applyAutoFixes = applyAutoFixes;
+  exports.applyComponentize = applyComponentize;
   exports.applyPropertyMod = applyPropertyMod;
   exports.applyUnmappedComponentOptOut = applyUnmappedComponentOptOut;
   exports.applyWithInstanceFallback = applyWithInstanceFallback;
