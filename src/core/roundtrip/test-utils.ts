@@ -25,7 +25,7 @@ export interface FigmaGlobalMock extends FigmaGlobal {
       ) => FigmaPaint
     >;
   };
-  // Phase 3 (#508 / ADR-024): tests assign or replace this on a per-case basis
+  // Phase 3 (#508 / ADR-023): tests assign or replace this on a per-case basis
   // (`mock.createComponentFromNode = vi.fn(...)`). Marked optional in
   // `FigmaGlobal` because the helper guards on `typeof create !== "function"`.
   createComponentFromNode?:

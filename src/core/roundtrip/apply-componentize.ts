@@ -8,28 +8,31 @@ import type {
 
 declare const figma: FigmaGlobal;
 
-// Telemetry event name for promote attempts. Mirrored as a typed constant in
-// `src/core/monitoring/events.ts` (`ROUNDTRIP_PROMOTE_COMPONENT`). The literal
-// string lives here so the bundled IIFE that runs in the Figma Plugin sandbox
-// stays free of `core/monitoring` imports — same pattern as
+// Telemetry event name for componentize attempts. Mirrored as a typed
+// constant in `src/core/monitoring/events.ts` (`ROUNDTRIP_COMPONENTIZE`).
+// The literal string lives here so the bundled IIFE that runs in the Figma
+// Plugin sandbox stays free of `core/monitoring` imports — same pattern as
 // `apply-with-instance-fallback.ts`.
-const PROMOTE_COMPONENT_EVENT = "cic_roundtrip_promote_component";
+const COMPONENTIZE_EVENT = "cic_roundtrip_componentize";
 
-export type PromoteOutcome =
-  | "promoted"
+export type ComponentizeOutcome =
+  | "componentized"
   | "skipped-inside-instance"
   | "skipped-free-form-parent"
   | "error";
 
-export interface PromoteComponentOptions {
-  // The FRAME (or other compatible) node the user agreed to promote.
+export interface ComponentizeOptions {
+  // The FRAME (or other compatible) node the user agreed to componentize.
   node: FigmaNode;
   // Names of components already in the file. Used for collision detection so a
-  // colliding promote auto-suffixes the new component with `-promoted` (and
-  // numeric suffixes if the suffixed name also collides). The caller computes
-  // this set inside the `use_figma` script via
+  // colliding componentize auto-suffixes the new component with `<name> 2`
+  // (and ` 3`, ` 4`, … if those also collide). The caller computes this set
+  // inside the `use_figma` script via
   // `figma.root.findAllWithCriteria({ types: ["COMPONENT", "COMPONENT_SET"] })`
-  // — we keep the helper pure so tests do not need a `figma.root` mock.
+  // — we keep the helper pure so tests do not need a `figma.root` mock. Note
+  // that the suffix is updated in-place per call: if you componentize multiple
+  // siblings in one batch, add the new name to the set before the next call
+  // or two siblings will collide on the same suffix.
   existingComponentNames: ReadonlySet<string>;
   // Used as the annotation `ruleId` and reported back in telemetry. The
   // batched gotcha question shape that drives this primitive (delta 4) is not
@@ -40,20 +43,20 @@ export interface PromoteComponentOptions {
   telemetry?: (event: string, props?: Record<string, unknown>) => void;
 }
 
-export interface PromoteComponentResult {
+export interface ComponentizeResult {
   icon: RoundtripResultIcon;
   label: string;
-  outcome: PromoteOutcome;
+  outcome: ComponentizeOutcome;
   newComponentId?: string;
   finalName?: string;
   // True iff `existingComponentNames` already contained the input node's name
-  // and the promote (or annotate-fallback) recorded the suffixed alternative.
-  // Surfaces in telemetry props and in the gotcha answer markdown so the
-  // designer sees `Card → Card-promoted` instead of a silent rename.
+  // and the call resolved to a numeric-suffixed alternative. Surfaces in
+  // telemetry props and in the gotcha answer markdown so the designer sees
+  // `Card → Card 2` instead of a silent rename.
   nameCollisionResolved?: boolean;
 }
 
-// ADR-024 / #368: walks `node.parent` upward looking for any INSTANCE
+// ADR-023 / #368: walks `node.parent` upward looking for any INSTANCE
 // ancestor. `createComponentFromNode` on a node inside an instance subtree
 // either throws or destructively detaches the parent instance (documented in
 // `docs/roundtrip-protocol.md:286`) — neither is acceptable, so the guard
@@ -67,7 +70,7 @@ function isInsideInstance(node: FigmaNode): boolean {
   return false;
 }
 
-// ADR-024 decision A: refuse promote+swap on a free-form parent (no Auto
+// ADR-023 decision A: refuse componentize on a free-form parent (no Auto
 // Layout) because the post-swap position carryover would silently mangle
 // coordinates the designer cannot recover. Auto Layout parents slot the new
 // instance in the original position automatically.
@@ -78,10 +81,12 @@ function isFreeFormParent(node: FigmaNode): boolean {
   return layoutMode === undefined || layoutMode === "NONE";
 }
 
-// ADR-024 decision C: when `node.name` already exists in
-// `existingComponentNames`, promote under `<name>-promoted`. If that also
-// collides, append `-2`, `-3`, etc. The original node name is left untouched
-// for the annotation diagnostic; only the promoted component's `name` shifts.
+// ADR-023 decision C: when `node.name` already exists in
+// `existingComponentNames`, componentize under `<name> 2` (Figma's native
+// duplicate-name pattern). If `<name> 2` also collides, walk up to ` 3`,
+// ` 4`, etc. The original FRAME's `name` is left untouched; only the new
+// component's `name` is the suffixed value. Returning the resolved name lets
+// the caller surface the rename in the gotcha answer.
 function resolveFinalName(
   desired: string,
   existing: ReadonlySet<string>
@@ -89,13 +94,9 @@ function resolveFinalName(
   if (!existing.has(desired)) {
     return { finalName: desired, collisionResolved: false };
   }
-  const base = `${desired}-promoted`;
-  if (!existing.has(base)) {
-    return { finalName: base, collisionResolved: true };
-  }
   let counter = 2;
-  while (existing.has(`${base}-${counter}`)) counter++;
-  return { finalName: `${base}-${counter}`, collisionResolved: true };
+  while (existing.has(`${desired} ${counter}`)) counter++;
+  return { finalName: `${desired} ${counter}`, collisionResolved: true };
 }
 
 function annotateFallback(
@@ -113,9 +114,10 @@ function annotateFallback(
 }
 
 /**
- * Phase 3 (#508 / ADR-024) — promote primitive.
+ * Phase 3 (#508 / ADR-023) — componentize primitive.
  *
- * Wraps `figma.createComponentFromNode(node)` with three guards:
+ * Wraps `figma.createComponentFromNode(node)` (Figma's "Create component"
+ * action) with three guards:
  *   1. instance-child guard (#368) — refuses if any ancestor is INSTANCE.
  *   2. free-form parent guard (decision A) — refuses if parent has no Auto
  *      Layout, because position carryover after the sibling swap (delta 2)
@@ -125,16 +127,16 @@ function annotateFallback(
  *
  * On any rejection the source FRAME gets a Strategy C `canicode:flag`
  * annotation naming the rejection reason so the designer can see why the
- * promote did not happen and either restructure or override the decision in
- * a follow-up roundtrip pass.
+ * componentize did not happen and either restructure or override the
+ * decision in a follow-up roundtrip pass.
  *
  * The companion `apply-replace-with-instance` primitive (delta 2) consumes
  * `result.newComponentId` and replaces the remaining sibling FRAMEs with
- * instances of the promoted component.
+ * instances of the new component.
  */
-export function applyPromoteComponent(
-  options: PromoteComponentOptions
-): PromoteComponentResult {
+export function applyComponentize(
+  options: ComponentizeOptions
+): ComponentizeResult {
   const { node, existingComponentNames, ruleId, categories, telemetry } =
     options;
 
@@ -143,19 +145,20 @@ export function applyPromoteComponent(
       node,
       ruleId,
       categories,
-      `**Promote skipped — node is inside an INSTANCE subtree.**\n\n` +
-        `Re-running ${ruleId} promote on a node inside an instance would ` +
-        `either throw or destructively detach the surrounding instance ` +
-        `(see roundtrip-protocol.md:286). Move the source frame outside the ` +
-        `instance, or detach the parent instance intentionally before promoting.`
+      `**Componentize skipped — node is inside an INSTANCE subtree.**\n\n` +
+        `Re-running ${ruleId} componentize on a node inside an instance ` +
+        `would either throw or destructively detach the surrounding ` +
+        `instance (see roundtrip-protocol.md:286). Move the source frame ` +
+        `outside the instance, or detach the parent instance intentionally ` +
+        `before componentizing.`
     );
-    telemetry?.(PROMOTE_COMPONENT_EVENT, {
+    telemetry?.(COMPONENTIZE_EVENT, {
       ruleId,
-      outcome: "skipped-inside-instance" as PromoteOutcome,
+      outcome: "skipped-inside-instance" as ComponentizeOutcome,
     });
     return {
       icon: "📝",
-      label: "promote skipped: inside instance",
+      label: "componentize skipped: inside instance",
       outcome: "skipped-inside-instance",
     };
   }
@@ -165,19 +168,19 @@ export function applyPromoteComponent(
       node,
       ruleId,
       categories,
-      `**Promote skipped — parent has no Auto Layout.**\n\n` +
-        `Promoting and swapping siblings under a free-form parent would ` +
-        `require manual coordinate carryover that can mangle layout ` +
-        `silently (ADR-024 decision A). Wrap the duplicates in an Auto ` +
-        `Layout frame first, or promote one of them manually.`
+      `**Componentize skipped — parent has no Auto Layout.**\n\n` +
+        `Componentizing and swapping siblings under a free-form parent ` +
+        `would require manual coordinate carryover that can mangle layout ` +
+        `silently (ADR-023 decision A). Wrap the duplicates in an Auto ` +
+        `Layout frame first, then re-run the roundtrip.`
     );
-    telemetry?.(PROMOTE_COMPONENT_EVENT, {
+    telemetry?.(COMPONENTIZE_EVENT, {
       ruleId,
-      outcome: "skipped-free-form-parent" as PromoteOutcome,
+      outcome: "skipped-free-form-parent" as ComponentizeOutcome,
     });
     return {
       icon: "📝",
-      label: "promote skipped: free-form parent",
+      label: "componentize skipped: free-form parent",
       outcome: "skipped-free-form-parent",
     };
   }
@@ -194,45 +197,43 @@ export function applyPromoteComponent(
       node,
       ruleId,
       categories,
-      `**Promote skipped — \`figma.createComponentFromNode\` unavailable.**\n\n` +
-        `The Plugin API host did not expose the promote primitive in this ` +
-        `session. The FRAME has been flagged so the next roundtrip can retry.`
+      `**Componentize skipped — \`figma.createComponentFromNode\` unavailable.**\n\n` +
+        `The Plugin API host did not expose the Create component primitive ` +
+        `in this session. The FRAME has been flagged so the next roundtrip ` +
+        `can retry.`
     );
-    telemetry?.(PROMOTE_COMPONENT_EVENT, {
+    telemetry?.(COMPONENTIZE_EVENT, {
       ruleId,
-      outcome: "error" as PromoteOutcome,
+      outcome: "error" as ComponentizeOutcome,
       reason: "createComponentFromNode-missing",
     });
     return {
       icon: "📝",
-      label: "promote skipped: createComponentFromNode unavailable",
+      label: "componentize skipped: createComponentFromNode unavailable",
       outcome: "error",
     };
   }
 
   try {
-    const promoted = create.call(figma, node);
-    // The Plugin API returns a NEW component node; rename it to the resolved
-    // final name in case decision C added a suffix. Reassignment guards the
-    // case where `name` is read-only on a frozen mock — we proceed without
-    // raising so the test envelope can still verify telemetry + ids.
-    try {
-      (promoted as { name: string }).name = finalName;
-    } catch {
-      // Mock frozen `name`; silently keep whatever the host assigned.
-    }
-    telemetry?.(PROMOTE_COMPONENT_EVENT, {
+    const created = create.call(figma, node);
+    // Figma's "Create component" action returns a NEW component node;
+    // overwrite `name` to the resolved final name so decision C's collision
+    // suffix applies. Real Plugin API `ComponentNode.name` is writable, so no
+    // try/catch — a frozen mock surfaces as a test failure, which is the
+    // signal we want.
+    (created as { name: string }).name = finalName;
+    telemetry?.(COMPONENTIZE_EVENT, {
       ruleId,
-      outcome: "promoted" as PromoteOutcome,
+      outcome: "componentized" as ComponentizeOutcome,
       nameCollisionResolved: collisionResolved,
     });
-    const result: PromoteComponentResult = {
+    const result: ComponentizeResult = {
       icon: "✅",
       label: collisionResolved
-        ? `promoted as "${finalName}" (renamed from collision)`
-        : `promoted as "${finalName}"`,
-      outcome: "promoted",
-      newComponentId: promoted.id,
+        ? `componentized as "${finalName}" (renamed from collision)`
+        : `componentized as "${finalName}"`,
+      outcome: "componentized",
+      newComponentId: created.id,
       finalName,
     };
     if (collisionResolved) result.nameCollisionResolved = true;
@@ -243,19 +244,19 @@ export function applyPromoteComponent(
       node,
       ruleId,
       categories,
-      `**Promote failed — \`createComponentFromNode\` threw.**\n\n` +
+      `**Componentize failed — \`createComponentFromNode\` threw.**\n\n` +
         `Error: \`${msg}\`. The FRAME has been flagged so the designer can ` +
         `inspect the structure (locked layer, unsupported child mix, etc.) ` +
         `before the next roundtrip pass.`
     );
-    telemetry?.(PROMOTE_COMPONENT_EVENT, {
+    telemetry?.(COMPONENTIZE_EVENT, {
       ruleId,
-      outcome: "error" as PromoteOutcome,
+      outcome: "error" as ComponentizeOutcome,
       reason: msg,
     });
     return {
       icon: "📝",
-      label: `promote failed: ${msg}`,
+      label: `componentize failed: ${msg}`,
       outcome: "error",
     };
   }

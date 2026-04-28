@@ -788,8 +788,8 @@ ${footer}`;
     return out;
   }
 
-  // src/core/roundtrip/apply-promote-component.ts
-  var PROMOTE_COMPONENT_EVENT = "cic_roundtrip_promote_component";
+  // src/core/roundtrip/apply-componentize.ts
+  var COMPONENTIZE_EVENT = "cic_roundtrip_componentize";
   function isInsideInstance(node) {
     let current = node.parent;
     while (current) {
@@ -808,13 +808,9 @@ ${footer}`;
     if (!existing.has(desired)) {
       return { finalName: desired, collisionResolved: false };
     }
-    const base = `${desired}-promoted`;
-    if (!existing.has(base)) {
-      return { finalName: base, collisionResolved: true };
-    }
     let counter = 2;
-    while (existing.has(`${base}-${counter}`)) counter++;
-    return { finalName: `${base}-${counter}`, collisionResolved: true };
+    while (existing.has(`${desired} ${counter}`)) counter++;
+    return { finalName: `${desired} ${counter}`, collisionResolved: true };
   }
   function annotateFallback(node, ruleId, categories, body) {
     if (!categories) return;
@@ -824,24 +820,24 @@ ${footer}`;
       categoryId: categories.flag
     });
   }
-  function applyPromoteComponent(options) {
+  function applyComponentize(options) {
     const { node, existingComponentNames, ruleId, categories, telemetry } = options;
     if (isInsideInstance(node)) {
       annotateFallback(
         node,
         ruleId,
         categories,
-        `**Promote skipped \u2014 node is inside an INSTANCE subtree.**
+        `**Componentize skipped \u2014 node is inside an INSTANCE subtree.**
 
-Re-running ${ruleId} promote on a node inside an instance would either throw or destructively detach the surrounding instance (see roundtrip-protocol.md:286). Move the source frame outside the instance, or detach the parent instance intentionally before promoting.`
+Re-running ${ruleId} componentize on a node inside an instance would either throw or destructively detach the surrounding instance (see roundtrip-protocol.md:286). Move the source frame outside the instance, or detach the parent instance intentionally before componentizing.`
       );
-      telemetry?.(PROMOTE_COMPONENT_EVENT, {
+      telemetry?.(COMPONENTIZE_EVENT, {
         ruleId,
         outcome: "skipped-inside-instance"
       });
       return {
         icon: "\u{1F4DD}",
-        label: "promote skipped: inside instance",
+        label: "componentize skipped: inside instance",
         outcome: "skipped-inside-instance"
       };
     }
@@ -850,17 +846,17 @@ Re-running ${ruleId} promote on a node inside an instance would either throw or 
         node,
         ruleId,
         categories,
-        `**Promote skipped \u2014 parent has no Auto Layout.**
+        `**Componentize skipped \u2014 parent has no Auto Layout.**
 
-Promoting and swapping siblings under a free-form parent would require manual coordinate carryover that can mangle layout silently (ADR-024 decision A). Wrap the duplicates in an Auto Layout frame first, or promote one of them manually.`
+Componentizing and swapping siblings under a free-form parent would require manual coordinate carryover that can mangle layout silently (ADR-023 decision A). Wrap the duplicates in an Auto Layout frame first, then re-run the roundtrip.`
       );
-      telemetry?.(PROMOTE_COMPONENT_EVENT, {
+      telemetry?.(COMPONENTIZE_EVENT, {
         ruleId,
         outcome: "skipped-free-form-parent"
       });
       return {
         icon: "\u{1F4DD}",
-        label: "promote skipped: free-form parent",
+        label: "componentize skipped: free-form parent",
         outcome: "skipped-free-form-parent"
       };
     }
@@ -875,37 +871,34 @@ Promoting and swapping siblings under a free-form parent would require manual co
         node,
         ruleId,
         categories,
-        `**Promote skipped \u2014 \`figma.createComponentFromNode\` unavailable.**
+        `**Componentize skipped \u2014 \`figma.createComponentFromNode\` unavailable.**
 
-The Plugin API host did not expose the promote primitive in this session. The FRAME has been flagged so the next roundtrip can retry.`
+The Plugin API host did not expose the Create component primitive in this session. The FRAME has been flagged so the next roundtrip can retry.`
       );
-      telemetry?.(PROMOTE_COMPONENT_EVENT, {
+      telemetry?.(COMPONENTIZE_EVENT, {
         ruleId,
         outcome: "error",
         reason: "createComponentFromNode-missing"
       });
       return {
         icon: "\u{1F4DD}",
-        label: "promote skipped: createComponentFromNode unavailable",
+        label: "componentize skipped: createComponentFromNode unavailable",
         outcome: "error"
       };
     }
     try {
-      const promoted = create.call(figma, node);
-      try {
-        promoted.name = finalName;
-      } catch {
-      }
-      telemetry?.(PROMOTE_COMPONENT_EVENT, {
+      const created = create.call(figma, node);
+      created.name = finalName;
+      telemetry?.(COMPONENTIZE_EVENT, {
         ruleId,
-        outcome: "promoted",
+        outcome: "componentized",
         nameCollisionResolved: collisionResolved
       });
       const result = {
         icon: "\u2705",
-        label: collisionResolved ? `promoted as "${finalName}" (renamed from collision)` : `promoted as "${finalName}"`,
-        outcome: "promoted",
-        newComponentId: promoted.id,
+        label: collisionResolved ? `componentized as "${finalName}" (renamed from collision)` : `componentized as "${finalName}"`,
+        outcome: "componentized",
+        newComponentId: created.id,
         finalName
       };
       if (collisionResolved) result.nameCollisionResolved = true;
@@ -916,18 +909,18 @@ The Plugin API host did not expose the promote primitive in this session. The FR
         node,
         ruleId,
         categories,
-        `**Promote failed \u2014 \`createComponentFromNode\` threw.**
+        `**Componentize failed \u2014 \`createComponentFromNode\` threw.**
 
 Error: \`${msg}\`. The FRAME has been flagged so the designer can inspect the structure (locked layer, unsupported child mix, etc.) before the next roundtrip pass.`
       );
-      telemetry?.(PROMOTE_COMPONENT_EVENT, {
+      telemetry?.(COMPONENTIZE_EVENT, {
         ruleId,
         outcome: "error",
         reason: msg
       });
       return {
         icon: "\u{1F4DD}",
-        label: `promote failed: ${msg}`,
+        label: `componentize failed: ${msg}`,
         outcome: "error"
       };
     }
@@ -958,7 +951,7 @@ Error: \`${msg}\`. The FRAME has been flagged so the designer can inspect the st
 
   exports.applyAutoFix = applyAutoFix;
   exports.applyAutoFixes = applyAutoFixes;
-  exports.applyPromoteComponent = applyPromoteComponent;
+  exports.applyComponentize = applyComponentize;
   exports.applyPropertyMod = applyPropertyMod;
   exports.applyUnmappedComponentOptOut = applyUnmappedComponentOptOut;
   exports.applyWithInstanceFallback = applyWithInstanceFallback;

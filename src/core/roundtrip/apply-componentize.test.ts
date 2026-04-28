@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { applyPromoteComponent } from "./apply-promote-component.js";
+import { applyComponentize } from "./apply-componentize.js";
 import {
   createFigmaGlobal,
   installFigmaGlobal,
@@ -72,14 +72,14 @@ afterEach(() => {
   uninstallFigmaGlobal();
 });
 
-describe("applyPromoteComponent — guards", () => {
+describe("applyComponentize — guards", () => {
   it("rejects nodes inside an INSTANCE subtree and annotates instead", () => {
     const wrapper = instanceAncestorChain();
     const target = makeFrame("Card", wrapper);
     const telemetry = vi.fn();
     mock.createComponentFromNode = vi.fn();
 
-    const result = applyPromoteComponent({
+    const result = applyComponentize({
       node: target,
       existingComponentNames: new Set(),
       ruleId: RULE_ID,
@@ -96,7 +96,7 @@ describe("applyPromoteComponent — guards", () => {
     );
     expect(target.annotations?.[0]?.categoryId).toBe(CATEGORIES.flag);
     expect(telemetry).toHaveBeenCalledWith(
-      "cic_roundtrip_promote_component",
+      "cic_roundtrip_componentize",
       expect.objectContaining({
         outcome: "skipped-inside-instance",
         ruleId: RULE_ID,
@@ -109,7 +109,7 @@ describe("applyPromoteComponent — guards", () => {
     const telemetry = vi.fn();
     mock.createComponentFromNode = vi.fn();
 
-    const result = applyPromoteComponent({
+    const result = applyComponentize({
       node: target,
       existingComponentNames: new Set(),
       ruleId: RULE_ID,
@@ -121,7 +121,7 @@ describe("applyPromoteComponent — guards", () => {
     expect(mock.createComponentFromNode).not.toHaveBeenCalled();
     expect(target.annotations?.[0]?.labelMarkdown).toContain("Auto Layout");
     expect(telemetry).toHaveBeenCalledWith(
-      "cic_roundtrip_promote_component",
+      "cic_roundtrip_componentize",
       expect.objectContaining({ outcome: "skipped-free-form-parent" })
     );
   });
@@ -133,7 +133,7 @@ describe("applyPromoteComponent — guards", () => {
       type: "FRAME",
       annotations: [],
     };
-    const result = applyPromoteComponent({
+    const result = applyComponentize({
       node: orphan,
       existingComponentNames: new Set(),
       ruleId: RULE_ID,
@@ -141,10 +141,47 @@ describe("applyPromoteComponent — guards", () => {
     });
     expect(result.outcome).toBe("skipped-free-form-parent");
   });
+
+  it("walks past non-instance ancestors before clearing the inside-instance guard", () => {
+    const root: FigmaNode = {
+      id: "root",
+      name: "Root",
+      type: "FRAME",
+      layoutMode: "VERTICAL",
+    };
+    const wrapA: FigmaNode = {
+      id: "wrap-a",
+      name: "WrapA",
+      type: "FRAME",
+      layoutMode: "VERTICAL",
+      parent: root,
+    };
+    const wrapB: FigmaNode = {
+      id: "wrap-b",
+      name: "WrapB",
+      type: "FRAME",
+      layoutMode: "VERTICAL",
+      parent: wrapA,
+    };
+    const target = makeFrame("Card", wrapB);
+    mock.createComponentFromNode = vi.fn(() => ({
+      id: "comp-x",
+      name: "Card",
+      type: "COMPONENT",
+    }));
+
+    const result = applyComponentize({
+      node: target,
+      existingComponentNames: new Set(),
+      ruleId: RULE_ID,
+      categories: CATEGORIES,
+    });
+    expect(result.outcome).toBe("componentized");
+  });
 });
 
-describe("applyPromoteComponent — success path", () => {
-  it("promotes the node and returns the new component id", () => {
+describe("applyComponentize — success path", () => {
+  it("creates the component and returns the new component id", () => {
     const target = makeFrame("Card", autoLayoutParent());
     const created: FigmaNode = {
       id: "comp-new",
@@ -154,7 +191,7 @@ describe("applyPromoteComponent — success path", () => {
     mock.createComponentFromNode = vi.fn(() => created);
     const telemetry = vi.fn();
 
-    const result = applyPromoteComponent({
+    const result = applyComponentize({
       node: target,
       existingComponentNames: new Set(),
       ruleId: RULE_ID,
@@ -162,22 +199,22 @@ describe("applyPromoteComponent — success path", () => {
       telemetry,
     });
 
-    expect(result.outcome).toBe("promoted");
+    expect(result.outcome).toBe("componentized");
     expect(result.icon).toBe("✅");
     expect(result.newComponentId).toBe("comp-new");
     expect(result.finalName).toBe("Card");
     expect(result.nameCollisionResolved).toBeUndefined();
     expect(mock.createComponentFromNode).toHaveBeenCalledWith(target);
     expect(telemetry).toHaveBeenCalledWith(
-      "cic_roundtrip_promote_component",
+      "cic_roundtrip_componentize",
       expect.objectContaining({
-        outcome: "promoted",
+        outcome: "componentized",
         nameCollisionResolved: false,
       })
     );
   });
 
-  it("auto-suffixes -promoted on a name collision and reports the rename", () => {
+  it("auto-suffixes ` 2` on a name collision and reports the rename", () => {
     const target = makeFrame("Card", autoLayoutParent());
     const created: FigmaNode = {
       id: "comp-new",
@@ -186,21 +223,21 @@ describe("applyPromoteComponent — success path", () => {
     };
     mock.createComponentFromNode = vi.fn(() => created);
 
-    const result = applyPromoteComponent({
+    const result = applyComponentize({
       node: target,
       existingComponentNames: new Set(["Card"]),
       ruleId: RULE_ID,
       categories: CATEGORIES,
     });
 
-    expect(result.outcome).toBe("promoted");
-    expect(result.finalName).toBe("Card-promoted");
+    expect(result.outcome).toBe("componentized");
+    expect(result.finalName).toBe("Card 2");
     expect(result.nameCollisionResolved).toBe(true);
     expect(result.label).toContain("renamed from collision");
-    expect(created.name).toBe("Card-promoted");
+    expect(created.name).toBe("Card 2");
   });
 
-  it("appends a numeric suffix when -promoted also collides", () => {
+  it("walks the suffix counter when ` 2` also collides", () => {
     const target = makeFrame("Card", autoLayoutParent());
     const created: FigmaNode = {
       id: "comp-new",
@@ -209,29 +246,25 @@ describe("applyPromoteComponent — success path", () => {
     };
     mock.createComponentFromNode = vi.fn(() => created);
 
-    const result = applyPromoteComponent({
+    const result = applyComponentize({
       node: target,
-      existingComponentNames: new Set([
-        "Card",
-        "Card-promoted",
-        "Card-promoted-2",
-      ]),
+      existingComponentNames: new Set(["Card", "Card 2", "Card 3"]),
       ruleId: RULE_ID,
       categories: CATEGORIES,
     });
 
-    expect(result.finalName).toBe("Card-promoted-3");
+    expect(result.finalName).toBe("Card 4");
     expect(result.nameCollisionResolved).toBe(true);
   });
 });
 
-describe("applyPromoteComponent — error and host gaps", () => {
+describe("applyComponentize — error and host gaps", () => {
   it("annotates and reports outcome=error when the host omits createComponentFromNode", () => {
     const target = makeFrame("Card", autoLayoutParent());
     mock.createComponentFromNode = undefined;
     const telemetry = vi.fn();
 
-    const result = applyPromoteComponent({
+    const result = applyComponentize({
       node: target,
       existingComponentNames: new Set(),
       ruleId: RULE_ID,
@@ -245,7 +278,7 @@ describe("applyPromoteComponent — error and host gaps", () => {
       "createComponentFromNode"
     );
     expect(telemetry).toHaveBeenCalledWith(
-      "cic_roundtrip_promote_component",
+      "cic_roundtrip_componentize",
       expect.objectContaining({
         outcome: "error",
         reason: "createComponentFromNode-missing",
@@ -253,14 +286,14 @@ describe("applyPromoteComponent — error and host gaps", () => {
     );
   });
 
-  it("annotates and reports the thrown message when promote throws", () => {
+  it("annotates and reports the thrown message when the call throws", () => {
     const target = makeFrame("Card", autoLayoutParent());
     mock.createComponentFromNode = vi.fn(() => {
       throw new Error("Locked layer");
     });
     const telemetry = vi.fn();
 
-    const result = applyPromoteComponent({
+    const result = applyComponentize({
       node: target,
       existingComponentNames: new Set(),
       ruleId: RULE_ID,
@@ -272,14 +305,14 @@ describe("applyPromoteComponent — error and host gaps", () => {
     expect(result.label).toContain("Locked layer");
     expect(target.annotations?.[0]?.labelMarkdown).toContain("Locked layer");
     expect(telemetry).toHaveBeenCalledWith(
-      "cic_roundtrip_promote_component",
+      "cic_roundtrip_componentize",
       expect.objectContaining({ outcome: "error", reason: "Locked layer" })
     );
   });
 
   it("skips annotation gracefully when categories are not supplied", () => {
     const target = makeFrame("Card", freeFormParent());
-    const result = applyPromoteComponent({
+    const result = applyComponentize({
       node: target,
       existingComponentNames: new Set(),
       ruleId: RULE_ID,

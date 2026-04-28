@@ -68,9 +68,9 @@ export interface FigmaGlobal {
   getNodeByIdAsync(id: string): Promise<FigmaNode | null>;
   annotations: FigmaAnnotationsAPI;
   variables: FigmaVariablesAPI;
-  // Phase 3 (#508 / ADR-024): converts a FRAME (or other compatible node) into
+  // Phase 3 (#508 / ADR-023): converts a FRAME (or other compatible node) into
   // a COMPONENT in place and returns the new component node. Throws if the
-  // input is unsupported (e.g. inside an INSTANCE) — `applyPromoteComponent`
+  // input is unsupported (e.g. inside an INSTANCE) — `applyComponentize`
   // wraps with the #368 ancestor guard before calling.
   createComponentFromNode?(node: FigmaNode): FigmaNode;
 }

@@ -60,20 +60,10 @@ for (const fixture of fixtures) {
   }
 
   const raw = JSON.parse(readFileSync(outFile, "utf-8"));
-  const issues = raw.scoreReport?.issues ?? raw.nodeIssueSummaries ?? [];
 
-  // nodeIssueSummaries shape is per-node grouped — we need raw issue list.
-  // calibrate-analyze doesn't dump raw issues. Re-derive from scoreReport.ruleScores or fall back.
-  // Use ruleScores to get count per rule, then re-scan for per-issue subType.
-  // Simpler: also dump scoreReport issues if present.
-
-  // The output JSON includes scoreReport which has perRule but not per-issue subType.
-  // Pull per-rule:
-  const perRule = raw.scoreReport?.perRule ?? {};
-  const missingComponentRule = perRule["missing-component"];
-
-  // Without subType breakdown in calibrate-analyze output, walk nodeIssueSummaries
-  // (which is filtered) for the rule id at minimum.
+  // calibrate-analyze emits per-node grouped issues (`nodeIssueSummaries`)
+  // rather than the raw issue stream. Walk the per-node groups to count
+  // missing-component subTypes — that's the only field we need for Stage 3.
   let stage1 = 0;
   let stage2 = 0;
   let stage3 = 0;
