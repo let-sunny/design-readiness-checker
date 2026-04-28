@@ -926,6 +926,217 @@ Error: \`${msg}\`. The FRAME has been flagged so the designer can inspect the st
     }
   }
 
+  // src/core/roundtrip/apply-replace-with-instance.ts
+  var REPLACE_EVENT = "cic_roundtrip_replace_with_instance";
+  function isFreeFormParent2(parent) {
+    if (!parent) return true;
+    const layoutMode = parent["layoutMode"];
+    return layoutMode === void 0 || layoutMode === "NONE";
+  }
+  function annotateFallback2(node, ruleId, categories, body) {
+    if (!node || !categories) return;
+    upsertCanicodeAnnotation(node, {
+      ruleId,
+      markdown: body,
+      categoryId: categories.flag
+    });
+  }
+  function isComponentLike(type) {
+    return type === "COMPONENT" || type === "COMPONENT_SET";
+  }
+  async function applyReplaceWithInstance(options) {
+    const { mainComponentId, targetNodeId, ruleId, categories, telemetry } = options;
+    const [target, main] = await Promise.all([
+      figma.getNodeByIdAsync(targetNodeId),
+      figma.getNodeByIdAsync(mainComponentId)
+    ]);
+    if (!target) {
+      telemetry?.(REPLACE_EVENT, {
+        ruleId,
+        outcome: "skipped-prereq-missing",
+        reason: "target-missing"
+      });
+      return {
+        icon: "\u{1F4DD}",
+        label: `replace skipped: target node ${targetNodeId} missing`,
+        outcome: "skipped-prereq-missing"
+      };
+    }
+    if (!main) {
+      annotateFallback2(
+        target,
+        ruleId,
+        categories,
+        `**Replace skipped \u2014 main component \`${mainComponentId}\` not found.**
+
+The componentize step (delta 1) likely failed earlier in this batch, or the main was deleted between componentize and swap. The FRAME has been flagged so the next roundtrip pass can re-derive the group.`
+      );
+      telemetry?.(REPLACE_EVENT, {
+        ruleId,
+        outcome: "skipped-prereq-missing",
+        reason: "main-missing"
+      });
+      return {
+        icon: "\u{1F4DD}",
+        label: `replace skipped: main ${mainComponentId} missing`,
+        outcome: "skipped-prereq-missing"
+      };
+    }
+    if (!isComponentLike(main.type)) {
+      annotateFallback2(
+        target,
+        ruleId,
+        categories,
+        `**Replace skipped \u2014 \`${mainComponentId}\` is not a COMPONENT.**
+
+Resolved to a \`${main.type}\` node. Phase 3's swap step requires the main to be a \`COMPONENT\` or \`COMPONENT_SET\`. Check that componentize ran cleanly on the source frame before this call.`
+      );
+      telemetry?.(REPLACE_EVENT, {
+        ruleId,
+        outcome: "skipped-prereq-missing",
+        reason: "main-not-component",
+        resolvedType: main.type
+      });
+      return {
+        icon: "\u{1F4DD}",
+        label: `replace skipped: main is ${main.type}, not COMPONENT`,
+        outcome: "skipped-prereq-missing"
+      };
+    }
+    if (target.id === main.id) {
+      annotateFallback2(
+        target,
+        ruleId,
+        categories,
+        `**Replace skipped \u2014 target and main are the same node.**
+
+This usually means the componentize source was passed in the swap set by mistake. The componentize source becomes the main; only the remaining sibling FRAMEs should be swapped.`
+      );
+      telemetry?.(REPLACE_EVENT, {
+        ruleId,
+        outcome: "skipped-prereq-missing",
+        reason: "target-is-main"
+      });
+      return {
+        icon: "\u{1F4DD}",
+        label: "replace skipped: target equals main",
+        outcome: "skipped-prereq-missing"
+      };
+    }
+    const parent = target.parent;
+    if (!parent) {
+      annotateFallback2(
+        target,
+        ruleId,
+        categories,
+        `**Replace skipped \u2014 target has no parent.**
+
+Cannot insert a new instance for an orphaned node. The FRAME has been flagged; no swap performed.`
+      );
+      telemetry?.(REPLACE_EVENT, {
+        ruleId,
+        outcome: "skipped-prereq-missing",
+        reason: "no-parent"
+      });
+      return {
+        icon: "\u{1F4DD}",
+        label: "replace skipped: no parent",
+        outcome: "skipped-prereq-missing"
+      };
+    }
+    if (isFreeFormParent2(parent)) {
+      annotateFallback2(
+        target,
+        ruleId,
+        categories,
+        `**Replace skipped \u2014 parent has no Auto Layout.**
+
+Swapping a sibling FRAME with an instance under a free-form parent would require explicit coordinate carryover that can mangle layout silently (ADR-023 decision A). Wrap the duplicates in an Auto Layout frame first, then re-run the roundtrip.`
+      );
+      telemetry?.(REPLACE_EVENT, {
+        ruleId,
+        outcome: "skipped-free-form-parent"
+      });
+      return {
+        icon: "\u{1F4DD}",
+        label: "replace skipped: free-form parent",
+        outcome: "skipped-free-form-parent"
+      };
+    }
+    const create = main.createInstance;
+    if (typeof create !== "function") {
+      annotateFallback2(
+        target,
+        ruleId,
+        categories,
+        `**Replace skipped \u2014 \`createInstance\` unavailable on main.**
+
+The Plugin API host did not expose \`createInstance\` on the resolved main (\`${main.type}\`). The FRAME has been flagged so the next roundtrip can retry once the host catches up.`
+      );
+      telemetry?.(REPLACE_EVENT, {
+        ruleId,
+        outcome: "error",
+        reason: "createInstance-missing"
+      });
+      return {
+        icon: "\u{1F4DD}",
+        label: "replace skipped: createInstance unavailable",
+        outcome: "error"
+      };
+    }
+    try {
+      const instance = create.call(main);
+      const siblings = parent.children ?? [];
+      const idx = siblings.findIndex((s) => s.id === target.id);
+      const insert = parent.insertChild;
+      const append = parent.appendChild;
+      if (idx >= 0 && typeof insert === "function") {
+        insert.call(parent, idx, instance);
+      } else if (typeof append === "function") {
+        append.call(parent, instance);
+      } else {
+        throw new Error(
+          "parent exposes neither insertChild nor appendChild \u2014 cannot insert instance"
+        );
+      }
+      if (typeof target.remove === "function") {
+        target.remove();
+      } else {
+        throw new Error("target node missing `remove` \u2014 cannot detach old FRAME");
+      }
+      telemetry?.(REPLACE_EVENT, {
+        ruleId,
+        outcome: "replaced"
+      });
+      return {
+        icon: "\u2705",
+        label: `replaced with instance of "${main.name}"`,
+        outcome: "replaced",
+        newInstanceId: instance.id
+      };
+    } catch (e) {
+      const msg = String(e?.message ?? e);
+      annotateFallback2(
+        target,
+        ruleId,
+        categories,
+        `**Replace failed \u2014 Plugin API threw.**
+
+Error: \`${msg}\`. The FRAME has been flagged so the designer can inspect (locked layer, parent restrictions, etc.) before the next roundtrip pass.`
+      );
+      telemetry?.(REPLACE_EVENT, {
+        ruleId,
+        outcome: "error",
+        reason: msg
+      });
+      return {
+        icon: "\u{1F4DD}",
+        label: `replace failed: ${msg}`,
+        outcome: "error"
+      };
+    }
+  }
+
   // src/core/roundtrip/remove-canicode-annotations.ts
   var LEGACY_CANICODE_PREFIX = "**[canicode]";
   function isCanicodeAnnotation(annotation, categories) {
@@ -953,6 +1164,7 @@ Error: \`${msg}\`. The FRAME has been flagged so the designer can inspect the st
   exports.applyAutoFixes = applyAutoFixes;
   exports.applyComponentize = applyComponentize;
   exports.applyPropertyMod = applyPropertyMod;
+  exports.applyReplaceWithInstance = applyReplaceWithInstance;
   exports.applyUnmappedComponentOptOut = applyUnmappedComponentOptOut;
   exports.applyWithInstanceFallback = applyWithInstanceFallback;
   exports.buildIntentionallyUnmappedAnnotationBody = buildIntentionallyUnmappedAnnotationBody;

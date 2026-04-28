@@ -30,9 +30,28 @@ export interface FigmaNode {
   // walks `parent` up to the containing COMPONENT/COMPONENT_SET to read it.
   remote?: boolean;
   parent?: FigmaNode | null;
+  // Live `parent.children` array on container nodes (FRAME, GROUP, COMPONENT,
+  // INSTANCE, etc.). Used by `apply-replace-with-instance` to find the index
+  // of the swap target so the new instance lands at the same position.
+  children?: readonly FigmaNode[];
   annotations?: readonly AnnotationEntry[];
   fills?: unknown;
   strokes?: unknown;
+  // Phase 3 (#508 / ADR-023, #554): COMPONENT and COMPONENT_SET expose
+  // `createInstance()`. We use it from `apply-replace-with-instance` after
+  // resolving the main component by id; the call returns a fresh InstanceNode
+  // that the caller then inserts into the swap-site parent.
+  createInstance?(): FigmaNode;
+  // `insertChild` is the position-preserving insert; `appendChild` lands at
+  // the end. We prefer `insertChild` when we know the original index. Both
+  // are present on any container node in the real Plugin API.
+  insertChild?(index: number, child: FigmaNode): void;
+  appendChild?(child: FigmaNode): void;
+  // `remove` detaches the node from the file. The original FRAME is removed
+  // after a successful swap so the new instance occupies the slot cleanly —
+  // any annotations on the removed FRAME are intentionally not transferred
+  // (delta 2 design note).
+  remove?(): void;
   [key: string]: unknown;
 }
 

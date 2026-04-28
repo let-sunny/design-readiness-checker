@@ -46,6 +46,15 @@ export const EVENTS = {
    * can split the funnel.
    */
   ROUNDTRIP_COMPONENTIZE: `${EVENT_PREFIX}roundtrip_componentize`,
+  /**
+   * Phase 3 (#508 / ADR-023, #554): `applyReplaceWithInstance` outcome —
+   * either a successful instance swap (`outcome: "replaced"`) or one of the
+   * guard rejections (`"skipped-free-form-parent"`, `"skipped-prereq-missing"`,
+   * `"error"`). The primitive pairs with `ROUNDTRIP_COMPONENTIZE` so a
+   * Node-side reader can correlate componentize+swap pairs across a single
+   * Phase 3 batch.
+   */
+  ROUNDTRIP_REPLACE_WITH_INSTANCE: `${EVENT_PREFIX}roundtrip_replace_with_instance`,
 } as const;
 
 export type EventName = (typeof EVENTS)[keyof typeof EVENTS];

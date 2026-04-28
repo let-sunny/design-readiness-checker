@@ -24,6 +24,12 @@ export type {
   ComponentizeResult,
   ComponentizeOutcome,
 } from "./apply-componentize.js";
+export { applyReplaceWithInstance } from "./apply-replace-with-instance.js";
+export type {
+  ReplaceWithInstanceOptions,
+  ReplaceWithInstanceResult,
+  ReplaceOutcome,
+} from "./apply-replace-with-instance.js";
 export type {
   ApplyAutoFixContext,
   AutoFixIssueInput,
