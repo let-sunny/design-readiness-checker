@@ -201,13 +201,26 @@ const missingComponentCheck: RuleCheckFn = (node, context, options) => {
   // ========================================
   if (node.type === "FRAME") {
     // Stage 1: Component exists but not used — FRAME name matches a component in metadata AND frame is repeated
+    //
+    // `matchingComponent` stays file-wide because `context.file.components`
+    // is the file-global component registry — a published component "exists"
+    // regardless of which subtree the user is currently analyzing.
+    //
+    // `frameNames` (#558): narrowed to `context.analysisRoot` so the
+    // repetition count and `firstFrame` dedup match the user's actual
+    // analysis scope. Pre-#558 this walked the full file, which under a
+    // `--target-node-id` run could let an out-of-scope FRAME claim
+    // `firstFrame` and silently swallow the in-scope hit (same shape as
+    // the Stage 3 scope leak fixed in #557). Falls back to `file.document`
+    // only on the unit-test path where contexts omit `analysisRoot`.
     const components = context.file.components;
     const matchingComponent = Object.values(components).find(
       (c) => c.name.toLowerCase() === node.name.toLowerCase()
     );
 
-    // Collect frame names once for Stage 1 and Stage 2
-    const frameNames = collectFrameNames(context.file.document);
+    // Collect frame names once for Stage 1 and Stage 2 — scope-aware (#558)
+    const scopeRoot = context.analysisRoot ?? context.file.document;
+    const frameNames = collectFrameNames(scopeRoot);
     const sameNameFrames = frameNames.get(node.name);
     const firstFrame = sameNameFrames?.[0];
 
