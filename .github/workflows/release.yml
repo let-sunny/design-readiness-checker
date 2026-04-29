@@ -20,6 +20,16 @@ jobs:
           cache: pnpm
           registry-url: https://registry.npmjs.org
       - run: pnpm install --frozen-lockfile
+
+      - name: Verify tag matches package.json version
+        run: |
+          PKG_VERSION="$(node -p "require('./package.json').version")"
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          if [ "$PKG_VERSION" != "$TAG_VERSION" ]; then
+            echo "Tag $GITHUB_REF_NAME (= $TAG_VERSION) does not match package.json version $PKG_VERSION" >&2
+            exit 1
+          fi
+
       - run: pnpm lint
 
       - name: Build with monitoring keys
