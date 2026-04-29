@@ -76,67 +76,27 @@ See [docs/POSITIONING.md](docs/POSITIONING.md) for the full thesis (target perso
 
 ---
 
-## Getting Started
+## Try it in 30 seconds
 
-> **Token safety:** Do **not** paste your Figma token into Claude, Cursor, or other agent chats — session logs can retain it. Use `FIGMA_TOKEN=figd_… npx canicode init`, or run `npx canicode init` and enter the token **only** at the CLI prompt.
+1. **[Open the web app](https://let-sunny.github.io/canicode/)** — paste any Figma URL, get a report. No install, no token, no AI cost. This is the linter view (Layer 1) — useful by itself.
+2. Then if you want the full Q&A roundtrip, install the Claude Code skill below.
 
-**Quickest way:** **[Open the web app](https://let-sunny.github.io/canicode/)** — paste a Figma URL, get a report.
-
-**Design-to-code in Claude Code (recommended):**
+## Run the full roundtrip (Claude Code)
 
 ```bash
-# 1. Save your Figma token AND install the /canicode-roundtrip skill
-#    Interactive (TTY): npx canicode init        — prompts for the token
-#    Non-interactive:   npx canicode init --token figd_xxxxxxxxxxxxx
-#    (never paste the token into chat — use env var, the prompt, or --token only)
 npx canicode init
+# saves your Figma token + installs /canicode-roundtrip
+# (the prompt asks for the token; never paste it into agent chat)
 
-# 2. Run the roundtrip on a Figma URL
 /canicode-roundtrip https://www.figma.com/design/ABC123/MyDesign?node-id=1-234
+# in your Claude Code session
 ```
 
-> **Prerequisite:** the roundtrip skill calls the Figma MCP server to read and write the design. Install it once with `claude mcp add -s project -t http figma https://mcp.figma.com/mcp` — see the **MCP Server** install section below.
+The roundtrip calls the **Figma MCP server** to read and write your design — install it once with `claude mcp add -s project -t http figma https://mcp.figma.com/mcp` and restart Claude Code.
 
-> **Optional — Code Connect (for the closing Step 6 mapping):** install `@figma/code-connect` (`pnpm add -D @figma/code-connect` or npm/yarn equivalent) and create `figma.config.json` at your repo root per [Figma's setup guide](https://www.figma.com/code-connect-docs/). Then run `canicode doctor` to confirm both prerequisites are in place. If you skip this, the roundtrip still generates code but will not register a Code Connect mapping — it tells you up front so you can decide.
+> **Cursor / Claude Desktop / other MCP host:** also supported. CLI install path (`npx canicode init --cursor-skills`), bare MCP server install, GitHub Action for CI gates, and other channels are listed in the **Installation** matrix below.
 
-> **Cursor / Claude Desktop / other MCP host:** also supported via `npx canicode init --cursor-skills` and the canicode MCP. Setup details in [`docs/CUSTOMIZATION.md`](docs/CUSTOMIZATION.md#cursor-mcp-canicode).
-
-**If you only want analysis (no writes back to Figma):**
-
-```bash
-# CLI — one command
-npx canicode analyze "https://www.figma.com/design/ABC123/MyDesign?node-id=1-234"
-
-# MCP Server — works with Claude Code, Cursor, Claude Desktop
-claude mcp add canicode -- npx --yes --package=canicode canicode-mcp
-```
-
-Restart Claude Code or reload MCP (Cursor) so canicode tools (`analyze`, `gotcha-survey`, …) load — same cold-session requirement as the Figma MCP.
-
-**Smoke test (no Figma token needed):**
-
-```bash
-git clone https://github.com/let-sunny/canicode.git
-cd canicode && pnpm install && pnpm build
-canicode analyze ./fixtures/done/desktop-home-page
-```
-
-Loads a bundled fixture (no Figma API call, no token), opens the HTML report in a browser (pass `--no-open` to skip auto-launch). Use any directory under `fixtures/done/` — `desktop-*` are screen-scale, `mobile-*` are mobile viewports.
-
-<details>
-<summary><strong>All channels</strong></summary>
-
-| Channel | Best for |
-|---------|----------|
-| **[Web App](https://let-sunny.github.io/canicode/)** | Quick check, no install |
-| **[Figma Plugin](https://www.figma.com/community/plugin/1617144221046795292/canicode)** | Analyze inside Figma (under review) |
-| **MCP Server** | Claude Code / Cursor / Claude Desktop integration |
-| **`/canicode-roundtrip` Skill** | Full design-to-code roundtrip via Claude Code (analyze → fix → re-analyze → handoff) |
-| **`/canicode` Skill** | Lightweight analyze-only skill, no MCP install |
-| **CLI** | Full control, CI/CD, offline analysis |
-| **[GitHub Action](https://github.com/marketplace/actions/canicode-action)** | PR gate with score threshold |
-
-</details>
+> **Optional — Code Connect** (for the closing Step 6 mapping): install `@figma/code-connect` and create `figma.config.json` at your repo root per [Figma's setup guide](https://www.figma.com/code-connect-docs/), then run `canicode doctor`. If you skip this, the roundtrip still works — it just does not register the mapping. It warns you up front so you can decide.
 
 ---
 
@@ -156,6 +116,8 @@ Each issue is classified: **Blocking** > **Risk** > **Missing Info** > **Suggest
 ---
 
 ## Installation — pick one
+
+> **Token safety:** never paste your Figma token into Claude / Cursor / agent chat — session logs can retain it. Use the CLI prompt (`npx canicode init`), `--token`, or the `FIGMA_TOKEN=…` env var.
 
 Each row below is a **complete** install. Don't run more than one — they cover overlapping use cases.
 
