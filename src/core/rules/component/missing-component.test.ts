@@ -277,6 +277,82 @@ describe("missing-component — Stage 2: Name-based repetition", () => {
     // Stage 1 message pattern
     expect(result!.message).toContain('Component "Card" exists');
   });
+
+  it("Stage 2 name-repetition respects analysisRoot — counts only in-scope occurrences (#558)", () => {
+    // 2 in-scope + 1 out-of-scope FRAME share a name. minRepetitions = 2.
+    // Pre-#558 the count was file-wide (3) AND `firstFrame` could be the
+    // outsider, swallowing the in-scope hit. Post-#558 the count is
+    // in-scope only (2), and the in-scope first frame fires.
+    const inScopeFrameA = makeNode({ id: "in:1", name: "Widget" });
+    const inScopeFrameB = makeNode({ id: "in:2", name: "Widget" });
+    const outsider = makeNode({ id: "out:1", name: "Widget" });
+
+    const subRoot = makeNode({
+      id: "sub:1",
+      name: "InScope",
+      type: "FRAME",
+      children: [inScopeFrameA, inScopeFrameB],
+    });
+    const doc = makeNode({
+      id: "0:1",
+      name: "Document",
+      type: "DOCUMENT",
+      // Outsider FIRST in document order — pre-#558 firstFrame would land
+      // on it and the in-scope frames would never see the issue.
+      children: [outsider, subRoot],
+    });
+
+    const ctx = makeContext({
+      file: makeFile({ document: doc }),
+      analysisRoot: subRoot,
+    });
+
+    const result = missingComponent.check(inScopeFrameA, ctx);
+    expect(result).not.toBeNull();
+    expect(result!.subType).toBe("name-repetition");
+    // In-scope count = 2, not 3 (with outsider).
+    expect(result!.message).toContain('"Widget" appears 2 times');
+  });
+
+  it("respects analysisRoot — out-of-scope frame does not steal firstFrame (#558)", () => {
+    // Pre-#558 the frame-name walk hit `file.document` and the
+    // out-of-scope `Card` won as firstFrame, so the in-scope `Card`
+    // never matched as "first" and the issue silently disappeared
+    // under a `--target-node-id` analysis. Same shape as the Stage 3
+    // scope leak fixed in #557.
+    const inScopeFrameA = makeNode({ id: "in:1", name: "Card" });
+    const inScopeFrameB = makeNode({ id: "in:2", name: "Card" });
+    const outsider = makeNode({ id: "out:1", name: "Card" });
+
+    const subRoot = makeNode({
+      id: "sub:1",
+      name: "InScope",
+      type: "FRAME",
+      children: [inScopeFrameA, inScopeFrameB],
+    });
+    const doc = makeNode({
+      id: "0:1",
+      name: "Document",
+      type: "DOCUMENT",
+      children: [outsider, subRoot],
+    });
+
+    const ctx = makeContext({
+      file: makeFile({
+        document: doc,
+        components: {
+          "comp:1": { key: "comp:1", name: "Card", description: "" },
+        },
+      }),
+      analysisRoot: subRoot,
+    });
+
+    const result = missingComponent.check(inScopeFrameA, ctx);
+    expect(result).not.toBeNull();
+    expect(result!.subType).toBe("unused-component");
+    // Count from the in-scope subtree only (2), not 3 (with outsider).
+    expect(result!.message).toContain('"Card" exists but 2 repeated frames');
+  });
 });
 
 // ============================================
