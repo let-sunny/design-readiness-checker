@@ -23,7 +23,7 @@ These workflows compose. A new project typically starts at Workflow 3 (find the 
 |---|---|---|---|
 | 1 | Component-to-code mapping | ✅ Available | [#509](https://github.com/let-sunny/canicode/issues/509) |
 | 2 | Screen-to-code handoff | ✅ Largely shipped | [#510](https://github.com/let-sunny/canicode/issues/510) |
-| 3 | Bootstrap a design system from screens | 🗺️ Planned | [#508](https://github.com/let-sunny/canicode/issues/508) |
+| 3 | Bootstrap a design system from screens | ✅ Available | [#508](https://github.com/let-sunny/canicode/issues/508) |
 
 ---
 
@@ -84,30 +84,32 @@ These workflows compose. A new project typically starts at Workflow 3 (find the 
 
 ## Workflow 3 — Bootstrap a design system from screens
 
-> 🚧 Detection ships today — the recommend / promote / swap loop is on the roadmap (epic #508).
+> ✅ Available — `analyze`, `gotcha-survey`, and `roundtrip` together perform end-to-end **componentize+swap** on Stage 3 fingerprint groups (`missing-component:structure-repetition`). The full epic [#508](https://github.com/let-sunny/canicode/issues/508) shipped in five deltas plus one follow-up — see ADR-023 for the design decisions and the deltas table below for PR history. v0.12.3 (npm) is the first release that exposes the apply path; earlier 0.12.x versions only flagged the duplicates.
 
 **You are**: looking at one or more screens with repeated patterns, no real design system yet, and you want canicode to help you find the components hiding inside the screen.
 
 **Why this matters**: the hardest part of starting a design system isn't drawing the first component, it's **noticing** the repetition you've already accepted as normal. A designer who didn't componentize the first time often can't decide on second look either. canicode's job here is to surface the candidates with enough context that the decision becomes makeable.
 
+**Prerequisites in your code repo**
+- (Strongly recommended) `@figma/code-connect` installed and `figma.config.json` at the repo root, so the closing Code Connect handoff can register the new component. `npx canicode doctor` verifies this — Workflow 1 (#509) owns the onboarding wall, Workflow 3 just inherits it. Skipping is fine; the componentize+swap still runs and the handoff prompt silently skips per ADR-023 decision E.
+
 **Today's flow**
-1. `canicode analyze` on each screen.
-2. The `missing-component` rule (Stage 3 — structural fingerprint) flags repeated structural patterns across siblings.
-3. For each flagged group, decide manually whether to promote it. Then go to Workflow 1 for each promoted component.
+1. `canicode analyze <figma-screen-url>` — Stage 3 (cross-parent fingerprint pass — #557) flags qualifying groups.
+2. `/canicode-roundtrip <url>` (Claude Code) or `@ canicode-roundtrip` (Cursor). The roundtrip walks you through the survey; for each Stage 3 group it asks one question: *"X 외에 동일한 구조의 frame이 N개 더 있습니다 (총 N+1개). 모두 컴포넌트화 할까요?"* (English equivalent in the SKILL prose).
+3. On `yes`, canicode componentizes the document-order first member (decision A — refuses if the parent is free-form) and swaps the rest with instances of the new component (decision C — auto-suffixes ` 2` on a name collision, Figma's native duplicate convention).
+4. After a successful componentize+swap, canicode prompts to register the new component with **Code Connect** so future roundtrips on screens containing it reuse the mapped code (Workflow 1 close-out, reused). When prereqs are missing, the handoff silently skips with a one-line pointer to Workflow 1.
+5. canicode re-analyzes in the same session and reports the issues delta (`structure-repetition` count drops to 0 for the resolved groups; per-target outcome icons surface in the Step 4 line for any free-form-parent rejections).
 
-**Planned flow (#508)**
-1. Same first two steps.
-2. canicode + LLM judgment proposes which flagged groups deserve componentization, with rationale (shared name pattern, semantic similarity, layout match) and the suggested component name.
-3. You confirm, modify, or skip per group.
-4. canicode runs `createComponentFromNode` on the chosen Frame and swaps the siblings to instances of the new main.
-5. You continue into Workflow 1 to register the Code Connect mapping for each promoted component.
+**Apply primitives** (live as bundled `CanICodeRoundtrip.*` helpers in v0.12.3):
+- `applyComponentize` (#553) — wraps `figma.createComponentFromNode` with the #368 instance-child guard and the decision A free-form-parent guard.
+- `applyReplaceWithInstance` (#555) — wraps `mainComponent.createInstance()` + `parent.insertChild` + `target.remove()` with an independent swap-site free-form check (decision A clarification).
+- `applyGroupComponentize` (#563) — orchestrator that drives the loop from a single user "yes" answer.
 
-**Outcome (planned)**: a previously component-less file gets a starter design system, with each new component eligible for Workflow 1 immediately.
+**Outcome**: a previously component-less file gets a starter design system, with each new component immediately eligible for Workflow 1 / Code Connect registration via the same roundtrip session.
 
-**Open questions on this workflow**
-- LLM recommendation quality has not been measured against real designs yet.
-- Base rate (how often Stage 3 fires meaningfully on real screens) has not been audited.
-- Both gate the heavier promote/swap implementation.
+**Known limits (revisit when real-world friction surfaces)**
+- **Per-member opt-out is not yet wired.** The orchestrator treats `groupMembers` as canonical. To exclude a specific frame, edit the design (rename it so its fingerprint differs) before re-running, or run the roundtrip again after manual cleanup.
+- **Stage 1 reverse case** (a published component already exists with the same name as the duplicates → swap to existing instances instead of creating a new one) is **not yet wired** — the gotcha question for Stage 1 still uses the standard Strategy C annotation path. ADR-023 decision D records the mode field shape (`"componentize-new" | "use-existing"`) for when this lands.
 
 ---
 
