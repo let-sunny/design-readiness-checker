@@ -164,8 +164,8 @@ export const missingComponentMsg = {
     message: `"${name}" appears ${count} times`,
     suggestion: `Extract as a reusable component`,
   }),
-  structureRepetition: (name: string, siblingCount: number): ViolationMsg => ({
-    message: `"${name}" and ${siblingCount} sibling frame(s) share the same internal structure`,
+  structureRepetition: (name: string, matchCount: number): ViolationMsg => ({
+    message: `"${name}" and ${matchCount} other frame(s) share the same internal structure`,
     suggestion: `Extract a shared component from the repeated structure`,
   }),
   styleOverride: (componentName: string, overrides: string[]): ViolationMsg => ({

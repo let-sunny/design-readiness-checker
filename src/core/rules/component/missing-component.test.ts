@@ -294,14 +294,22 @@ describe("missing-component — Stage 3: Structure-based repetition", () => {
     const frameA = makeNode({ id: "f:1", name: "Card A", children: [childA] });
     const frameB = makeNode({ id: "f:2", name: "Card B", children: [childB] });
 
-    const siblings = [frameA, frameB];
-    const ctx = makeContext({ siblings });
+    const doc = makeNode({
+      id: "0:1",
+      name: "Document",
+      type: "DOCUMENT",
+      children: [frameA, frameB],
+    });
+    const ctx = makeContext({
+      file: makeFile({ document: doc }),
+      siblings: [frameA, frameB],
+    });
 
     const result = missingComponent.check(frameA, ctx);
     expect(result).not.toBeNull();
     expect(result!.ruleId).toBe("missing-component");
     expect(result!.message).toContain("Card A");
-    expect(result!.message).toContain("1 sibling frame(s)");
+    expect(result!.message).toContain("1 other frame(s)");
     expect(result!.suggestion).toContain("Extract a shared component");
   });
 
@@ -311,10 +319,18 @@ describe("missing-component — Stage 3: Structure-based repetition", () => {
     const frameA = makeNode({ id: "f:1", name: "Card A", children: [childA] });
     const frameB = makeNode({ id: "f:2", name: "Card B", children: [childB] });
 
-    const siblings = [frameA, frameB];
-    const ctxB = makeContext({ siblings });
+    const doc = makeNode({
+      id: "0:1",
+      name: "Document",
+      type: "DOCUMENT",
+      children: [frameA, frameB],
+    });
+    const ctx = makeContext({
+      file: makeFile({ document: doc }),
+      siblings: [frameA, frameB],
+    });
 
-    expect(missingComponent.check(frameB, ctxB)).toBeNull();
+    expect(missingComponent.check(frameB, ctx)).toBeNull();
   });
 
   it("skips inside INSTANCE subtree", () => {
@@ -370,8 +386,16 @@ describe("missing-component — Stage 3: Structure-based repetition", () => {
     const frameA = makeNode({ id: "f:1", name: "Card A", children: [childA] });
     const frameB = makeNode({ id: "f:2", name: "Card B", children: [childB] });
 
-    const siblings = [frameA, frameB];
-    const ctx = makeContext({ siblings });
+    const doc = makeNode({
+      id: "0:1",
+      name: "Document",
+      type: "DOCUMENT",
+      children: [frameA, frameB],
+    });
+    const ctx = makeContext({
+      file: makeFile({ document: doc }),
+      siblings: [frameA, frameB],
+    });
 
     // Default structureMinRepetitions is 2 — should flag
     const result = missingComponent.check(frameA, ctx);
@@ -420,11 +444,22 @@ describe("missing-component — Stage 3: Structure-based repetition", () => {
     const childRect = makeChildFrame("c:1", "RECTANGLE");
     const childText = makeChildFrame("c:2", "TEXT");
 
-    const frameA = makeNode({ id: "f:1", children: [childRect] });
-    const frameB = makeNode({ id: "f:2", children: [childText] });
+    // Distinct names so Stage 2 (name-repetition, minRepetitions: 2) does
+    // not fire — we want to verify Stage 3 returns null on differing
+    // fingerprints, not have Stage 2 mask it.
+    const frameA = makeNode({ id: "f:1", name: "RectCard", children: [childRect] });
+    const frameB = makeNode({ id: "f:2", name: "TextCard", children: [childText] });
 
-    const siblings = [frameA, frameB];
-    const ctx = makeContext({ siblings });
+    const doc = makeNode({
+      id: "0:1",
+      name: "Document",
+      type: "DOCUMENT",
+      children: [frameA, frameB],
+    });
+    const ctx = makeContext({
+      file: makeFile({ document: doc }),
+      siblings: [frameA, frameB],
+    });
 
     expect(missingComponent.check(frameA, ctx)).toBeNull();
   });
@@ -449,11 +484,99 @@ describe("missing-component — Stage 3: Structure-based repetition", () => {
       children: [childC],
     };
 
-    const siblings = [frameA, textNode, groupNode];
-    const ctx = makeContext({ siblings });
+    const doc = makeNode({
+      id: "0:1",
+      name: "Document",
+      type: "DOCUMENT",
+      children: [frameA, textNode, groupNode],
+    });
+    const ctx = makeContext({
+      file: makeFile({ document: doc }),
+      siblings: [frameA, textNode, groupNode],
+    });
 
-    // Only one qualifying FRAME sibling — below threshold
+    // Only one qualifying FRAME — below threshold
     expect(missingComponent.check(frameA, ctx)).toBeNull();
+  });
+
+  // ============================================
+  // Stage 3 — cross-parent fingerprint pass (#508 / #556 / delta 3)
+  // ============================================
+
+  it("detects cross-parent identical structure (#556)", () => {
+    const childA = makeChildFrame("c:1", "RECTANGLE");
+    const childB = makeChildFrame("c:2", "RECTANGLE");
+    const childC = makeChildFrame("c:3", "RECTANGLE");
+    const frameA = makeNode({ id: "f:1", name: "Card A", children: [childA] });
+    const frameB = makeNode({ id: "f:2", name: "Card B", children: [childB] });
+    const frameC = makeNode({ id: "f:3", name: "Card C", children: [childC] });
+
+    const sectionA = makeNode({
+      id: "s:a",
+      name: "Section A",
+      type: "FRAME",
+      children: [frameA, frameB],
+    });
+    const sectionB = makeNode({
+      id: "s:b",
+      name: "Section B",
+      type: "FRAME",
+      children: [frameC],
+    });
+    const doc = makeNode({
+      id: "0:1",
+      name: "Document",
+      type: "DOCUMENT",
+      children: [sectionA, sectionB],
+    });
+
+    const ctxA = makeContext({
+      file: makeFile({ document: doc }),
+      parent: sectionA,
+      siblings: [frameA, frameB],
+    });
+    const result = missingComponent.check(frameA, ctxA);
+    expect(result).not.toBeNull();
+    expect(result!.subType).toBe("structure-repetition");
+    // Group spans 3 FRAMEs across two parents → "and 2 other frame(s)"
+    expect(result!.message).toContain("2 other frame(s)");
+
+    // frameC lives under a DIFFERENT parent but shares the fingerprint —
+    // pre-#556 this would have been missed. Post-#556 it folds into the same
+    // group; only the document-order first emits, so frameC returns null.
+    const ctxC = makeContext({
+      file: makeFile({ document: doc }),
+      parent: sectionB,
+      siblings: [frameC],
+    });
+    // Reuse the cached scope-wide pass via the same analysisState to mirror
+    // a real analysis run.
+    expect(missingComponent.check(frameC, ctxC)).toBeNull();
+  });
+
+  it("caches the scope-wide pass on analysisState (no rebuild between calls)", () => {
+    const childA = makeChildFrame("c:1", "RECTANGLE");
+    const childB = makeChildFrame("c:2", "RECTANGLE");
+    const frameA = makeNode({ id: "f:1", name: "Card A", children: [childA] });
+    const frameB = makeNode({ id: "f:2", name: "Card B", children: [childB] });
+    const doc = makeNode({
+      id: "0:1",
+      name: "Document",
+      type: "DOCUMENT",
+      children: [frameA, frameB],
+    });
+    const ctx = makeContext({
+      file: makeFile({ document: doc }),
+      siblings: [frameA, frameB],
+    });
+
+    expect(missingComponent.check(frameA, ctx)).not.toBeNull();
+    // Cached map should now live on analysisState — at least one key with
+    // the depth-keyed prefix.
+    const keys = Array.from(ctx.analysisState.keys());
+    expect(
+      keys.some((k) => k.startsWith("missing-component:stage3Groups:depth="))
+    ).toBe(true);
   });
 });
 
