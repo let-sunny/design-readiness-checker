@@ -30,6 +30,12 @@ export type {
   ReplaceWithInstanceResult,
   ReplaceOutcome,
 } from "./apply-replace-with-instance.js";
+export { applyGroupComponentize } from "./apply-group-componentize.js";
+export type {
+  GroupComponentizeOptions,
+  GroupComponentizeResult,
+  GroupComponentizeOutcome,
+} from "./apply-group-componentize.js";
 export type {
   ApplyAutoFixContext,
   AutoFixIssueInput,
