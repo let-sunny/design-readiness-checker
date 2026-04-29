@@ -117,10 +117,14 @@ function getSeenStage4(context: RuleContext): Set<string> {
  * option override stays correct.
  */
 interface Stage3GroupInfo {
-  /** Document-order id of the first qualifying FRAME in this group. */
-  firstNodeId: string;
-  /** Total qualifying FRAMEs in this group across the entire analysis scope. */
-  count: number;
+  /**
+   * Document-order ids of every qualifying FRAME in this group (across the
+   * entire analysis scope). Used both for the per-node "first emitter" check
+   * (`memberIds[0] === node.id`) and for `groupMembers` on the emitted
+   * `RuleViolation` so the apply step (#560 / delta 4) can drive the full
+   * componentize+swap loop from a single user answer.
+   */
+  memberIds: string[];
 }
 
 function stage3GroupsKey(maxDepth: number): string {
@@ -157,8 +161,8 @@ function buildStage3Groups(
     if (nodeQualifiesForStage3(node, parent, ancestorIsInstance)) {
       const fp = buildFingerprint(node, maxFingerprintDepth);
       const existing = groups.get(fp);
-      if (existing) existing.count++;
-      else groups.set(fp, { firstNodeId: node.id, count: 1 });
+      if (existing) existing.memberIds.push(node.id);
+      else groups.set(fp, { memberIds: [node.id] });
     }
     if (node.children) {
       for (const child of node.children) walk(child, node, insideInstance);
@@ -292,15 +296,23 @@ const missingComponentCheck: RuleCheckFn = (node, context, options) => {
     const fingerprint = buildFingerprint(node, maxFingerprintDepth);
     const group = groups.get(fingerprint);
     if (!group) return null;
-    if (group.count < structureMinRepetitions) return null;
-    if (group.firstNodeId !== node.id) return null;
+    if (group.memberIds.length < structureMinRepetitions) return null;
+    if (group.memberIds[0] !== node.id) return null;
 
     return {
       ruleId: missingComponentDef.id,
       subType: "structure-repetition" as const,
       nodeId: node.id,
       nodePath: context.path.join(" > "),
-      ...missingComponentMsg.structureRepetition(node.name, group.count - 1),
+      ...missingComponentMsg.structureRepetition(
+        node.name,
+        group.memberIds.length - 1
+      ),
+      // #560 / delta 4a: surface the full group so the apply step can drive
+      // the componentize+swap loop from a single user answer. `nodeId` is
+      // the document-order first member; the rest are siblings or cross-
+      // parent matches found by the scope-wide pass (#557).
+      groupMembers: [...group.memberIds],
     };
   }
 

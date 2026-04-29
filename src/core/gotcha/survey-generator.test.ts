@@ -46,10 +46,12 @@ function makeIssue(opts: {
   score?: number;
   subType?: string;
   suggestedName?: string;
+  groupMembers?: string[];
 }): AnalysisIssue {
   const extra: Partial<RuleViolation> = {};
   if (opts.subType !== undefined) extra.subType = opts.subType;
   if (opts.suggestedName !== undefined) extra.suggestedName = opts.suggestedName;
+  if (opts.groupMembers !== undefined) extra.groupMembers = opts.groupMembers;
   return {
     violation: makeViolation(
       opts.ruleId,
@@ -1504,6 +1506,48 @@ describe("generateGotchaSurvey", () => {
       expect(typeof survey.suggestedDefaultApply).toBe("boolean");
       const result = GotchaSurveySchema.safeParse(survey);
       expect(result.success).toBe(true);
+    });
+  });
+
+  describe("groupMembers (#560 / Phase 3 delta 4a)", () => {
+    it("threads groupMembers from violation onto the question", () => {
+      const issues = [
+        makeIssue({
+          ruleId: "missing-component",
+          category: "code-quality",
+          severity: "risk",
+          nodeId: "fA",
+          nodePath: "Root > A",
+          subType: "structure-repetition",
+          groupMembers: ["fA", "fB", "fC"],
+        }),
+      ];
+      const survey = generateGotchaSurvey(
+        makeResult(issues),
+        makeScoreReport("C"),
+      );
+      expect(survey.questions).toHaveLength(1);
+      expect(survey.questions[0]?.groupMembers).toEqual(["fA", "fB", "fC"]);
+      // Schema validation — `groupMembers: z.array(z.string()).optional()`
+      const parsed = GotchaSurveySchema.safeParse(survey);
+      expect(parsed.success).toBe(true);
+    });
+
+    it("omits groupMembers when the violation does not carry one (non-group rules)", () => {
+      const issues = [
+        makeIssue({
+          ruleId: "no-auto-layout",
+          category: "pixel-critical",
+          severity: "blocking",
+          nodeId: "1:1",
+        }),
+      ];
+      const survey = generateGotchaSurvey(
+        makeResult(issues),
+        makeScoreReport("C"),
+      );
+      expect(survey.questions).toHaveLength(1);
+      expect(survey.questions[0]?.groupMembers).toBeUndefined();
     });
   });
 });

@@ -88,6 +88,24 @@ export const GotchaSurveyQuestionSchema = z.object({
   // Single-instance questions omit both fields.
   replicas: z.number().int().min(2).optional(),
   replicaNodeIds: z.array(z.string()).optional(),
+  /**
+   * Phase 3 (#508 / #560 / delta 4a): every node id in the rule's emitted
+   * group, including `nodeId`. Currently only populated for
+   * `missing-component:structure-repetition` (Stage 3) — one question per
+   * fingerprint group, the apply step (delta 4b) iterates this list to
+   * componentize the first member and swap the rest.
+   *
+   * Distinct from `replicas` / `replicaNodeIds`: those collapse N
+   * instance-child questions that pre-existed as separate violations into
+   * one. `groupMembers` carries N original group members from a single
+   * group-shaped violation that never became N separate issues. The apply
+   * step distinguishes by which field is set.
+   */
+  // `.min(2)` locks the contract: a group-shaped emit always carries at
+  // least 2 members (Stage 3 short-circuits below `structureMinRepetitions`
+  // = 2). A future rule emitting `[]` or `[oneId]` is a programming error,
+  // not a runtime case to handle gracefully.
+  groupMembers: z.array(z.string()).min(2).optional(),
 });
 
 export type GotchaSurveyQuestion = z.infer<typeof GotchaSurveyQuestionSchema>;

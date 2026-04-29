@@ -616,6 +616,10 @@ describe("missing-component — Stage 3: Structure-based repetition", () => {
     expect(result!.subType).toBe("structure-repetition");
     // Group spans 3 FRAMEs across two parents → "and 2 other frame(s)"
     expect(result!.message).toContain("2 other frame(s)");
+    // #560 / delta 4a: groupMembers carries every node id in the group,
+    // document-order, including the emitting `nodeId`. The apply step
+    // (delta 4b) iterates this list to drive the componentize+swap loop.
+    expect(result!.groupMembers).toEqual(["f:1", "f:2", "f:3"]);
 
     // frameC lives under a DIFFERENT parent but shares the fingerprint —
     // pre-#556 this would have been missed. Post-#556 it folds into the same
@@ -700,6 +704,38 @@ describe("missing-component — Stage 3: Structure-based repetition", () => {
     expect(
       keys.some((k) => k.startsWith("missing-component:stage3Groups:depth="))
     ).toBe(true);
+  });
+
+  it("emits groupMembers in document order including the emitting nodeId (#560)", () => {
+    // 4 sibling FRAMEs with identical fingerprint. Pre-emit: groupMembers
+    // should list all four ids in document order, with the first one
+    // matching the result's `nodeId`. Apply step iterates this list to
+    // componentize the first member and swap the rest.
+    const childA = makeChildFrame("c:1", "RECTANGLE");
+    const childB = makeChildFrame("c:2", "RECTANGLE");
+    const childC = makeChildFrame("c:3", "RECTANGLE");
+    const childD = makeChildFrame("c:4", "RECTANGLE");
+    const frameA = makeNode({ id: "fA", name: "A", children: [childA] });
+    const frameB = makeNode({ id: "fB", name: "B", children: [childB] });
+    const frameC = makeNode({ id: "fC", name: "C", children: [childC] });
+    const frameD = makeNode({ id: "fD", name: "D", children: [childD] });
+
+    const doc = makeNode({
+      id: "0:1",
+      name: "Document",
+      type: "DOCUMENT",
+      children: [frameA, frameB, frameC, frameD],
+    });
+    const ctx = makeContext({
+      file: makeFile({ document: doc }),
+      siblings: [frameA, frameB, frameC, frameD],
+    });
+
+    const result = missingComponent.check(frameA, ctx);
+    expect(result).not.toBeNull();
+    expect(result!.nodeId).toBe("fA");
+    expect(result!.groupMembers).toEqual(["fA", "fB", "fC", "fD"]);
+    expect(result!.groupMembers?.[0]).toBe(result!.nodeId);
   });
 });
 
