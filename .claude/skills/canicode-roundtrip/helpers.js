@@ -1137,6 +1137,83 @@ Error: \`${msg}\`. The FRAME has been flagged so the designer can inspect (locke
     }
   }
 
+  // src/core/roundtrip/apply-group-componentize.ts
+  function summarizeReplaceCounts(results) {
+    const total = results.length;
+    if (total === 0) return "";
+    const replaced = results.filter((r) => r.outcome === "replaced").length;
+    const reasons = [];
+    const freeForm = results.filter(
+      (r) => r.outcome === "skipped-free-form-parent"
+    ).length;
+    const prereq = results.filter(
+      (r) => r.outcome === "skipped-prereq-missing"
+    ).length;
+    const error = results.filter((r) => r.outcome === "error").length;
+    if (freeForm > 0) reasons.push(`${freeForm} free-form parent`);
+    if (prereq > 0) reasons.push(`${prereq} prereq missing`);
+    if (error > 0) reasons.push(`${error} error`);
+    const tail = reasons.length > 0 ? ` (${reasons.join(", ")})` : "";
+    return `swapped ${replaced}/${total} siblings${tail}`;
+  }
+  async function applyGroupComponentize(options) {
+    const { question, existingComponentNames, categories, telemetry } = options;
+    const members = question.groupMembers;
+    const firstId = members[0];
+    if (firstId === void 0) {
+      return {
+        outcome: "missing-first-member",
+        replaceResults: [],
+        summary: "group componentize skipped: no members in group"
+      };
+    }
+    const firstNode = await figma.getNodeByIdAsync(firstId);
+    if (!firstNode) {
+      return {
+        outcome: "missing-first-member",
+        replaceResults: [],
+        summary: `group componentize skipped: first member ${firstId} not found`
+      };
+    }
+    const componentizeResult = applyComponentize({
+      node: firstNode,
+      existingComponentNames,
+      ruleId: question.ruleId,
+      ...categories !== void 0 ? { categories } : {},
+      ...telemetry !== void 0 ? { telemetry } : {}
+    });
+    if (componentizeResult.outcome !== "componentized") {
+      return {
+        outcome: "componentize-failed",
+        componentizeResult,
+        replaceResults: [],
+        summary: `group componentize skipped: ${componentizeResult.label}`
+      };
+    }
+    const newComponentId = componentizeResult.newComponentId;
+    const swapTargets = members.slice(1);
+    const replaceResults = [];
+    for (const targetId of swapTargets) {
+      const r = await applyReplaceWithInstance({
+        mainComponentId: newComponentId,
+        targetNodeId: targetId,
+        ruleId: question.ruleId,
+        ...categories !== void 0 ? { categories } : {},
+        ...telemetry !== void 0 ? { telemetry } : {}
+      });
+      replaceResults.push(r);
+    }
+    const swapSummary = summarizeReplaceCounts(replaceResults);
+    const finalName = componentizeResult.finalName ?? "(unnamed)";
+    const summary = swapSummary.length > 0 ? `componentized "${finalName}", ${swapSummary}` : `componentized "${finalName}"`;
+    return {
+      outcome: "componentized-and-swapped",
+      componentizeResult,
+      replaceResults,
+      summary
+    };
+  }
+
   // src/core/roundtrip/remove-canicode-annotations.ts
   var LEGACY_CANICODE_PREFIX = "**[canicode]";
   function isCanicodeAnnotation(annotation, categories) {
@@ -1163,6 +1240,7 @@ Error: \`${msg}\`. The FRAME has been flagged so the designer can inspect (locke
   exports.applyAutoFix = applyAutoFix;
   exports.applyAutoFixes = applyAutoFixes;
   exports.applyComponentize = applyComponentize;
+  exports.applyGroupComponentize = applyGroupComponentize;
   exports.applyPropertyMod = applyPropertyMod;
   exports.applyReplaceWithInstance = applyReplaceWithInstance;
   exports.applyUnmappedComponentOptOut = applyUnmappedComponentOptOut;

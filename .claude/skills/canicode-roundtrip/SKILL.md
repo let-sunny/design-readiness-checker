@@ -261,6 +261,43 @@ The name must match **the variable's `name` field exactly** — including any sl
 
 Instance-child guard and per-rule prompts — **[Appendix Strategy B](https://github.com/let-sunny/canicode/blob/main/docs/roundtrip-protocol.md#appendix--strategy-b-structural-modification)**. Decline / guard → Strategy C annotation.
 
+##### Strategy B group componentize — Phase 3 (`missing-component:structure-repetition`)
+
+When `applyStrategy === "structural-mod"` AND `question.ruleId === "missing-component"` AND `question.subType === "structure-repetition"` AND `question.groupMembers` is set, the question represents a fingerprint group of N FRAMEs the user can componentize-and-swap in one batch. The group spans both same-parent siblings and cross-parent matches found by the Stage 3 scope-wide pass (#557). Render the per-question prompt with the **group size** explicitly so the designer knows the scope before answering:
+
+> "{nodeName}" 외에 동일한 구조의 frame이 N개 더 있습니다 (총 N+1개). 모두 컴포넌트화 할까요? (yes/no)
+
+(English equivalent — substitute when user language is English.)
+
+On `yes`, compute the file-wide existing component name set once (decision C uses this for the suffix), then call the group orchestrator. On `no` / `skip`, drop the question without writing anything; the gotcha state is captured in the SKILL's section markdown either way.
+
+<!-- adr-016-ack: existingComponentNames computed via figma.root API; orchestration loop lives in applyGroupComponentize -->
+```javascript
+const existingComponentNames = new Set(
+  figma.root
+    .findAllWithCriteria({ types: ["COMPONENT", "COMPONENT_SET"] })
+    .map((c) => c.name)
+);
+const result = await CanICodeRoundtrip.applyGroupComponentize({
+  question: { ruleId: question.ruleId, groupMembers: question.groupMembers },
+  existingComponentNames,
+  categories,
+});
+// result.summary — e.g. `componentized "Card", swapped 3/4 siblings (1 free-form parent)`
+// result.outcome — `componentized-and-swapped` | `componentize-failed` | `missing-first-member`
+// Bump stepFourReport per outcome:
+//   `componentized-and-swapped` AND every replace.outcome === "replaced" → resolved
+//   any replace failures → resolved + annotated (per-target outcome icons)
+//   `componentize-failed` → annotated (componentize annotate-fallback already wrote)
+//   `missing-first-member` → skipped
+```
+
+Notes:
+- **Free-form parents are refused per ADR-023 decision A.** When the group's parent (or any swap-target's parent) has no Auto Layout, the relevant primitive annotates the source FRAME with a "wrap in Auto Layout first" hint and skips the write. The summary string surfaces the count (`(1 free-form parent)`) so the designer sees the partial outcome at a glance.
+- **Name collision auto-suffixes per ADR-023 decision C** (`Card 2`, `Card 3`, …). The orchestrator passes `existingComponentNames` to the componentize step which resolves the suffix and reports the rename in `result.componentizeResult.finalName`.
+- **Per-member opt-out is not yet wired** — the orchestrator treats `groupMembers` as canonical. If the designer wants to exclude a specific member, that is currently a manual pre-edit (delete the entry from the question payload before calling) or a follow-up enhancement.
+- **No replica fan-out.** Stage 3 questions never carry `replicaNodeIds` (the `#356` instance-child dedupe applies to single-node violations, not group-shaped ones). Iterate `groupMembers` instead.
+
 #### Strategy C: Annotation — record on the design for designer reference
 
 Rules with `applyStrategy === "annotation"` cannot be auto-fixed via Plugin API. Add the gotcha answer as a Figma annotation so designers see it in Dev Mode. Use the helper — it handles the D1 mutex, D2 in-place upsert, and D4 category assignment. When `question.replicaNodeIds` is present (#356), iterate the merged set so every replica instance gets the annotation:
