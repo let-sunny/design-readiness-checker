@@ -101,7 +101,11 @@ export const GotchaSurveyQuestionSchema = z.object({
    * group-shaped violation that never became N separate issues. The apply
    * step distinguishes by which field is set.
    */
-  groupMembers: z.array(z.string()).optional(),
+  // `.min(2)` locks the contract: a group-shaped emit always carries at
+  // least 2 members (Stage 3 short-circuits below `structureMinRepetitions`
+  // = 2). A future rule emitting `[]` or `[oneId]` is a programming error,
+  // not a runtime case to handle gracefully.
+  groupMembers: z.array(z.string()).min(2).optional(),
 });
 
 export type GotchaSurveyQuestion = z.infer<typeof GotchaSurveyQuestionSchema>;
