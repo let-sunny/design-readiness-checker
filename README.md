@@ -10,7 +10,7 @@
   <a href="https://github.com/let-sunny/canicode/actions/workflows/release.yml"><img src="https://github.com/let-sunny/canicode/actions/workflows/release.yml/badge.svg" alt="Release"></a>
 </p>
 
-<p align="center"><strong>Make your Figma file information-complete — so AI generates code that actually works.</strong></p>
+<p align="center"><strong>Ship your Figma design exactly as you intended — without learning CSS.</strong></p>
 
 <p align="center">
   <strong><a href="https://let-sunny.github.io/canicode/">Try it in your browser</a></strong> — no install needed.
@@ -22,19 +22,41 @@
 
 ---
 
-## How it works
+## What canicode does
 
-AI can turn Figma designs into code — but the quality depends heavily on **how the design is structured**. CanICode runs a **roundtrip** over your Figma file: analyze the design, surface the gotchas it can't answer on its own, apply fixes back to Figma, re-analyze until the design is clean, then hand off to Figma's `figma-implement-design` skill for code generation. canicode does the design augmentation; code generation lives downstream.
+You designed it in Figma. You know exactly how it should look and behave — but the AI codegen guesses, and half the time it guesses wrong. The cards don't stack on mobile. The hover state disappears. The padding gets normalised. *That's not what I designed.*
 
-![Role diagram: gotchas (memo) vs roundtrip (canvas) vs code-gen](docs/images/roles.svg)
+canicode is the **pre-implementation interview** between your Figma file and AI codegen. It asks the questions a developer would ask before they implement — in plain language you can answer:
 
-### How the analyzer knows what to fix
+> *"The three cards are side-by-side at desktop width — what should happen when the screen is narrow?"*
 
-- **16 rules** across 6 categories: Pixel Critical, Responsive Critical, Code Quality, Token Management, Interaction, Semantic
-- **Deterministic** — no AI tokens consumed per analysis, runs in milliseconds
-- **Ablation-validated** — [experiments](https://github.com/let-sunny/canicode/wiki) confirmed the curated design-tree achieves 94% pixel accuracy with 5× fewer tokens than raw JSON
+You answer in plain words ("좁아지면 한 줄에 하나씩" / "stack them vertically"). canicode translates that into the exact technical spec the codegen needs, and writes it back into your Figma file as a structured annotation so the next run no longer has to guess.
 
-Rule scores aren't guesswork. The calibration pipeline converts real Figma designs to HTML, measures pixel-level similarity (via `visual-compare`), and adjusts scores based on actual implementation difficulty — hard-to-implement patterns get a higher penalty, easy ones get demoted. The pipeline runs on community fixtures, not on every analysis. See the [Calibration wiki](https://github.com/let-sunny/canicode/wiki/Calibration).
+You stay in Figma. You never type a CSS selector. The intent ships.
+
+→ Full thesis: [docs/POSITIONING.md](docs/POSITIONING.md)
+
+### The three layers
+
+1. **Linter** — 17 rules surface the gaps your craft instinct senses but can't name. *"Something's off with this spacing."* → it finds the one card with 14px padding while the rest are 16px.
+2. **Q&A scaffolding** — for every gap, canicode asks in your vocabulary, not the developer's. You answer, it spec'ifies.
+3. **Roundtrip persistence** — answers live in the Figma file as Dev Mode annotations. Next run, next person, next codegen — they all see the intent.
+
+The linter is deterministic (no LLM tokens consumed for the analysis itself), [ablation-validated](https://github.com/let-sunny/canicode/wiki) at 94% pixel accuracy with 5× fewer tokens than raw JSON, and [calibrated](https://github.com/let-sunny/canicode/wiki/Calibration) against real Figma designs.
+
+---
+
+## Why canicode (vs Claude Design)
+
+[Claude Design](https://www.anthropic.com/news/claude-design) launched in April 2026 and covers the **prompt → app** path beautifully — AI designs from your prompt and hands the result to Claude Code. canicode covers a different workflow:
+
+|  | Claude Design | canicode |
+|---|---|---|
+| Who designs | AI (from a prompt) | The designer (in Figma) |
+
+If you want the AI to design for you, use Claude Design. If you already designed it and want it implemented exactly the way you intended, canicode is for you. The two are not in competition — they assume different things about who owns the design.
+
+See [docs/POSITIONING.md](docs/POSITIONING.md) for the full thesis (target persona, the workflow assumption, and what canicode is **not** for).
 
 ---
 
@@ -42,7 +64,7 @@ Rule scores aren't guesswork. The calibration pipeline converts real Figma desig
 
 **Skills:** **`canicode-gotchas`** = survey answers saved **locally** in SKILL.md only (memo). **`canicode-roundtrip`** = same analysis path plus **writes to Figma** (annotations / properties). Pick gotchas for capture-only; pick roundtrip when the design file should change.
 
-1. **Analyze** — run the 16 rules against the Figma design (report includes grade).
+1. **Analyze** — run the 17 rules against the Figma design (report includes grade).
 2. **Surface gotchas** — the analyzer emits questions for design information it can't infer (missing states, unclear variants, responsive intent).
 3. **Apply fixes to Figma** — the `/canicode-roundtrip` skill writes answers back via `use_figma`. Each write shows up in the summary with one of three outcome markers:
    - ✅ **scene write succeeded** — the property was written directly to the scene node or instance override.
@@ -77,11 +99,7 @@ npx canicode init
 
 > **Optional — Code Connect (for the closing Step 6 mapping):** install `@figma/code-connect` (`pnpm add -D @figma/code-connect` or npm/yarn equivalent) and create `figma.config.json` at your repo root per [Figma's setup guide](https://www.figma.com/code-connect-docs/). Then run `canicode doctor` to confirm both prerequisites are in place. If you skip this, the roundtrip still generates code but will not register a Code Connect mapping — it tells you up front so you can decide.
 
-**CanICode in Cursor (no Claude Code required):**
-
-1. Add **canicode** and **Figma** MCPs — [Cursor MCP](docs/CUSTOMIZATION.md#cursor-mcp-canicode) for `npx` → `canicode-mcp` (use **`.cursor/mcp.json`** or **`~/.cursor/mcp.json`** in Cursor, not repo-root `.mcp.json`; [why](docs/CUSTOMIZATION.md#which-mcp-file-affects-which-host)); Figma MCP is required for **`use_figma`** if you run **roundtrip** (design writes), not for analyze-only.
-2. `npx canicode init --token figd_xxxxxxxxxxxxx --cursor-skills` (use `FIGMA_TOKEN=…` or the CLI prompt — not chat) — installs the same three skills as Claude under `.cursor/skills/` (`canicode`, `canicode-gotchas`, `canicode-roundtrip` + `helpers.js`) plus the shared `.claude/skills/canicode-gotchas/SKILL.md` answer file when needed.
-3. In Agent chat, @-mention **canicode-gotchas** (survey) or **canicode-roundtrip** (full roundtrip) and pass a Figma URL — same tool names and JSON as Claude Code (`gotcha-survey`, `analyze`, etc.).
+> **Cursor / Claude Desktop / other MCP host:** also supported via `npx canicode init --cursor-skills` and the canicode MCP. Setup details in [`docs/CUSTOMIZATION.md`](docs/CUSTOMIZATION.md#cursor-mcp-canicode).
 
 **If you only want analysis (no writes back to Figma):**
 
@@ -128,7 +146,7 @@ Loads a bundled fixture (no Figma API call, no token), opens the HTML report in 
 |----------|:-----:|------------------|
 | **Pixel Critical** | 3 | Can AI read the layout? (Auto Layout, absolute positioning, groups) |
 | **Responsive Critical** | 2 | Will it work at different viewports? (fixed sizing, size constraints) |
-| **Code Quality** | 4 | Is the design efficient for AI context? (components, variants, nesting) |
+| **Code Quality** | 5 | Is the design efficient for AI context? (components, variants, nesting, Code Connect coverage) |
 | **Token Management** | 2 | Can AI reproduce exact values? (raw values, spacing grid) |
 | **Interaction** | 2 | Can AI know what happens? (state variants, prototypes) |
 | **Semantic** | 3 | Can AI infer meaning? (semantic names, conventions) |
