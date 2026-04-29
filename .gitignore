@@ -32,6 +32,7 @@ coverage/
 # Temporary files
 *.tmp
 *.temp
+.tmp/
 .cache/
 
 # Generated reports and logs
