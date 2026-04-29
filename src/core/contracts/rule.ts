@@ -138,6 +138,19 @@ export interface RuleViolation {
    * string keeps lowercase prose.
    */
   suggestedName?: string;
+  /**
+   * Phase 3 (#508 / #560): when a rule emits a single issue that represents
+   * a group of N nodes (e.g. `missing-component:structure-repetition` —
+   * one issue per fingerprint group covering N qualifying FRAMEs), this
+   * lists every node id in the group **including** `nodeId`. Document
+   * order, scope-aware. Apply primitives (componentize + replace-with-
+   * instance) iterate this list to drive the full componentize+swap loop
+   * from a single user answer.
+   *
+   * Optional: rules that emit one issue per node (the typical path) leave
+   * this undefined.
+   */
+  groupMembers?: string[];
 }
 
 /**
