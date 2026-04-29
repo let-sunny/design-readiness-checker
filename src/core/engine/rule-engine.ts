@@ -260,6 +260,7 @@ export class RuleEngine {
       analysisState,
       scope,
       rootNodeType,
+      rootNode,
       undefined,
       undefined
     );
@@ -320,6 +321,7 @@ export class RuleEngine {
     analysisState: Map<string, unknown>,
     scope: AnalysisScope,
     rootNodeType: string,
+    analysisRoot: AnalysisNode,
     parent?: AnalysisNode,
     siblings?: AnalysisNode[]
   ): void {
@@ -351,6 +353,7 @@ export class RuleEngine {
       analysisState,
       scope,
       rootNodeType,
+      analysisRoot,
       findAcknowledgment: (nodeId, ruleId) =>
         acknowledgmentsByKey.get(`${normalizeNodeId(nodeId)}::${ruleId}`),
     };
@@ -414,6 +417,7 @@ export class RuleEngine {
           analysisState,
           scope,
           rootNodeType,
+          analysisRoot,
           node,
           node.children
         );

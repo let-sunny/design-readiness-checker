@@ -71,6 +71,26 @@ export interface RuleContext {
    */
   rootNodeType: string;
   /**
+   * #557: Root node of the current analysis subtree. Set by
+   * `RuleEngine.analyze` to the same node `traverseAndCheck` walks — i.e.
+   * `file.document` for full-file analysis or the resolved subtree when
+   * `targetNodeId` scopes the run.
+   *
+   * Distinct from `file.document`, which is **always** the full file root.
+   * Rules that build scope-wide indices (e.g. Stage 3 fingerprint pass in
+   * `missing-component`) MUST walk `analysisRoot`, not `file.document` —
+   * walking the full file under a scoped run produces silent false
+   * negatives because the index's first-occurrence id may resolve to a
+   * node outside the current scope, and the in-scope duplicate then never
+   * matches as "first" so the issue never surfaces.
+   *
+   * Optional purely so existing rule unit tests that construct
+   * `RuleContext` literals do not have to backfill the field. The engine
+   * always sets it; rule code reading this should default to
+   * `context.file.document` for safety on the unit-test path.
+   */
+  analysisRoot?: AnalysisNode;
+  /**
    * ADR-022: lookup canicode-authored acknowledgments by `(nodeId, ruleId)`.
    * The rule engine builds this from `RuleEngineOptions.acknowledgments` and
    * exposes it to every rule so individual rules can short-circuit (suppress

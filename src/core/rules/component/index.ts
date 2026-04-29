@@ -106,6 +106,86 @@ function getSeenStage4(context: RuleContext): Set<string> {
   return getAnalysisState(context, SEEN_STAGE4_KEY, () => new Set<string>());
 }
 
+/**
+ * Phase 3 (#508 / #556) — Stage 3 group lookup table.
+ *
+ * One-time scope-wide pass that maps each fingerprint to the list of
+ * qualifying FRAME ids. Built lazily on the first Stage 3 invocation in an
+ * analysis run and cached on `context.analysisState` so subsequent per-node
+ * calls just look up — O(1) per node instead of re-walking siblings every
+ * time. Cached separately per `maxFingerprintDepth` so the rare per-call
+ * option override stays correct.
+ */
+interface Stage3GroupInfo {
+  /** Document-order id of the first qualifying FRAME in this group. */
+  firstNodeId: string;
+  /** Total qualifying FRAMEs in this group across the entire analysis scope. */
+  count: number;
+}
+
+function stage3GroupsKey(maxDepth: number): string {
+  return `missing-component:stage3Groups:depth=${maxDepth}`;
+}
+
+// Single source of truth for Stage 3's qualification predicate. Used by
+// both the per-node check (entry point) and the scope-wide walker
+// (`buildStage3Groups`) so the index never holds a node the per-node check
+// would have rejected. Adding a new exclusion here covers both paths.
+function nodeQualifiesForStage3(
+  node: AnalysisNode,
+  parent: AnalysisNode | null,
+  insideInstance: boolean
+): boolean {
+  if (insideInstance) return false;
+  if (node.type !== "FRAME") return false;
+  if (parent?.type === "COMPONENT_SET") return false;
+  if (!node.children || node.children.length === 0) return false;
+  return true;
+}
+
+function buildStage3Groups(
+  root: AnalysisNode,
+  maxFingerprintDepth: number
+): Map<string, Stage3GroupInfo> {
+  const groups = new Map<string, Stage3GroupInfo>();
+  const walk = (
+    node: AnalysisNode,
+    parent: AnalysisNode | null,
+    ancestorIsInstance: boolean
+  ): void => {
+    const insideInstance = ancestorIsInstance || node.type === "INSTANCE";
+    if (nodeQualifiesForStage3(node, parent, ancestorIsInstance)) {
+      const fp = buildFingerprint(node, maxFingerprintDepth);
+      const existing = groups.get(fp);
+      if (existing) existing.count++;
+      else groups.set(fp, { firstNodeId: node.id, count: 1 });
+    }
+    if (node.children) {
+      for (const child of node.children) walk(child, node, insideInstance);
+    }
+  };
+  walk(root, null, false);
+  return groups;
+}
+
+function getStage3Groups(
+  context: RuleContext,
+  maxFingerprintDepth: number
+): Map<string, Stage3GroupInfo> {
+  // #557: walk the analysis root (the subtree the engine is actually
+  // checking), not `context.file.document` (always the full file). When
+  // analysis is scoped via `targetNodeId`, the full-file walk would seed
+  // the index with out-of-scope groups whose `firstNodeId` resolves to a
+  // node the engine never visits — the in-scope duplicate then never
+  // matches "first" and the issue silently disappears. Falls back to
+  // `file.document` only on the unit-test path where the test omits
+  // `analysisRoot` from a hand-built context literal.
+  const root = context.analysisRoot ?? context.file.document;
+  return getAnalysisState(context, stage3GroupsKey(maxFingerprintDepth), () =>
+    buildStage3Groups(root, maxFingerprintDepth)
+  );
+}
+
 const missingComponentDef: RuleDefinition = {
   id: "missing-component",
   name: "Missing Component",
@@ -168,15 +248,24 @@ const missingComponentCheck: RuleCheckFn = (node, context, options) => {
       }
     }
 
-    // Stage 3: Structure-based repetition (absorbed from repeated-frame-structure)
-    // Skip if node is inside an INSTANCE subtree
-    if (isInsideInstance(context)) return null;
-
-    // Skip if parent is COMPONENT_SET
-    if (context.parent?.type === "COMPONENT_SET") return null;
-
-    // Skip if node has no children
-    if (!node.children || node.children.length === 0) return null;
+    // Stage 3: scope-wide structure-based repetition (#508 / #556)
+    //
+    // Pre-#556 the check restricted matching to `context.siblings` — same-
+    // parent only. The cross-parent fingerprint pass (delta 3) replaces the
+    // sibling walk with a one-time scope-wide pass cached on
+    // `analysisState`, so duplicates spread across different parents now
+    // land in the same fingerprint group and emit a single issue on the
+    // document-order first qualifying FRAME.
+    //
+    // The per-node check shares `nodeQualifiesForStage3` with the walker so
+    // a cheap reject path short-circuits before any map lookup, and the
+    // qualification logic stays in one place — a future exclusion only
+    // needs to land in `nodeQualifiesForStage3`.
+    if (
+      !nodeQualifiesForStage3(node, context.parent ?? null, isInsideInstance(context))
+    ) {
+      return null;
+    }
 
     const structureMinRepetitions =
       (options?.["structureMinRepetitions"] as number | undefined) ??
@@ -186,51 +275,20 @@ const missingComponentCheck: RuleCheckFn = (node, context, options) => {
       (options?.["maxFingerprintDepth"] as number | undefined) ??
       getRuleOption("missing-component", "maxFingerprintDepth", 3);
 
-    // Compute fingerprint for this node
+    const groups = getStage3Groups(context, maxFingerprintDepth);
     const fingerprint = buildFingerprint(node, maxFingerprintDepth);
+    const group = groups.get(fingerprint);
+    if (!group) return null;
+    if (group.count < structureMinRepetitions) return null;
+    if (group.firstNodeId !== node.id) return null;
 
-    // Access siblings (may be undefined)
-    const siblings = context.siblings ?? [];
-
-    // Filter siblings to qualifying frames (type === FRAME, not inside INSTANCE, has children)
-    const qualifyingSiblings = siblings.filter(
-      (s) =>
-        s.type === "FRAME" &&
-        s.children !== undefined &&
-        s.children.length > 0
-    );
-
-    // Count siblings (including self) sharing the same fingerprint
-    const matchingNodes = qualifyingSiblings.filter(
-      (s) => buildFingerprint(s, maxFingerprintDepth) === fingerprint
-    );
-
-    // Ensure self is counted (it should be in siblings, but add a guard)
-    const selfIsInSiblings = qualifyingSiblings.some((s) => s.id === node.id);
-    const count = selfIsInSiblings
-      ? matchingNodes.length
-      : matchingNodes.length + 1;
-
-    if (count >= structureMinRepetitions) {
-      // Only emit for the first sibling (by array order) with this fingerprint
-      const firstMatch = qualifyingSiblings.find(
-        (s) => buildFingerprint(s, maxFingerprintDepth) === fingerprint
-      );
-
-      // If self is not in siblings list, treat self as first match when no earlier match exists
-      const firstMatchId = firstMatch?.id ?? node.id;
-      if (firstMatchId === node.id) {
-        return {
-          ruleId: missingComponentDef.id,
-          subType: "structure-repetition" as const,
-          nodeId: node.id,
-          nodePath: context.path.join(" > "),
-          ...missingComponentMsg.structureRepetition(node.name, count - 1),
-        };
-      }
-    }
-
-    return null;
+    return {
+      ruleId: missingComponentDef.id,
+      subType: "structure-repetition" as const,
+      nodeId: node.id,
+      nodePath: context.path.join(" > "),
+      ...missingComponentMsg.structureRepetition(node.name, group.count - 1),
+    };
   }
 
   // ========================================
