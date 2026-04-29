@@ -127,6 +127,10 @@ function stage3GroupsKey(maxDepth: number): string {
   return `missing-component:stage3Groups:depth=${maxDepth}`;
 }
 
+// Single source of truth for Stage 3's qualification predicate. Used by
+// both the per-node check (entry point) and the scope-wide walker
+// (`buildStage3Groups`) so the index never holds a node the per-node check
+// would have rejected. Adding a new exclusion here covers both paths.
 function nodeQualifiesForStage3(
   node: AnalysisNode,
   parent: AnalysisNode | null,
@@ -168,8 +172,17 @@ function getStage3Groups(
   context: RuleContext,
   maxFingerprintDepth: number
 ): Map<string, Stage3GroupInfo> {
+  // #557: walk the analysis root (the subtree the engine is actually
+  // checking), not `context.file.document` (always the full file). When
+  // analysis is scoped via `targetNodeId`, the full-file walk would seed
+  // the index with out-of-scope groups whose `firstNodeId` resolves to a
+  // node the engine never visits — the in-scope duplicate then never
+  // matches "first" and the issue silently disappears. Falls back to
+  // `file.document` only on the unit-test path where the test omits
+  // `analysisRoot` from a hand-built context literal.
+  const root = context.analysisRoot ?? context.file.document;
   return getAnalysisState(context, stage3GroupsKey(maxFingerprintDepth), () =>
-    buildStage3Groups(context.file.document, maxFingerprintDepth)
+    buildStage3Groups(root, maxFingerprintDepth)
   );
 }
 
@@ -244,12 +257,15 @@ const missingComponentCheck: RuleCheckFn = (node, context, options) => {
     // land in the same fingerprint group and emit a single issue on the
     // document-order first qualifying FRAME.
     //
-    // The per-node guards stay (`isInsideInstance`, `COMPONENT_SET` parent,
-    // empty children) so a cheap reject path short-circuits before any map
-    // lookup.
-    if (isInsideInstance(context)) return null;
-    if (context.parent?.type === "COMPONENT_SET") return null;
-    if (!node.children || node.children.length === 0) return null;
+    // The per-node check shares `nodeQualifiesForStage3` with the walker so
+    // a cheap reject path short-circuits before any map lookup, and the
+    // qualification logic stays in one place — a future exclusion only
+    // needs to land in `nodeQualifiesForStage3`.
+    if (
+      !nodeQualifiesForStage3(node, context.parent ?? null, isInsideInstance(context))
+    ) {
+      return null;
+    }
 
     const structureMinRepetitions =
       (options?.["structureMinRepetitions"] as number | undefined) ??

@@ -554,6 +554,53 @@ describe("missing-component — Stage 3: Structure-based repetition", () => {
     expect(missingComponent.check(frameC, ctxC)).toBeNull();
   });
 
+  it("respects analysisRoot when scoped — out-of-scope frames don't pollute groups (#557)", () => {
+    // Scope is `subRoot` only. `outsiderFrame` lives elsewhere in the file
+    // and shares the fingerprint with the in-scope frames. Pre-#557 the
+    // walker hit `file.document` and folded `outsiderFrame` into the same
+    // group, making it the document-order first match — the in-scope
+    // frames then never fired because their id !== firstNodeId. Now the
+    // walker honours `analysisRoot`, so the outsider is invisible and the
+    // in-scope first frame fires.
+    const childA = makeChildFrame("c:1", "RECTANGLE");
+    const childB = makeChildFrame("c:2", "RECTANGLE");
+    const childOut = makeChildFrame("c:99", "RECTANGLE");
+    const inFrameA = makeNode({ id: "in:1", name: "Card In A", children: [childA] });
+    const inFrameB = makeNode({ id: "in:2", name: "Card In B", children: [childB] });
+    const outsider = makeNode({
+      id: "out:1",
+      name: "Card Out",
+      children: [childOut],
+    });
+
+    const subRoot = makeNode({
+      id: "sub:1",
+      name: "InScope",
+      type: "FRAME",
+      children: [inFrameA, inFrameB],
+    });
+    const doc = makeNode({
+      id: "0:1",
+      name: "Document",
+      type: "DOCUMENT",
+      // Document order: outsider FIRST, then subRoot. Pre-#557 outsider
+      // would win as `firstNodeId` and silently swallow the in-scope hits.
+      children: [outsider, subRoot],
+    });
+
+    const ctx = makeContext({
+      file: makeFile({ document: doc }),
+      analysisRoot: subRoot,
+      parent: subRoot,
+      siblings: [inFrameA, inFrameB],
+    });
+
+    const result = missingComponent.check(inFrameA, ctx);
+    expect(result).not.toBeNull();
+    // Group inside the scope has 2 frames → "1 other frame(s)"
+    expect(result!.message).toContain("1 other frame(s)");
+  });
+
   it("caches the scope-wide pass on analysisState (no rebuild between calls)", () => {
     const childA = makeChildFrame("c:1", "RECTANGLE");
     const childB = makeChildFrame("c:2", "RECTANGLE");
