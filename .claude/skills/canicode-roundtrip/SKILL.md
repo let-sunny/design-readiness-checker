@@ -263,11 +263,10 @@ Instance-child guard and per-rule prompts — **[Appendix Strategy B](https://gi
 
 ##### Strategy B group componentize — Phase 3 (`missing-component:structure-repetition`)
 
-When `applyStrategy === "structural-mod"` AND `question.ruleId === "missing-component"` AND `question.subType === "structure-repetition"` AND `question.groupMembers` is set, the question represents a fingerprint group of N FRAMEs the user can componentize-and-swap in one batch. The group spans both same-parent siblings and cross-parent matches found by the Stage 3 scope-wide pass (#557). Render the per-question prompt with the **group size** explicitly so the designer knows the scope before answering:
+When `applyStrategy === "structural-mod"` AND `question.ruleId === "missing-component"` AND `question.subType === "structure-repetition"` AND `question.groupMembers` is set, the question represents a fingerprint group of N FRAMEs the user can componentize-and-swap in one batch. The group spans both same-parent siblings and cross-parent matches found by the Stage 3 scope-wide pass (#557). Render the per-question prompt with the **group size** explicitly so the designer knows the scope before answering. Substitute `{nodeName}` with `question.nodeName` and `{others}` with `question.groupMembers.length - 1` (the count excluding the first member that becomes the new component); render in the user's session language:
 
-> "{nodeName}" 외에 동일한 구조의 frame이 N개 더 있습니다 (총 N+1개). 모두 컴포넌트화 할까요? (yes/no)
-
-(English equivalent — substitute when user language is English.)
+- Korean: `> "{nodeName}" 외에 동일한 구조의 frame이 {others}개 더 있습니다 (총 {others + 1}개). 모두 컴포넌트화 할까요? (yes/no)`
+- English: `> "{nodeName}" and {others} other frame(s) share the same structure ({others + 1} total). Componentize the whole group? (yes/no)`
 
 On `yes`, compute the file-wide existing component name set once (decision C uses this for the suffix), then call the group orchestrator. On `no` / `skip`, drop the question without writing anything; the gotcha state is captured in the SKILL's section markdown either way.
 
@@ -285,11 +284,16 @@ const result = await CanICodeRoundtrip.applyGroupComponentize({
 });
 // result.summary — e.g. `componentized "Card", swapped 3/4 siblings (1 free-form parent)`
 // result.outcome — `componentized-and-swapped` | `componentize-failed` | `missing-first-member`
-// Bump stepFourReport per outcome:
-//   `componentized-and-swapped` AND every replace.outcome === "replaced" → resolved
-//   any replace failures → resolved + annotated (per-target outcome icons)
-//   `componentize-failed` → annotated (componentize annotate-fallback already wrote)
-//   `missing-first-member` → skipped
+//
+// Step 4 report counter mapping (bump ONCE per primitive call, not once per
+// outcome bucket — counters track work performed, not aggregate verdicts):
+//   componentize step:
+//     componentizeResult.outcome === "componentized" → resolved (+1)
+//     componentizeResult.outcome === "skipped-*" or "error" → annotated (+1)
+//   each replace step (iterate result.replaceResults):
+//     replaceResult.outcome === "replaced" → resolved (+1)
+//     replaceResult.outcome === "skipped-*" or "error" → annotated (+1)
+//   missing-first-member → skipped (+1) and no further bumps
 ```
 
 Notes:
@@ -297,6 +301,51 @@ Notes:
 - **Name collision auto-suffixes per ADR-023 decision C** (`Card 2`, `Card 3`, …). The orchestrator passes `existingComponentNames` to the componentize step which resolves the suffix and reports the rename in `result.componentizeResult.finalName`.
 - **Per-member opt-out is not yet wired** — the orchestrator treats `groupMembers` as canonical. If the designer wants to exclude a specific member, that is currently a manual pre-edit (delete the entry from the question payload before calling) or a follow-up enhancement.
 - **No replica fan-out.** Stage 3 questions never carry `replicaNodeIds` (the `#356` instance-child dedupe applies to single-node violations, not group-shaped ones). Iterate `groupMembers` instead.
+
+###### Code Connect handoff for the new component (Phase 3 delta 5, optional)
+
+When `result.outcome === "componentized-and-swapped"` AND `result.componentizeResult.newComponentId` is set, the new component is a candidate for a Code Connect mapping so future roundtrips reuse the just-generated code instead of regenerating markup. This mirrors the Workflow 1 (#509) Step 7 close-out — same pre-check, same MCP tools, just sharing the closing question.
+
+Per ADR-023 decision E this is **silent skip + one-line pointer** when prereqs are absent — Phase 3 does not own onboarding (Workflow 1 / #509 does). The check is the same `npx canicode doctor --figma-url <url>` already run at Step 1.5 (`prereqs.codeConnectReady` cached on the session) — do **not** re-run doctor here. If prereqs were missing, surface ONE line and move on:
+
+> Code Connect 미설정이라 매핑 단계는 건너뜁니다. Workflow 1 (`/canicode-roundtrip <component-url>`)로 setup하면 다음부터 자동 매핑됩니다.
+
+(English: `> Code Connect not configured — skipping mapping. Run Workflow 1 (\`/canicode-roundtrip <component-url>\`) to set it up; subsequent roundtrips map automatically.`)
+
+When prereqs are ready, ask the satisfaction prompt and, on `yes`, register the mapping:
+
+```javascript
+// 1. Probe the just-componentized main for an existing mapping (idempotency)
+const existing = await mcp__figma__get_code_connect_map({
+  componentId: result.componentizeResult.newComponentId,
+});
+if (existing) {
+  // Already mapped — surface and move on. Do not overwrite without consent.
+  return;
+}
+
+// 2. Ask the user (one line, in session language)
+//    Korean: "이 새 component를 Code Connect 매핑으로 등록할까요? (yes/no)"
+//    English: "Register this new component with Code Connect? (yes/no)"
+
+// 3. On yes, fetch suggestions and register the user's choice
+const suggestions = await mcp__figma__get_code_connect_suggestions({
+  componentId: result.componentizeResult.newComponentId,
+  componentName: result.componentizeResult.finalName,
+});
+// Render suggestions to the user; on confirmation:
+await mcp__figma__add_code_connect_map({
+  componentId: result.componentizeResult.newComponentId,
+  codePath: chosenSuggestion.path,        // e.g. "src/components/Card.tsx"
+  codeName: chosenSuggestion.exportName,  // e.g. "Card"
+});
+await mcp__figma__send_code_connect_mappings();
+```
+
+Notes:
+- **Inherits Step 1.5 prereq check.** Do not re-invoke `canicode doctor` — the cached result from Step 1.5 already covers `figma.config.json` + `@figma/code-connect` install + Figma publish status. Skipping the re-check keeps the close-out fast and avoids a second Figma round-trip.
+- **No suggestions match → still surface the option.** When `get_code_connect_suggestions` returns empty, ask the user for a manual `codePath` + `codeName` (one prompt, optional). Skipping is always valid — the new component remains unmapped and Workflow 1 can register it later.
+- **Wraps the Step 4 apply line** with one extra outcome marker: `+ Code Connect: Card → src/components/Card.tsx` on success, `+ Code Connect: skipped (prereq missing)` or `+ Code Connect: skipped (user declined)` on the two skip paths. Counts as part of the Phase 3 group's overall result for Step 5 tally — no new counter, just an annotation appended to the existing line.
 
 #### Strategy C: Annotation — record on the design for designer reference
 
