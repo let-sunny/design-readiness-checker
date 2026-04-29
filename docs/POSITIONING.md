@@ -1,8 +1,6 @@
 # canicode Positioning
 
-A one-pager that captures **who canicode is for, what it does for them, and why it is not Claude Design**. This is the source of truth for README copy, Show HN pitch, future feature decisions ("should we add X?"), and 6-months-from-now self-check on whether the project still fits its declared niche.
-
-Treat as living. When the answer to a real-world question contradicts a line here, fix the line — not the user.
+A one-pager covering who canicode is for, what it does for them, and why it sits next to Claude Design rather than competing with it.
 
 ---
 
@@ -72,18 +70,13 @@ The persistence layer is what makes canicode an investment, not a one-time fix.
 
 ---
 
-## Differentiation matrix
+## The one differentiation that matters
 
-| Concern | canicode | Claude Design | figma-implement-design alone | No tool (designer + dev chat) |
-|---|---|---|---|---|
-| Who designs | Designer (in Figma) | AI (from prompt) | Designer (in Figma) | Designer |
-| Who articulates technical intent | canicode pulls it out via Q&A | AI infers from prompt | AI infers from Figma | Designer types prose; dev re-interprets |
-| Designer learning curve | Answers plain questions | Learns prompt engineering | None | None |
-| Design tool | Figma (existing investment preserved) | Claude Design (new tool) | Figma | Figma |
-| Iteration loop | Edit Figma → roundtrip again | New prompt | Edit Figma → re-codegen | Async chat / Slack |
-| Intent persistence | Annotations in Figma file | Conversation history | None | Slack scrollback |
-| Cost | Free, open source | Pro / Max / Team / Enterprise plans | Free (with Claude Code) | Engineer time |
-| Best fit | Designer-led, craft-driven | Solo founder, MVP velocity | Skilled designer + skilled dev | Small team with strong rapport |
+|  | Claude Design | canicode |
+|---|---|---|
+| Who designs | AI (from a prompt) | The designer (in Figma) |
+
+Everything else (iteration loop, persistence, plan tier, learning curve) follows from this one row. The next section unpacks why.
 
 ---
 
